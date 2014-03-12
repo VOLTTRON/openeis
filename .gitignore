@@ -1,0 +1,7 @@
+.*.sw?
+*.py[co]
+*.egg-info
+*~
+__pycache_/
+
+/buildout/
