@@ -38,22 +38,6 @@ from zc.buildout.buildout import bool_option
 from zc.recipe.egg import Eggs
 
 
-def _make_relative(start_dir, dest):
-    '''Return the path to dest relative to start_dir.
-    
-    If start_dir and dest have no common prefix, the absolute path of
-    dest is returned.
-    '''
-    path = os.path
-    abs_start = path.abspath(start_dir)
-    abs_dest = path.abspath(dest)
-    path.dirname(path.commonprefix([abs_start, abs_dest]))
-    if not prefix or prefix == os.path.sep:
-        return path.abspath(dest)
-    dots = ['..'] * abs_start[len(prefix):].count(path.sep)
-    return path.sep.join(dots) + abs_dest[len(prefix):]
-
-
 class VirtualEnvironmentSite(Eggs):
     '''Buildout recipe to add eggs to venv site-packages.'''
 
@@ -90,7 +74,7 @@ class VirtualEnvironmentSite(Eggs):
         paths = itertools.chain(self.extra_paths, ws.entries)
         if self.relative_paths:
             site_dir = os.path.dirname(site_path)
-            paths = (_make_relative(site_dir, path) for path in paths)
+            paths = (os.path.relpath(path, site_dir) for path in paths)
         with open(site_path, 'w') as file:
             for path in paths:
                 file.writelines([path, '\n'])
