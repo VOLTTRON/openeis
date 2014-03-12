@@ -5,3 +5,4 @@
 __pycache_/
 
 /buildout/
+/openeis-db.sqlite3

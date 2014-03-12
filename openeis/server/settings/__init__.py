@@ -8,9 +8,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/1.6/ref/settings/
 """
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import posixpath
+
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+POSIX_BASE_DIR = os.path.abspath(BASE_DIR)
+if os.path.sep != posixpath.sep:
+    POSIX_BASE_DIR = posixpath.join(*POSIX_BASE_DIR.split(os.path.sep))
 
 def _get_data_dir():
     d = BASE_DIR
@@ -21,7 +26,7 @@ def _get_data_dir():
         d, b = os.path.split(d)
         if not b:
             break
-    return os.path.join(d or BASE_DIR, 'data')
+    return d or BASE_DIR
 DATA_DIR = _get_data_dir()
 
 
@@ -87,4 +92,20 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+
 MEDIA_ROOT = os.path.join(DATA_DIR, 'media')
+
+TEMPLATE_DIRS = (
+    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
+    # Always use forward slashes, even on Windows.
+    # Don't forget to use absolute paths, not relative paths.
+    posixpath.join(POSIX_BASE_DIR, "templates"),
+)
