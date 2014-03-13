@@ -8,6 +8,15 @@ setup(
     author_email = 'bora@pnnl.gov',
     url = 'http://www.pnnl.gov',
     packages = ['openeis.server'],
-    install_requires = ['django>=1.6,<1.7'],
+    install_requires = [
+        'django>=1.6,<1.7',
+        'django-filter',
+        'django-guardian',
+        'djangorestframework',
+    ],
+    extras_require = {
+        'md': ['Markdown'],
+        'yaml': ['PyYAML'],
+    }
 )
 
