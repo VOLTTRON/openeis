@@ -1,4 +1,3 @@
-
 import sys
 
 # venv and other features used in openeis were introduced in Python 3.3.
@@ -27,4 +26,4 @@ builder.create(directory)
 
 # Install the buildout environment.
 os.system(os.path.join(directory, 'bin', 'python') + ' bootstrap-buildout.py')
-
+os.system(os.path.join(directory, 'bin', 'buildout'))

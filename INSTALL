@@ -1,0 +1,78 @@
+Requirements
+============
+
+Python version 3.3 (or greater) is required because in it was introduced the
+venv package (for creating virtual environments), implicit namespace packaging,
+and improved import machinery.
+
+
+Building
+========
+
+Execute the bootstrap.py script with the desired version of Python (>= 3.3).
+
+  On Linux, OS-X, and other Unix-like systems:
+
+    $ python3.3 bootstrap.py
+
+  On Windows:
+
+    C:\openeis> python3.3.exe bootstrap.py
+
+The bootstrap.py script performs three tasks:
+
+  1. Creates a Python virtual environment (using venv) in the buildout
+     directory.
+  2. Bootstraps zc.buildout by executing the bootstrap-buildout.py script with
+     the python executable installed in the virtual environment.
+  3. Executes the resulting buildout script to download and install OpenEIS
+     dependencies and install them into the buildout environment.
+
+
+Updating
+========
+
+After the environment is bootstrapped it may be updated by rerunning the
+buildout script:
+
+  $ buildout/bin/buildout
+
+This will update dependencies and installed scripts.
+
+
+Using
+=====
+
+Two additional scripts are added to the buildout/bin directory:
+
+  activate or activate.bat (on Windows)
+
+    Used to activate the virtual environment, this script adds buildout/bin to
+    the PATH environment variable and sets the shell prompt to indicate the
+    virtual environment is active. Adding the bin directory to the PATH allows
+    one to execute commands in that directory without prefixing it with a path.
+
+    On Windows, activate.bat should be run directly. On other systems, activate
+    should be sourced to include the changes in the current shell.
+
+    On Windows:
+    
+      C:\openeis> buidout/bin/activate.bat
+
+    On other systems:
+
+      $ . buildout/bin/activate
+
+    The effects of activation can be reversed by executing deactivate or
+    deactivate.bat (on Windows).
+
+  django
+
+    This is the manage.py equivalent script used to interact with the OpenEIS
+    Django installation.
+
+
+Developing
+==========
+
+You can run the Django development server using the django script discussed above. Simple run `django runserver` and the web server will serve pages on localhost port 8000. The development server will pick up most changes to the project and automatically reload.
