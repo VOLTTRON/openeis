@@ -3,7 +3,7 @@ Requirements
 
 Python version 3.3 (or greater) is required because in it was introduced the
 venv package (for creating virtual environments), implicit namespace packaging,
-and improved import machinery.
+and improved import machinery which are all used by OpenEIS.
 
 
 Building
@@ -11,43 +11,47 @@ Building
 
 Execute the bootstrap.py script with the desired version of Python (>= 3.3).
 
-  On Linux, OS-X, and other Unix-like systems:
-
-    $ python3.3 bootstrap.py
-
   On Windows:
 
-    C:\openeis> python3.3.exe bootstrap.py
+    C:\openeis> C:\Python33\python.exe bootstrap.py
+
+  On Linux, OS-X, and other Unix-like systems:
+
+    [openeis]$ python3.3 bootstrap.py
 
 The bootstrap.py script performs three tasks:
 
-  1. Creates a Python virtual environment (using venv) in the buildout
-     directory.
-  2. Bootstraps zc.buildout by executing the bootstrap-buildout.py script with
-     the python executable installed in the virtual environment.
-  3. Executes the resulting buildout script to download and install OpenEIS
-     dependencies and install them into the buildout environment.
+  1. Creates a Python virtual environment (using venv) in the env directory.
+  2. Installs pip and setuptools by downloading and executing the get-pip.py
+     script from the Pip repository.
+  3. Uses pip to install openeis and dependencies into the virtual
+     environment.
 
 
 Updating
 ========
 
-After the environment is bootstrapped it may be updated by rerunning the
-buildout script:
-
-  $ buildout/bin/buildout
-
-This will update dependencies and installed scripts.
+After the environment is bootstrapped it may be updated by rerunning bootstrap
+with the python executable in the virtual environment.
 
 
-Using
-=====
+  On Windows:
 
-Two additional scripts are added to the buildout/bin directory:
+    C:\openeis> env\bin\python.exe bootstrap.py
+
+  On Linux, OS-X, and other Unix-like systems:
+
+    [openeis]$ env/bin/python bootstrap.py
+
+
+Working
+=======
+
+Two openeis items are added to the env/bin directory:
 
   activate or activate.bat (on Windows)
 
-    Used to activate the virtual environment, this script adds buildout/bin to
+    Used to activate the virtual environment, this script adds env/bin to
     the PATH environment variable and sets the shell prompt to indicate the
     virtual environment is active. Adding the bin directory to the PATH allows
     one to execute commands in that directory without prefixing it with a path.
@@ -57,22 +61,50 @@ Two additional scripts are added to the buildout/bin directory:
 
     On Windows:
     
-      C:\openeis> buidout/bin/activate.bat
+      C:\openeis> env\bin\activate.bat
 
     On other systems:
 
-      $ . buildout/bin/activate
+      [openeis]$ . env/bin/activate
 
     The effects of activation can be reversed by executing deactivate or
     deactivate.bat (on Windows).
 
-  django
+  openeis or openeis.exe (on Windows)
 
     This is the manage.py equivalent script used to interact with the OpenEIS
-    Django installation.
+    Django installation. Its settings file defaults to
+    openeis.server.settings.desktop.
 
 
 Developing
 ==========
 
-You can run the Django development server using the django script discussed above. Simple run `django runserver` and the web server will serve pages on localhost port 8000. The development server will pick up most changes to the project and automatically reload.
+You can run the Django development server using the openeis executable
+discussed above. Simple run `openeis runserver` and the web server will serve
+pages on localhost port 8000. The development server will pick up most changes
+to the project and automatically reload.
+
+Check out the Django documentation for further help:
+
+  https://docs.djangoproject.com/en/1.6/
+
+
+Synchronizing the Database
+==========================
+
+After initial installation, and whenever the project's models change, the 
+database must be synchronized using the syncdb command to add missing
+tables.
+
+    On Windows:
+    
+      C:\openeis> env\bin\openeis.exe syncdb
+
+    On other systems:
+
+      [openeis]$ env/bin/openeis syncdb
+
+The first time syncdb is run, it will ask to create a superuser account. This
+bootstraps the user table with an administrator user. You can add additional
+superusers with the createsuperuser command.

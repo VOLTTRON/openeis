@@ -18,17 +18,8 @@ POSIX_BASE_DIR = os.path.abspath(BASE_DIR)
 if os.path.sep != posixpath.sep:
     POSIX_BASE_DIR = posixpath.join(*POSIX_BASE_DIR.split(os.path.sep))
 
-def _get_data_dir():
-    d = BASE_DIR
-    while True:
-        if (os.path.exists(os.path.join(d, 'buildout.cfg')) and
-            os.path.exists(os.path.join(d, 'openeis'))):
-            break
-        d, b = os.path.split(d)
-        if not b:
-            break
-    return d or BASE_DIR
-DATA_DIR = _get_data_dir()
+DATA_DIR = os.path.abspath(
+    os.path.join(*([BASE_DIR] + ['..']*__package__.count('.') + ['data'])))
 
 
 # Quick-start development settings - unsuitable for production

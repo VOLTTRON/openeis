@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name = 'openeis.server',
     version = '0.1',
-    description = 'OpenEIS server.',
+    description = 'Open Energy Information System (OpenEIS) server.',
     author = 'Bora Akyol',
     author_email = 'bora@pnnl.gov',
     url = 'http://www.pnnl.gov',
@@ -17,6 +17,10 @@ setup(
     extras_require = {
         'md': ['Markdown'],
         'yaml': ['PyYAML'],
-    }
+    },
+    entry_points = '''
+        [console_scripts]
+        openeis = openeis.server.manage:main
+    ''',
 )
 
