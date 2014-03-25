@@ -37,7 +37,7 @@ with the python executable in the virtual environment.
 
   On Windows:
 
-    C:\openeis> env\bin\python.exe bootstrap.py
+    C:\openeis> env\Scripts\python.exe bootstrap.py
 
   On Linux, OS-X, and other Unix-like systems:
 
@@ -47,21 +47,22 @@ with the python executable in the virtual environment.
 Working
 =======
 
-Two openeis items are added to the env/bin directory:
+Two openeis items are added to the env/bin (env/Scripts on Windows) directory:
 
   activate or activate.bat (on Windows)
 
-    Used to activate the virtual environment, this script adds env/bin to
-    the PATH environment variable and sets the shell prompt to indicate the
-    virtual environment is active. Adding the bin directory to the PATH allows
-    one to execute commands in that directory without prefixing it with a path.
+    Used to activate the virtual environment, this script adds the bin
+    directory to the PATH environment variable and sets the shell prompt to
+    indicate the virtual environment is active. Adding the bin directory to the
+    PATH allows one to execute commands in that directory without prefixing it
+    with a path.
 
     On Windows, activate.bat should be run directly. On other systems, activate
     should be sourced to include the changes in the current shell.
 
     On Windows:
     
-      C:\openeis> env\bin\activate.bat
+      C:\openeis> env\Scripts\activate.bat
 
     On other systems:
 
@@ -99,7 +100,7 @@ tables.
 
     On Windows:
     
-      C:\openeis> env\bin\openeis.exe syncdb
+      C:\openeis> env\Scripts\openeis.exe syncdb
 
     On other systems:
 
