@@ -92,29 +92,26 @@ def get_pip():
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def _bin_path(exe, directory=sys.prefix):
-    if sys.platform == 'win32':
-        exe += '.exe'
-        bindir = 'Scripts'
-    else:
-        bindir = 'bin'
-    return os.path.join(directory, bindir, exe)
-
-
 def stage1(directory='env', prompt='(openeis)'):
     import venv
     # Install the virtual environment.
     builder = venv.EnvBuilder(upgrade=os.path.exists(directory))
-    # Override ensure_directories to set the prompt
+    # Override ensure_directories to set the prompt and get the context
+    context = None
     _ensure_directories = builder.ensure_directories
     def ensure_directories(*args, **kwargs):
+        nonlocal context
         context = _ensure_directories(*args, **kwargs)
         context.prompt = prompt
         return context
     builder.ensure_directories = ensure_directories
     builder.create(directory)
     # Call this script in the new virtual Python environment
-    subprocess.check_call([_bin_path('python', directory=directory), __file__])
+    env = os.environ.copy()
+    # Set the environment variable to keep Debian site.getsitepackages()
+    # from appending 'local' to the prefix.
+    env['VIRTUAL_ENV'] = context.env_dir
+    subprocess.check_call([context.env_exe, __file__], env=env)
 
 
 def stage2():
@@ -125,7 +122,7 @@ def stage2():
             import ensurepip
         except ImportError:
             get_pip()
-    subprocess.check_call([_bin_path('pip'), 'install', '-e', '.[md,yaml]'])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', '.'])
 
 
 def main(directory='env', prompt='(openeis)'):
