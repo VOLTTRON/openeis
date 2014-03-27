@@ -104,7 +104,7 @@ def stage1(directory='env', prompt='(openeis)'):
             super().__init__(*args, **kwargs)
 
         def ensure_directories(self, *args, **kwargs):
-            context = super().ensure_directories(*args, **kwargs)
+            self.context = context = super().ensure_directories(*args, **kwargs)
             context.prompt = self.prompt
             return context
 
@@ -119,12 +119,12 @@ def stage1(directory='env', prompt='(openeis)'):
             if not os.path.exists(venv_pth):
                 with open(venv_pth, 'w') as file:
                     file.write('import os, sys; os.environ.setdefault("VIRTUAL_ENV", sys.prefix)\n')
-            # Run this script within the virtual environment for stage2
-            subprocess.check_call([context.env_exe, __file__])
 
     # Install the virtual environment.
     builder = EnvBuilder(upgrade=os.path.exists(directory), prompt='(openeis)')
     builder.create(directory)
+    # Run this script within the virtual environment for stage2
+    subprocess.check_call([builder.context.env_exe, __file__])
 
 
 def stage2():
