@@ -2,7 +2,7 @@
 *.py[co]
 *.egg-info
 *~
-__pycache_/
+__pycache__/
 
 /env/
 /data/
