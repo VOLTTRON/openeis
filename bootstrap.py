@@ -66,7 +66,7 @@ vEsXCS+0yx5DaMkHJ8HSXPfqIbloEpw8nL+e/IBcm2PN7EeqJSdnoDfzAIJ9VNep
 
 
 def get_pip():
-    # Download and execute the get-pip.py bootstrap script to install pip
+    # Download and execute the get-pip.py bootstrap script to install pip.
     import shutil
     import tempfile
     from urllib.request import urlopen
@@ -94,24 +94,37 @@ def get_pip():
 
 def stage1(directory='env', prompt='(openeis)'):
     import venv
+
+    class EnvBuilder(venv.EnvBuilder):
+        # Subclass EnvBuilder to set the prompt and perform
+        # post setup tasks.
+
+        def __init__(self, *args, **kwargs):
+            self.prompt = kwargs.pop('prompt', None)
+            super().__init__(*args, **kwargs)
+
+        def ensure_directories(self, *args, **kwargs):
+            context = super().ensure_directories(*args, **kwargs)
+            context.prompt = self.prompt
+            return context
+
+        def post_setup(self, context):
+            # Set the VIRTUAL_ENV environment variable on Debian to keep
+            # site.getsitepackages() from appending 'local' to the prefix.
+            dist_dir = os.path.join(context.env_dir, 'lib',
+                    'python%d.%d' % sys.version_info[:2], 'dist-packages')
+            if not os.path.exists(dist_dir):
+                os.makedirs(dist_dir)
+            venv_pth = os.path.join(dist_dir, 'virtual_env.pth')
+            if not os.path.exists(venv_pth):
+                with open(venv_pth, 'w') as file:
+                    file.write('import os, sys; os.environ.setdefault("VIRTUAL_ENV", sys.prefix)\n')
+            # Run this script within the virtual environment for stage2
+            subprocess.check_call([context.env_exe, __file__])
+
     # Install the virtual environment.
-    builder = venv.EnvBuilder(upgrade=os.path.exists(directory))
-    # Override ensure_directories to set the prompt and get the context
-    context = None
-    _ensure_directories = builder.ensure_directories
-    def ensure_directories(*args, **kwargs):
-        nonlocal context
-        context = _ensure_directories(*args, **kwargs)
-        context.prompt = prompt
-        return context
-    builder.ensure_directories = ensure_directories
+    builder = EnvBuilder(upgrade=os.path.exists(directory), prompt='(openeis)')
     builder.create(directory)
-    # Call this script in the new virtual Python environment
-    env = os.environ.copy()
-    # Set the environment variable to keep Debian site.getsitepackages()
-    # from appending 'local' to the prefix.
-    env['VIRTUAL_ENV'] = context.env_dir
-    subprocess.check_call([context.env_exe, __file__], env=env)
 
 
 def stage2():
@@ -120,9 +133,12 @@ def stage2():
     except ImportError:
         try:
             import ensurepip
+            ensurepip.bootstrap(upgrade=True, default_pip=True)
         except ImportError:
             get_pip()
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', '.'])
+    if not os.path.exists('data'):
+        os.mkdir('data')
 
 
 def main(directory='env', prompt='(openeis)'):
