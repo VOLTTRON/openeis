@@ -94,11 +94,13 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
-MEDIA_ROOT = os.path.join(DATA_DIR, 'media')
-
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
     posixpath.join(POSIX_BASE_DIR, "templates"),
 )
+
+PROTECTED_MEDIA_URL = '/files/'
+PROTECTED_MEDIA_ROOT = os.path.join(DATA_DIR, 'files')
+PROTECTED_MEDIA_METHOD = 'direct' # 'X-Sendfile', 'X-Accel-Redirect', 'direct'
