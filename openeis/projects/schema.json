@@ -1,0 +1,22 @@
+{
+	"$schema": "http://json-schema.org/draft-04/schema#",
+	
+	"definitions": {
+		"address": {
+			"type": "object",
+			"properties": {
+				"street_address":	{"type": "string"},
+				"city":				{"type": "string"},
+				"zip_code":			{"type": "string"}
+			}
+		}
+	},
+	
+	"type": "object",
+	"object_type": "site",
+	"properties": {
+		"name": {"type": "string"},
+		"address": {"$ref": "#/definitions/address"}
+	},
+	"required": ["name"]
+}

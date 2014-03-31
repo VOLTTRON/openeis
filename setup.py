@@ -13,6 +13,7 @@ setup(
         'django-filter',
         'django-guardian',
         'djangorestframework',
+        'jsonschema',
     ],
     extras_require = {
         'md': ['Markdown'],
