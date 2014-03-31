@@ -40,7 +40,7 @@ class Project(models.Model):
     '''Organizes and groups a users files, mappings, and results.'''
 
     name = models.CharField(max_length=100)
-    owner = models.ForeignKey(User)
+    owner = models.ForeignKey(User, related_name='projects')
 
     def __str__(self):
         return self.name
