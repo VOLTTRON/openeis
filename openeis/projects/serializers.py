@@ -22,16 +22,20 @@ class CreateFileSerializer(serializers.ModelSerializer):
     '''
     class Meta:
         model = models.DataFile
-        read_only_fields = ('project',)
+        exclude = ('project',)
 
     def __init__(self, *args, **kwargs):
         self.project = kwargs.pop('project', None)
         super().__init__(*args, **kwargs)
 
     def restore_object(self, attrs, instance=None):
+        #if self.project is not None:
+        #    attrs['project'] = self.project
+        #return super().restore_object(attrs, instance)
+        obj = super().restore_object(attrs, instance)
         if self.project is not None:
-            attrs['project'] = self.project
-        return super().restore_object(attrs, instance)
+            obj.project = self.project
+        return obj
 
 
 class FileSerializer(serializers.ModelSerializer):

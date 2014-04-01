@@ -1,8 +1,10 @@
 from django.contrib.auth.decorators import user_passes_test
+from django.http import HttpResponseRedirect
 
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, link
 from rest_framework.response import Response
+from rest_framework.reverse import reverse
 
 from . import models
 from .protectedmedia import protected_media, ProtectedMediaResponse
@@ -29,7 +31,7 @@ class IsProjectOwner(permissions.BasePermission):
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
-    '''REST API handler for Project model.'''
+    '''List all projects owned by the active user.'''
 
     model = models.Project
     serializer_class = serializers.ProjectSerializer
@@ -51,9 +53,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer = serializers.CreateFileSerializer(
                 project=project, data=request.DATA, files=request.FILES)
         if serializer.is_valid():
-            serializer.save(force_insert=True)
+            obj = serializer.save(force_insert=True)
+            serializer = serializers.FileSerializer(instance=obj)
+            serializer.request = request
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+
+    @link()
+    def files(self, request, *args, **kwargs):
+        project = self.get_object()
+        return HttpResponseRedirect(reverse('datafile-list', request=request) +
+                                    '?project={}'.format(project.id))
 
 
 class FileViewSet(mixins.ListModelMixin,
@@ -61,7 +71,10 @@ class FileViewSet(mixins.ListModelMixin,
                   mixins.UpdateModelMixin,
                   mixins.DestroyModelMixin,
                   viewsets.GenericViewSet):
-    '''REST API for viewing and modifying data files.'''
+    '''List all files owned by the active user.
+
+    project -- Restrict the list to those with the given project ID.
+    '''
 
     model = models.DataFile
     serializer_class = serializers.FileSerializer
