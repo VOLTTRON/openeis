@@ -1,6 +1,23 @@
 {
 	"$schema": "http://json-schema.org/draft-04/schema#",
 	
+	"type": "object",
+	"required": ["sites"],
+	"properties": {
+		"sites": {
+			"type": "array",
+			"items": [
+				{"$ref": "#definitions/site"}
+			]
+		},
+		"sensors": {
+			"type": "array",
+			"items": [
+				{"$ref": "#definitions/sensor"}
+			]
+		}
+	},	
+		
 	"definitions": {
 		"address": {
 			"type": "object",
@@ -9,14 +26,53 @@
 				"city":				{"type": "string"},
 				"zip_code":			{"type": "string"}
 			}
-		}
-	},
-	
-	"type": "object",
-	"object_type": "site",
-	"properties": {
-		"name": {"type": "string"},
-		"address": {"$ref": "#/definitions/address"}
-	},
-	"required": ["name"]
+		},
+		
+		"site": {
+			"type": "object",
+			"object_type": "site",
+			"required": ["name"],
+			"properties": {
+				"name": {"type": "string"},
+				"address": {"$ref": "#/definitions/address"},
+				"buildings": {
+					"type": "array",
+					"items": [
+						{"$ref": "#/definitions/building"}
+					]
+				}
+			}
+		},
+		
+		"building": {
+			"type": "object",
+			"required": ["name"],
+			"properties": {
+				"name": {"type": "string"},
+				"address": {"$ref": "#/definitions/address"}				
+			}			
+		},
+		
+		"system": {
+			"type": "object",
+			"required":["name", "system-type"],
+			"properties": {
+				"system-type": {"type": "string"}				
+			}		
+		},
+		
+		"sub-system": {
+			"type": "object"		
+		},
+		
+		"sensor": {
+			"type": "object",
+			"required": ["name","units", "sensor_type"],
+			"properties": {
+				"sensor_type": {"$ref": "sensors.json#/sensors"},
+				"minimum_value": {"type": "number"},
+				"maximum_value": {"type": "number"}
+			}
+		}				
+	}	
 }

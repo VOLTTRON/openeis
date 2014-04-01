@@ -9,13 +9,29 @@ from jsonschema import validate
 with open('schema.json') as jsonFile:
     schema = json.load(jsonFile)
 
+#print(schema)
+# site = {
+#     "name": "PNNL",
+#     "street_address": "902 Battelle Blvd."
+# }    
+# 
+# print(validate(site, schema))
 
-site = {
-    "name": "PNNL",
-    "address": {"street_address": "902 Battelle Blvd."},
-}    
+with open("schema_test.json") as loader:
+    test = json.load(loader)
 
-print(validate(site, schema))
+print("Test Data")
+print(json.dumps(test,  sort_keys=True, indent=4))
+#print(test)
+# sensor = {
+#     "sensor":{
+#     #"name": "OutdoorAirTemperature",
+#     "data-type": "float",
+#     "units": "bogus"
+#     }
+# }
+
+print(validate(test, schema))
 
 # schema = {
 #     "$schema": "http://openeis.pnnl.gov/01/schema#"
