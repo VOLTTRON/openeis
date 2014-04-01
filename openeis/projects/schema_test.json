@@ -31,6 +31,10 @@
 					"name": "ORNL Building 1"
 				}
 			]			
+		},
+		
+		{
+			"bogus": "apple"
 		}
 	]
 	

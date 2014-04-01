@@ -6,6 +6,9 @@
 	"properties": {
 		"sites": {
 			"type": "array",
+			"uniqueItems": true,
+			"minItems": 1,
+			"additionalItems": {"$ref": "#definitions/site"},
 			"items": [
 				{"$ref": "#definitions/site"}
 			]
