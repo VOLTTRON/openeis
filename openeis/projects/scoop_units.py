@@ -6,7 +6,7 @@ Created on Mar 31, 2014
 import json
 
 with open("hastack_units.txt") as parser:
-    units = {}
+    units = {'units': {}}
     current_unit = None
     
     for line in parser:
@@ -17,15 +17,13 @@ with open("hastack_units.txt") as parser:
         
         if current_unit == None:
             current_unit = line.strip()[2:-2].strip()
-            units[current_unit] = {}
-            units[current_unit]['name'] = current_unit
-            units[current_unit]['values'] = []
+            #units['units'][current_unit] = {}
+            units['units'][current_unit] = []
             continue
         
-        units[current_unit]['values'].append(line.strip())
+        units['units'][current_unit].append(line.strip())
         
 
-#with open("units.json") as writeJson:
-
-print(json.dumps(units, sort_keys=True, indent=4))
+with open("units.json", 'w') as writeJson:
+    json.dump(units, writeJson, sort_keys=True, indent=4)
     
