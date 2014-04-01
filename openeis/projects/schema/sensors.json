@@ -1,0 +1,19 @@
+{
+	"sensors": {
+		"OutdoorAirTemperature": {
+			"name": "OutdoorAirTemperature",
+			"units": "temperature",
+			"data_type": "float" 
+		},
+		"WboleBuildingElectricity": {		
+			"name": "WboleBuildingElectricity",
+			"units": "electric current",
+			"data_type": "float"			 
+		},
+		"WholeBuildingGas":	{
+			"name": "WholeBuildingGas",
+			"units": "volume",
+			"data_type": "float" 
+		}		
+	}
+}
