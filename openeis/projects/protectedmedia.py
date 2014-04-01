@@ -13,6 +13,7 @@ class ProtectedFileSystemStorage(FileSystemStorage):
 
 
 class XSendfileResponse(HttpResponse):
+    '''Add X-Sendfile to header for Apache.'''
     def __init__(self, filename, **kwargs):
         super().__init__(**kwargs)
         self['X-Sendfile'] = os.path.join(
@@ -20,6 +21,7 @@ class XSendfileResponse(HttpResponse):
 
 
 class XAccelRedirectResponse(HttpResponse):
+    '''Add X-Accel-Redirect to header for Nginx.'''
     def __init__(self, filename, **kwargs):
         super().__init__(**kwargs)
         self['X-Accel-Redirect'] = posixpath.join(
@@ -36,6 +38,7 @@ def _read_file(filename):
 
 
 class DirectFileResponse(StreamingHttpResponse):
+    '''Serve the file directly from Django.'''
     def __init__(self, filename, **kwargs):
         super().__init__(_read_file(os.path.join(
                 settings.PROTECTED_MEDIA_ROOT, filename)), **kwargs)

@@ -16,6 +16,14 @@ class ProjectSerializer(serializers.ModelSerializer):
 # be unchangeable once it is uploaded and assigned to the user's # project.
 
 class CreateFileSerializer(serializers.ModelSerializer):
+    '''Serializer used to create/upload file.
+    
+    It ensures the file is associated with the appropriate project.
+    '''
+    class Meta:
+        model = models.DataFile
+        read_only_fields = ('project',)
+
     def __init__(self, *args, **kwargs):
         self.project = kwargs.pop('project', None)
         super().__init__(*args, **kwargs)
@@ -25,12 +33,13 @@ class CreateFileSerializer(serializers.ModelSerializer):
             attrs['project'] = self.project
         return super().restore_object(attrs, instance)
 
-    class Meta:
-        model = models.DataFile
-        read_only_fields = ('project',)
-
 
 class FileSerializer(serializers.ModelSerializer):
+    '''Serializer for file viewing/modification.
+
+    Only the comments field of the file is updateable. If the request
+    attribute is set, download_url will contain an absolute URL.
+    '''
     download_url = serializers.CharField(source='pk', read_only=True)
 
     class Meta:
