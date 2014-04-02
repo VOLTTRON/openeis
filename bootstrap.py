@@ -137,6 +137,8 @@ def stage2():
         except ImportError:
             get_pip()
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', '.'])
+    if not os.path.exists('data'):
+        os.mkdir('data')
 
 
 def main(directory='env', prompt='(openeis)'):
