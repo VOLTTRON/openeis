@@ -1,19 +1,20 @@
 from setuptools import setup
 
 setup(
-    name = 'openeis.server',
+    name = 'openeis',
     version = '0.1',
     description = 'Open Energy Information System (OpenEIS) server.',
     author = 'Bora Akyol',
     author_email = 'bora@pnnl.gov',
     url = 'http://www.pnnl.gov',
-    packages = ['openeis.server'],
+    packages = ['openeis.server', 'openeis.projects'],
     install_requires = [
         'django>=1.6,<1.7',
         'django-filter',
         'django-guardian',
         'djangorestframework',
-        'jsonschema',
+        'django-rest-swagger',
+        'jsonschema'
     ],
     extras_require = {
         'md': ['Markdown'],
