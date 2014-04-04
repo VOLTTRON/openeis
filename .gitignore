@@ -5,5 +5,5 @@
 __pycache__/
 
 /env/
-/data/*
-/openeis/server/settings.py
+/data/
+/openeis/local/
