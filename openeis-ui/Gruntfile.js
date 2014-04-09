@@ -2,12 +2,12 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
-    buildDir: 'build/',
+    buildDir: 'build',
 
     copy: {
       build: {
         files: [
-          { src: ['*.html', 'partials/*.html'], dest: '<%= buildDir %>' },
+          { src: ['*.html', 'partials/*.html'], dest: '<%= buildDir %>/' },
         ]
       }
     },
@@ -27,7 +27,7 @@ module.exports = function(grunt) {
       },
       build: {
         files: {
-        '<%= buildDir %>css/app.css': 'scss/app.scss',
+        '<%= buildDir %>/css/app.css': 'scss/app.scss',
         },
       },
     },
@@ -39,7 +39,7 @@ module.exports = function(grunt) {
           sourceMapIncludeSources: true,
         },
         files: {
-          '<%= buildDir %>js/app.js': [
+          '<%= buildDir %>/js/app.js': [
             'bower_components/angular/angular.js',
             'bower_components/angular-*/angular-*.js',
             '!bower_components/angular-*/angular-*.min.js',
@@ -55,10 +55,7 @@ module.exports = function(grunt) {
       livereload: {
         options: { livereload: true },
         files: [
-          '<%= buildDir %>*.html',
-          '<%= buildDir %>css/*',
-          '<%= buildDir %>js/*',
-          '<%= buildDir %>partials/*.html',
+          '<%= buildDir %>/**/*',
         ],
       },
 
