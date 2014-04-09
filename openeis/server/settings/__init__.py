@@ -87,7 +87,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-STATIC_UI_DIR = os.path.join(BASE_DIR, '../static_ui')
+STATIC_UI_DIR = os.path.abspath(os.path.join(DATA_DIR, '../openeis-ui/build'))
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',

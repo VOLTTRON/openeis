@@ -2,7 +2,7 @@ module.exports = function(grunt) {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
-    buildDir: '../openeis/static_ui/',
+    buildDir: 'build/',
 
     copy: {
       build: {
