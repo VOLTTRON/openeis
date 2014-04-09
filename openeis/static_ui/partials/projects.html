@@ -1,0 +1,9 @@
+<div>
+    <h2>Projects</h2>
+    <ul ng-if="projects">
+        <li ng-repeat="project in projects">
+            <a ng-href="/projects/{{project.id}}">{{project.name}}</a>
+        </li>
+    </ul>
+    <input class="button" type="button" value="Log out" ng-click="logOut()">
+</div>
