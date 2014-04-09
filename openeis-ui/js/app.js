@@ -29,7 +29,7 @@ angular.module('openeis-ui', [
         })
         .whenAuthenticated('/projects/:projectId', {
             controller: 'ProjectCtrl',
-            template: '<h2 ng-if="project">{{project.name}} (id: {{project.id}})</h2>',
+            templateUrl: '/partials/project.html',
         })
         .otherwise({
             templateUrl: '/partials/404.html',

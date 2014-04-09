@@ -23,19 +23,20 @@ angular.module('openeis-ui.controllers', [])
         });
     };
 })
-.controller('ProjectsCtrl', function ($scope, Projects, Auth, $location) {
+.controller('ProjectsCtrl', function ($scope, Projects) {
     Projects.query(function (results) {
         $scope.projects = results;
     });
-
-    $scope.logOut = function () {
-        Auth.logOut().then(function () {
-            $location.url('/');
-        });
-    };
 })
 .controller('ProjectCtrl', function ($scope, $routeParams, Projects) {
     Projects.get({ projectId: $routeParams.projectId }, function (result) {
         $scope.project = result;
     });
+})
+.controller('TopBarCtrl', function ($scope, Auth, $location) {
+    $scope.logOut = function () {
+        Auth.logOut().then(function () {
+            $location.url('/');
+        });
+    };
 });
