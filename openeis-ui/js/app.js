@@ -1,7 +1,5 @@
-// URL of OpenEIS API, without trailing slash
-var API_URL = '/api';
-
 angular.module('openeis.ui', ['ngAnimate', 'ngCookies', 'ngResource', 'ngRoute', 'djangoRESTResources'])
+.constant('API_URL', '/api') // URL of OpenEIS API, without trailing slash
 .config(function ($routeProvider, $locationProvider, $httpProvider) {
     $routeProvider
     .when('/', {
@@ -25,7 +23,7 @@ angular.module('openeis.ui', ['ngAnimate', 'ngCookies', 'ngResource', 'ngRoute',
     $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
     $httpProvider.defaults.xsrfCookieName = 'csrftoken';
 })
-.factory('Auth', function ($resource, $location) {
+.factory('Auth', function ($resource, $location, API_URL) {
     return $resource(API_URL + '/auth', null, {
         check: { method: 'GET' },
         logIn: { method: 'POST', interceptor: {
@@ -36,7 +34,7 @@ angular.module('openeis.ui', ['ngAnimate', 'ngCookies', 'ngResource', 'ngRoute',
         }},
     });
 })
-.factory('Projects', function (djResource) {
+.factory('Projects', function (djResource, API_URL) {
     return djResource(API_URL + '/projects/:projectId/', { projectId: '@id' });
 })
 .controller('LoginCtrl', function ($scope, $location, Auth, $cookies) {
