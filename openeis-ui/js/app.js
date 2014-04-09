@@ -1,82 +1,50 @@
-angular.module('openeis.ui', ['ngAnimate', 'ngCookies', 'ngResource', 'ngRoute', 'djangoRESTResources'])
+angular.module('openeis-ui', [
+    'openeis-ui.factories', 'openeis-ui.controllers',
+    'ngAnimate', 'ngCookies', 'ngRoute',
+])
 .constant('API_URL', '/api') // URL of OpenEIS API, without trailing slash
 .config(function ($routeProvider, $locationProvider, $httpProvider) {
+    // Add method for routes requiring authentication
+    $routeProvider.whenAuthenticated = function(path, route) {
+        route.resolve = route.resolve || {};
+
+        angular.extend(route.resolve, {
+            // Use array syntax until ngmin can do it for us
+            authenticated: ['Auth', function (Auth) {
+                return Auth.isAuthenticated();
+            }]
+        });
+
+        return $routeProvider.when(path, route);
+    };
+
     $routeProvider
-    .when('/', {
-        controller: 'LoginCtrl',
-        templateUrl: '/partials/login.html',
-    })
-    .when('/projects', {
-        controller: 'ProjectsCtrl',
-        templateUrl: '/partials/projects.html',
-    })
-    .when('/projects/:projectId', {
-        controller: 'ProjectCtrl',
-        template: '<h2 ng-if="project">{{project.name}} (id: {{project.id}})</h2>',
-    })
-    .otherwise({
-        templateUrl: '/partials/404.html',
-    });
+        .when('/', {
+            controller: 'LoginCtrl',
+            templateUrl: '/partials/login.html',
+        })
+        .whenAuthenticated('/projects', {
+            controller: 'ProjectsCtrl',
+            templateUrl: '/partials/projects.html',
+        })
+        .whenAuthenticated('/projects/:projectId', {
+            controller: 'ProjectCtrl',
+            template: '<h2 ng-if="project">{{project.name}} (id: {{project.id}})</h2>',
+        })
+        .otherwise({
+            templateUrl: '/partials/404.html',
+        });
 
     $locationProvider.html5Mode(true);
 
     $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
     $httpProvider.defaults.xsrfCookieName = 'csrftoken';
 })
-.factory('Auth', function ($resource, $location, API_URL) {
-    return $resource(API_URL + '/auth', null, {
-        check: { method: 'GET' },
-        logIn: { method: 'POST', interceptor: {
-            response: function () { $location.url('/projects'); },
-        }},
-        logOut: { method: 'DELETE', interceptor: {
-            response: function () { $location.url('/'); },
-        }},
+.run(function ($rootScope, Auth, $location) {
+    $rootScope.$on('$routeChangeError', function (event, current, previous, rejection) {
+        console.log(rejection);
+        if (rejection.status === 401) {
+            $location.url('/');
+        }
     });
 })
-.factory('Projects', function (djResource, API_URL) {
-    return djResource(API_URL + '/projects/:projectId/', { projectId: '@id' });
-})
-.controller('LoginCtrl', function ($scope, $location, Auth, $cookies) {
-    Auth.check(
-        function () { $location.url('/projects'); },
-        function () { $scope.anonymous = true; }
-    );
-
-    $scope.form = {};
-    $scope.form.logIn = function () {
-        Auth.logIn(
-            null,
-            { username: $scope.form.username, password: $scope.form.password },
-            null,
-            function (response) {
-                switch (response.status) {
-                    case 401:
-                    $scope.form.error = 'Authentication failed.'
-                    break;
-
-                    case 405:
-                    $location.url('/projects');
-                    break;
-
-                    default:
-                    $scope.form.error = 'Unknown error occurred.'
-                }
-            }
-        );
-    };
-})
-.controller('ProjectsCtrl', function ($scope, Projects, Auth) {
-    Projects.query(function (results) {
-        $scope.projects = results;
-    });
-
-    $scope.logOut = function () {
-        Auth.logOut();
-    };
-})
-.controller('ProjectCtrl', function ($scope, $routeParams, Projects) {
-    Projects.get({ projectId: $routeParams.projectId }, function (result) {
-        $scope.project = result;
-    });
-});

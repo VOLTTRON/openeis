@@ -15,7 +15,7 @@ module.exports = function(grunt) {
     ngmin: {
       build: {
         files: {
-          'js/app.ngmin.js': 'js/app.js',
+          'js/app.ngmin.js': ['js/app*.js', '!js/app.ngmin.js'],
         },
       },
     },
@@ -65,7 +65,7 @@ module.exports = function(grunt) {
       },
 
       js: {
-        files: ['js/app.js'],
+        files: ['js/app*.js', '!js/app.ngmin.js'],
         tasks: ['ngmin', 'uglify'],
       },
 
