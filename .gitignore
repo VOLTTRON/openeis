@@ -6,3 +6,9 @@ __pycache__/
 
 /env/
 /data/*
+
+/openeis/static_ui/js/app.map
+
+/openeis-ui/bower_components/*
+/openeis-ui/node_modules/*
+/openeis-ui/js/app.ngmin.js

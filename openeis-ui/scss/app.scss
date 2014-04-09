@@ -1,0 +1,18 @@
+@import "normalize";
+
+@import
+    "foundation/components/alert-boxes",
+    "foundation/components/buttons",
+    "foundation/components/forms",
+    "foundation/components/grid",
+    "foundation/components/panels",
+    "foundation/components/type";
+
+.alert-box {
+    &.ng-animate {
+        -webkit-transition: 0.25s ease-out all;
+        transition: 0.25s ease-out all;
+    }
+    &.ng-enter, &.ng-leave.ng-leave-active { opacity: 0; }
+    &.ng-leave, &.ng-enter.ng-enter-active { opacity: 1; }
+}
