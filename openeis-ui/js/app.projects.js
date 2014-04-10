@@ -1,4 +1,6 @@
-angular.module('openeis-ui.projects', ['openeis-ui.auth', 'ngResource', 'ngRoute'])
+angular.module('openeis-ui.projects', [
+    'openeis-ui.auth', 'ngResource', 'ngRoute', 'mm.foundation',
+])
 .config(function ($routeProvider) {
     $routeProvider
         .when('/projects', {
@@ -36,6 +38,28 @@ angular.module('openeis-ui.projects', ['openeis-ui.auth', 'ngResource', 'ngRoute
 .controller('ProjectsCtrl', function ($scope, projects) {
     $scope.projects = projects;
 })
-.controller('ProjectCtrl', function ($scope, project) {
+.controller('ProjectCtrl', function ($scope, project, $modal) {
     $scope.project = project;
+
+    $scope.open = function () {
+        var modalInstance = $modal.open({
+            templateUrl: '/partials/addfile.html',
+            controller: 'AddFileCtrl',
+        });
+
+        modalInstance.result.then(function (response) {
+            console.log(response);
+        }, function (rejection) {
+            console.log(rejection);
+        });
+    };
+})
+.controller('AddFileCtrl', function ($scope, $modalInstance) {
+    $scope.ok = function () {
+        $modalInstance.close("Clicked OK.");
+    };
+
+    $scope.cancel = function () {
+        $modalInstance.dismiss("Cancelled.");
+    };
 })
