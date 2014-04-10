@@ -1,0 +1,22 @@
+<ng-include src="'/partials/topbar.html'"></ng-include>
+<div class="row" style="margin-top: 1em">
+    <div class="columns">
+        <ul class="breadcrumbs">
+            <li>Dashboard</li>
+        </ul>
+    </div>
+</div>
+<div class="row">
+    <div class="columns">
+        <h2>Dashboard</h2>
+    </div>
+</div>
+<div class="row" id="main">
+    <div class="columns">
+        <ul ng-if="projects">
+            <li ng-repeat="project in projects">
+                <a ng-href="/projects/{{project.id}}">{{project.name}}</a>
+            </li>
+        </ul>
+    </div>
+</div>

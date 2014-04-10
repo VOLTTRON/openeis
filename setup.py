@@ -16,10 +16,6 @@ setup(
         'django-rest-swagger',
         'jsonschema'
     ],
-    extras_require = {
-        'md': ['Markdown'],
-        'yaml': ['PyYAML'],
-    },
     entry_points = '''
         [console_scripts]
         openeis = openeis.server.manage:main

@@ -1,0 +1,13 @@
+{
+  "name": "openeis-ui",
+  "devDependencies": {
+    "node-sass": "~0.8.4",
+    "grunt": "~0.4.4",
+    "grunt-contrib-uglify": "~0.4.0",
+    "grunt-contrib-watch": "~0.6.1",
+    "grunt-sass": "~0.12.1",
+    "grunt-ngmin": "0.0.3",
+    "grunt-contrib-copy": "^0.5.0"
+  },
+  "private": true
+}
