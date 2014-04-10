@@ -24,7 +24,7 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
                 deferred.reject(response);
             });
         } else if (Auth.authenticated === false) {
-            deferred.reject({ status: 401 });
+            deferred.reject({ status: 403 });
         } else if (Auth.authenticated === true) {
             deferred.resolve();
         }
@@ -70,12 +70,8 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
             $location.url(AUTH_HOME);
         }, function (response) {
             switch (response.status) {
-                case 401:
+                case 403:
                 $scope.form.error = 'Authentication failed.'
-                break;
-
-                case 405:
-                $location.url(AUTH_HOME);
                 break;
 
                 default:

@@ -19,7 +19,7 @@ angular.module('openeis-ui', [
 .run(function ($rootScope, Auth, $location) {
     $rootScope.$on('$routeChangeError', function (event, current, previous, rejection) {
         console.log(rejection);
-        if (rejection.status === 401) {
+        if (rejection.status === 403) {
             $location.url('/');
         }
     });

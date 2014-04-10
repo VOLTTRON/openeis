@@ -1,5 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden, HttpResponseNotAllowed
 from django.views.decorators.csrf import ensure_csrf_cookie
 import json
 
@@ -9,17 +9,14 @@ def auth(request):
     if request.method == 'GET':
         if request.user.is_authenticated():
             return HttpResponse()
-        return HttpResponse(status=401)
+        return HttpResponseForbidden()
 
     if request.method == 'DELETE':
         logout(request);
         return HttpResponse()
 
     if request.method != 'POST':
-        return HttpResponse(status=405)
-
-    if request.user.is_authenticated():
-        return HttpResponse(status=405);
+        return HttpResponseNotAllowed(['GET', 'POST', 'DELETE'])
 
     creds = json.loads(request.body.decode(encoding='UTF-8'))
 
@@ -29,4 +26,4 @@ def auth(request):
         login(request, user)
         return HttpResponse()
 
-    return HttpResponse(status=401)
+    return HttpResponseForbidden()
