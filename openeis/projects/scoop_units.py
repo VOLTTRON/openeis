@@ -5,20 +5,36 @@ Created on Mar 31, 2014
 '''
 import json
 
+def make_prop(value):
+    value = value.replace(' ', '_')
+    value = value.replace('#', '_')
+    return value
+
+def make_id(value):
+    """
+    Makes a schema id from the passed value reference.
+    """
+    make_prop(value)
+    value = '#' + value
+    return value
+
+
+root = 'properties'
 with open("hastack_units.txt") as parser:
-    units = {'units': {}}
+    units = {}
     current_unit = None
     
     for line in parser:
         # blank line between each of the units
-        if line.strip() == "":
+        if line.strip() == "": 
             current_unit = None
             continue
         
         if current_unit == None:
-            current_unit = line.strip()[2:-2].strip()
+            current_unit = make_prop(line.strip()[2:-2].strip())
             #units['units'][current_unit] = {}
-            units['units'][current_unit] = []
+            units[current_unit] = []
+            #units[root][current_unit] = []
             continue
         
         print(line.strip())
@@ -39,16 +55,21 @@ with open("hastack_units.txt") as parser:
         
         # Only include other keyword if there are other items in the list  
         if other:
-            units['units'][current_unit].append({"key": key,
-                                                 "value": value,
-                                                 "other": other
-                                                 })
+            units[current_unit].append({
+                                         "key": key,
+                                         "value": value,
+                                         "other": other                                                 
+                                      })
         else:
-            units['units'][current_unit].append({"key": key,
-                                                 "value": value
-                                                 })
+            units[current_unit].append({
+                                         "key": key,
+                                         "value": value
+                                      })
         
-
-with open("units.json", 'w') as writeJson:
+with open("units_list.txt", 'w') as writelist:
+    for x in sorted(units.keys()):
+        writelist.write("\""+x+"\",\n")
+    
+with open("unit_data.json", 'w') as writeJson:
     json.dump(units, writeJson, sort_keys=True, indent=4)
     

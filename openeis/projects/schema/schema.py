@@ -17,11 +17,14 @@ with open('schema.json') as jsonFile:
 # 
 # print(validate(site, schema))
 
-with open("schema_test.json") as loader:
-    test = json.load(loader)
+instance = "{}"
+print (validate(instance, schema))
 
-print("Test Data")
-print(json.dumps(test,  sort_keys=True, indent=4))
+# with open("tests/schema_test.json") as loader:
+#     test = json.load(loader)
+# 
+# print("Test Data")
+# print(json.dumps(test,  sort_keys=True, indent=4))
 #print(test)
 # sensor = {
 #     "sensor":{
@@ -31,7 +34,7 @@ print(json.dumps(test,  sort_keys=True, indent=4))
 #     }
 # }
 
-print(validate(test, schema))
+# print(validate(test, schema))
 
 # schema = {
 #     "$schema": "http://openeis.pnnl.gov/01/schema#"

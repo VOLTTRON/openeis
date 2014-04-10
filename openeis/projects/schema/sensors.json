@@ -1,5 +1,7 @@
 {
-	"sensors": {
+	"type": "object",
+	"id": "#sensors",
+	"properties": {
 		"OutdoorAirTemperature": {
 			"name": "OutdoorAirTemperature",
 			"units": "temperature",

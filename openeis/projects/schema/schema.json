@@ -7,21 +7,24 @@
 		"sites": {
 			"type": "array",
 			"uniqueItems": true,
-			"minItems": 1,
 			"additionalItems": {"$ref": "#definitions/site"},
+			"minItems": 1,
 			"items": [
 				{"$ref": "#definitions/site"}
 			]
-		},
-		"sensors": {
-			"type": "array",
-			"items": [
-				{"$ref": "#definitions/sensor"}
-			]
-		}
+		}			
 	},	
 		
 	"definitions": {
+		"acceleration": {},
+		"angular_acceleration": {
+			"object": "object",
+			"properties": {
+				"huh": {"type": "string"}
+			}
+		},
+		
+		
 		"address": {
 			"type": "object",
 			"properties": {
@@ -34,47 +37,170 @@
 		"site": {
 			"type": "object",
 			"object_type": "site",
-			"required": ["name"],
+			"required": ["site_name"],
 			"properties": {
-				"name": {"type": "string"},
-				"address": {"$ref": "#/definitions/address"},
+				"site_name": {"type": "string"},
+				"site_address": {"$ref": "#/definitions/address"},
 				"buildings": {
 					"type": "array",
 					"items": [
 						{"$ref": "#/definitions/building"}
 					]
-				}
+				},
+				"sensors": {
+					"type": "array",
+					"description": "There can be one or more sensors for a site",
+					"additionalItems": {"$ref": "#definitions/sensor"},
+					"items": [
+						{"$ref": "#definitions/sensor"}
+					]
+				}				
 			}
 		},
 		
 		"building": {
 			"type": "object",
-			"required": ["name"],
+			"required": ["building_name"],
 			"properties": {
-				"name": {"type": "string"},
-				"address": {"$ref": "#/definitions/address"}				
+				"building_name": {"type": "string"},
+				"building_address": {"$ref": "#/definitions/address"}				
 			}			
 		},
 		
 		"system": {
 			"type": "object",
-			"required":["name", "system-type"],
+			"required":["sytem_name", "system-type"],
 			"properties": {
-				"system-type": {"type": "string"}				
+				"system_type": {"type": "string"}				
 			}		
 		},
 		
-		"sub-system": {
+		"subsystem": {
 			"type": "object"		
 		},
 		
 		"sensor": {
 			"type": "object",
-			"required": ["name","units", "sensor_type"],
+			"required": ["sensor_name","unit_type", "data_type", "sensor_type"],
 			"properties": {
-				"sensor_type": {"$ref": "sensors.json#/sensors"},
+				"sensor_name": {"type": "string"},
+				"data_type": {"enum": ["boolean", "float"]},
 				"minimum_value": {"type": "number"},
-				"maximum_value": {"type": "number"}
+				"maximum_value": {"type": "number"},
+				"sensor_type": {
+					"enum": [
+						"OutdoorAirTemperature",
+						"OutdoorAirRelativeHumidity",
+						"MixedAirTemperature",
+						"MixedAirRelativeHumidity",
+						"ReturnAirTemperature",
+						"ReturnAirRelativeHumidity",
+						"DischargeAirTemperature",
+						"DischargeAirRelativeHumidity",
+						"FirstStageCooling",
+						"SecondStageCooling",
+						"FirstStageHeating",
+						"SecondStageHeating",
+						"TotalPower",
+						"SupplyFanPower",
+						"CondenserFanPower",
+						"OutdoorDamperSignal",
+						"EconomizerMode",
+						"OccupancyMode",
+						"ZoneSetpoint",
+						"ZoneTemperature",
+						"SupplyFanSpeed",
+						"WboleBuildingElectricity",
+						"WholeBuildingGas"
+					]
+				},
+				"unit_type": {					
+					"enum": [
+						"acceleration",
+						"angular_acceleration",
+						"angular_momentum",
+						"angular_velocity",
+						"apparent_energy",
+						"apparent_power",
+						"area",
+						"bytes",
+						"capacitance",
+						"cooling_efficiency",
+						"currency",
+						"density",
+						"dimensionless",
+						"electric_charge",
+						"electric_conductance",
+						"electric_current",
+						"electric_current_density",
+						"electric_field_strength",
+						"electric_potential",
+						"electric_resistance",
+						"electrical_conductivity",
+						"electrical_resistivity",
+						"energy",
+						"energy_by_area",
+						"enthalpy",
+						"entropy",
+						"force",
+						"frequency",
+						"grammage",
+						"heating_rate",
+						"illuminance",
+						"inductance",
+						"irradiance",
+						"length",
+						"luminescence",
+						"luminous_flux",
+						"magnetic_field_strength",
+						"magnetic_flux",
+						"magnetic_flux_density",
+						"mass",
+						"mass_flow",
+						"momentum",
+						"power",
+						"power_by_area",
+						"power_by_volumetric_flow",
+						"pressure",
+						"reactive_energy",
+						"reactive_power",
+						"specific_entropy",
+						"surface_tension",
+						"temperature",
+						"temperature_differential",
+						"thermal_conductivity",
+						"time",
+						"velocity",
+						"volume",
+						"volumetric_flow"
+					]
+				}
+			}
+		},
+			
+		
+		"keyvaluepair":{
+			"type": "object",
+			"required": ["key", "value"],
+			"properties": {
+				"key": { "type": "string"},
+				"value": { "type": "string"}
+			}
+		},
+		
+		"unit": {
+			"type": "object",
+			"required": ["name", "values"],
+			"properties": {
+				"name": {"type": "string"},
+				"values": {
+					"type": "array",
+					"minItems": 1,
+					"additionalItems": {"$ref": "#definitions/keyvaluepair"},
+					"items": [
+						{"$ref": "#definitions/keyvaluepair"}
+					]
+				}
 			}
 		}				
 	}	
