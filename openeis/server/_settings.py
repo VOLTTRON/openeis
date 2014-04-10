@@ -12,13 +12,13 @@ import os
 import posixpath
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+BASE_DIR = os.path.dirname(__file__)
 POSIX_BASE_DIR = os.path.abspath(BASE_DIR)
 if os.path.sep != posixpath.sep:
     POSIX_BASE_DIR = posixpath.join(*POSIX_BASE_DIR.split(os.path.sep))
 
 DATA_DIR = os.path.abspath(
-    os.path.join(*([BASE_DIR] + ['..']*__package__.count('.') + ['data'])))
+    os.path.join(*([BASE_DIR] + ['..']*len(__package__.split('.')) + ['data'])))
 
 
 # Quick-start development settings - unsuitable for production
@@ -94,7 +94,7 @@ STATICFILES_FINDERS = (
 )
 
 STATICFILES_DIRS = (
-    os.path.join(BASE_DIR, 'server', 'static'),
+    os.path.join(BASE_DIR, 'static'),
 )
 
 TEMPLATE_DIRS = (
