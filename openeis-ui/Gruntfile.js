@@ -20,8 +20,10 @@ module.exports = function(grunt) {
             expand: true,
             flatten: true,
             src: [
+              'bower_components/jquery/dist/jquery.*',
+              'bower_components/angular-foundation/mm-foundation-tpls.js',
               'bower_components/angular*/angular*.js',
-              '!bower_components/angular*/angular*.min.js'
+              '!bower_components/angular*/angular*.min.js',
             ],
             dest: '<%= buildDir %>/js/'
           },
@@ -57,6 +59,7 @@ module.exports = function(grunt) {
         files: {
           '<%= buildDir %>/js/app.js': [
             '<%= buildDir %>/js/angular.js',
+            '<%= buildDir %>/js/mm-foundation-tpls.js',
             '<%= buildDir %>/js/*.js',
             '!<%= buildDir %>/js/app.js',
           ],
