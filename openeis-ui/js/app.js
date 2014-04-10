@@ -1,8 +1,10 @@
 angular.module('openeis-ui', [
     'openeis-ui.auth', 'openeis-ui.projects',
-    'ngAnimate', 'ngCookies', 'ngRoute',
+    'ngAnimate', 'ngRoute',
 ])
 .constant('API_URL', '/api') // URL of OpenEIS API, without trailing slash
+.constant('ANON_HOME', '/')
+.constant('AUTH_HOME', '/projects')
 .config(function ($routeProvider, $locationProvider, $httpProvider) {
     $routeProvider
         .otherwise({

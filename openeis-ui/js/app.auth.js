@@ -1,4 +1,4 @@
-angular.module('openeis-ui.auth', ['openeis-ui.projects', 'ngResource', 'ngRoute'])
+angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
 .config(function ($routeProvider) {
     $routeProvider
         .when('/', {
@@ -60,14 +60,14 @@ angular.module('openeis-ui.auth', ['openeis-ui.projects', 'ngResource', 'ngRoute
 
     return Auth;
 })
-.controller('LoginCtrl', function ($scope, $location, Auth, $cookies) {
+.controller('LoginCtrl', function ($scope, $location, Auth, AUTH_HOME) {
     $scope.form = {};
     $scope.form.logIn = function () {
         Auth.logIn({
             username: $scope.form.username,
             password: $scope.form.password,
         }).then(function () {
-            $location.url('/projects');
+            $location.url(AUTH_HOME);
         }, function (response) {
             switch (response.status) {
                 case 401:
@@ -75,7 +75,7 @@ angular.module('openeis-ui.auth', ['openeis-ui.projects', 'ngResource', 'ngRoute
                 break;
 
                 case 405:
-                $location.url('/projects');
+                $location.url(AUTH_HOME);
                 break;
 
                 default:
@@ -84,10 +84,10 @@ angular.module('openeis-ui.auth', ['openeis-ui.projects', 'ngResource', 'ngRoute
         });
     };
 })
-.controller('TopBarCtrl', function ($scope, Auth, $location) {
+.controller('TopBarCtrl', function ($scope, Auth, $location, ANON_HOME) {
     $scope.logOut = function () {
         Auth.logOut().then(function () {
-            $location.url('/');
+            $location.url(ANON_HOME);
         });
     };
 })
