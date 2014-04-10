@@ -1,4 +1,11 @@
-angular.module('openeis-ui.factories', ['ngResource'])
+angular.module('openeis-ui.auth', ['openeis-ui.projects', 'ngResource', 'ngRoute'])
+.config(function ($routeProvider) {
+    $routeProvider
+        .when('/', {
+            controller: 'LoginCtrl',
+            templateUrl: '/partials/login.html',
+        })
+})
 .factory('Auth', function ($resource, API_URL, $q) {
     var Auth = this;
 
@@ -53,16 +60,34 @@ angular.module('openeis-ui.factories', ['ngResource'])
 
     return Auth;
 })
-.factory('Projects', function ($resource, API_URL) {
-    var Projects = {
-        resource: $resource(API_URL + '/projects/:projectId', { projectId: '@id' }),
-        get: function (projectId) {
-            return Projects.resource.get({ projectId: projectId}).$promise;
-        },
-        query: function (projectId) {
-            return Projects.resource.query().$promise;
-        },
-    };
+.controller('LoginCtrl', function ($scope, $location, Auth, $cookies) {
+    $scope.form = {};
+    $scope.form.logIn = function () {
+        Auth.logIn({
+            username: $scope.form.username,
+            password: $scope.form.password,
+        }).then(function () {
+            $location.url('/projects');
+        }, function (response) {
+            switch (response.status) {
+                case 401:
+                $scope.form.error = 'Authentication failed.'
+                break;
 
-    return Projects;
+                case 405:
+                $location.url('/projects');
+                break;
+
+                default:
+                $scope.form.error = 'Unknown error occurred.'
+            }
+        });
+    };
+})
+.controller('TopBarCtrl', function ($scope, Auth, $location) {
+    $scope.logOut = function () {
+        Auth.logOut().then(function () {
+            $location.url('/');
+        });
+    };
 })
