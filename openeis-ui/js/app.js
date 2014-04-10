@@ -26,10 +26,20 @@ angular.module('openeis-ui', [
         .whenAuthenticated('/projects', {
             controller: 'ProjectsCtrl',
             templateUrl: '/partials/projects.html',
+            resolve: {
+                projects: ['Projects', function(Projects) {
+                    return Projects.query();
+                }]
+            },
         })
         .whenAuthenticated('/projects/:projectId', {
             controller: 'ProjectCtrl',
             templateUrl: '/partials/project.html',
+            resolve: {
+                project: ['Projects', '$route', function(Projects, $route) {
+                    return Projects.get($route.current.params.projectId);
+                }]
+            },
         })
         .otherwise({
             templateUrl: '/partials/404.html',

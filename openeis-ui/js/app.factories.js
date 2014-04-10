@@ -1,4 +1,4 @@
-angular.module('openeis-ui.factories', ['ngResource', 'djangoRESTResources'])
+angular.module('openeis-ui.factories', ['ngResource'])
 .factory('Auth', function ($resource, API_URL, $q) {
     var Auth = this;
 
@@ -53,6 +53,16 @@ angular.module('openeis-ui.factories', ['ngResource', 'djangoRESTResources'])
 
     return Auth;
 })
-.factory('Projects', function (djResource, API_URL) {
-    return djResource(API_URL + '/projects/:projectId/', { projectId: '@id' });
-});
+.factory('Projects', function ($resource, API_URL) {
+    var Projects = {
+        resource: $resource(API_URL + '/projects/:projectId', { projectId: '@id' }),
+        get: function (projectId) {
+            return Projects.resource.get({ projectId: projectId}).$promise;
+        },
+        query: function (projectId) {
+            return Projects.resource.query().$promise;
+        },
+    };
+
+    return Projects;
+})
