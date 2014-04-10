@@ -16,11 +16,3 @@ angular.module('openeis-ui', [
     $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
     $httpProvider.defaults.xsrfCookieName = 'csrftoken';
 })
-.run(function ($rootScope, Auth, $location) {
-    $rootScope.$on('$routeChangeError', function (event, current, previous, rejection) {
-        console.log(rejection);
-        if (rejection.status === 403) {
-            $location.url('/');
-        }
-    });
-})

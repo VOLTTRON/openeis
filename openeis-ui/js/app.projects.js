@@ -1,21 +1,7 @@
 angular.module('openeis-ui.projects', ['openeis-ui.auth', 'ngResource', 'ngRoute'])
 .config(function ($routeProvider) {
-    // Add method for routes requiring authentication
-    $routeProvider.whenAuthenticated = function(path, route) {
-        route.resolve = route.resolve || {};
-
-        angular.extend(route.resolve, {
-            // Use array syntax until ngmin can do it for us
-            authenticated: ['Auth', function (Auth) {
-                return Auth.isAuthenticated();
-            }]
-        });
-
-        return $routeProvider.when(path, route);
-    };
-
     $routeProvider
-        .whenAuthenticated('/projects', {
+        .when('/projects', {
             controller: 'ProjectsCtrl',
             templateUrl: '/partials/projects.html',
             resolve: {
@@ -24,7 +10,7 @@ angular.module('openeis-ui.projects', ['openeis-ui.auth', 'ngResource', 'ngRoute
                 }]
             },
         })
-        .whenAuthenticated('/projects/:projectId', {
+        .when('/projects/:projectId', {
             controller: 'ProjectCtrl',
             templateUrl: '/partials/project.html',
             resolve: {
