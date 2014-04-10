@@ -4,37 +4,23 @@ module.exports = function(grunt) {
 
     buildDir: 'build',
 
-    clean: {
-      build: ['<%= buildDir %>/js/app.ngmin.js'],
-    },
-
-    copy: {
-      buildHtml: {
-        files: [
-          { src: ['*.html', 'partials/*.html'], dest: '<%= buildDir %>/' },
-        ]
-      },
-      buildJS: {
-        files: [
-          {
-            expand: true,
-            flatten: true,
-            src: [
-              'bower_components/jquery/dist/jquery.*',
-              'bower_components/angular-foundation/mm-foundation-tpls.js',
-              'bower_components/angular*/angular*.js',
-              '!bower_components/angular*/angular*.min.js',
-            ],
-            dest: '<%= buildDir %>/js/'
-          },
-        ]
+    concat: {
+      build: {
+        files : {
+          '<%= buildDir %>/js/app.min.js': [
+            '<%= buildDir %>/js/jquery.min.js',
+            '<%= buildDir %>/js/angular.min.js',
+            '<%= buildDir %>/js/*.js',
+            '!<%= buildDir %>/js/app.min.js',
+          ],
+        }
       }
     },
 
     ngmin: {
       build: {
         files: {
-          '<%= buildDir %>/js/app.ngmin.js': 'js/app*.js',
+          '<%= buildDir %>/js/app.js': 'js/app*.js',
         },
       },
     },
@@ -51,18 +37,28 @@ module.exports = function(grunt) {
       },
     },
 
+    sync: {
+      build: {
+        files: [
+          { src: ['*.html', 'partials/*.html'], dest: '<%= buildDir %>/' },
+          {
+            expand: true,
+            flatten: true,
+            src: [
+              'bower_components/jquery/dist/jquery.min.js',
+              'bower_components/angular-foundation/mm-foundation-tpls.min.js',
+              'bower_components/angular*/angular*.min.js',
+            ],
+            dest: '<%= buildDir %>/js/'
+          },
+        ]
+      }
+    },
+
     uglify: {
       build: {
-        options: {
-          sourceMap: true,
-        },
         files: {
-          '<%= buildDir %>/js/app.js': [
-            '<%= buildDir %>/js/angular.js',
-            '<%= buildDir %>/js/mm-foundation-tpls.js',
-            '<%= buildDir %>/js/*.js',
-            '!<%= buildDir %>/js/app.js',
-          ],
+          '<%= buildDir %>/js/app.js': '<%= buildDir %>/js/app.js',
         },
       },
     },
@@ -75,18 +71,18 @@ module.exports = function(grunt) {
         files: [
           '<%= buildDir %>/**/*.html',
           '<%= buildDir %>/css/app.css',
-          '<%= buildDir %>/js/app.js',
+          '<%= buildDir %>/js/app.min.js',
         ],
       },
 
       html: {
         files: ['*.html', 'partials/*.html'],
-        tasks: ['copy:buildHtml'],
+        tasks: ['sync'],
       },
 
       js: {
         files: ['js/app*.js', '!js/app.ngmin.js'],
-        tasks: ['copy:buildJS', 'ngmin', 'uglify', 'clean'],
+        tasks: ['ngmin', 'uglify', 'sync', 'concat'],
       },
 
       sass: {
@@ -96,13 +92,13 @@ module.exports = function(grunt) {
     }
   });
 
-  grunt.loadNpmTasks('grunt-contrib-clean');
-  grunt.loadNpmTasks('grunt-contrib-copy');
+  grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-ngmin');
   grunt.loadNpmTasks('grunt-sass');
+  grunt.loadNpmTasks('grunt-sync');
 
-  grunt.registerTask('build', ['copy', 'sass', 'ngmin', 'uglify', 'clean']);
+  grunt.registerTask('build', ['sass', 'ngmin', 'uglify', 'sync', 'concat']);
   grunt.registerTask('default', ['build','watch']);
 }
