@@ -9,5 +9,5 @@ __pycache__/
 
 /openeis-ui/bower_components/*
 /openeis-ui/node_modules/*
-/openeis-ui/js/app.ngmin.js
-/openeis-ui/build/js/app.map
+/openeis-ui/build/js/*
+!/openeis-ui/build/js/app.js

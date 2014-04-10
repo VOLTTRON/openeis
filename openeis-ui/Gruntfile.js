@@ -4,10 +4,27 @@ module.exports = function(grunt) {
 
     buildDir: 'build',
 
+    clean: {
+      build: ['<%= buildDir %>/js/app.ngmin.js'],
+    },
+
     copy: {
-      build: {
+      buildHtml: {
         files: [
           { src: ['*.html', 'partials/*.html'], dest: '<%= buildDir %>/' },
+        ]
+      },
+      buildJS: {
+        files: [
+          {
+            expand: true,
+            flatten: true,
+            src: [
+              'bower_components/angular*/angular*.js',
+              '!bower_components/angular*/angular*.min.js'
+            ],
+            dest: '<%= buildDir %>/js/'
+          },
         ]
       }
     },
@@ -15,7 +32,7 @@ module.exports = function(grunt) {
     ngmin: {
       build: {
         files: {
-          'js/app.ngmin.js': ['js/app*.js', '!js/app.ngmin.js'],
+          '<%= buildDir %>/js/app.ngmin.js': 'js/app*.js',
         },
       },
     },
@@ -36,15 +53,13 @@ module.exports = function(grunt) {
       build: {
         options: {
           sourceMap: true,
-          sourceMapIncludeSources: true,
         },
         files: {
           '<%= buildDir %>/js/app.js': [
-            'bower_components/angular/angular.js',
-            'bower_components/angular-*/angular-*.js',
-            '!bower_components/angular-*/angular-*.min.js',
-            'js/app.ngmin.js',
-          ]
+            '<%= buildDir %>/js/angular.js',
+            '<%= buildDir %>/js/*.js',
+            '!<%= buildDir %>/js/app.js',
+          ],
         },
       },
     },
@@ -55,18 +70,20 @@ module.exports = function(grunt) {
       livereload: {
         options: { livereload: true },
         files: [
-          '<%= buildDir %>/**/*',
+          '<%= buildDir %>/**/*.html',
+          '<%= buildDir %>/css/app.css',
+          '<%= buildDir %>/js/app.js',
         ],
       },
 
       html: {
         files: ['*.html', 'partials/*.html'],
-        tasks: ['copy'],
+        tasks: ['copy:buildHtml'],
       },
 
       js: {
         files: ['js/app*.js', '!js/app.ngmin.js'],
-        tasks: ['ngmin', 'uglify'],
+        tasks: ['copy:buildJS', 'ngmin', 'uglify', 'clean'],
       },
 
       sass: {
@@ -76,12 +93,13 @@ module.exports = function(grunt) {
     }
   });
 
+  grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-copy');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-ngmin');
   grunt.loadNpmTasks('grunt-sass');
 
-  grunt.registerTask('build', ['copy', 'sass', 'ngmin', 'uglify']);
+  grunt.registerTask('build', ['copy', 'sass', 'ngmin', 'uglify', 'clean']);
   grunt.registerTask('default', ['build','watch']);
 }
