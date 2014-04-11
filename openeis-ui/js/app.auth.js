@@ -87,3 +87,14 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         });
     };
 })
+.run(function (Auth, ANON_HOME, AUTH_HOME, $location) {
+    Auth.isAuthenticated().then(function () {
+        if ($location.path() === '/') {
+            $location.url(AUTH_HOME);
+        }
+    }, function () {
+        if ($location.path() !== '/') {
+            $location.url(ANON_HOME);
+        }
+    });
+})
