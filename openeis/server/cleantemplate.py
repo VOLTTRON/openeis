@@ -26,18 +26,34 @@ from django.utils.safestring import mark_safe, SafeData
 __all__ = django.template.__all__ + ('clean_render',)
 
 
-_sub_trailing_space_nl = re.compile(r'\r?\n[ \t]*$').sub
-_sub_trailing_space = re.compile(r'[ \t]*$').sub
-_sub_leading_space_nl = re.compile(r'^[ \t]*\r?\n').sub
+_trailing_space_nl = re.compile(r'\r?\n[ \t]*$')
+_trailing_space = re.compile(r'[ \t]*$')
+_leading_space_nl = re.compile(r'^[ \t]*\r?\n')
 
 
-class JoinedStr(str, SafeData):
-    '''Wraps strings returned from NodeList.render so they can be
-    detected as such by cleaning functions.'''
-    pass
+## Debugging functions
+#
+#def abbr(string, length=16):
+#    if len(string) <= length:
+#        return string
+#    head = (length - 3) // 2
+#    tail = length - head - 3
+#    return ''.join([string[:head], '...', string[-tail:]])
+#
+#import sys
+#
+#def dump_nodes(prev, node, next, file=sys.stderr):
+#    prev_text, prev_obj = prev if prev else ('', None)
+#    node_text, node_obj = node if node else ('', None)
+#    next_text, next_obj = next if next else ('', None)
+#    print('{}({!r}), {}({!r}), {}({!r})'.format(
+#            re.sub(r'Node$', '', type(prev_obj).__name__), abbr(prev_text),
+#            re.sub(r'Node$', '', type(node_obj).__name__), abbr(node_text),
+#            re.sub(r'Node$', '', type(next_obj).__name__), abbr(next_text)),
+#          file=file)
 
 
-def clean_spaces(prev, node):
+def clean_spaces(prev, node, next):
     '''Remove extra space caused by block-level tags.
 
     This function takes advantage of the fact that node tokens alternate
@@ -49,53 +65,57 @@ def clean_spaces(prev, node):
     node is nodelist, only the trailing spaces and tabs must be removed
     from the previous node.
     '''
+    #dump_nodes(prev, node, next)
+    prev_text = prev[0] if prev else ''
     node_text, node_obj = node if node else ('', None)
-    prev_text, prev_obj = prev if prev else ('', None)
-    if not prev_text and isinstance(node_obj, TextNode):
-        # The previous node was empty, so adjust space before current node.
-        node_text = _sub_leading_space_nl('', node_text)
-    if isinstance(node_text, JoinedStr):
-        # Node text is from a node list and will likely not be empty, but
-        # is caused by a block tag where previous space should be adjusted.
-        prev_text = _sub_trailing_space('', prev_text)
-    elif not node_text and isinstance(prev_obj, TextNode):
-        # Current node is empty, so adjust space after previous node.
-        prev_text = _sub_trailing_space_nl('', prev_text)
-    return prev_text, node_text
+    next_text = next[0] if next else ''
+    if (node and not isinstance(node_obj, TextNode) and
+            (not prev or _trailing_space_nl.search(prev_text)) and
+            (not next or _leading_space_nl.search(next_text))):
+        prev_text = _trailing_space_nl.sub('', prev_text)
+        if not prev:
+            node_text = _leading_space_nl.sub('', node_text)
+        node_text = _trailing_space.sub('', node_text)
+        next_text = _leading_space_nl.sub('', next_text)
+    return prev_text, node_text, next_text
 
 
 def render_clean(nodelist, context, clean):
     '''Similar to NodeList.render, but with a cleaner.
     
-    The clean function takes two 2-tuples as arguments: the first is the
-    rendered text and object instance of the previous node; the second
-    the rendered text and object instance of the current node. The first
-    argument will be None for the first node processed and the second
-    will be None after the last node is processed. The clean function
-    should return a tuple containing two strings: the rendered text of
-    the previous and current nodes. The text of the previous node will
-    be appended to the output of the function and the current node and
-    its text will be saved for the next round. The results are also
-    wrapped in a JoinedStr object to allow the cleaner to detect the
-    results of a NodeList.render.
+    The clean function is called with three 2-tuples as arguments, which
+    are the rendered text and node instances of the previous, current,
+    and next nodes, respectively. The first and second arguments will be
+    None for the first node processed and each node will work its way
+    from next to current to previous with each succeeding call. The last
+    node in the node list will have None as the last argument and
+    finally be called with the node as the first argument and None for
+    the remaining arugments. The clean function should return a tuple
+    containing three strings, which are the rendered text of the
+    previous, current, and next nodes, respectively. The text of the
+    previous node will be appended to the output of the function and the
+    current and next node texts will be saved and used in the next
+    round.
     '''
     bits = []
-    prev = None
+    prev = (None, None)
     for node in nodelist:
-        if isinstance(node, Node):
-            bit = nodelist.render_node(node, context)
-        else:
-            bit = node
-        bit = force_text(bit)
-        bit, text = clean(prev, (bit, node))
-        prev = (text, node)
+        bit = force_text(nodelist.render_node(node, context)
+                         if isinstance(node, Node) else node)
+        args = prev + ((bit, node),)
+        text = clean(*args)
+        prev = (args[1] and (text[1], args[1][1]), args[2] and (text[2], args[2][1]))
+        bit = text[0]
         if bit:
             bits.append(bit)
-    if prev:
-        bit, text = clean(prev, None)
+    while any(prev):
+        args = prev + (None,)
+        text = clean(*args)
+        prev = (args[1] and (text[1], args[1][1]), args[2] and (text[2], args[2][1]))
+        bit = text[0]
         if bit:
             bits.append(bit)
-    return JoinedStr(mark_safe(''.join(bits)))
+    return mark_safe(''.join(bits))
 
 
 def with_cleaner(func):
