@@ -13,18 +13,18 @@ class Command(BaseCommand):
     help = 'Create nginx configuration file from project settings.'
     requires_model_validation = False
     option_list = BaseCommand.option_list + (
-        make_option('--no-https', default=False, action='store_true',
-                    help='Do not configure HTTPS.'),
         make_option('--http-port', default=80, type=int,
                     help='Use non-standard HTTP port.'),
         make_option('--https-port', default=443, type=int,
                     help='Use non-standard HTTPS port.'),
+        make_option('--no-https', default=False, action='store_true',
+                    help='Do not configure HTTPS.'),
+        make_option('--server-root', default=None,
+                    help='Override server root'),
         make_option('-s', '--socket', default=None,
                     help='Specify path for uWSGI Unix domain socket.'),
         make_option('--worker-processes', default=None, type=int,
                     help='Set number of worker processes.'),
-        make_option('--server-root', default=None,
-                    help='Override server root'),
     )
 
     def handle(self, config_file=None, **options):
