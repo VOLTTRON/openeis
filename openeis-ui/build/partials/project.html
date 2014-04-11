@@ -10,7 +10,22 @@
 <div class="row">
     <div class="columns">
         <h2>{{project.name}}</h2>
-        <p>Project: {{project}}</p>
-        <a class="button" ng-click="open()">Add file</a>
+        <div ng-if="projectFiles">
+            <h3>Project files</h3>
+            <ul>
+                <li ng-repeat="file in projectFiles">
+                    {{file.file}} &mdash;
+                    <a href="{{file.download_url}}" target="_self">Download</a>
+                </li>
+            </ul>
+        </div>
+        <h3>Add file</h3>
+        <div class="file-drop" ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="active" ng-show="dropSupported">
+            <p>Drag and drop file here</p>
+            <button ng-click="upload.abort()" ng-show="uploading">Cancel Upload</button>
+        </div>
+        <div ng-file-drop-available="dropSupported=true" ng-show="!dropSupported">
+            <input type="file" ng-file-select="onFileSelect($files)">
+        </div>
     </div>
 </div>

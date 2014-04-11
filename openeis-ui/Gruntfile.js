@@ -47,6 +47,7 @@ module.exports = function(grunt) {
             src: [
               'bower_components/jquery/dist/jquery.min.js',
               'bower_components/angular-foundation/mm-foundation-tpls.min.js',
+              'bower_components/ng-file-upload/angular-file-upload.min.js',
               'bower_components/angular*/angular*.min.js',
             ],
             dest: '<%= buildDir %>/js/'

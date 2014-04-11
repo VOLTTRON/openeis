@@ -1,5 +1,5 @@
 angular.module('openeis-ui.projects', [
-    'openeis-ui.auth', 'ngResource', 'ngRoute', 'mm.foundation',
+    'openeis-ui.auth', 'ngResource', 'ngRoute', 'mm.foundation', 'angularFileUpload',
 ])
 .config(function ($routeProvider) {
     $routeProvider
@@ -18,7 +18,10 @@ angular.module('openeis-ui.projects', [
             resolve: {
                 project: ['Projects', '$route', function(Projects, $route) {
                     return Projects.get($route.current.params.projectId);
-                }]
+                }],
+                projectFiles: ['ProjectFiles', '$route', function(ProjectFiles, $route) {
+                    return ProjectFiles.query($route.current.params.projectId);
+                }],
             },
         })
 })
@@ -28,23 +31,73 @@ angular.module('openeis-ui.projects', [
         get: function (projectId) {
             return Projects.resource.get({ projectId: projectId}).$promise;
         },
-        query: function (projectId) {
+        query: function () {
             return Projects.resource.query().$promise;
         },
     };
 
     return Projects;
 })
+.factory('ProjectFiles', function ($resource, API_URL) {
+    var ProjectFiles = {
+        resource: $resource(API_URL + '/files?project=:projectId'),
+        query: function (projectId) {
+            return ProjectFiles.resource.query({ projectId: projectId }).$promise;
+        },
+    };
+
+    return ProjectFiles;
+})
 .controller('ProjectsCtrl', function ($scope, projects) {
     $scope.projects = projects;
 })
-.controller('ProjectCtrl', function ($scope, project, $modal) {
+.controller('ProjectCtrl', function ($scope, project, projectFiles, $modal, $upload, API_URL) {
     $scope.project = project;
+    $scope.projectFiles = projectFiles;
 
-    $scope.open = function () {
+    $scope.onFileSelect = function($files) {
+        //$files: an array of files selected, each file has name, size, and type.
+        for (var i = 0; i < $files.length; i++) {
+            var file = $files[i];
+
+            $scope.uploading = true;
+
+            $scope.upload = $upload.upload({
+                url: API_URL + '/projects/' + project.id + '/add_file',
+                method: 'POST',
+                file: file, // or list of files: $files for html5 only
+            }).progress(function(evt) {
+                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
+            }).success(function(data, status, headers, config) {
+                $scope.uploading = false;
+
+                // Inject mock file contents unfil API returns it,
+                // or provides method for retrieval
+                data.top = [
+                    'These lines were manually injected',
+                    'into the API\'s response. The first',
+                    'few lines of the file will be displayed',
+                    'once the API actually returns them.',
+                ].join('\n');
+
+                $scope.projectFiles.push(data);
+                $scope.openModal(data);
+            }).error(function () {
+                $scope.uploading = false;
+            })
+            //.then(success, error, progress);
+        }
+    };
+
+    $scope.openModal = function (file) {
         var modalInstance = $modal.open({
             templateUrl: '/partials/addfile.html',
-            controller: 'AddFileCtrl',
+            controller: 'FileModalCtrl',
+            resolve: {
+                file: function () {
+                    return file;
+                },
+            },
         });
 
         modalInstance.result.then(function (response) {
@@ -54,7 +107,9 @@ angular.module('openeis-ui.projects', [
         });
     };
 })
-.controller('AddFileCtrl', function ($scope, $modalInstance) {
+.controller('FileModalCtrl', function ($scope, $modalInstance, file) {
+    $scope.file = file;
+
     $scope.ok = function () {
         $modalInstance.close("Clicked OK.");
     };

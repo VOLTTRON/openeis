@@ -47,3 +47,16 @@
     &.ng-enter, &.ng-leave.ng-leave-active { opacity: 0; }
     &.ng-leave, &.ng-enter.ng-enter-active { opacity: 1; }
 }
+
+.file-drop {
+    border: 1px dashed #ccc;
+    background-color: #f4f4f4;
+    text-align: center;
+    padding: 50px;
+    margin-bottom: 25px;
+    border-radius: 6px;
+    &.active {
+        border-color: #aaa;
+        background-color: #eef;
+    }
+}
