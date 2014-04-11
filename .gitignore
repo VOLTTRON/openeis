@@ -5,7 +5,8 @@
 __pycache__/
 
 /env/
-/data/*
+/data/
+/openeis/local/
 
 /openeis-ui/bower_components/*
 /openeis-ui/node_modules/*
