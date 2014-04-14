@@ -6,6 +6,14 @@ venv package (for creating virtual environments), implicit namespace packaging,
 and improved import machinery which are all used by OpenEIS.
 
 
+Getting the Source Code
+=======================
+
+The best way to get the source code is with Git:
+
+  git clone https://git.pnnl.gov/openeis
+
+
 Building
 ========
 
@@ -109,3 +117,85 @@ tables.
 The first time syncdb is run, it will ask to create a superuser account. This
 bootstraps the user table with an administrator user. You can add additional
 superusers with the createsuperuser command.
+
+
+Updating
+========
+
+As updates are made available in VCS, it may be necessary to perform certain
+tasks to update the local installation to use those changes. After pulling
+changes from the Git repository, the bootstrap process should be re-executed if
+setup.py or bootstrap.py were modified. Database synchronization should be
+preformed if either settings.py or _settings.py in openeis/server changed or if
+any models (model.py) were added or modified.
+
+
+Cleaning
+========
+
+The virtual environment can be rebuilt by first removing the env directory and
+then rerunning bootstrap. A pristine copy of the source code can be had by
+running `git clean -xdf` followed by `git reset`. But please be warned that
+executing the first command will remove all untracked files from the working
+copy and the second will revert any changes to tracked files.
+
+
+Deployment Quickstart (on Ubuntu with Nginx, uWSGI, and PostgreSQL)
+===================================================================
+
+ 1. Install Nginx:
+
+    $ sudo apt-get install nginx
+ 
+    Note: Ubuntu's Nginx packages are generally out-of-date. You
+          should consider using the built packages at http://nginx.org.
+
+ 3. Install PostgreSQL and create a database and user for OpenEIS:
+
+    $ sudo apt-get install postgresql
+    $ sudo pgadmin2   # Create database and user
+
+ 3. Checkout OpenEIS:
+
+    $ git clone https://git.pnnl.gov/openeis
+
+ 4. Bootstrap OpenEIS:
+   
+    $ cd openeis
+    openeis$ python3.3 bootstrap.py
+
+ 5. Install uWSGI and database packages into virtual environment:
+
+    openeis$ env/bin/pip install uwsgi
+    openeis$ env/bin/pip install psycopg2   # For PostgreSQL databases
+
+ 5. Generate the openeis.local.settings module and customize it:
+
+    openeis$ env/bin/openeis localsettings
+    openeis$ ${EDITOR:-nano} openeis/local/settings.py
+
+ 6. Generate nginx.conf and copy it to nginx configuration directory:
+
+    openeis$ env/bin/openeis nginxconfig openeis.conf
+    openeis$ cp openeis.conf /etc/nginx/conf.d/
+
+ 7. Copy and edit uWSGI and Upstart configuration templates:
+
+    openeis$ cp openeis/server/templates/server/management/uwsgi.ini \
+             openeis/local/
+    openeis$ sudo cp openeis/server/templates/server/management/upstart.conf \
+             /etc/init/openeis.conf
+
+ 8. Start openeis service and start/restart nginx:
+
+    $ sudo initctl start openeis
+    $ sudo service nginx restart
+
+For more information, see the following resources:
+
+  https://docs.djangoproject.com/en/1.6/howto/deployment/wsgi/uwsgi/
+  https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
+  https://uwsgi.readthedocs.org/en/latest/tutorials/Django_and_nginx.html
+  https://uwsgi.readthedocs.org/en/latest/Upstart.html
+  http://nginx.org/en/docs/http/configuring_https_servers.html
+  http://upstart.ubuntu.com/cookbook/
