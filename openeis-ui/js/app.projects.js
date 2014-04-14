@@ -23,7 +23,7 @@ angular.module('openeis-ui.projects', [
                     return ProjectFiles.query($route.current.params.projectId);
                 }],
             },
-        })
+        });
 })
 .factory('Projects', function ($resource, API_URL) {
     var Projects = {
@@ -117,4 +117,4 @@ angular.module('openeis-ui.projects', [
     $scope.cancel = function () {
         $modalInstance.dismiss("Cancelled.");
     };
-})
+});

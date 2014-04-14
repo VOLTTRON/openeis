@@ -4,7 +4,7 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         .when('/', {
             controller: 'LoginCtrl',
             templateUrl: '/partials/login.html',
-        })
+        });
 })
 .factory('Auth', function ($resource, API_URL, $q) {
     var Auth = this;
@@ -71,11 +71,11 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         }, function (response) {
             switch (response.status) {
                 case 403:
-                $scope.form.error = 'Authentication failed.'
+                $scope.form.error = 'Authentication failed.';
                 break;
 
                 default:
-                $scope.form.error = 'Unknown error occurred.'
+                $scope.form.error = 'Unknown error occurred.';
             }
         });
     };
@@ -97,4 +97,4 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
             $location.url(ANON_HOME);
         }
     });
-})
+});

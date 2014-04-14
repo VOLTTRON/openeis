@@ -102,4 +102,4 @@ module.exports = function(grunt) {
 
   grunt.registerTask('build', ['sass', 'ngmin', 'uglify', 'sync', 'concat']);
   grunt.registerTask('default', ['build','watch']);
-}
+};
