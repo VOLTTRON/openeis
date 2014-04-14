@@ -23,6 +23,9 @@ SENSOR_UNIT_TYPE = 'unit_type'
 BUILDINGS = 'buildings'
 BUILDING_NAME = 'building_name'
 DATA_TYPE = "data_type"
+SYSTEMS = "systems"
+SYSTEM_NAME = "system_name"
+SYSTEM_TYPE = "system_type"
 
 class SchemaTestCase(unittest.TestCase):
 
@@ -30,23 +33,54 @@ class SchemaTestCase(unittest.TestCase):
     good_site = None
     good_building = None
     
-    @classmethod
-    def setUpClass(cls):
-        # Change cwd to the schema directory.
-        newCwd = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-        os.chdir(newCwd)
-        
     def setUp(self):
         # Provide different levels to test schema validation.  The below example shows
         # how to do a deep copy if necessary to extend.
         self.good_site = {SITES:[{SITE_NAME:"PNNL"}]}
+        
         self.good_building = copy.deepcopy(self.good_site)
         self.good_building[SITES][0][BUILDINGS] = [{BUILDING_NAME:"ISB1"}]
+        
         self.good_sensor = copy.deepcopy(self.good_site)
         self.good_sensor[SITES][0][SENSORS] = [{SENSOR_NAME: "Test One", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "acceleration", SENSOR_TYPE:"OutdoorAirTemperature"}]
-        #resolver.resolve_fragment(document, fragment)
-        full_schema_file = "schema.json"
+        
+        self.good_system = copy.deepcopy(self.good_building)
+        self.good_system[SITES][0][BUILDINGS][0][SYSTEMS] = [{SYSTEM_NAME: "HVAC_1", SYSTEM_TYPE: "Chiller" }]
+        
+        self.good_building_sensor = copy.deepcopy(self.good_system)
+        self.good_system[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS] = [{SENSOR_NAME: "A System Sensor", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"MixedAirTemperature"}]                         
+                         
+        
+        # Path relative to the tests directory.
+        full_schema_file = "../schema.json"
+        
         self.full_schema = json.load(open(full_schema_file))
+        
+    def test_cant_add_properties_to_any_object(self):
+        """
+        Tests the ability to include random stuff in the object that are defined in the schema.
+        
+        The "additionalProperties": false is the property that is being tested on all of the elements.
+        """
+        instance = copy.deepcopy(self.good_site)
+        instance['bogus_property'] = 'hello world'
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+        
+        instance = copy.deepcopy(self.good_building)
+        instance['bogus_property'] = 'hello world'
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+        
+        instance = copy.deepcopy(self.good_sensor)
+        instance['bogus_property'] = 'hello world'
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+        
+        instance = copy.deepcopy(self.good_system)
+        instance['bogus_property'] = 'hello world'
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+        
+        
+        
+        
         
     def test_sensor_must_have_valid_sensor_type(self):
         

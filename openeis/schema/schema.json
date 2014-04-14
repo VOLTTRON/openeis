@@ -3,6 +3,7 @@
 	
 	"type": "object",
 	"required": ["sites"],
+	"additionalProperties": false,
 	"properties": {
 		"sites": {
 			"type": "array",
@@ -15,16 +16,7 @@
 		}			
 	},	
 		
-	"definitions": {
-		"acceleration": {},
-		"angular_acceleration": {
-			"object": "object",
-			"properties": {
-				"huh": {"type": "string"}
-			}
-		},
-		
-		
+	"definitions": {		
 		"address": {
 			"type": "object",
 			"properties": {
@@ -63,20 +55,38 @@
 			"required": ["building_name"],
 			"properties": {
 				"building_name": {"type": "string"},
-				"building_address": {"$ref": "#/definitions/address"}				
+				"building_address": {"$ref": "#/definitions/address"},
+				"systems": {
+					"type": "array",
+					"items": [
+						{"$ref": "#definitions/system"}
+					]
+				}
 			}			
 		},
 		
 		"system": {
 			"type": "object",
-			"required":["sytem_name", "system-type"],
+			"required":["sytem_name", "system_type"],
 			"properties": {
-				"system_type": {"type": "string"}				
+				"system_name": {"type": "string"},
+				"system_type": {"type": "string"},
+				"subsystem": {
+					"type": "array",
+					"items": [
+						{"$ref": "#definitions/subsystem"}
+					]
+				} 
 			}		
 		},
 		
 		"subsystem": {
-			"type": "object"		
+			"type": "object",
+			"required":["sytem_name", "system_type"],
+			"properties": {
+				"system_name": {"type": "string"},
+				"system_type": {"type": "string"}
+			}
 		},
 		
 		"sensor": {
