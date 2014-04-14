@@ -5,7 +5,7 @@ from rest_framework.routers import DefaultRouter
 from . import views
 from . import swagger_patch
 
-router = DefaultRouter()
+router = DefaultRouter(trailing_slash=False)
 router.register(r'projects', views.ProjectViewSet)
 router.register(r'files', views.FileViewSet)
 

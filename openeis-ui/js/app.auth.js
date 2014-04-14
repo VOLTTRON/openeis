@@ -1,4 +1,11 @@
-angular.module('openeis-ui.factories', ['ngResource', 'djangoRESTResources'])
+angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
+.config(function ($routeProvider) {
+    $routeProvider
+        .when('/', {
+            controller: 'LoginCtrl',
+            templateUrl: '/partials/login.html',
+        })
+})
 .factory('Auth', function ($resource, API_URL, $q) {
     var Auth = this;
 
@@ -17,7 +24,7 @@ angular.module('openeis-ui.factories', ['ngResource', 'djangoRESTResources'])
                 deferred.reject(response);
             });
         } else if (Auth.authenticated === false) {
-            deferred.reject({ status: 401 });
+            deferred.reject({ status: 403 });
         } else if (Auth.authenticated === true) {
             deferred.resolve();
         }
@@ -53,6 +60,41 @@ angular.module('openeis-ui.factories', ['ngResource', 'djangoRESTResources'])
 
     return Auth;
 })
-.factory('Projects', function (djResource, API_URL) {
-    return djResource(API_URL + '/projects/:projectId/', { projectId: '@id' });
-});
+.controller('LoginCtrl', function ($scope, $location, Auth, AUTH_HOME) {
+    $scope.form = {};
+    $scope.form.logIn = function () {
+        Auth.logIn({
+            username: $scope.form.username,
+            password: $scope.form.password,
+        }).then(function () {
+            $location.url(AUTH_HOME);
+        }, function (response) {
+            switch (response.status) {
+                case 403:
+                $scope.form.error = 'Authentication failed.'
+                break;
+
+                default:
+                $scope.form.error = 'Unknown error occurred.'
+            }
+        });
+    };
+})
+.controller('TopBarCtrl', function ($scope, Auth, $location, ANON_HOME) {
+    $scope.logOut = function () {
+        Auth.logOut().then(function () {
+            $location.url(ANON_HOME);
+        });
+    };
+})
+.run(function (Auth, ANON_HOME, AUTH_HOME, $location) {
+    Auth.isAuthenticated().then(function () {
+        if ($location.path() === '/') {
+            $location.url(AUTH_HOME);
+        }
+    }, function () {
+        if ($location.path() !== '/') {
+            $location.url(ANON_HOME);
+        }
+    });
+})
