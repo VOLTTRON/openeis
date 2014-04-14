@@ -8,46 +8,21 @@ from jsonschema import validate
 
 with open('schema.json') as jsonFile:
     schema = json.load(jsonFile)
+    
+with open('sensor_data.json') as sensordatafile:
+    sensordata = json.load(sensordatafile)
+    
+with open('unit_data.json') as unitdatafile:
+    unitdata = json.load(unitdatafile)
+    
 
-#print(schema)
-# site = {
-#     "name": "PNNL",
-#     "street_address": "902 Battelle Blvd."
-# }    
-# 
-# print(validate(site, schema))
+for k in sensordata.keys():
+    verify = validate(sensordata[k], schema['definitions']['sensor']) 
+    if verify != None:
+        raise Exception("Invalid sensor:\n"+verify)
+    
+# for k in unitdata.keys():
+#     verify = validate(sensordata[k], schema['definitions']['unit']) 
+#     if verify != None:
+#         raise Exception("Invalid unit:\n"+verify)
 
-instance = "{}"
-print (validate(instance, schema))
-
-# with open("tests/schema_test.json") as loader:
-#     test = json.load(loader)
-# 
-# print("Test Data")
-# print(json.dumps(test,  sort_keys=True, indent=4))
-#print(test)
-# sensor = {
-#     "sensor":{
-#     #"name": "OutdoorAirTemperature",
-#     "data-type": "float",
-#     "units": "bogus"
-#     }
-# }
-
-# print(validate(test, schema))
-
-# schema = {
-#     "$schema": "http://openeis.pnnl.gov/01/schema#"
-#     "type": "object",
-#     "properties": {
-#         "object_type": {
-#             "type": "string"
-#         },
-#     },
-#     "required": []
-#     
-# }
-# 
-# units_schema = {
-#     
-# }

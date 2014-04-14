@@ -1,0 +1,14 @@
+{
+	"OutdoorAirTemperature": {
+		"sensor_name": "OA1",
+		"sensor_type": "OutdoorAirTemperature",
+		"unit_type": "temperature",
+		"data_type": "float" 
+	},
+	"WboleBuildingElectricity": {
+		"sensor_name": "WBE1",		
+		"sensor_type": "WboleBuildingElectricity",
+		"unit_type": "electric_current",
+		"data_type": "float"			 
+	}	
+}
