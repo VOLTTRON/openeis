@@ -30,12 +30,6 @@ class SchemaTestCase(unittest.TestCase):
     good_site = None
     good_building = None
     
-    @classmethod
-    def setUpClass(cls):
-        # Change cwd to the schema directory.
-        newCwd = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-        os.chdir(newCwd)
-        
     def setUp(self):
         # Provide different levels to test schema validation.  The below example shows
         # how to do a deep copy if necessary to extend.
@@ -44,8 +38,10 @@ class SchemaTestCase(unittest.TestCase):
         self.good_building[SITES][0][BUILDINGS] = [{BUILDING_NAME:"ISB1"}]
         self.good_sensor = copy.deepcopy(self.good_site)
         self.good_sensor[SITES][0][SENSORS] = [{SENSOR_NAME: "Test One", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "acceleration", SENSOR_TYPE:"OutdoorAirTemperature"}]
-        #resolver.resolve_fragment(document, fragment)
-        full_schema_file = "schema.json"
+        
+        # Path relative to the tests directory.
+        full_schema_file = "../schema.json"
+        
         self.full_schema = json.load(open(full_schema_file))
         
     def test_sensor_must_have_valid_sensor_type(self):
