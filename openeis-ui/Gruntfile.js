@@ -14,8 +14,9 @@ module.exports = function(grunt) {
         files : {
           '<%= buildDir %>/js/app.min.js': [
             '<%= buildDir %>/js/angular.min.js',
-            '<%= buildDir %>/js/*.js',
-            '!<%= buildDir %>/js/app.min.js',
+            '<%= buildDir %>/js/angular-*.min.js',
+            '<%= buildDir %>/js/mm-foundation-tpls.min.js',
+            '<%= buildDir %>/js/app.min.js',
           ],
         }
       }
@@ -24,7 +25,7 @@ module.exports = function(grunt) {
     ngmin: {
       build: {
         files: {
-          '<%= buildDir %>/js/app.js': 'js/app*.js',
+          '<%= buildDir %>/js/app.js': ['js/app.js', 'js/app.*.js']
         },
       },
     },
@@ -62,7 +63,7 @@ module.exports = function(grunt) {
     uglify: {
       build: {
         files: {
-          '<%= buildDir %>/js/app.js': '<%= buildDir %>/js/app.js',
+          '<%= buildDir %>/js/app.min.js': '<%= buildDir %>/js/app.js',
         },
       },
     },
@@ -85,8 +86,8 @@ module.exports = function(grunt) {
       },
 
       js: {
-        files: ['js/app*.js', '!js/app.ngmin.js'],
-        tasks: ['ngmin', 'uglify', 'sync', 'concat'],
+        files: ['js/app*.js'],
+        tasks: ['sync', 'ngmin', 'uglify', 'concat'],
       },
 
       sass: {
