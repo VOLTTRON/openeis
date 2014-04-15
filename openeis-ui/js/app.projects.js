@@ -87,6 +87,10 @@ angular.module('openeis-ui.projects', [
         });
     };
 
+    $scope.hasFiles = function () {
+        return $scope.projectFiles.length;
+    };
+
     $scope.openModal = function (file) {
         var modalInstance = $modal.open({
             templateUrl: '/partials/addfile.html',
