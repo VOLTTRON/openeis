@@ -1,5 +1,6 @@
 angular.module('openeis-ui.projects', [
-    'openeis-ui.auth', 'ngResource', 'ngRoute', 'mm.foundation', 'angularFileUpload',
+    'openeis-ui.auth', 'openeis-ui.file',
+    'ngResource', 'ngRoute', 'mm.foundation', 'angularFileUpload',
 ])
 .config(function ($routeProvider) {
     $routeProvider
@@ -55,38 +56,26 @@ angular.module('openeis-ui.projects', [
     $scope.project = project;
     $scope.projectFiles = projectFiles;
 
-    $scope.onFileSelect = function($files) {
-        //$files: an array of files selected, each file has name, size, and type.
-        for (var i = 0; i < $files.length; i++) {
-            var file = $files[i];
-
-            $scope.uploading = true;
-
-            $scope.upload = $upload.upload({
+    $scope.upload = function (fileInput) {
+        angular.forEach(fileInput[0].files, function(file) {
+            $upload.upload({
                 url: API_URL + '/projects/' + project.id + '/add_file',
-                method: 'POST',
-                file: file, // or list of files: $files for html5 only
-            }).progress(function(evt) {
-                console.log('percent: ' + parseInt(100.0 * evt.loaded / evt.total));
-            }).success(function(data, status, headers, config) {
-                $scope.uploading = false;
-
-                // Inject mock file contents unfil API returns it,
-                // or provides method for retrieval
-                data.top = [
+                file: file,
+            }).then(function (response) {
+                // Inject mock file contents for now. Remove once
+                // API returns it or provides a method for retrieval
+                response.data.top = [
                     'These lines were manually injected',
                     'into the API\'s response. The first',
                     'few lines of the file will be displayed',
                     'once the API actually returns them.',
                 ].join('\n');
 
-                $scope.projectFiles.push(data);
-                $scope.openModal(data);
-            }).error(function () {
-                $scope.uploading = false;
-            })
-            //.then(success, error, progress);
-        }
+               $scope.projectFiles.push(response.data);
+               $scope.openModal(response.data);
+               fileInput.val('');
+            });
+        });
     };
 
     $scope.openModal = function (file) {

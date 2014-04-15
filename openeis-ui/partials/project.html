@@ -20,12 +20,6 @@
             </ul>
         </div>
         <h3>Add file</h3>
-        <div class="file-drop" ng-file-drop="onFileSelect($files)" ng-file-drag-over-class="active" ng-show="dropSupported">
-            <p>Drag and drop file here</p>
-            <button ng-click="upload.abort()" ng-show="uploading">Cancel Upload</button>
-        </div>
-        <div ng-file-drop-available="dropSupported=true" ng-show="!dropSupported">
-            <input type="file" ng-file-select="onFileSelect($files)">
-        </div>
+        <file-upload file-upload-click="upload(fileInput)"></file-upload>
     </div>
 </div>
