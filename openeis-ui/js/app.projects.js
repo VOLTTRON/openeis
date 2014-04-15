@@ -41,9 +41,12 @@ angular.module('openeis-ui.projects', [
 })
 .factory('ProjectFiles', function ($resource, API_URL) {
     var ProjectFiles = {
-        resource: $resource(API_URL + '/files?project=:projectId'),
+        resource: $resource(API_URL + '/files/:fileId'),
         query: function (projectId) {
-            return ProjectFiles.resource.query({ projectId: projectId }).$promise;
+            return ProjectFiles.resource.query({ project: projectId }).$promise;
+        },
+        delete: function (fileId) {
+            return ProjectFiles.resource.delete({ fileId: fileId }).$promise;
         },
     };
 
@@ -52,7 +55,7 @@ angular.module('openeis-ui.projects', [
 .controller('ProjectsCtrl', function ($scope, projects) {
     $scope.projects = projects;
 })
-.controller('ProjectCtrl', function ($scope, project, projectFiles, $modal, $upload, API_URL) {
+.controller('ProjectCtrl', function ($scope, project, projectFiles, $modal, $upload, API_URL, ProjectFiles) {
     $scope.project = project;
     $scope.projectFiles = projectFiles;
 
@@ -75,6 +78,12 @@ angular.module('openeis-ui.projects', [
                $scope.openModal(response.data);
                fileInput.val('');
             });
+        });
+    };
+
+    $scope.deleteFile = function ($index) {
+        ProjectFiles.delete($scope.projectFiles[$index].id).then(function (response) {
+            $scope.projectFiles.splice($index, 1);
         });
     };
 

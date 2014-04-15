@@ -14,8 +14,9 @@
             <h3>Project files</h3>
             <ul>
                 <li ng-repeat="file in projectFiles">
-                    {{file.file}} &mdash;
-                    <a href="{{file.download_url}}" target="_self">Download</a>
+                    {{file.file}}
+                    &mdash; <a href="{{file.download_url}}" target="_self">Download</a>
+                    &mdash; <a ng-click="deleteFile($index)">Delete</a>
                 </li>
             </ul>
         </div>
