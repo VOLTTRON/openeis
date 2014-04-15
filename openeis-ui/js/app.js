@@ -1,5 +1,5 @@
 angular.module('openeis-ui', [
-    'openeis-ui.auth', 'openeis-ui.projects',
+    'openeis-ui.auth', 'openeis-ui.projects', 'openeis-ui.templates',
     'ngAnimate', 'ngRoute',
 ])
 .constant('API_URL', '/api') // URL of OpenEIS API, without trailing slash

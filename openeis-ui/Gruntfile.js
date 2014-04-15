@@ -30,6 +30,27 @@ module.exports = function(grunt) {
       },
     },
 
+    ngtemplates: {
+      options: {
+        module: 'openeis-ui.templates',
+        htmlmin: {
+          collapseBooleanAttributes:      true,
+          collapseWhitespace:             true,
+          removeAttributeQuotes:          true,
+          removeComments:                 true, // Only if you don't use comment directives!
+          removeEmptyAttributes:          true,
+          removeScriptTypeAttributes:     true,
+          removeStyleLinkTypeAttributes:  true,
+        },
+        prefix: '/',
+        standalone: true,
+      },
+      build: {
+        src: 'partials/*.html',
+        dest: '<%= buildDir %>/js/app.templates.js',
+      },
+    },
+
     sass: {
       options: {
         includePaths: ['bower_components/foundation/scss'],
@@ -45,7 +66,7 @@ module.exports = function(grunt) {
     sync: {
       build: {
         files: [
-          { src: ['*.html', 'partials/*.html'], dest: '<%= buildDir %>/' },
+          { src: 'index.html', dest: '<%= buildDir %>/' },
           {
             expand: true,
             flatten: true,
@@ -63,7 +84,10 @@ module.exports = function(grunt) {
     uglify: {
       build: {
         files: {
-          '<%= buildDir %>/js/app.min.js': '<%= buildDir %>/js/app.js',
+          '<%= buildDir %>/js/app.min.js': [
+            '<%= buildDir %>/js/app.js',
+            '<%= buildDir %>/js/app.templates.js',
+          ],
         },
       },
     },
@@ -74,15 +98,20 @@ module.exports = function(grunt) {
       livereload: {
         options: { livereload: true },
         files: [
-          '<%= buildDir %>/**/*.html',
+          '<%= buildDir %>/index.html',
           '<%= buildDir %>/css/app.css',
           '<%= buildDir %>/js/app.min.js',
         ],
       },
 
-      html: {
-        files: ['*.html', 'partials/*.html'],
+      index: {
+        files: ['index.html'],
         tasks: ['sync'],
+      },
+
+      partials: {
+        files: ['partials/*.html'],
+        tasks: ['ngtemplates', 'uglify', 'concat'],
       },
 
       js: {
@@ -97,6 +126,7 @@ module.exports = function(grunt) {
     }
   });
 
+  grunt.loadNpmTasks('grunt-angular-templates');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
@@ -104,6 +134,6 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-sass');
   grunt.loadNpmTasks('grunt-sync');
 
-  grunt.registerTask('build', ['sass', 'ngmin', 'uglify', 'sync', 'concat']);
+  grunt.registerTask('build', ['sass', 'sync', 'ngmin', 'ngtemplates', 'uglify', 'concat']);
   grunt.registerTask('default', ['build','watch']);
 };
