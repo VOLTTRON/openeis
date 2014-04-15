@@ -5,6 +5,11 @@ module.exports = function(grunt) {
     buildDir: 'build',
 
     concat: {
+      options: {
+        process: function(src) {
+          return src.replace(/^\/\/# sourceMappingURL=.+\n/mg, '');
+        },
+      },
       build: {
         files : {
           '<%= buildDir %>/js/app.min.js': [
