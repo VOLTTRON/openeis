@@ -76,7 +76,7 @@ angular.module('openeis-ui.projects', [
 
                $scope.projectFiles.push(response.data);
                $scope.openModal(response.data);
-               fileInput.val('');
+               fileInput.val('').triggerHandler('change');
             });
         });
     };
@@ -85,10 +85,6 @@ angular.module('openeis-ui.projects', [
         ProjectFiles.delete($scope.projectFiles[$index].id).then(function (response) {
             $scope.projectFiles.splice($index, 1);
         });
-    };
-
-    $scope.hasFiles = function () {
-        return $scope.projectFiles.length;
     };
 
     $scope.openModal = function (file) {

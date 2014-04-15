@@ -11,7 +11,7 @@ angular.module('openeis-ui.file', [])
                     uploadButton = element.find('button');
 
                 fileInput.on('change', function () {
-                    if (fileInput[0].files) {
+                    if (fileInput[0].files.length) {
                         uploadButton.prop('disabled', false);
                     } else {
                         uploadButton.prop('disabled', true);
