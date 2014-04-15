@@ -8,7 +8,7 @@ import json
 def auth(request):
     if request.method == 'GET':
         if request.user.is_authenticated():
-            return HttpResponse()
+            return HttpResponse('{{"username":"{}"}}'.format(request.user.username))
         return HttpResponseForbidden()
 
     if request.method == 'DELETE':
@@ -24,6 +24,6 @@ def auth(request):
 
     if user is not None:
         login(request, user)
-        return HttpResponse()
+        return HttpResponse('{{"username":"{}"}}'.format(user.username))
 
     return HttpResponseForbidden()

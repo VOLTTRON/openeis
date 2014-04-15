@@ -7,58 +7,64 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         });
 })
 .factory('Auth', function ($resource, API_URL, $q) {
-    var Auth = this;
+    var authenticated = null,
+        username = 'Anonymous',
+        resource = $resource(API_URL + '/auth');
 
-    Auth.authenticated = null;
-    Auth.resource = $resource(API_URL + '/auth');
+    this.username = function () {
+        return username;
+    };
 
-    Auth.isAuthenticated = function () {
+    this.isAuthenticated = function () {
         var deferred = $q.defer();
 
-        if (Auth.authenticated === null) {
-            Auth.resource.get().$promise.then(function () {
-                Auth.authenticated = true;
+        if (authenticated === null) {
+            resource.get().$promise.then(function (response) {
+                authenticated = true;
+                username = response.username;
                 deferred.resolve();
-            }, function (response) {
-                Auth.authenticated = false;
-                deferred.reject(response);
+            }, function (rejection) {
+                authenticated = false;
+                deferred.reject(rejection);
             });
-        } else if (Auth.authenticated === false) {
+        } else if (authenticated === false) {
             deferred.reject({ status: 403 });
-        } else if (Auth.authenticated === true) {
+        } else if (authenticated === true) {
             deferred.resolve();
         }
 
         return deferred.promise;
     };
 
-    Auth.logIn = function(credentials) {
+    this.logIn = function(credentials) {
         var deferred = $q.defer();
 
-        Auth.resource.save(credentials).$promise.then(function () {
-            Auth.authenticated = true;
+        resource.save(credentials).$promise.then(function (response) {
+            authenticated = true;
+            username = response.username;
             deferred.resolve();
-        }, function (response) {
-            deferred.reject(response);
+        }, function (rejection) {
+            deferred.reject(rejection);
         });
 
         return deferred.promise;
     };
 
-    Auth.logOut = function(credentials) {
+    this.logOut = function(credentials) {
         var deferred = $q.defer();
 
-        Auth.resource.delete().$promise.then(function () {
-            Auth.authenticated = false;
+        resource.delete().$promise.then(function () {
+            authenticated = false;
+            username = 'Anonymous';
             deferred.resolve();
-        }, function (response) {
-            deferred.reject(response);
+        }, function (rejection) {
+            deferred.reject(rejection);
         });
 
         return deferred.promise;
     };
 
-    return Auth;
+    return this;
 })
 .controller('LoginCtrl', function ($scope, $location, Auth, AUTH_HOME) {
     $scope.form = {};
@@ -81,6 +87,8 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
     };
 })
 .controller('TopBarCtrl', function ($scope, Auth, $location, ANON_HOME) {
+    $scope.username = Auth.username();
+
     $scope.logOut = function () {
         Auth.logOut().then(function () {
             $location.url(ANON_HOME);
