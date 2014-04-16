@@ -1,0 +1,37 @@
+{
+		{
+			"sytem_name": "RTU",
+			"system_type": "RTU",
+			"sensors": [
+				"OutdoorAirTemperature",
+				"OutdoorAirRelativeHumidity",
+				"MixedAirTemperature",
+				"MixedAirRelativeHumidity",
+				"ReturnAirTemperature",
+				"ReturnAirRelativeHumidity",
+				"DischargeAirTemperature",
+				"DischargeAirRelativeHumidity",
+				"FirstStageCooling",
+				"SecondStageCooling",
+				"FirstStageHeating",
+				"SecondStageHeating",
+				"TotalPower",
+				"SupplyFanPower",
+				"CondenserFanPower",
+				"OutdoorDamperSignal",
+				"EconomizerMode",
+				"OccupancyMode",
+				"ZoneSetpoint",
+				"ZoneTemperature",
+				"SupplyFanSpeed"
+			]		
+		},
+		{
+			"sytem_name": "chiller"
+			"system_type": "chiller,
+			"subsystems": [
+				"pump"
+			]
+		}
+
+}

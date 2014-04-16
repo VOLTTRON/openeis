@@ -1,0 +1,189 @@
+{
+    "OutdoorAirTemperature": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "float",
+        "sensor_name": "OutdoorAirTemperature"
+    }
+}
+{
+    "OutdoorAirRelativeHumidity": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "dimensionless",
+        "data_type": "float",
+        "sensor_name": "OutdoorAirRelativeHumidity"
+    }
+}
+{
+    "MixedAirTemperature": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "float",
+        "sensor_name": "MixedAirTemperature"
+    }
+}
+{
+    "MixedAirRelativeHumidity": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "dimensionless",
+        "data_type": "float",
+        "sensor_name": "MixedAirRelativeHumidity"
+    }
+}
+{
+    "ReturnAirTemperature": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "float",
+        "sensor_name": "ReturnAirTemperature"
+    }
+}
+{
+    "ReturnAirRelativeHumidity": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "dimensionless",
+        "data_type": "float",
+        "sensor_name": "ReturnAirRelativeHumidity"
+    }
+}
+{
+    "DischargeAirTemperature": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "float",
+        "sensor_name": "DischargeAirTemperature"
+    }
+}
+{
+    "DischargeAirRelativeHumidity": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "dimensionless",
+        "data_type": "float",
+        "sensor_name": "DischargeAirRelativeHumidity"
+    }
+}
+{
+    "FirstStageCooling": {
+        "Maximum": "1",
+        "Minimum": "0",
+        "Unit": "boolean",
+        "data_type": "boolean",
+        "sensor_name": "FirstStageCooling"
+    }
+}
+{
+    "SecondStageCooling": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "boolean",
+        "sensor_name": "SecondStageCooling"
+    }
+}
+{
+    "FirstStageHeating": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "boolean",
+        "sensor_name": "FirstStageHeating"
+    }
+}
+{
+    "SecondStageHeating": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "boolean",
+        "sensor_name": "SecondStageHeating"
+    }
+}
+{
+    "TotalPower": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "energy",
+        "data_type": "float",
+        "sensor_name": "TotalPower"
+    }
+}
+{
+    "SupplyFanPower": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "energy",
+        "data_type": "float",
+        "sensor_name": "SupplyFanPower"
+    }
+}
+{
+    "CondenserFanPower": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "energy",
+        "data_type": "float",
+        "sensor_name": "CondenserFanPower"
+    }
+}
+{
+    "OutdoorDamperSignal": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "dimensionless",
+        "data_type": "float",
+        "sensor_name": "OutdoorDamperSignal"
+    }
+}
+{
+    "EconomizerMode": {
+        "Maximum": "1",
+        "Minimum": "0",
+        "Unit": "boolean",
+        "data_type": "boolean",
+        "sensor_name": "EconomizerMode"
+    }
+}
+{
+    "OccupancyMode": {
+        "Maximum": "1",
+        "Minimum": "0",
+        "Unit": "boolean",
+        "data_type": "boolean",
+        "sensor_name": "OccupancyMode"
+    }
+}
+{
+    "ZoneSetpoint": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "float",
+        "sensor_name": "ZoneSetpoint"
+    }
+}
+{
+    "ZoneTemperature": {
+        "Maximum": "",
+        "Minimum": "",
+        "Unit": "temperature",
+        "data_type": "float",
+        "sensor_name": "ZoneTemperature"
+    }
+}
+{
+    "SupplyFanSpeed": {
+        "Maximum": "100",
+        "Minimum": "0",
+        "Unit": "dimensionless",
+        "data_type": "float",
+        "sensor_name": "SupplyFanSpeed"
+    }
+}

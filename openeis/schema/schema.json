@@ -80,6 +80,22 @@
 			}		
 		},
 		
+		"rtu": {
+			
+			"type": "object",
+			"required":["sytem_name", "system_type"],
+			"properties": {
+				"system_name": {"type": "string"},
+				"system_type": {"type": "string"},
+				"subsystem": {
+					"type": "array",
+					"items": [
+						{"$ref": "#definitions/subsystem"}
+					]
+				} 
+			}		
+		},
+		
 		"subsystem": {
 			"type": "object",
 			"required":["sytem_name", "system_type"],
