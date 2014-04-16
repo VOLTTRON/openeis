@@ -50,15 +50,17 @@ def render_clean_nodes(nodelist, context):
     prev_text, prev_node = '', None
     text, node = next(nodes)
     for next_text, next_node in nodes:
-        if (not isinstance(node, TextNode) and
-                (not prev_node or _trailing_space_nl.search(prev_text)) and
-                (not next_node or _leading_space_nl.search(next_text))):
-            if prev_node:
-                prev_text = _trailing_space_nl.sub('', prev_text)
-            else:
+        if not isinstance(node, TextNode):
+            if not prev_node:
                 text = _leading_space_nl.sub('', text)
-            text = _trailing_space.sub('', text)
-            next_text = _leading_space_nl.sub('', next_text)
+            if not next_node:
+                text = _trailing_space_nl.sub('', text)
+            if (_trailing_space_nl.search(prev_text) and
+                    _leading_space_nl.search(next_text)):
+                prev_text = _trailing_space_nl.sub('', prev_text)
+                text = _trailing_space.sub('', text)
+                if text:
+                    next_text = _leading_space_nl.sub('', next_text)
         yield prev_text
         prev_text, prev_node = text, node
         text, node = next_text, next_node

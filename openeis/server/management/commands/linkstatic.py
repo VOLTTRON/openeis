@@ -55,15 +55,23 @@ class Command(NoArgsCommand):
                 count += 1
             return path if count > relative_depth else rel_path
 
-        def link(names, src_storage, dirs=False):
+        def link(names, storage, dirs=False):
             '''Link each name from its storage to the static root.
 
-            names is a list of file or directory names, src_storage is
+            names is a list of file or directory names, storage is
             the storage for the source file, and dirs indicates whether
             or not names are all directories (only important on Windows).
             '''
+            if storage.prefix:
+                dst_dir = os.path.join(static_root, storage.prefix)
+                if not os.path.exists(dst_dir):
+                    log('creating directory {}'.format(dst_dir))
+                    if not dry_run:
+                        os.mkdir(dst_dir)
+            else:
+                dst_dir = static_root
             for name in names:
-                dst_path = os.path.join(static_root, name)
+                dst_path = os.path.join(dst_dir, name)
                 if os.path.lexists(dst_path):
                     if clear:
                         log('removing {}'.format(dst_path))
@@ -72,7 +80,8 @@ class Command(NoArgsCommand):
                     else:
                         log('exists: {}'.format(dst_path), level=1)
                         continue
-                src_path = make_path(src_storage.path(name), os.path.dirname(dst_path))
+                src_path = make_path(storage.path(name),
+                                     os.path.dirname(dst_path))
                 log('linking {} to {}'.format(src_path, dst_path))
                 if not dry_run:
                     os.symlink(src_path, dst_path, target_is_directory=dirs)

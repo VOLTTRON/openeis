@@ -20,7 +20,7 @@ class Command(NoArgsCommand):
         make_option('-f', '--force', action='store_true', default=False,
                     help='Overrite existing module.'),
         make_option('--host', dest='hosts', action='append', default=[],
-                    help='Append host to ALLOWED_HOSTS'),
+                    metavar='HOST', help='Append host to ALLOWED_HOSTS'),
         make_option('--no-https', action='store_true', default=False,
                     help='Disable HTTPS security settings.'),
         make_option('--server', default='generic', type='choice',

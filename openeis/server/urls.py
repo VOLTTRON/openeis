@@ -15,6 +15,8 @@ urlpatterns = patterns('',
 
 if settings.DEBUG:
     urlpatterns += patterns('',
-        url(r'^(?P<path>(?:css|js|partials)/.+)$', 'django.views.static.serve', {'document_root': settings.STATIC_UI_DIR}),
-        url(r'', 'django.views.static.serve', {'path': 'index.html', 'document_root': settings.STATIC_UI_DIR}),
+        url(r'^(?P<path>(?:css|js|partials)/.+)$', 'django.views.static.serve',
+            {'document_root': settings.STATIC_UI_DIR}),
+        url(r'', 'django.views.static.serve',
+            {'path': 'index.html', 'document_root': settings.STATIC_UI_DIR}),
     )
