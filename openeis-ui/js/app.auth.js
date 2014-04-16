@@ -3,7 +3,7 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
     $routeProvider
         .when('/', {
             controller: 'LoginCtrl',
-            templateUrl: '/partials/login.html',
+            templateUrl: 'partials/login.html',
         });
 })
 .factory('Auth', function ($resource, API_URL, $q) {
@@ -97,11 +97,11 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
 })
 .run(function (Auth, ANON_HOME, AUTH_HOME, $location) {
     Auth.isAuthenticated().then(function () {
-        if ($location.path() === '/') {
+        if ($location.path() === ANON_HOME) {
             $location.url(AUTH_HOME);
         }
     }, function () {
-        if ($location.path() !== '/') {
+        if ($location.path() !== ANON_HOME) {
             $location.url(ANON_HOME);
         }
     });

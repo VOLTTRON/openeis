@@ -1,4 +1,4 @@
-<ng-include src="'/partials/topbar.html'"></ng-include>
+<ng-include src="'partials/topbar.html'"></ng-include>
 <div class="row" style="margin-top: 1em">
     <div class="columns">
         <ul class="breadcrumbs">
@@ -15,7 +15,7 @@
     <div class="columns">
         <ul ng-if="projects">
             <li ng-repeat="project in projects">
-                <a ng-href="/projects/{{project.id}}">{{project.name}}</a>
+                <a ng-href="projects/{{project.id}}">{{project.name}}</a>
             </li>
         </ul>
     </div>

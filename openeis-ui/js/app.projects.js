@@ -6,7 +6,7 @@ angular.module('openeis-ui.projects', [
     $routeProvider
         .when('/projects', {
             controller: 'ProjectsCtrl',
-            templateUrl: '/partials/projects.html',
+            templateUrl: 'partials/projects.html',
             resolve: {
                 projects: ['Projects', function(Projects) {
                     return Projects.query();
@@ -15,7 +15,7 @@ angular.module('openeis-ui.projects', [
         })
         .when('/projects/:projectId', {
             controller: 'ProjectCtrl',
-            templateUrl: '/partials/project.html',
+            templateUrl: 'partials/project.html',
             resolve: {
                 project: ['Projects', '$route', function(Projects, $route) {
                     return Projects.get($route.current.params.projectId);
@@ -93,7 +93,7 @@ angular.module('openeis-ui.projects', [
 
     $scope.openModal = function (file) {
         var modalInstance = $modal.open({
-            templateUrl: '/partials/addfile.html',
+            templateUrl: 'partials/addfile.html',
             controller: 'FileModalCtrl',
             resolve: {
                 file: function () {

@@ -42,7 +42,6 @@ module.exports = function(grunt) {
           removeScriptTypeAttributes:     true,
           removeStyleLinkTypeAttributes:  true,
         },
-        prefix: '/',
         standalone: true,
       },
       build: {
