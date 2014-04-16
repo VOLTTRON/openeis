@@ -16,9 +16,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'openeis',
         'USER': 'openeis',
-        'PASSWORD': '',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'PASSWORD': 'changeme',
+        #'HOST': '127.0.0.1',
+        #'PORT': '5432',
     }
 }
 
