@@ -1,0 +1,24 @@
+Source: nginx-repo
+Section: main
+Priority: optional
+Maintainer: Brandon Carpenter <brandon.carpenter@pnnl.gov>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+
+Package: nginx-keys
+Architecture: all
+Depends: ${misc:Depends}, coreutils, gnupg
+Description: GPG keys for Nginx repositories.
+ GPG keys for Nginx repositories.
+
+Package: nginx-stable
+Architecture: all
+Depends: nginx-keys, coreutils, sed
+Description: sources.list for Nginx stable repository.
+ sources.list for Nginx stable repository.
+
+Package: nginx-mainline
+Architecture: all
+Depends: nginx-keys, coreutils, sed
+Description: sources.list for Nginx mainline repository.
+ sources.list for Nginx stable repository.

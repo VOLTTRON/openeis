@@ -1,0 +1,22 @@
+#!/bin/sh
+# postinst script for nginx-keys
+
+set -e
+
+case "$1" in
+    configure)
+        gpg --dearmor < /usr/share/nginx/nginx.key > /etc/apt/trusted.gpg.d/nginx.gpg
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
