@@ -27,11 +27,6 @@
 			]		
 		},
 		{
-			"sytem_name": "chiller"
-			"system_type": "chiller,
-			"subsystems": [
-				"pump"
-			]
-		}
+	
 
 }
