@@ -1,0 +1,23 @@
+#!/bin/sh
+# postrm script for #PACKAGE#
+
+set -e
+
+case "$1" in
+    remove)
+        rm -f /etc/apt/sources.list.d/deadsnakes-ppa.list
+        rm -f /etc/apt/trusted.gpg.d/deadsnakes-ppa.gpg
+    ;;
+
+    purge|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0
