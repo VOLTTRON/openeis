@@ -114,7 +114,7 @@ class FileViewSet(mixins.ListModelMixin,
         '''
         try:
             rows = int(request.QUERY_PARAMS['rows'])
-        except (KeyError, TypeError):
+        except (KeyError, ValueError):
             rows = proj_settings.FILE_HEAD_ROWS_DEFAULT
         rows = min(rows, proj_settings.FILE_HEAD_ROWS_MAX)
         lines = []
