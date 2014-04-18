@@ -1,5 +1,6 @@
+from contextlib import closing
 from django.contrib.auth.decorators import user_passes_test
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 
 from rest_framework import filters, mixins, permissions, status, viewsets
 from rest_framework.decorators import action, link
@@ -9,6 +10,7 @@ from rest_framework.reverse import reverse
 from . import models
 from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
+from .conf import settings as proj_settings
 
 
 @protected_media
@@ -101,3 +103,31 @@ class FileViewSet(mixins.ListModelMixin,
         '''Method for retrieving data files.'''
         file = self.get_object().file
         return ProtectedMediaResponse(file.name)
+
+    @link()
+    def head(self, request, *args, **kwargs):
+        '''Return the top N lines of the file.
+
+        N defaults to FILE_HEAD_ROWS_DEFAULT projects setting and can be
+        overridden using the rows query parameter. However, rows may not
+        exceed FILE_HEAD_ROWS_MAX projects setting.
+        '''
+        try:
+            rows = int(request.QUERY_PARAMS['rows'])
+        except (KeyError, TypeError):
+            rows = proj_settings.FILE_HEAD_ROWS_DEFAULT
+        rows = min(rows, proj_settings.FILE_HEAD_ROWS_MAX)
+        lines = []
+        file = self.get_object().file
+        file.open()
+        with closing(file):
+            while len(lines) < rows:
+                # File iteration is broken in Django FileSystemStorage,
+                # but readline() still works, so we do it this way.
+                line = file.readline()
+                if not line:
+                    break
+                lines.append(line.decode('utf-8'))
+        return Response(lines)
+        return Response(''.join(lines))
+
