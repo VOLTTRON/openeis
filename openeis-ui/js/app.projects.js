@@ -27,26 +27,26 @@ angular.module('openeis-ui.projects', [
         });
 })
 .factory('Projects', function ($resource, API_URL) {
-    var Projects = {
-        resource: $resource(API_URL + '/projects/:projectId', { projectId: '@id' }),
+    var resource = $resource(API_URL + '/projects/:projectId', { projectId: '@id' });
+
+    return {
         get: function (projectId) {
-            return Projects.resource.get({ projectId: projectId}).$promise;
+            return resource.get({ projectId: projectId}).$promise;
         },
         query: function () {
-            return Projects.resource.query().$promise;
+            return resource.query().$promise;
         },
     };
-
-    return Projects;
 })
 .factory('ProjectFiles', function ($resource, API_URL, $http) {
-    var ProjectFiles = {
-        resource: $resource(API_URL + '/files/:fileId'),
+    var resource = $resource(API_URL + '/files/:fileId');
+
+    return {
         query: function (projectId) {
-            return ProjectFiles.resource.query({ project: projectId }).$promise;
+            return resource.query({ project: projectId }).$promise;
         },
         delete: function (fileId) {
-            return ProjectFiles.resource.delete({ fileId: fileId }).$promise;
+            return resource.delete({ fileId: fileId }).$promise;
         },
         head: function (fileId) {
             return $http({
@@ -58,8 +58,6 @@ angular.module('openeis-ui.projects', [
             });
         },
     };
-
-    return ProjectFiles;
 })
 .controller('ProjectsCtrl', function ($scope, projects) {
     $scope.projects = projects;
