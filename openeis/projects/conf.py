@@ -10,7 +10,7 @@ _DEFAULTS = {
 }
 
 
-class Settings(object):
+class Settings:
     '''Package-level settings providing default values.
 
     Initializes settings to the package defaults, then updates the
