@@ -27,30 +27,37 @@ angular.module('openeis-ui.projects', [
         });
 })
 .factory('Projects', function ($resource, API_URL) {
-    var Projects = {
-        resource: $resource(API_URL + '/projects/:projectId', { projectId: '@id' }),
+    var resource = $resource(API_URL + '/projects/:projectId', { projectId: '@id' });
+
+    return {
         get: function (projectId) {
-            return Projects.resource.get({ projectId: projectId}).$promise;
+            return resource.get({ projectId: projectId}).$promise;
         },
         query: function () {
-            return Projects.resource.query().$promise;
+            return resource.query().$promise;
         },
     };
-
-    return Projects;
 })
-.factory('ProjectFiles', function ($resource, API_URL) {
-    var ProjectFiles = {
-        resource: $resource(API_URL + '/files/:fileId'),
+.factory('ProjectFiles', function ($resource, API_URL, $http) {
+    var resource = $resource(API_URL + '/files/:fileId');
+
+    return {
         query: function (projectId) {
-            return ProjectFiles.resource.query({ project: projectId }).$promise;
+            return resource.query({ project: projectId }).$promise;
         },
         delete: function (fileId) {
-            return ProjectFiles.resource.delete({ fileId: fileId }).$promise;
+            return resource.delete({ fileId: fileId }).$promise;
+        },
+        head: function (fileId) {
+            return $http({
+                method: 'GET',
+                url: API_URL + '/files/' + fileId + '/head',
+                transformResponse: function (data) {
+                    return angular.fromJson(data);
+                },
+            });
         },
     };
-
-    return ProjectFiles;
 })
 .controller('ProjectsCtrl', function ($scope, projects) {
     $scope.projects = projects;
@@ -65,18 +72,13 @@ angular.module('openeis-ui.projects', [
                 url: API_URL + '/projects/' + project.id + '/add_file',
                 file: file,
             }).then(function (response) {
-                // Inject mock file contents for now. Remove once
-                // API returns it or provides a method for retrieval
-                response.data.top = [
-                    'These lines were manually injected',
-                    'into the API\'s response. The first',
-                    'few lines of the file will be displayed',
-                    'once the API actually returns them.',
-                ].join('\n');
+                ProjectFiles.head(response.data.id).then(function (headResponse) {
+                    response.data.head = headResponse.data.join('');
+                    $scope.openModal(response.data);
+                });
 
-               $scope.projectFiles.push(response.data);
-               $scope.openModal(response.data);
-               fileInput.val('');
+                $scope.projectFiles.push(response.data);
+                fileInput.val('').triggerHandler('change');
             });
         });
     };
@@ -85,10 +87,6 @@ angular.module('openeis-ui.projects', [
         ProjectFiles.delete($scope.projectFiles[$index].id).then(function (response) {
             $scope.projectFiles.splice($index, 1);
         });
-    };
-
-    $scope.hasFiles = function () {
-        return $scope.projectFiles.length;
     };
 
     $scope.openModal = function (file) {

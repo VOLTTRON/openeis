@@ -100,7 +100,7 @@ class FileViewSet(mixins.ListModelMixin,
 
     @link()
     def download(self, request, *args, **kwargs):
-        '''Method for retrieving data files.'''
+        '''Retrieve the file.'''
         file = self.get_object().file
         response = ProtectedMediaResponse(file.name)
         response['Content-Type'] = 'text/csv; name="{}"'.format(
@@ -108,8 +108,8 @@ class FileViewSet(mixins.ListModelMixin,
         return response
 
     @link()
-    def head(self, request, *args, **kwargs):
-        '''Return the top N rows of the file.
+    def top(self, request, *args, **kwargs):
+        '''Return the top rows of the file split into columns.
 
         N defaults to FILE_HEAD_ROWS_DEFAULT projects setting and can be
         overridden using the rows query parameter. However, rows may not
@@ -131,3 +131,29 @@ class FileViewSet(mixins.ListModelMixin,
                     break
         return Response({'has_header': csv_file.has_header, 'rows': rows})
 
+
+    @link()
+    def head(self, request, *args, **kwargs):
+        '''Return the first lines of the file.
+
+        N defaults to FILE_HEAD_ROWS_DEFAULT projects setting and can be
+        overridden using the rows query parameter. However, rows may not
+        exceed FILE_HEAD_ROWS_MAX projects setting.
+        '''
+        try:
+            rows = int(request.QUERY_PARAMS['rows'])
+        except (KeyError, ValueError):
+            rows = proj_settings.FILE_HEAD_ROWS_DEFAULT
+        rows = min(rows, proj_settings.FILE_HEAD_ROWS_MAX)
+        lines = []
+        file = self.get_object().file
+        file.open()
+        with closing(file):
+            while len(lines) < rows:
+                # File iteration is broken in Django FileSystemStorage,
+                # but readline() still works, so we do it this way.
+                line = file.readline()
+                if not line:
+                    break
+                lines.append(line.decode('utf-8'))
+        return Response(lines)

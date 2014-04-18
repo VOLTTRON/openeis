@@ -10,7 +10,7 @@
 <div class="row">
     <div class="columns">
         <h2>{{project.name}}</h2>
-        <div ng-if="hasFiles()">
+        <div ng-if="projectFiles.length">
             <h3>Project files</h3>
             <ul>
                 <li ng-repeat="file in projectFiles">

@@ -6,11 +6,9 @@ Static (AngularJS) front-end client to REST API (Django)
 Requirements
 ------------------
 
-Node.js modules:
-
+* [Node.js](http://nodejs.org/)
 * [npm](https://www.npmjs.org/)
-* [bower](http://bower.io/)
-* [grunt-cli](http://gruntjs.com/)
+* npm modules [bower](http://bower.io/) and [grunt-cli](http://gruntjs.com/)
 
 
 Installing dependencies
