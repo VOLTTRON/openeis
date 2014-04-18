@@ -39,7 +39,7 @@ angular.module('openeis-ui.projects', [
 
     return Projects;
 })
-.factory('ProjectFiles', function ($resource, API_URL) {
+.factory('ProjectFiles', function ($resource, API_URL, $http) {
     var ProjectFiles = {
         resource: $resource(API_URL + '/files/:fileId'),
         query: function (projectId) {
@@ -47,6 +47,15 @@ angular.module('openeis-ui.projects', [
         },
         delete: function (fileId) {
             return ProjectFiles.resource.delete({ fileId: fileId }).$promise;
+        },
+        head: function (fileId) {
+            return $http({
+                method: 'GET',
+                url: API_URL + '/files/' + fileId + '/head',
+                transformResponse: function (data) {
+                    return angular.fromJson(data);
+                },
+            });
         },
     };
 
@@ -65,18 +74,13 @@ angular.module('openeis-ui.projects', [
                 url: API_URL + '/projects/' + project.id + '/add_file',
                 file: file,
             }).then(function (response) {
-                // Inject mock file contents for now. Remove once
-                // API returns it or provides a method for retrieval
-                response.data.top = [
-                    'These lines were manually injected',
-                    'into the API\'s response. The first',
-                    'few lines of the file will be displayed',
-                    'once the API actually returns them.',
-                ].join('\n');
+                ProjectFiles.head(response.data.id).then(function (headResponse) {
+                    response.data.head = headResponse.data.join('');
+                    $scope.openModal(response.data);
+                });
 
-               $scope.projectFiles.push(response.data);
-               $scope.openModal(response.data);
-               fileInput.val('').triggerHandler('change');
+                $scope.projectFiles.push(response.data);
+                fileInput.val('').triggerHandler('change');
             });
         });
     };
