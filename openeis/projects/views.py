@@ -48,7 +48,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return user.projects.all()
 
-    @action(serializer_class=serializers.CreateFileSerializer)
+    @action(methods=['POST'], serializer_class=serializers.CreateFileSerializer)
     def add_file(self, request, *args, **kwargs):
         '''Always set the owning project when adding files.'''
         project = self.get_object()
@@ -59,7 +59,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             serializer = serializers.FileSerializer(instance=obj)
             serializer.request = request
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @link()
     def files(self, request, *args, **kwargs):
@@ -102,32 +102,32 @@ class FileViewSet(mixins.ListModelMixin,
     def download(self, request, *args, **kwargs):
         '''Method for retrieving data files.'''
         file = self.get_object().file
-        return ProtectedMediaResponse(file.name)
+        response = ProtectedMediaResponse(file.name)
+        response['Content-Type'] = 'text/csv; name="{}"'.format(
+                file.name.replace('"', '\\"'))
+        return response
 
     @link()
     def head(self, request, *args, **kwargs):
-        '''Return the top N lines of the file.
+        '''Return the top N rows of the file.
 
         N defaults to FILE_HEAD_ROWS_DEFAULT projects setting and can be
         overridden using the rows query parameter. However, rows may not
         exceed FILE_HEAD_ROWS_MAX projects setting.
         '''
         try:
-            rows = int(request.QUERY_PARAMS['rows'])
+            count = int(request.QUERY_PARAMS['rows'])
         except (KeyError, ValueError):
-            rows = proj_settings.FILE_HEAD_ROWS_DEFAULT
-        rows = min(rows, proj_settings.FILE_HEAD_ROWS_MAX)
-        lines = []
+            count = proj_settings.FILE_HEAD_ROWS_DEFAULT
+        count = min(count, proj_settings.FILE_HEAD_ROWS_MAX)
+        rows = []
         file = self.get_object().file
         file.open()
         with closing(file):
-            while len(lines) < rows:
-                # File iteration is broken in Django FileSystemStorage,
-                # but readline() still works, so we do it this way.
-                line = file.readline()
-                if not line:
+            csv_file = serializers.CSVFile(file)
+            for row in csv_file:
+                rows.append(row)
+                if len(rows) >= count:
                     break
-                lines.append(line.decode('utf-8'))
-        return Response(lines)
-        return Response(''.join(lines))
+        return Response({'has_header': csv_file.has_header, 'rows': rows})
 
