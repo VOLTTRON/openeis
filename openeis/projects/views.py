@@ -129,5 +129,4 @@ class FileViewSet(mixins.ListModelMixin,
                     break
                 lines.append(line.decode('utf-8'))
         return Response(lines)
-        return Response(''.join(lines))
 
