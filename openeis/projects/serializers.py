@@ -45,6 +45,7 @@ class FileSerializer(serializers.ModelSerializer):
     attribute is set, download_url will contain an absolute URL.
     '''
     download_url = serializers.CharField(source='pk', read_only=True)
+    size = serializers.IntegerField(source='pk', read_only=True)
 
     class Meta:
         model = models.DataFile
@@ -56,3 +57,6 @@ class FileSerializer(serializers.ModelSerializer):
     def transform_download_url(self, obj, value):
         return reverse('datafile-download', kwargs={'pk': value},
                        request=getattr(self, 'request', None))
+
+    def transform_size(self, obj, value):
+        return obj.file.file.size
