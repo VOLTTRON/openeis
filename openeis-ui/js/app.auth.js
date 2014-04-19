@@ -6,7 +6,7 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
             templateUrl: 'partials/login.html',
         });
 })
-.factory('Auth', function ($resource, API_URL, $q) {
+.factory('Auth', function ($resource, API_URL, $q, ANON_HOME, AUTH_HOME, $location) {
     var authenticated = null,
         username = 'Anonymous',
         resource = $resource(API_URL + '/auth');
@@ -64,6 +64,18 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         return deferred.promise;
     };
 
+    this.relocate = function () {
+        this.isAuthenticated().then(function () {
+            if ($location.path() === ANON_HOME) {
+                $location.url(AUTH_HOME);
+            }
+        }, function () {
+            if ($location.path() !== ANON_HOME) {
+                $location.url(ANON_HOME);
+            }
+        });
+    };
+
     return this;
 })
 .controller('LoginCtrl', function ($scope, $location, Auth, AUTH_HOME) {
@@ -94,15 +106,4 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
             $location.url(ANON_HOME);
         });
     };
-})
-.run(function (Auth, ANON_HOME, AUTH_HOME, $location) {
-    Auth.isAuthenticated().then(function () {
-        if ($location.path() === ANON_HOME) {
-            $location.url(AUTH_HOME);
-        }
-    }, function () {
-        if ($location.path() !== ANON_HOME) {
-            $location.url(ANON_HOME);
-        }
-    });
 });

@@ -18,4 +18,7 @@ angular.module('openeis-ui', [
 
     $httpProvider.defaults.xsrfHeaderName = 'X-CSRFToken';
     $httpProvider.defaults.xsrfCookieName = 'csrftoken';
+})
+.run(function (Auth) {
+    Auth.relocate();
 });
