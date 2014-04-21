@@ -55,6 +55,13 @@ angular.module('openeis-ui.projects', [
                 transformResponse: angular.fromJson,
             });
         },
+        headCsv: function (fileId) {
+            return $http({
+                method: 'GET',
+                url: API_URL + '/files/' + fileId + '/top',
+                transformResponse: angular.fromJson,
+            });
+        },
     };
 })
 .controller('ProjectsCtrl', function ($scope, projects) {
@@ -70,8 +77,11 @@ angular.module('openeis-ui.projects', [
                 url: API_URL + '/projects/' + project.id + '/add_file',
                 file: file,
             }).then(function (response) {
-                ProjectFiles.head(response.data.id).then(function (headResponse) {
-                    response.data.head = headResponse.data.join('');
+                ProjectFiles.headCsv(response.data.id).then(function (headResponse) {
+                    if (headResponse.data.has_header) {
+                        headResponse.data.header = headResponse.data.rows.shift();
+                    }
+                    response.data.head = headResponse.data;
                     $scope.openModal(response.data);
                 });
 
