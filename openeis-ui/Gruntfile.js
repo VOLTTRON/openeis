@@ -37,9 +37,8 @@ module.exports = function(grunt) {
       build: {
         files: {
           '<%= buildDir %>/js/app.js': [
-            'js/app.js',
-            'js/app.*.js',
-            '!js/app.*.spec.js',
+            'js/*.js',
+            '!js/*.spec.js',
           ]
         },
       },
@@ -118,11 +117,6 @@ module.exports = function(grunt) {
         ],
       },
 
-      karma: {
-        files: ['js/*.js'],
-        tasks: ['karma:build:run'],
-      },
-
       index: {
         files: ['index.html'],
         tasks: ['sync'],
@@ -136,6 +130,11 @@ module.exports = function(grunt) {
       js: {
         files: ['js/*.js', '!js/*.spec.js'],
         tasks: ['sync', 'ngmin', 'uglify', 'concat'],
+      },
+
+      karma: {
+        files: ['js/*.js'],
+        tasks: ['karma:build:run'],
       },
 
       sass: {

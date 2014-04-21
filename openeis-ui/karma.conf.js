@@ -1,7 +1,7 @@
 module.exports = function(config) {
   config.set({
     frameworks: ['jasmine'],
-    browsers: ['PhantomJS'],
+    browsers: ['Chrome', 'Firefox', 'PhantomJS'],
     files: [
       'bower_components/angular/angular.js',
       'bower_components/angular-*/angular-*.js',
