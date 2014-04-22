@@ -1,5 +1,5 @@
 angular.module('openeis-ui.projects', [
-    'openeis-ui.auth', 'openeis-ui.file',
+    'openeis-ui.file',
     'ngResource', 'ngRoute', 'mm.foundation', 'angularFileUpload',
 ])
 .config(function ($routeProvider) {
@@ -42,12 +42,6 @@ angular.module('openeis-ui.projects', [
         create: function (project) {
             return resource.create(project).$promise;
         },
-        save: function (project) {
-            return resource.save(project).$promise;
-        },
-        delete: function (projectId) {
-            return resource.delete({ projectId: projectId }).$promise;
-        },
     };
 })
 .factory('ProjectFiles', function ($resource, API_URL, $http) {
@@ -57,17 +51,7 @@ angular.module('openeis-ui.projects', [
         query: function (projectId) {
             return resource.query({ project: projectId }).$promise;
         },
-        delete: function (fileId) {
-            return resource.delete({ fileId: fileId }).$promise;
-        },
         head: function (fileId) {
-            return $http({
-                method: 'GET',
-                url: API_URL + '/files/' + fileId + '/head',
-                transformResponse: angular.fromJson,
-            });
-        },
-        headCsv: function (fileId) {
             return $http({
                 method: 'GET',
                 url: API_URL + '/files/' + fileId + '/top',
@@ -118,7 +102,7 @@ angular.module('openeis-ui.projects', [
                 url: API_URL + '/projects/' + project.id + '/add_file',
                 file: file,
             }).then(function (response) {
-                ProjectFiles.headCsv(response.data.id).then(function (headResponse) {
+                ProjectFiles.head(response.data.id).then(function (headResponse) {
                     if (headResponse.data.has_header) {
                         headResponse.data.header = headResponse.data.rows.shift();
                     }
@@ -133,7 +117,7 @@ angular.module('openeis-ui.projects', [
     };
 
     $scope.deleteFile = function ($index) {
-        ProjectFiles.delete($scope.projectFiles[$index].id).then(function (response) {
+        $scope.projectFiles[$index].$delete(function () {
             $scope.projectFiles.splice($index, 1);
         });
     };
