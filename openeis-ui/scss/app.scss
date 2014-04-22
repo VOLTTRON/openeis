@@ -40,6 +40,10 @@
     // , "foundation/components/visibility"
     ;
 
+button, .button {
+    @include button($radius:true);
+}
+
 .alert-box {
     &.ng-animate {
         -webkit-transition: 0.25s ease-out all;
