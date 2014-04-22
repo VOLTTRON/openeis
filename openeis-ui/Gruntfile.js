@@ -4,6 +4,10 @@ module.exports = function(grunt) {
 
     buildDir: 'build',
 
+    clean: {
+      build: ['<%= buildDir %>'],
+    },
+
     concat: {
       options: {
         process: function(src) {
@@ -22,10 +26,21 @@ module.exports = function(grunt) {
       }
     },
 
+    karma: {
+      build: {
+        configFile: 'karma.conf.js',
+        background: true,
+      },
+    },
+
     ngmin: {
       build: {
         files: {
-          '<%= buildDir %>/js/app.js': ['js/app.js', 'js/app.*.js']
+          '<%= buildDir %>/js/app.js': [
+            'js/app.js',
+            'js/app.*.js',
+            '!js/app.*.spec.js',
+          ]
         },
       },
     },
@@ -103,6 +118,11 @@ module.exports = function(grunt) {
         ],
       },
 
+      karma: {
+        files: ['js/*.js'],
+        tasks: ['karma:build:run'],
+      },
+
       index: {
         files: ['index.html'],
         tasks: ['sync'],
@@ -114,7 +134,7 @@ module.exports = function(grunt) {
       },
 
       js: {
-        files: ['js/app*.js'],
+        files: ['js/*.js', '!js/*.spec.js'],
         tasks: ['sync', 'ngmin', 'uglify', 'concat'],
       },
 
@@ -126,13 +146,15 @@ module.exports = function(grunt) {
   });
 
   grunt.loadNpmTasks('grunt-angular-templates');
+  grunt.loadNpmTasks('grunt-contrib-clean');
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-ngmin');
   grunt.loadNpmTasks('grunt-sass');
   grunt.loadNpmTasks('grunt-sync');
 
-  grunt.registerTask('build', ['sass', 'sync', 'ngmin', 'ngtemplates', 'uglify', 'concat']);
-  grunt.registerTask('default', ['build','watch']);
+  grunt.registerTask('build', ['clean', 'sass', 'sync', 'ngmin', 'ngtemplates', 'uglify', 'concat']);
+  grunt.registerTask('default', ['karma:build:start', 'build', 'watch']);
 };
