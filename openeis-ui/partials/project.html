@@ -12,13 +12,24 @@
         <h2>{{project.name}}</h2>
         <div ng-if="projectFiles.length">
             <h3>Project files</h3>
-            <ul>
-                <li ng-repeat="file in projectFiles">
-                    {{file.file}} ({{file.size}} bytes)
-                    &mdash; <a href="{{file.download_url}}" target="_self">Download</a>
-                    &mdash; <a ng-click="deleteFile($index)">Delete</a>
-                </li>
-            </ul>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Size</th>
+                        <th>Download</th>
+                        <th>Delete</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="file in projectFiles">
+                        <td>{{file.file}}</td>
+                        <td>{{file.size | bytes}}</td>
+                        <td><a href="{{file.download_url}}" target="_self">Download</a></td>
+                        <td><a ng-click="deleteFile($index)">Delete</a></td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
         <h3>Add file</h3>
         <file-upload file-upload-click="upload(fileInput)"></file-upload>
