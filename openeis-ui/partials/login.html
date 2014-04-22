@@ -6,7 +6,7 @@
         <form class="panel radius" ng-submit="form.logIn()">
             <input type="text" placeholder="Username" required ng-model="form.username" ng-change="form.error = false">
             <input type="password" placeholder="Password" required ng-model="form.password" ng-change="form.error = false">
-            <input type="submit" value="Log in" class="button radius small">
+            <button type="submit">Log in</button>
             <p class="alert-box warning radius" ng-if="form.error">{{form.error}}</p>
         </form>
     </div>

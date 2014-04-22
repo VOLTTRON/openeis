@@ -1,4 +1,5 @@
 @import "normalize";
+@import "settings";
 
 @import
     "foundation/components/grid"
@@ -29,7 +30,7 @@
     // , "foundation/components/split-buttons"
     // , "foundation/components/sub-nav"
     // , "foundation/components/switch"
-    // , "foundation/components/tables"
+    , "foundation/components/tables"
     // , "foundation/components/tabs"
     // , "foundation/components/thumbs"
     // , "foundation/components/tooltips"
@@ -38,6 +39,10 @@
     // , "foundation/components/offcanvas"
     // , "foundation/components/visibility"
     ;
+
+button, .button {
+    @include button($radius:true);
+}
 
 .alert-box {
     &.ng-animate {

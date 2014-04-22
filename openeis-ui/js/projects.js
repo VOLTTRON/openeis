@@ -1,5 +1,5 @@
 angular.module('openeis-ui.projects', [
-    'openeis-ui.auth', 'openeis-ui.file',
+    'openeis-ui.file',
     'ngResource', 'ngRoute', 'mm.foundation', 'angularFileUpload',
 ])
 .config(function ($routeProvider) {
@@ -27,7 +27,10 @@ angular.module('openeis-ui.projects', [
         });
 })
 .factory('Projects', function ($resource, API_URL) {
-    var resource = $resource(API_URL + '/projects/:projectId', { projectId: '@id' });
+    var resource = $resource(API_URL + '/projects/:projectId', { projectId: '@id' }, {
+        create: { method: 'POST' },
+        save: { method: 'PUT' },
+    });
 
     return {
         get: function (projectId) {
@@ -35,6 +38,9 @@ angular.module('openeis-ui.projects', [
         },
         query: function () {
             return resource.query().$promise;
+        },
+        create: function (project) {
+            return resource.create(project).$promise;
         },
     };
 })
@@ -45,20 +51,46 @@ angular.module('openeis-ui.projects', [
         query: function (projectId) {
             return resource.query({ project: projectId }).$promise;
         },
-        delete: function (fileId) {
-            return resource.delete({ fileId: fileId }).$promise;
-        },
         head: function (fileId) {
             return $http({
                 method: 'GET',
-                url: API_URL + '/files/' + fileId + '/head',
+                url: API_URL + '/files/' + fileId + '/top',
                 transformResponse: angular.fromJson,
             });
         },
     };
 })
-.controller('ProjectsCtrl', function ($scope, projects) {
+.controller('ProjectsCtrl', function ($scope, projects, Projects) {
     $scope.projects = projects;
+
+    $scope.newProject = {
+        name: '',
+        create: function () {
+            Projects.create({ name: $scope.newProject.name }).then(function (response) {
+                $scope.newProject.name = '';
+                $scope.projects.push(response);
+            });
+        },
+    };
+
+    $scope.renameProject = function ($index) {
+        var newName = prompt("New project name:");
+
+        if (!newName || !newName.length) {
+            return;
+        }
+
+        $scope.projects[$index].name = newName;
+        $scope.projects[$index].$save(function (response) {
+            $scope.projects[$index] = response;
+        });
+    };
+
+    $scope.deleteProject = function ($index) {
+        $scope.projects[$index].$delete(function () {
+            $scope.projects.splice($index, 1);
+        });
+    };
 })
 .controller('ProjectCtrl', function ($scope, project, projectFiles, $modal, $upload, API_URL, ProjectFiles) {
     $scope.project = project;
@@ -71,7 +103,10 @@ angular.module('openeis-ui.projects', [
                 file: file,
             }).then(function (response) {
                 ProjectFiles.head(response.data.id).then(function (headResponse) {
-                    response.data.head = headResponse.data.join('');
+                    if (headResponse.data.has_header) {
+                        headResponse.data.header = headResponse.data.rows.shift();
+                    }
+                    response.data.head = headResponse.data;
                     $scope.openModal(response.data);
                 });
 
@@ -82,7 +117,7 @@ angular.module('openeis-ui.projects', [
     };
 
     $scope.deleteFile = function ($index) {
-        ProjectFiles.delete($scope.projectFiles[$index].id).then(function (response) {
+        $scope.projectFiles[$index].$delete(function () {
             $scope.projectFiles.splice($index, 1);
         });
     };

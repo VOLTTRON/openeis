@@ -1,6 +1,15 @@
-<h3>First lines of {{file.file}}</h3>
-<blockquote>
-    <pre>{{file.head}}</pre>
-</blockquote>
+<h3>First rows of {{file.file}}</h3>
+<table>
+    <thead ng-if="file.head.header.length">
+        <tr>
+            <th ng-repeat="header in file.head.header">{{header}}</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat="row in file.head.rows">
+            <td ng-repeat="col in row">{{col}}</td>
+        </tr>
+    </tbody>
+</table>
 <button ng-click="ok()">OK</button>
 <a class="close-reveal-modal" ng-click="cancel()">&#215;</a>
