@@ -27,7 +27,10 @@ angular.module('openeis-ui.projects', [
         });
 })
 .factory('Projects', function ($resource, API_URL) {
-    var resource = $resource(API_URL + '/projects/:projectId', { projectId: '@id' });
+    var resource = $resource(API_URL + '/projects/:projectId', { projectId: '@id' }, {
+        create: { method: 'POST' },
+        save: { method: 'PUT' },
+    });
 
     return {
         get: function (projectId) {
@@ -35,6 +38,15 @@ angular.module('openeis-ui.projects', [
         },
         query: function () {
             return resource.query().$promise;
+        },
+        create: function (project) {
+            return resource.create(project).$promise;
+        },
+        save: function (project) {
+            return resource.save(project).$promise;
+        },
+        delete: function (projectId) {
+            return resource.delete({ projectId: projectId }).$promise;
         },
     };
 })
@@ -64,8 +76,37 @@ angular.module('openeis-ui.projects', [
         },
     };
 })
-.controller('ProjectsCtrl', function ($scope, projects) {
+.controller('ProjectsCtrl', function ($scope, projects, Projects) {
     $scope.projects = projects;
+
+    $scope.newProject = {
+        name: '',
+        create: function () {
+            Projects.create({ name: $scope.newProject.name }).then(function (response) {
+                $scope.newProject.name = '';
+                $scope.projects.push(response);
+            });
+        },
+    };
+
+    $scope.renameProject = function ($index) {
+        var newName = prompt("New project name:");
+
+        if (!newName || !newName.length) {
+            return;
+        }
+
+        $scope.projects[$index].name = newName;
+        $scope.projects[$index].$save(function (response) {
+            $scope.projects[$index] = response;
+        });
+    };
+
+    $scope.deleteProject = function ($index) {
+        $scope.projects[$index].$delete(function () {
+            $scope.projects.splice($index, 1);
+        });
+    };
 })
 .controller('ProjectCtrl', function ($scope, project, projectFiles, $modal, $upload, API_URL, ProjectFiles) {
     $scope.project = project;

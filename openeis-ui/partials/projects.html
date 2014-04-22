@@ -13,10 +13,16 @@
 </div>
 <div class="row" id="main">
     <div class="columns">
-        <ul ng-if="projects">
+        <ul ng-if="projects.length">
             <li ng-repeat="project in projects">
                 <a ng-href="projects/{{project.id}}">{{project.name}}</a>
+                &mdash; <a ng-click="renameProject($index)">Rename</a>
+                &mdash; <a ng-click="deleteProject($index)">Delete</a>
             </li>
         </ul>
+        <form ng-submit="newProject.create()">
+            <input type="text" placeholder="Name of new project" ng-model="newProject.name" required>
+            <button type="submit">Create new project</button>
+        </form>
     </div>
 </div>
