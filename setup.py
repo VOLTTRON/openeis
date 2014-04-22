@@ -14,7 +14,8 @@ setup(
         'django-guardian',
         'djangorestframework',
         'django-rest-swagger',
-        'jsonschema'
+        'jsonschema',
+        'nose'
     ],
     entry_points = '''
         [console_scripts]
