@@ -4,6 +4,10 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         .when('/', {
             controller: 'LoginCtrl',
             templateUrl: 'partials/login.html',
+        })
+        .when('/sign-up', {
+            controller: 'SignUpCtrl',
+            templateUrl: 'partials/signup.html',
         });
 })
 .factory('Auth', function ($resource, API_URL, $q, ANON_HOME, AUTH_HOME, $location) {
@@ -70,7 +74,7 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
                 $location.url(AUTH_HOME);
             }
         }, function () {
-            if ($location.path() !== ANON_HOME) {
+            if ([ANON_HOME, '/sign-up'].indexOf($location.path()) === -1) {
                 $location.url(ANON_HOME);
             }
         });
@@ -96,6 +100,12 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
                 $scope.form.error = 'Unknown error occurred.';
             }
         });
+    };
+})
+.controller('SignUpCtrl', function ($scope, $location, Auth, AUTH_HOME) {
+    $scope.form = {};
+    $scope.signUp = function () {
+        console.log($scope.form);
     };
 })
 .controller('TopBarCtrl', function ($scope, Auth, $location, ANON_HOME) {

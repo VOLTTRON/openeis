@@ -1,0 +1,19 @@
+<div class="row" style="padding-top: 60px">
+    <div class="small-6 small-offset-3 columns end">
+        <h1>OpenEIS</h1>
+        <form class="panel radius" ng-submit="signUp()">
+            <h2>Sign up</h2>
+            <label>Name</label>
+            <input type="text" required ng-model="form.name">
+            <label>Email address</label>
+            <input type="email" required ng-model="form.email">
+            <label>Username</label>
+            <input type="text" autocomplete="off" required ng-model="form.username">
+            <label>Password</label>
+            <input type="password" autocomplete="off" placeholder="Enter password" required ng-model="form.password">
+            <input type="password" autocomplete="off" placeholder="Re-enter password" required ng-model="form.passwordconfirm">
+            <button type="submit">Sign up</button>
+            <p class="alert-box warning radius" ng-if="form.error">{{form.error}}</p>
+        </form>
+    </div>
+</div>

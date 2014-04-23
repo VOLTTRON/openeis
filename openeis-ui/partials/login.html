@@ -1,4 +1,4 @@
-<div class="row" style="margin-top: 200px">
+<div class="row" style="padding-top: 200px">
     <div class="small-8 columns">
         <h1 style="font-size: 7.5rem; line-height: 1.5">OpenEIS</h1>
     </div>
@@ -6,6 +6,9 @@
         <form class="panel radius" ng-submit="form.logIn()">
             <input type="text" placeholder="Username" required ng-model="form.username" ng-change="form.error = false">
             <input type="password" placeholder="Password" required ng-model="form.password" ng-change="form.error = false">
+            <p class="right" style="width: 140px; line-height: 3">
+                <a href="sign-up">Create new account</a>
+            </p>
             <button type="submit">Log in</button>
             <p class="alert-box warning radius" ng-if="form.error">{{form.error}}</p>
         </form>
