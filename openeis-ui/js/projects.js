@@ -45,7 +45,7 @@ angular.module('openeis-ui.projects', [
     };
 })
 .factory('ProjectFiles', function ($resource, API_URL, $http) {
-    var resource = $resource(API_URL + '/files/:fileId');
+    var resource = $resource(API_URL + '/files/:fileId', { fileId: '@id' });
 
     return {
         query: function (projectId) {
