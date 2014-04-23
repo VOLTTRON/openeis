@@ -94,13 +94,11 @@ class Site(models.Model):
 #         
 #         if not hasattr(self, 'site_name'):
 #             raise ValidationError("Something doesn't exist")
-#     
-    
-    
+#        
 
 class Building(models.Model):
     building_name = models.CharField(max_length=50)
-    site = models.ForeignKey(Site)    
+    site = models.ForeignKey(Site, related_name='sites')    
     
 class SystemType(models.Model):
     "Specifies the classification of a specific system i.e. RTU"
@@ -111,8 +109,8 @@ class System(models.Model):
     system_name = models.CharField(max_length=50)
     system_type = models.ForeignKey(SystemType)
 
-class SubSystem(models.Model):
-    parent = models.ForeignKey(System)
+# class SubSystem(models.Model):
+#     parent = models.ForeignKey(System)
     
 
 class SensorType(models.Model):
