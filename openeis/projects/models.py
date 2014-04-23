@@ -69,16 +69,18 @@ class DataFile(models.Model):
 
 
 class Address(models.Model):
+    "An address that will "
     street_address = models.CharField(max_length=50)
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=50)
     zip_code = models.CharField(max_length=10)    
 
-class Unit(models.Model):
-    pass
-
 class UnitType(models.Model):
-    pass
+    grouping = models.CharField(max_length=50)
+    key = models.CharField(max_length=50)
+    value = models.CharField(max_length=50)
+    other = models.CharField(max_length=50)
+    
         
 class Site(models.Model):
     '''Site specific data.'''
@@ -125,7 +127,7 @@ class Sensor(models.Model):
     #
     # The following three fields allow the parent to be one of Site,
     # Buildng, or System.
-    content_type = models.ForeignKey(ContentType)
+    content_type = models.ForeignKey(ContentType, null=True)
     object_id = models.PositiveIntegerField()
     parent_object = generic.GenericForeignKey('content_type', 'object_id')
     
