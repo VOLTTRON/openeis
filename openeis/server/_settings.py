@@ -110,3 +110,4 @@ PROTECTED_MEDIA_URL = '/files/'
 PROTECTED_MEDIA_ROOT = os.path.join(DATA_DIR, 'files')
 PROTECTED_MEDIA_METHOD = 'direct' # 'X-Sendfile', 'X-Accel-Redirect', 'direct'
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

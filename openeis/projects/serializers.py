@@ -1,6 +1,8 @@
 import csv
 import posixpath
 
+from django.contrib.auth.models import User
+
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -136,3 +138,27 @@ class FileSerializer(serializers.ModelSerializer):
 
     def transform_size(self, obj, value):
         return obj.file.file.size
+
+
+class MinimalUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'last_name', 'first_name')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'last_name', 'first_name',
+                  'date_joined', 'last_login', 'groups', 'password')
+        read_only_fields = ('last_login', 'date_joined', 'groups')
+        write_only_fields = ('password',)
+
+    def restore_object(self, attrs, instance=None):
+        password = attrs.pop('password', None)
+        instance = super().restore_object(attrs, instance)
+        if password:
+            instance.set_password(password)
+        return instance

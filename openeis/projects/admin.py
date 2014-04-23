@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
 
-from .models import Organization, Project, DataFile
+from .models import Organization, Project, DataFile, AccountVerification
 
 
 class MembershipInline(admin.TabularInline):
@@ -33,7 +33,13 @@ class ProjectAdmin(admin.ModelAdmin):
     inlines = (DataFileAdmin,)
 
 
+class AccountVerificationAdmin(admin.ModelAdmin):
+    model = AccountVerification
+    list_display = ('account', 'initiated')
+
+
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(Organization, OrganizationAdmin)
 admin.site.register(Project, ProjectAdmin)
+admin.site.register(AccountVerification, AccountVerificationAdmin)

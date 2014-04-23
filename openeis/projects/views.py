@@ -1,8 +1,17 @@
 from contextlib import closing
+import posixpath
+import traceback
+
 from django.contrib.auth.decorators import user_passes_test
-from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.db import transaction
+from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.shortcuts import get_object_or_404
 
 from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework import decorators
 from rest_framework.decorators import action, link
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -31,6 +40,12 @@ class IsProjectOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.project.owner == request.user
 
+class IsAuthenticatedOrPost(permissions.BasePermission):
+    '''Restrict access to authenticated users or to POSTs.'''
+    def has_object_permission(self, request, view, obj):
+        print('is-authenticated-or-is-post')
+        return (request.method == 'POST') ^ (request.user is not None)
+
 
 class ProjectViewSet(viewsets.ModelViewSet):
     '''List all projects owned by the active user.'''
@@ -48,7 +63,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return user.projects.all()
 
-    @action(methods=['POST'], serializer_class=serializers.CreateFileSerializer)
+    @action(methods=['POST'],
+            serializer_class=serializers.CreateFileSerializer,
+            permission_classes=permission_classes)
     def add_file(self, request, *args, **kwargs):
         '''Always set the owning project when adding files.'''
         project = self.get_object()
@@ -157,3 +174,75 @@ class FileViewSet(mixins.ListModelMixin,
                     break
                 lines.append(line.decode('utf-8'))
         return Response(lines)
+
+
+class UserViewSet(mixins.ListModelMixin,
+                  mixins.RetrieveModelMixin,
+                  viewsets.GenericViewSet):
+    queryset = User.objects.filter(is_active=True)
+    serializer_class = serializers.MinimalUserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_fields = ('last_name', 'first_name', 'username')
+
+
+def send_traceback(fn):
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except Exception:
+            tb = traceback.format_exc()
+        response = HttpResponse(tb, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        response['Content-Type'] = 'text/plain'
+        return response
+    wrapper.__name__ = fn.__name__
+    wrapper.__doc__ = fn.__doc__
+    wrapper.__dict__ = fn.__dict__
+    return wrapper
+
+
+class AccountViewSet(mixins.RetrieveModelMixin,
+                     mixins.UpdateModelMixin,
+                     mixins.DestroyModelMixin,
+                     viewsets.GenericViewSet):
+    serializer_class = serializers.UserSerializer
+    permission_classes = (IsAuthenticatedOrPost,)
+
+    def get_object(self):
+        user = self.request.user
+        if user.pk is None:
+            raise Http404()
+        return user
+
+    def create(self, request, *args, **kwargs):
+        serializer = serializers.UserSerializer(data=request.DATA)
+        if serializer.is_valid():
+            user = serializer.object
+            user.is_active = False
+            with transaction.atomic():
+                user.save()
+                verify = models.AccountVerification(
+                        account=user, data={'verify': 'create'})
+                verify.save()
+            try:
+                send_mail('OpenEIS Account Creation Verification',
+                          request.build_absolute_uri(
+                              reverse('account-verify',
+                                  kwargs={'pk': verify.pk, 'code': verify.code})),
+                          'openeis@pnnl.gov', [user.email])
+            except Exception:
+                user.delete()
+                raise
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def verify(self, request, *args, **kwargs):
+        verify = get_object_or_404(models.AccountVerification,
+                                   pk=kwargs['pk'], code=kwargs['code'])
+        if verify.data.get('verify') == 'create':
+            user = verify.account
+            user.is_active = True
+            user.save()
+        verify.delete()
+        return HttpResponseRedirect('/')
+
