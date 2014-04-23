@@ -96,33 +96,7 @@ angular.module('openeis-ui.projects', [
     $scope.project = project;
     $scope.projectFiles = projectFiles;
 
-    $scope.upload = function (fileInput) {
-        angular.forEach(fileInput[0].files, function(file) {
-            $upload.upload({
-                url: API_URL + '/projects/' + project.id + '/add_file',
-                file: file,
-            }).then(function (response) {
-                ProjectFiles.head(response.data.id).then(function (headResponse) {
-                    if (headResponse.data.has_header) {
-                        headResponse.data.header = headResponse.data.rows.shift();
-                    }
-                    response.data.head = headResponse.data;
-                    $scope.openModal(response.data);
-                });
-
-                $scope.projectFiles.push(response.data);
-                fileInput.val('').triggerHandler('change');
-            });
-        });
-    };
-
-    $scope.deleteFile = function ($index) {
-        $scope.projectFiles[$index].$delete(function () {
-            $scope.projectFiles.splice($index, 1);
-        });
-    };
-
-    $scope.openModal = function (file) {
+    function openModal (file) {
         var modalInstance = $modal.open({
             templateUrl: 'partials/addfile.html',
             controller: 'FileModalCtrl',
@@ -137,6 +111,32 @@ angular.module('openeis-ui.projects', [
             console.log(response);
         }, function (rejection) {
             console.log(rejection);
+        });
+    }
+
+    $scope.upload = function (fileInput) {
+        angular.forEach(fileInput[0].files, function(file) {
+            $upload.upload({
+                url: API_URL + '/projects/' + project.id + '/add_file',
+                file: file,
+            }).then(function (response) {
+                ProjectFiles.head(response.data.id).then(function (headResponse) {
+                    if (headResponse.data.has_header) {
+                        headResponse.data.header = headResponse.data.rows.shift();
+                    }
+                    response.data.head = headResponse.data;
+                    openModal(response.data);
+                });
+
+                $scope.projectFiles.push(response.data);
+                fileInput.val('').triggerHandler('change');
+            });
+        });
+    };
+
+    $scope.deleteFile = function ($index) {
+        $scope.projectFiles[$index].$delete(function () {
+            $scope.projectFiles.splice($index, 1);
         });
     };
 })
