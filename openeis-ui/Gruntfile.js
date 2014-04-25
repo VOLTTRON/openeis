@@ -96,6 +96,12 @@ module.exports = function(grunt) {
       },
     },
 
+    focus: {
+      notest: {
+        exclude: ['karma'],
+      },
+    },
+
     watch: {
       grunt: { files: ['Gruntfile.js'] },
 
@@ -140,11 +146,13 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-concat');
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-focus');
   grunt.loadNpmTasks('grunt-karma');
   grunt.loadNpmTasks('grunt-ngmin');
   grunt.loadNpmTasks('grunt-sass');
   grunt.loadNpmTasks('grunt-sync');
 
   grunt.registerTask('build', ['clean', 'sass', 'sync', 'ngmin', 'ngtemplates', 'uglify', 'concat']);
+  grunt.registerTask('notest', ['build', 'focus:notest']);
   grunt.registerTask('default', ['karma:build:start', 'build', 'watch']);
 };
