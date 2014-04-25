@@ -17,9 +17,10 @@ module.exports = function(grunt) {
       build: {
         files : {
           '<%= buildDir %>/js/app.min.js': [
-            '<%= buildDir %>/js/angular.min.js',
-            '<%= buildDir %>/js/angular-*.min.js',
-            '<%= buildDir %>/js/mm-foundation-tpls.min.js',
+            'bower_components/angular/angular.min.js',
+            'bower_components/angular-*/angular-*.min.js',
+            'bower_components/ng-file-upload/angular-file-upload.min.js',
+            'bower_components/angular-foundation/mm-foundation-tpls.min.js',
             '<%= buildDir %>/js/app.min.js',
           ],
         }
@@ -80,16 +81,6 @@ module.exports = function(grunt) {
       build: {
         files: [
           { src: 'index.html', dest: '<%= buildDir %>/' },
-          {
-            expand: true,
-            flatten: true,
-            src: [
-              'bower_components/angular-foundation/mm-foundation-tpls.min.js',
-              'bower_components/ng-file-upload/angular-file-upload.min.js',
-              'bower_components/angular*/angular*.min.js',
-            ],
-            dest: '<%= buildDir %>/js/'
-          },
         ]
       }
     },
@@ -129,7 +120,7 @@ module.exports = function(grunt) {
 
       js: {
         files: ['js/*.js', '!js/*.spec.js'],
-        tasks: ['sync', 'ngmin', 'uglify', 'concat'],
+        tasks: ['ngmin', 'uglify', 'concat'],
       },
 
       karma: {
