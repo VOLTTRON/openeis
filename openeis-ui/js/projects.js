@@ -48,6 +48,9 @@ angular.module('openeis-ui.projects', [
     var resource = $resource(API_URL + '/files/:fileId', { fileId: '@id' });
 
     return {
+        get: function (fileId) {
+            return resource.get({ fileId: fileId }).$promise;
+        },
         query: function (projectId) {
             return resource.query({ project: projectId }).$promise;
         },
@@ -128,7 +131,10 @@ angular.module('openeis-ui.projects', [
                     openModal(response.data);
                 });
 
-                $scope.projectFiles.push(response.data);
+                ProjectFiles.get(response.data.id).then(function (response) {
+                    $scope.projectFiles.push(response);
+                });
+
                 fileInput.val('').triggerHandler('change');
             });
         });
