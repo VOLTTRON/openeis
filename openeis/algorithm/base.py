@@ -23,6 +23,11 @@ class InputDescriptor:
 
 class DriverBaseClass(metaclass=ABCMeta):
     
+    def __init__(self,inp=None,out=None,**kwargs):
+        super().__init__(**kwargs)
+        self.inp = inp
+        self.out = out
+    
     @classmethod
     @abstractmethod
     def required_input(cls):
@@ -39,7 +44,7 @@ class DriverBaseClass(metaclass=ABCMeta):
                 {
                     'OAT1':InputDescriptor('OutdoorAirTemperature','Hillside OAT'),
                     'OAT2':InputDescriptor('OutdoorAirTemperature','Roof OATs',minimum=3)
-                    'CFP1':InputDescriptor('CondenserFanPower','Roof OATs',minimum=3,maximum=None)
+                    'CFP1':InputDescriptor('CondenserFanPower','CFP Desc',minimum=3,maximum=None)
                 }
         """
     
@@ -70,5 +75,5 @@ class DriverBaseClass(metaclass=ABCMeta):
         """
     
     @abstractmethod
-    def run(self,inp,out):
+    def run(self):
         "runs algorithm"
