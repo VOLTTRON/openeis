@@ -95,26 +95,12 @@ angular.module('openeis-ui.projects', [
         });
     };
 })
-.controller('ProjectCtrl', function ($scope, project, projectFiles, $modal, $upload, API_URL, ProjectFiles) {
+.controller('ProjectCtrl', function ($scope, project, projectFiles, $upload, API_URL, ProjectFiles) {
     $scope.project = project;
     $scope.projectFiles = projectFiles;
 
     function openModal (file) {
-        var modalInstance = $modal.open({
-            templateUrl: 'partials/addfile.html',
-            controller: 'FileModalCtrl',
-            resolve: {
-                file: function () {
-                    return file;
-                },
-            },
-        });
-
-        modalInstance.result.then(function (response) {
-            console.log(response);
-        }, function (rejection) {
-            console.log(rejection);
-        });
+        console.log(file);
     }
 
     $scope.upload = function (fileInput) {
@@ -144,16 +130,5 @@ angular.module('openeis-ui.projects', [
         $scope.projectFiles[$index].$delete(function () {
             $scope.projectFiles.splice($index, 1);
         });
-    };
-})
-.controller('FileModalCtrl', function ($scope, $modalInstance, file) {
-    $scope.file = file;
-
-    $scope.ok = function () {
-        $modalInstance.close("Clicked OK.");
-    };
-
-    $scope.cancel = function () {
-        $modalInstance.dismiss("Cancelled.");
     };
 });
