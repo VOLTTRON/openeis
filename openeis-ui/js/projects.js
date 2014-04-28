@@ -1,10 +1,10 @@
 angular.module('openeis-ui.projects', [
-    'openeis-ui.file',
-    'ngResource', 'ngRoute', 'mm.foundation', 'angularFileUpload',
+    'openeis-ui.auth', 'openeis-ui.file',
+    'ngResource', 'angularFileUpload',
 ])
-.config(function ($routeProvider) {
-    $routeProvider
-        .when('/projects', {
+.config(function (authRouteProvider) {
+    authRouteProvider
+        .whenAuth('/projects', {
             controller: 'ProjectsCtrl',
             templateUrl: 'partials/projects.html',
             resolve: {
@@ -13,7 +13,7 @@ angular.module('openeis-ui.projects', [
                 }]
             },
         })
-        .when('/projects/:projectId', {
+        .whenAuth('/projects/:projectId', {
             controller: 'ProjectCtrl',
             templateUrl: 'partials/project.html',
             resolve: {
