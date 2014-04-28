@@ -184,6 +184,18 @@ nav {
 }
 
 .view {
+    &--account {
+        @extend %box;
+
+        form {
+            @extend %form--aligned;
+
+            .current-password {
+                @extend %animated;
+            }
+        }
+    }
+
     &--login {
         @extend %layout;
         padding-top: 150px;

@@ -27,6 +27,10 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         .whenAnon('/sign-up', {
             controller: 'SignUpCtrl',
             templateUrl: 'partials/signup.html',
+        })
+        .whenAuth('/account', {
+            controller: 'AccountCtrl',
+            templateUrl: 'partials/account.html',
         });
 })
 .service('Auth', function ($resource, API_URL, $q, ANON_HOME, AUTH_HOME, $location) {
@@ -147,6 +151,25 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
     $scope.signUp = function () {
         console.log($scope.form);
     };
+})
+.controller('AccountCtrl', function ($scope, Auth) {
+    $scope.form = {
+        changed: false,
+        submit: function () {
+            console.log($scope.account);
+        },
+    };
+
+    $scope.account = {
+        username: Auth.username(),
+        email: Auth.username() +'.email@example.com',
+    };
+
+    $scope.$watchCollection('account', function (newValue, oldValue) {
+        if (newValue !== oldValue) {
+            $scope.form.changed = true;
+        }
+    });
 })
 .controller('TopBarCtrl', function ($scope, Auth, $location, ANON_HOME) {
     $scope.username = Auth.username();
