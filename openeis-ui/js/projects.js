@@ -100,7 +100,10 @@ angular.module('openeis-ui.projects', [
     $scope.projectFiles = projectFiles;
 
     function openModal (file) {
-        console.log(file);
+        $scope.modal = {
+            show: true,
+            file: file,
+        };
     }
 
     $scope.upload = function (fileInput) {

@@ -128,23 +128,18 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
     };
 })
 .controller('LoginCtrl', function ($scope, $location, Auth, AUTH_HOME) {
-    $scope.form = {};
-    $scope.form.logIn = function () {
+    $scope.logIn = function () {
         Auth.logIn({
             username: $scope.form.username,
             password: $scope.form.password,
         }).then(function () {
             $location.url(AUTH_HOME);
         }, function (response) {
-            switch (response.status) {
-                case 403:
-                $scope.form.error = 'Authentication failed.';
-                break;
-
-                default:
-                $scope.form.error = 'Unknown error occurred.';
-            }
+            $scope.form.error = response.status;
         });
+    };
+    $scope.clearError = function () {
+        $scope.form.error = null;
     };
 })
 .controller('SignUpCtrl', function ($scope, $location, Auth, AUTH_HOME) {

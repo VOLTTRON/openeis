@@ -1,0 +1,56 @@
+%form--aligned {
+    label {
+        @extend %label--inline;
+        width: 6 * $inuit-base-spacing-unit;
+        text-align: right;
+    }
+
+    input {
+        width: 12 * $inuit-base-spacing-unit;
+    }
+
+    :not(label) + input {
+        display: block;
+        margin-top: halve($inuit-base-spacing-unit);
+        margin-left: 6.5 * $inuit-base-spacing-unit;
+    }
+
+    button:first-child,
+    :not(label) + button {
+        margin-left: 6.5 * $inuit-base-spacing-unit;
+    }
+}
+
+.label--inline,
+%label--inline {
+    display: inline-block;
+    line-height: 2 * $inuit-base-spacing-unit;
+    margin-right: halve($inuit-base-spacing-unit);
+    vertical-align: middle;
+
+    &:after {
+        content: ":";
+    }
+}
+
+.input--inline,
+%input--inline {
+    margin-right: halve($inuit-base-spacing-unit);
+}
+
+.panel,
+%panel {
+    border-radius: 3px;
+    border: 1px solid #ddd;
+    background-color: #f4f4f4;
+}
+
+.animated,
+%animated {
+    &.ng-animate {
+        -webkit-transition: 0.1s ease-out all;
+        transition: 0.1s ease-out all;
+    }
+    &.ng-enter, &.ng-leave.ng-leave-active { opacity: 0; }
+    &.ng-leave, &.ng-enter.ng-enter-active { opacity: 1; }
+}

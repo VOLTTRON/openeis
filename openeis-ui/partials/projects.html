@@ -1,18 +1,12 @@
 <ng-include src="'partials/topbar.html'"></ng-include>
-<div class="row" style="margin-top: 1em">
-    <div class="columns">
-        <ul class="breadcrumbs">
-            <li>Dashboard</li>
-        </ul>
-    </div>
-</div>
-<div class="row">
-    <div class="columns">
-        <h2>Dashboard</h2>
-    </div>
-</div>
-<div class="row" id="main">
-    <div class="columns">
+
+<div class="container">
+    <ul class="breadcrumbs">
+        <li>Projects</li>
+    </ul>
+
+    <div class="view view--projects">
+        <h2>Projects</h2>
         <ul ng-if="projects.length">
             <li ng-repeat="project in projects">
                 <a ng-href="projects/{{project.id}}">{{project.name}}</a>
@@ -21,8 +15,9 @@
             </li>
         </ul>
         <form ng-submit="newProject.create()">
-            <input type="text" placeholder="Name of new project" ng-model="newProject.name" required>
-            <button type="submit">Create new project</button>
+            <label>Create new project</label>
+            <input type="text" placeholder="Name" ng-model="newProject.name" required>
+            <button type="submit">Create</button>
         </form>
     </div>
 </div>

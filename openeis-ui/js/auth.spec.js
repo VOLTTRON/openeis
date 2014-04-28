@@ -182,39 +182,41 @@ describe('openeis-ui.auth', function () {
         });
 
         it('should define a function for logging in', function () {
-            expect(scope.form.logIn).toBeDefined();
+            expect(scope.logIn).toBeDefined();
         });
 
         it('should redirect to AUTH_HOME on successful login', function () {
-            scope.form.username = 'TestUser';
-            scope.form.password = 'testpassword';
+            scope.form = {
+                username: 'TestUser',
+                password: 'testpassword',
+            };
+
             $httpBackend.expectPOST('/api/auth').respond('{"username":"TestUser"}');
-            scope.form.logIn();
+            scope.logIn();
             $httpBackend.flush();
 
             expect($location.url).toHaveBeenCalledWith(AUTH_HOME);
         });
 
-        it('should display an error message for invalid credentials', function () {
-            scope.form.username = 'TestUser';
-            scope.form.password = 'testpassword';
+        it('should assign error statuses to form.error', function () {
+            scope.form = {
+                username: 'TestUser',
+                password: 'testpassword',
+            };
+
             $httpBackend.expectPOST('/api/auth').respond(403, '');
-            scope.form.logIn();
+            scope.logIn();
             $httpBackend.flush();
 
             expect($location.url).not.toHaveBeenCalled();
-            expect(scope.form.error).toEqual('Authentication failed.');
-        });
+            expect(scope.form.error).toEqual(403);
 
-        it('should display an error message for unrecognized responses from the API', function () {
-            scope.form.username = 'TestUser';
-            scope.form.password = 'testpassword';
             $httpBackend.expectPOST('/api/auth').respond(500, '');
-            scope.form.logIn();
+            scope.logIn();
             $httpBackend.flush();
 
             expect($location.url).not.toHaveBeenCalled();
-            expect(scope.form.error).toEqual('Unknown error occurred.');
+            expect(scope.form.error).toEqual(500);
         });
     });
 
