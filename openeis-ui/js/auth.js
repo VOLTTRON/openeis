@@ -28,6 +28,10 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
             controller: 'SignUpCtrl',
             templateUrl: 'partials/signup.html',
         })
+        .whenAnon('/recovery', {
+            controller: 'RecoveryCtrl',
+            templateUrl: 'partials/recovery.html',
+        })
         .whenAuth('/account', {
             controller: 'AccountCtrl',
             templateUrl: 'partials/account.html',
@@ -149,6 +153,12 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
 .controller('SignUpCtrl', function ($scope, $location, Auth, AUTH_HOME) {
     $scope.form = {};
     $scope.signUp = function () {
+        console.log($scope.form);
+    };
+})
+.controller('RecoveryCtrl', function ($scope, $location, Auth) {
+    $scope.form = {};
+    $scope.submit = function () {
         console.log($scope.form);
     };
 })
