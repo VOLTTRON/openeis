@@ -147,9 +147,11 @@ describe('openeis-ui.auth', function () {
         });
 
         describe('requireAnon method', function () {
+            var ANONYMOUS_PAGE = '/path/to/anonymous/page';
+
             it('should redirect authenticated users to AUTH_HOME', inject(function ($location) {
-                $location.url(LOGIN_PAGE);
-                expect($location.url()).toEqual(LOGIN_PAGE);
+                $location.url(ANONYMOUS_PAGE);
+                expect($location.url()).toEqual(ANONYMOUS_PAGE);
 
                 $httpBackend.expectGET('/api/auth').respond('{"username":"TestUser"}');
                 Auth.requireAnon();
@@ -157,11 +159,23 @@ describe('openeis-ui.auth', function () {
 
                 expect($location.url()).toEqual(AUTH_HOME);
             }));
+
+            it('should not redirect anonymous users', inject(function ($location) {
+                $location.url(ANONYMOUS_PAGE);
+                expect($location.url()).toEqual(ANONYMOUS_PAGE);
+
+                $httpBackend.expectGET('/api/auth').respond(403, '');
+                Auth.requireAnon();
+                $httpBackend.flush();
+
+                expect($location.url()).toEqual(ANONYMOUS_PAGE);
+            }));
         });
 
         describe('requireAuth method', function () {
+            var RESTRICTED_PAGE = '/path/to/restricted/page';
+
             it('should redirect anonymous users to LOGIN_PAGE and redirect back after login', inject(function ($location) {
-                var RESTRICTED_PAGE = '/path/to/restricted/page';
                 $location.url(RESTRICTED_PAGE);
                 expect($location.url()).toEqual(RESTRICTED_PAGE);
 
@@ -173,6 +187,17 @@ describe('openeis-ui.auth', function () {
 
                 $httpBackend.expectPOST('/api/auth').respond('{"username":"TestUser"}');
                 Auth.logIn({ username: 'TestUser', password: 'testpassword' });
+                $httpBackend.flush();
+
+                expect($location.url()).toEqual(RESTRICTED_PAGE);
+            }));
+
+            it('should not redirect authenticated users', inject(function ($location) {
+                $location.url(RESTRICTED_PAGE);
+                expect($location.url()).toEqual(RESTRICTED_PAGE);
+
+                $httpBackend.expectGET('/api/auth').respond('{"username":"TestUser"}');
+                Auth.requireAuth();
                 $httpBackend.flush();
 
                 expect($location.url()).toEqual(RESTRICTED_PAGE);
