@@ -44,7 +44,7 @@ router = SingleObjectRouter(trailing_slash=False)
 router.register(r'account', views.AccountViewSet, base_name='account')
 api_urls.extend(router.urls)
 api_urls.append(
-    url(r'^account/verify/(?P<pk>\d+)/(?P<code>[a-zA-Z0-9]{50})$',
+    url(r'^account/verify/(?P<code>[a-zA-Z0-9]{50})$',
         views.AccountViewSet.as_view({'get': 'verify'}), name='account-verify'))
 
 urlpatterns = patterns('openeis.projects.views',

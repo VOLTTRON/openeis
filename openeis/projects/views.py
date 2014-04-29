@@ -5,7 +5,6 @@ import traceback
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
 from django.db import transaction
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
@@ -201,12 +200,17 @@ def send_traceback(fn):
     return wrapper
 
 
-class AccountViewSet(mixins.RetrieveModelMixin,
+class AccountViewSet(mixins.CreateModelMixin,
+                     mixins.RetrieveModelMixin,
                      mixins.UpdateModelMixin,
                      mixins.DestroyModelMixin,
                      viewsets.GenericViewSet):
-    serializer_class = serializers.UserSerializer
     permission_classes = (IsAuthenticatedOrPost,)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return serializers.CreateUserSerializer
+        return serializers.UserSerializer
 
     def get_object(self):
         user = self.request.user
@@ -214,35 +218,31 @@ class AccountViewSet(mixins.RetrieveModelMixin,
             raise Http404()
         return user
 
-    def create(self, request, *args, **kwargs):
-        serializer = serializers.UserSerializer(data=request.DATA)
-        if serializer.is_valid():
-            user = serializer.object
+    def pre_save(self, user):
+        if self.request.method == 'POST':
             user.is_active = False
-            with transaction.atomic():
-                user.save()
+        user.full_clean()
+
+    def post_save(self, user, created=False):
+        if created:
+            try:
                 verify = models.AccountVerification(
                         account=user, data={'verify': 'create'})
                 verify.save()
-            try:
-                send_mail('OpenEIS Account Creation Verification',
-                          request.build_absolute_uri(
-                              reverse('account-verify',
-                                  kwargs={'pk': verify.pk, 'code': verify.code})),
-                          'openeis@pnnl.gov', [user.email])
+                user.email_user('OpenEIS Account Creation Verification',
+                        self.request.build_absolute_uri(reverse('account-verify',
+                                kwargs={'code': verify.code})), 'openeis@pnnl.gov')
             except Exception:
                 user.delete()
                 raise
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return
 
-    def verify(self, request, *args, **kwargs):
-        verify = get_object_or_404(models.AccountVerification,
-                                   pk=kwargs['pk'], code=kwargs['code'])
+    def verify(self, request, *args, code=None, **kwargs):
+        verify = get_object_or_404(models.AccountVerification, code=code)
         if verify.data.get('verify') == 'create':
             user = verify.account
             user.is_active = True
             user.save()
         verify.delete()
+        # XXX: Respond with success page or JS depending on Accept header
         return HttpResponseRedirect('/')
-

@@ -9,6 +9,13 @@ from django.db import models
 from .protectedmedia import ProtectedFileSystemStorage
 
 
+def patch_user():
+    email = User._meta.get_field('email')
+    email.__dict__['blank'] = False
+    email._unique = True
+patch_user()
+
+
 class Organization(models.Model):
     '''Group and manage users by organization.'''
 
@@ -98,11 +105,15 @@ class JSONField(models.TextField, metaclass=models.SubfieldBase):
 _CODE_CHOICES = string.ascii_letters + string.digits
 
 def _verification_code():
-    return ''.join(random.choice(_CODE_CHOICES) for i in range(50))
+    while True:
+        code = ''.join(random.choice(_CODE_CHOICES) for i in range(50))
+        if not AccountVerification.objects.filter(code=code).exists():
+            return code
 
 
 class AccountVerification(models.Model):
     account = models.ForeignKey(User)
     initiated = models.DateTimeField(auto_now_add=True)
-    code = models.CharField(max_length=50, default=_verification_code)
+    code = models.CharField(max_length=50, unique=True,
+                            default=_verification_code)
     data = JSONField(blank=True)

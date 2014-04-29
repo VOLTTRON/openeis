@@ -9,7 +9,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'^', include(projects_urls)),
-    url(r'^admin/', include(admin.site.urls)),
+    url(r'^admin', include(admin.site.urls)),
     url(r'^api/auth$', 'openeis.server.views.auth'),
 )
 

@@ -147,14 +147,18 @@ class MinimalUserSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(required=True)
-
     class Meta:
         model = User
         fields = ('id', 'username', 'email', 'last_name', 'first_name',
-                  'date_joined', 'last_login', 'groups', 'password')
-        read_only_fields = ('last_login', 'date_joined', 'groups')
-        write_only_fields = ('password',)
+                  'date_joined', 'last_login', 'groups')
+        read_only_fields = ('username', 'last_login', 'date_joined', 'groups')
+
+
+class CreateUserSerializer(UserSerializer):
+    password = serializers.CharField(required=True, write_only=True)
+
+    class Meta(UserSerializer.Meta):
+        read_only_fields = UserSerializer.Meta.read_only_fields[1:]
 
     def restore_object(self, attrs, instance=None):
         password = attrs.pop('password', None)
