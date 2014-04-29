@@ -1,13 +1,21 @@
-<div class="row" style="margin-top: 200px">
-    <div class="small-8 columns">
-        <h1 style="font-size: 7.5rem; line-height: 1.5">OpenEIS</h1>
-    </div>
-    <div class="small-4 columns">
-        <form class="panel radius" ng-submit="form.logIn()">
-            <input type="text" placeholder="Username" required ng-model="form.username" ng-change="form.error = false">
-            <input type="password" placeholder="Password" required ng-model="form.password" ng-change="form.error = false">
-            <button type="submit">Log in</button>
-            <p class="alert-box warning radius" ng-if="form.error">{{form.error}}</p>
+<div class="container">
+    <div class="view view--login">
+        <h1>OpenEIS</h1>
+        <form ng-submit="logIn()">
+            <p>
+                <input type="text" placeholder="Username" ng-required="true" ng-model="form.username" ng-change="clearError()">
+            </p>
+            <p>
+                <input type="password" placeholder="Password" ng-required="true" ng-model="form.password" ng-change="clearError()">
+            </p>
+            <p>
+                <button type="submit">Log in</button>
+                <a href="sign-up">Create new account</a>
+            </p>
+            <p class="alert alert--error" ng-if="form.error" ng-switch="form.error">
+                <span ng-switch-when="403">Authentication failed.</span>
+                <span ng-switch-default>Unknown error occurred. ({{form.error}})</span>
+            </p>
         </form>
     </div>
 </div>

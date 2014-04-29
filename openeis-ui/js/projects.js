@@ -1,10 +1,10 @@
 angular.module('openeis-ui.projects', [
-    'openeis-ui.file',
-    'ngResource', 'ngRoute', 'mm.foundation', 'angularFileUpload',
+    'openeis-ui.auth', 'openeis-ui.file',
+    'ngResource', 'angularFileUpload',
 ])
-.config(function ($routeProvider) {
-    $routeProvider
-        .when('/projects', {
+.config(function (authRouteProvider) {
+    authRouteProvider
+        .whenAuth('/projects', {
             controller: 'ProjectsCtrl',
             templateUrl: 'partials/projects.html',
             resolve: {
@@ -13,7 +13,7 @@ angular.module('openeis-ui.projects', [
                 }]
             },
         })
-        .when('/projects/:projectId', {
+        .whenAuth('/projects/:projectId', {
             controller: 'ProjectCtrl',
             templateUrl: 'partials/project.html',
             resolve: {
@@ -48,6 +48,9 @@ angular.module('openeis-ui.projects', [
     var resource = $resource(API_URL + '/files/:fileId', { fileId: '@id' });
 
     return {
+        get: function (fileId) {
+            return resource.get({ fileId: fileId }).$promise;
+        },
         query: function (projectId) {
             return resource.query({ project: projectId }).$promise;
         },
@@ -92,26 +95,15 @@ angular.module('openeis-ui.projects', [
         });
     };
 })
-.controller('ProjectCtrl', function ($scope, project, projectFiles, $modal, $upload, API_URL, ProjectFiles) {
+.controller('ProjectCtrl', function ($scope, project, projectFiles, $upload, API_URL, ProjectFiles) {
     $scope.project = project;
     $scope.projectFiles = projectFiles;
 
     function openModal (file) {
-        var modalInstance = $modal.open({
-            templateUrl: 'partials/addfile.html',
-            controller: 'FileModalCtrl',
-            resolve: {
-                file: function () {
-                    return file;
-                },
-            },
-        });
-
-        modalInstance.result.then(function (response) {
-            console.log(response);
-        }, function (rejection) {
-            console.log(rejection);
-        });
+        $scope.modal = {
+            show: true,
+            file: file,
+        };
     }
 
     $scope.upload = function (fileInput) {
@@ -128,7 +120,10 @@ angular.module('openeis-ui.projects', [
                     openModal(response.data);
                 });
 
-                $scope.projectFiles.push(response.data);
+                ProjectFiles.get(response.data.id).then(function (response) {
+                    $scope.projectFiles.push(response);
+                });
+
                 fileInput.val('').triggerHandler('change');
             });
         });
@@ -138,16 +133,5 @@ angular.module('openeis-ui.projects', [
         $scope.projectFiles[$index].$delete(function () {
             $scope.projectFiles.splice($index, 1);
         });
-    };
-})
-.controller('FileModalCtrl', function ($scope, $modalInstance, file) {
-    $scope.file = file;
-
-    $scope.ok = function () {
-        $modalInstance.close("Clicked OK.");
-    };
-
-    $scope.cancel = function () {
-        $modalInstance.dismiss("Cancelled.");
     };
 });

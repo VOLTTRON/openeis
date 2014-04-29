@@ -35,14 +35,10 @@ describe('openeis-ui.projects', function () {
             });
         });
 
-        it('should define get, query, and create methods', function () {
-            expect(Projects.get).toBeDefined();
-            expect(Projects.query).toBeDefined();
-            expect(Projects.create).toBeDefined();
-        });
-
         it('should get projects by project ID that can be saved and deleted', function () {
             var project;
+
+            expect(Projects.get).toBeDefined();
 
             $httpBackend.expectGET(API_URL + '/projects/' + testProjects[0].id).respond(angular.toJson(testProjects[0]));
             Projects.get(testProjects[0].id).then(function (response) {
@@ -58,6 +54,8 @@ describe('openeis-ui.projects', function () {
 
         it('should query for all projects', function () {
             var projects;
+
+            expect(Projects.query).toBeDefined();
 
             $httpBackend.expectGET(API_URL + '/projects').respond(angular.toJson(testProjects));
             Projects.query().then(function (response) {
@@ -76,6 +74,8 @@ describe('openeis-ui.projects', function () {
         it('should create new projects', function () {
             var project,
                 newProject = { name: 'New project' };
+
+            expect(Projects.create).toBeDefined();
 
             $httpBackend.expectPOST(API_URL + '/projects').respond(angular.toJson(newProject));
             Projects.create(newProject).then(function (response) {
@@ -101,13 +101,27 @@ describe('openeis-ui.projects', function () {
             });
         });
 
-        it('should define query and head methods', function () {
-            expect(ProjectFiles.query).toBeDefined();
-            expect(ProjectFiles.head).toBeDefined();
+        it('should get files by file ID that can be saved and deleted', function () {
+            var file;
+
+            expect(ProjectFiles.get).toBeDefined();
+
+            $httpBackend.expectGET(API_URL + '/files/' + testFiles[0].id).respond(angular.toJson(testFiles[0]));
+            ProjectFiles.get(testFiles[0].id).then(function (response) {
+                file = response;
+            });
+            $httpBackend.flush();
+
+            expect(file.id).toEqual(testFiles[0].id);
+            expect(file.file).toEqual(testFiles[0].file);
+            expect(file.$save).toBeDefined();
+            expect(file.$delete).toBeDefined();
         });
 
         it('should query for all files in a project by project ID', function () {
             var files;
+
+            expect(ProjectFiles.query).toBeDefined();
 
             $httpBackend.expectGET(API_URL + '/files?project=1').respond(angular.toJson(testFiles));
             ProjectFiles.query(1).then(function (response) {
@@ -134,6 +148,8 @@ describe('openeis-ui.projects', function () {
                         [ '3-1', '3-2', '3-3' ],
                     ],
                 };
+
+            expect(ProjectFiles.head).toBeDefined();
 
             $httpBackend.expectGET(API_URL + '/files/1/top').respond(angular.toJson(testHead));
             ProjectFiles.head(1).then(function (response) {

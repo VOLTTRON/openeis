@@ -1,14 +1,12 @@
 <ng-include src="'partials/topbar.html'"></ng-include>
-<div class="row" style="margin-top: 1em">
-    <div class="columns">
-        <ul class="breadcrumbs">
-            <li><a href="projects">Dashboard</a></li>
-            <li>{{project.name}}</li>
-        </ul>
-    </div>
-</div>
-<div class="row">
-    <div class="columns">
+
+<div class="container">
+    <ul class="breadcrumbs">
+        <li><a href="projects">Projects</a></li>
+        <li>{{project.name}}</li>
+    </ul>
+
+    <div class="view view--project">
         <h2>{{project.name}}</h2>
         <div ng-if="projectFiles.length">
             <h3>Project files</h3>
@@ -31,7 +29,26 @@
                 </tbody>
             </table>
         </div>
-        <h3>Add file</h3>
+        <label>Upload file</label>
         <file-upload file-upload-click="upload(fileInput)"></file-upload>
+    </div>
+</div>
+
+<div class="modal" ng-show="modal.show">
+    <div class="modal__dialog">
+        <h4>{{modal.file.file}}</h4>
+        <table>
+            <thead ng-if="modal.file.head.header.length">
+                <tr>
+                    <th ng-repeat="header in modal.file.head.header">{{header}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="row in modal.file.head.rows">
+                    <td ng-repeat="col in row">{{col}}</td>
+                </tr>
+            </tbody>
+        </table>
+        <button ng-click="modal.show = false">Close</button>
     </div>
 </div>

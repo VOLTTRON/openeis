@@ -27,8 +27,4 @@ describe('openeis-ui', function () {
     it('should define the constant AUTH_HOME', inject(function (AUTH_HOME) {
         expect(AUTH_HOME).toBeDefined();
     }));
-
-    it('should call Auth.relocate on run', function () {
-        expect(Auth.relocate).toHaveBeenCalled();
-    });
 });

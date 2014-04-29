@@ -1,13 +1,17 @@
-<div class="contain-to-grid" ng-controller="TopBarCtrl">
-    <nav class="top-bar">
-        <ul class="title-area">
-            <li class="name"><h1><a href="projects">OpenEIS</a></h1></li>
+<div class="topbar" ng-controller="TopBarCtrl">
+    <nav class="container">
+        <h1><a href="projects">OpenEIS</a></h1>
+        <ul>
+            <li class="divider"></li>
+            <li><a href="projects">Projects</a></li>
+            <li class="divider"></li>
+            <li>
+                <a href="account">Account: <strong>{{username}}</strong></a>
+                <ul class="dropdown">
+                    <li><a ng-click="logOut()">Log out</a></li>
+                </ul>
+            </li>
+            <li class="divider"></li>
         </ul>
-        <section class="top-bar-section">
-            <ul class="right">
-                <li><a>Hello, {{username}}!</a></li>
-                <li class="has-form"><a class="button" ng-click="logOut()">Log out</a></li>
-            </ul>
-        </section>
     </nav>
-</div>
+</nav>
