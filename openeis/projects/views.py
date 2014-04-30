@@ -177,9 +177,7 @@ class FileViewSet(mixins.ListModelMixin,
         return Response(lines)
 
 
-class UserViewSet(mixins.ListModelMixin,
-                  mixins.RetrieveModelMixin,
-                  viewsets.GenericViewSet):
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
     '''List active users.'''
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.MinimalUserSerializer
