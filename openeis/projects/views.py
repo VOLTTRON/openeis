@@ -272,9 +272,14 @@ class AccountViewSet(mixins.CreateModelMixin,
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['POST'],
-            serializer_class=serializers.ResetRequestSerializer)
-    def request_reset(self, request, *args, **kwargs):
+    @action(methods=['POST', 'PUT', 'DELETE'])
+    def password_reset(self, request, *args, **kwargs):
+        handler = {'POST': self._request_reset,
+                   'PUT': self._reset_password,
+                   'DELETE': self._clear_reset}[request.method]
+        return handler(request, *args, **kwargs)
+
+    def _request_reset(self, request, *args, **kwargs):
         '''Request password reset.'''
         serializer = serializers.ResetRequestSerializer(data=request.DATA)
         if serializer.is_valid():
@@ -294,9 +299,7 @@ class AccountViewSet(mixins.CreateModelMixin,
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['POST'],
-            serializer_class=serializers.PasswordResetSerializer)
-    def reset_password(self, request, *args, **kwargs):
+    def _reset_password(self, request, *args, **kwargs):
         '''Reset user password.'''
         serializer = serializers.PasswordResetSerializer(data=request.DATA)
         if serializer.is_valid():
@@ -310,9 +313,7 @@ class AccountViewSet(mixins.CreateModelMixin,
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(methods=['POST'],
-            permission_classes=(permissions.IsAuthenticated,))
-    def clear_reset(self, request, *args, **kwargs):
+    def _clear_reset(self, request, *args, **kwargs):
         '''Clear password reset request.'''
         user = self.get_object()
         models.AccountVerification.objects.filter(
