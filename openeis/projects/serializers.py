@@ -208,3 +208,12 @@ class PasswordResetSerializer(serializers.Serializer):
         return (attrs.get('username', instance and instance[0]),
                 attrs.get('code', instance and instance[1]),
                 attrs.get('password', instance and instance[2]))
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def restore_object(self, attrs, instance=None):
+        return (attrs.get('username', instance and instance[0]),
+                attrs.get('password', instance and instance[1]))

@@ -2,6 +2,7 @@ from contextlib import closing
 import posixpath
 import traceback
 
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
@@ -43,8 +44,8 @@ class IsProjectOwner(permissions.BasePermission):
 class IsAuthenticatedOrPost(permissions.BasePermission):
     '''Restrict access to authenticated users or to POSTs.'''
     def has_object_permission(self, request, view, obj):
-        print('is-authenticated-or-is-post')
-        return (request.method == 'POST') ^ (request.user is not None)
+        return ((request.method == 'POST') ^
+                (request.user and request.user.pk is not None))
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -204,6 +205,7 @@ class AccountViewSet(mixins.CreateModelMixin,
     def get_object(self):
         '''Operate on currently logged in user or raise 404 error.'''
         user = self.request.user
+        self.check_object_permissions(self.request, user)
         if user.pk is None:
             raise Http404()
         return user
@@ -316,3 +318,24 @@ class AccountViewSet(mixins.CreateModelMixin,
         models.AccountVerification.objects.filter(
                 account=user, what='password-reset').delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(methods=['POST', 'DELETE'],
+            serializer_class=serializers.LoginSerializer)
+    def login(self, request, *args, **kwargs):
+        '''Create or delete cookie-based session.'''
+        if request.method == 'DELETE':
+            logout(request)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = serializers.LoginSerializer(data=request.DATA)
+        if serializer.is_valid():
+            username, password = serializer.object
+            user = authenticate(username=username, password=password)
+            if user is not None:
+                if user.is_active:
+                    login(request, user)
+                    return Response(status=status.HTTP_204_NO_CONTENT)
+                return Response({'detail': 'Account is disabled.'},
+                                status=status.HTTP_403_FORBIDDEN)
+            return Response({'detail': 'Invalid username/password.'},
+                            status=status.HTTP_403_FORBIDDEN)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
