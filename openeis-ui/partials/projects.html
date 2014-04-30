@@ -1,22 +1,23 @@
-<ng-include src="'/partials/topbar.html'"></ng-include>
-<div class="row" style="margin-top: 1em">
-    <div class="columns">
-        <ul class="breadcrumbs">
-            <li>Dashboard</li>
-        </ul>
-    </div>
-</div>
-<div class="row">
-    <div class="columns">
-        <h2>Dashboard</h2>
-    </div>
-</div>
-<div class="row" id="main">
-    <div class="columns">
-        <ul ng-if="projects">
+<ng-include src="'partials/topbar.html'"></ng-include>
+
+<div class="container">
+    <ul class="breadcrumbs">
+        <li>Projects</li>
+    </ul>
+
+    <div class="view view--projects">
+        <h2>Projects</h2>
+        <ul ng-if="projects.length">
             <li ng-repeat="project in projects">
-                <a ng-href="/projects/{{project.id}}">{{project.name}}</a>
+                <a ng-href="projects/{{project.id}}">{{project.name}}</a>
+                &mdash; <a ng-click="renameProject($index)">Rename</a>
+                &mdash; <a ng-click="deleteProject($index)">Delete</a>
             </li>
         </ul>
+        <form ng-submit="newProject.create()">
+            <label>Create new project</label>
+            <input type="text" placeholder="Name" ng-model="newProject.name" required>
+            <button type="submit">Create</button>
+        </form>
     </div>
 </div>

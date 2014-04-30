@@ -1,13 +1,24 @@
 <!doctype html>
 <html lang="en" ng-app="openeis-ui">
 <head>
+    <!--
+    If application will not be served at the root level, set base href to the
+    path to the application. For example, if application is located at
+
+        https://example.com/openeis/
+
+    then use
+
+        <base href="/openeis/">
+    -->
+    <base href="/">
     <meta charset="utf-8">
     <meta name="description" content="OpenEIS building energy analysis system.">
     <title>OpenEIS</title>
-    <link rel="stylesheet" href="/css/app.css">
+    <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
     <div ng-view></div>
-    <script src="/js/app.min.js"></script>
+    <script src="js/app.min.js"></script>
 </body>
 </html>

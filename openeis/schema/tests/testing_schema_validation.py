@@ -14,24 +14,14 @@ from jsonschema import validate, RefResolver, Draft4Validator
 import sys
 import os
 import copy
-SITES = 'sites'
-SITE_NAME = 'site_name'
-SENSORS = 'sensors'
-SENSOR_NAME = 'sensor_name'
-SENSOR_TYPE = 'sensor_type'
-SENSOR_UNIT_TYPE = 'unit_type'
-BUILDINGS = 'buildings'
-BUILDING_NAME = 'building_name'
-DATA_TYPE = "data_type"
-SYSTEMS = "systems"
-SYSTEM_NAME = "system_name"
-SYSTEM_TYPE = "system_type"
+from schema.schema import BUILDING_NAME, BUILDINGS, DATA_TYPE, SENSOR_NAME, SENSOR_TYPE, SENSOR_UNIT_TYPE, SITE_NAME, SITES, SENSORS, SYSTEM_NAME, SYSTEM_TYPE, SYSTEMS
 
 class SchemaTestCase(unittest.TestCase):
 
     # good_* are instances that pass the schema
     good_site = None
     good_building = None
+    
     
     def setUp(self):
         # Provide different levels to test schema validation.  The below example shows

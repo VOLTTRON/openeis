@@ -1,7 +1,13 @@
+import json
 import posixpath
+import random
+import string
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes import generic
 
 from .protectedmedia import ProtectedFileSystemStorage
 
@@ -62,3 +68,129 @@ class DataFile(models.Model):
 
     def __str__(self):
         return self.file.name
+
+
+class JSONString(str):
+    pass
+
+
+class JSONField(models.TextField, metaclass=models.SubfieldBase):
+
+    description = 'JSON encoded object'
+
+    def to_python(self, value):
+        if not value:
+            return None
+        if not isinstance(value, str) or isinstance(value, JSONString):
+            return value
+        try:
+            result = json.loads(value)
+        except ValueError:
+            raise models.ValidationError('Invalid JSON data')
+        if isinstance(result, str):
+            return JSONString(result)
+        return result
+
+    def get_prep_value(self, value):
+        try:
+            return json.dumps(value, separators=(',', ':'))
+        except TypeError:
+            raise models.ValidationError('Cannot serialize object to JSON')
+
+
+_CODE_CHOICES = string.ascii_letters + string.digits
+
+def _verification_code():
+    return ''.join(random.choice(_CODE_CHOICES) for i in range(50))
+
+
+class AccountVerification(models.Model):
+    account = models.ForeignKey(User)
+    initiated = models.DateTimeField(auto_now_add=True)
+    code = models.CharField(max_length=50, unique=True,
+                            default=_verification_code)
+    what = models.CharField(max_length=20)
+    data = JSONField(blank=True)
+
+
+class Address(models.Model):
+    "An address that will "
+    street_address = models.CharField(max_length=50)
+    city = models.CharField(max_length=50)
+    state = models.CharField(max_length=50)
+    zip_code = models.CharField(max_length=10)    
+
+
+class UnitType(models.Model):
+    grouping = models.CharField(max_length=50)
+    key = models.CharField(max_length=50)
+    value = models.CharField(max_length=50)
+    other = models.CharField(max_length=50)
+    
+        
+class Site(models.Model):
+    '''Site specific data.'''
+    site_name = models.CharField(max_length=50)
+    site_address = models.ForeignKey(Address)
+    
+    #buildings = models.ManyToOneRel(field, to, field_name, related_name, limit_choices_to, parent_link, on_delete, related_query_name)
+    
+#     def validate(self):
+#         "This function raises ValidationError if any of the model data is invalid"
+#         
+#         if not hasattr(self, 'site_name'):
+#             raise ValidationError("Something doesn't exist")
+#        
+
+
+class Building(models.Model):
+    building_name = models.CharField(max_length=50)
+    site = models.ForeignKey(Site, related_name='sites')    
+
+    
+class SystemType(models.Model):
+    "Specifies the classification of a specific system i.e. RTU"
+    system_name = models.CharField(max_length=50)
+    system_type = models.CharField(max_length=50)
+
+
+class System(models.Model):
+    system_name = models.CharField(max_length=50)
+    system_type = models.ForeignKey(SystemType)
+
+
+# class SubSystem(models.Model):
+#     parent = models.ForeignKey(System)
+    
+
+class SensorType(models.Model):
+    sensor_type_name = models.CharField(max_length=50)
+    unit_type = models.ForeignKey(UnitType)
+        
+    
+class Sensor(models.Model):
+    
+    # See for details about Generic Relations that we are dealing with here
+    # for the first time.
+    #
+    # The following three fields allow the parent to be one of Site,
+    # Buildng, or System.
+    content_type = models.ForeignKey(ContentType, null=True)
+    object_id = models.PositiveIntegerField()
+    parent_object = generic.GenericForeignKey('content_type', 'object_id')
+    
+    sensor_type = models.ForeignKey(SensorType)
+    
+    # https://docs.djangoproject.com/en/dev/topics/db/models/#abstract-base-classes
+    # Abstract becaus we have common information but the value is going to be of a different
+    # type between the classes.
+    class Meta:
+        abstract=True
+
+    
+class BoolSensor(Sensor):
+    value = models.BooleanField(default=False)
+
+
+class FloatSensor(Sensor):
+    value = models.FloatField()

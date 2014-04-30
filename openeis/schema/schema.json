@@ -80,6 +80,39 @@
 			}		
 		},
 		
+		"rtu": {
+			"allOf": [ { "$ref": "#/definitions/system" },
+
+   
+			"properties": {
+				"type": "array",
+					"items": [
+						"OutdoorAirTemperature",
+						"OutdoorAirRelativeHumidity",
+						"MixedAirTemperature",
+						"MixedAirRelativeHumidity",
+						"ReturnAirTemperature",
+						"ReturnAirRelativeHumidity",
+						"DischargeAirTemperature",
+						"DischargeAirRelativeHumidity",
+						"FirstStageCooling",
+						"SecondStageCooling",
+						"FirstStageHeating",
+						"SecondStageHeating",
+						"TotalPower",
+						"SupplyFanPower",
+						"CondenserFanPower",
+						"OutdoorDamperSignal",
+						"EconomizerMode",
+						"OccupancyMode",
+						"ZoneSetpoint",
+						"ZoneTemperature",
+						"SupplyFanSpeed"
+					]
+					
+			}		
+		},
+		
 		"subsystem": {
 			"type": "object",
 			"required":["sytem_name", "system_type"],
@@ -88,6 +121,32 @@
 				"system_type": {"type": "string"}
 			}
 		},
+		
+		"chiller": {
+			"allOf": [{"$ref": "#/definitions/system"}],
+			"properties":{
+				"subsystem": {
+					"enum": [
+						"pump","cooling_tower"
+					]
+				} 			
+			}
+		},
+		
+		"pump": {
+			"allOf": [{"$ref": "#/definitions/subsystem"}],
+			"properties":{
+				
+			}
+		},
+		"cooling_tower": {
+			"allOf": [{"$ref": "#/definitions/subsystem"}],
+			"properties":{
+				
+			}
+		},
+		
+		
 		
 		"sensor": {
 			"type": "object",

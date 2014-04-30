@@ -37,11 +37,11 @@ def find_management_module(app_name):
             return mod.management.__path__[0]
         except (AttributeError, ImportError):
             raise e
-# Uncomment the following line to enable discovery of management
-# commands in namespace packages. This has the side effect of loading
-# each module during discovery which is avoided by the original
-# function.
-#core_management.find_management_module = find_management_module
+
+# The following line to enables discovery of management commands in
+# namespace packages. This has the side effect of loading each module
+# during discovery which is avoided by the original function.
+core_management.find_management_module = find_management_module
 
 
 def main():

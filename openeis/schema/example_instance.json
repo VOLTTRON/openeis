@@ -1,4 +1,51 @@
 {
+    "sites": [
+        {
+            "name": "PNNL Main Campus",
+            "address": {
+                "street_address": "902 Battelle Blvd",
+                "city": "Richland",
+                "zip_code": "99352"
+            },
+            "sensors": [
+                {
+                    "name": "OA1",
+                    "units": "fahrenheit,°F",
+                    "sensor_type": "OutdoorAirTemperature"
+                }
+            ],
+            "buildings": [
+                {
+                    "name": "ISB1",
+                    "sensors": [
+                        {
+                            "name": "OutdoorAirTemperature",
+                            "units": "fahrenheit,°F",
+                            "sensor_type": "OutdoorAirTemperature"
+                        },
+                        {
+                            "name": "OutdoorAirRelativeHumidity",
+                            "units": "percent, %",
+                            "sensor_type": "OutdoorAirRelativeHumidity"
+                        },
+                        {
+                            "name": "WboleBuildingElectricity",
+                            "units": "energy, kWh",
+                            "sensor_type": "WboleBuildingElectricity"
+                        },
+                        {
+                            "name": "WholeBuildingGas",
+                            "units": "energy, cubic_feet_natural_gas, ccf",
+                            "sensor_type": "WholeBuildingGas"
+                        }
+                    ],
+                    "systems": [
+                        {
+                            "system_name": "RTU_1",
+                            "system_type": "RTU"
+                            "sensors": [
+                            
+                            {
     "CondenserFanPower": {
         "Maximum": "",
         "Minimum": "",
@@ -167,4 +214,21 @@
         "sensor_type": "ZoneTemperature",
         "unit_type": "temperature"
     }
+                            ]
+                        },
+                        {
+                            "system_name": "Chiller_1",
+                            "system_type": "chiller",
+                            "subsystems": [
+                                {
+                                    "system_name": "Pump_1",
+                                    "system_type": "pump"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
 }

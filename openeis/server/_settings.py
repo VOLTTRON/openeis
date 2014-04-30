@@ -48,6 +48,7 @@ INSTALLED_APPS = (
     'openeis.projects',
     'rest_framework',
     'rest_framework_swagger',
+    'django_nose',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -106,7 +107,11 @@ TEMPLATE_DIRS = (
     posixpath.join(POSIX_BASE_DIR, "templates"),
 )
 
+# Setup of django_nose based upon readme at https://github.com/django-nose/django-nose
+TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+
 PROTECTED_MEDIA_URL = '/files/'
 PROTECTED_MEDIA_ROOT = os.path.join(DATA_DIR, 'files')
 PROTECTED_MEDIA_METHOD = 'direct' # 'X-Sendfile', 'X-Accel-Redirect', 'direct'
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

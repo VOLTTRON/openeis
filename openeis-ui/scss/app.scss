@@ -1,62 +1,264 @@
-@import "normalize";
+// Import types in the following order:
+//     Settings -- Sass vars, etc.
+//     Tools -- Functions and mixins.
+//     Generic -- Generic, high-level styling, like resets, etc.
+//     Base -- Unclasses HTML elements (e.g. `h2`, `ul`).
+//     Object -- Objects and abstractions.
+//     Components -- Your designed UI elements (inuitcss includes none of these).
+//     Trumps -- Overrides and helper classes.
 
-@import
-    "foundation/components/grid"
-    // , "foundation/components/accordion"
-    , "foundation/components/alert-boxes"
-    // , "foundation/components/block-grid"
-    , "foundation/components/breadcrumbs"
-    // , "foundation/components/button-groups"
-    , "foundation/components/buttons"
-    // , "foundation/components/clearing"
-    // , "foundation/components/dropdown"
-    // , "foundation/components/dropdown-buttons"
-    // , "foundation/components/flex-video"
-    , "foundation/components/forms"
-    // , "foundation/components/inline-lists"
-    // , "foundation/components/joyride"
-    // , "foundation/components/keystrokes"
-    // , "foundation/components/labels"
-    // , "foundation/components/magellan"
-    // , "foundation/components/orbit"
-    // , "foundation/components/pagination"
-    , "foundation/components/panels"
-    // , "foundation/components/pricing-tables"
-    // , "foundation/components/progress-bars"
-    // , "foundation/components/range-slider"
-    , "foundation/components/reveal"
-    // , "foundation/components/side-nav"
-    // , "foundation/components/split-buttons"
-    // , "foundation/components/sub-nav"
-    // , "foundation/components/switch"
-    // , "foundation/components/tables"
-    // , "foundation/components/tabs"
-    // , "foundation/components/thumbs"
-    // , "foundation/components/tooltips"
-    , "foundation/components/top-bar"
-    , "foundation/components/type"
-    // , "foundation/components/offcanvas"
-    // , "foundation/components/visibility"
-    ;
+$inuit-base-font-size: 14px;
+$inuit-base-line-height: 20px;
+$primary-action-color: #58b;
+@import "inuit-defaults/settings.defaults";
 
-.alert-box {
-    &.ng-animate {
-        -webkit-transition: 0.25s ease-out all;
-        transition: 0.25s ease-out all;
-    }
-    &.ng-enter, &.ng-leave.ng-leave-active { opacity: 0; }
-    &.ng-leave, &.ng-enter.ng-enter-active { opacity: 1; }
+@import "inuit-functions/tools.functions";
+@import "inuit-mixins/tools.mixins";
+
+@import "inuit-clearfix/generic.clearfix";
+@import "inuit-normalize/generic.normalize";
+@import "inuit-box-sizing/generic.box-sizing";
+
+@import "inuit-headings/base.headings";
+@import "inuit-lists/base.lists";
+@import "base";
+
+$inuit-enable-block-list--small: true;
+$inuit-enable-box--small: true;
+$inuit-enable-layout--flush: true;
+$inuit-enable-layout--right: true;
+$inuit-btn-radius: 3px;
+$inuit-btn-background: $primary-action-color;
+
+@import "inuit-bare-list/objects.bare-list";
+@import "inuit-block-list/objects.block-list";
+@import "inuit-box/objects.box";
+@import "inuit-buttons/objects.buttons";
+@import "inuit-layout/objects.layout";
+@import "objects";
+
+.container {
+    width: 960px;
+    margin: auto;
 }
 
-.file-drop {
-    border: 1px dashed #ccc;
-    background-color: #f4f4f4;
-    text-align: center;
-    padding: 50px;
-    margin-bottom: 25px;
-    border-radius: 6px;
-    &.active {
-        border-color: #aaa;
-        background-color: #eef;
+.alert {
+    @extend %box;
+    @extend %box--small;
+    @extend %panel;
+    @extend %animated;
+
+    &--error {
+        background-color: #F08A24;
+        border-color: #DE770F;
+        color: #FFF;
+    }
+}
+
+.modal {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: rgba(0,0,0,0.2);
+    z-index: 100;
+
+    &__dialog {
+        @extend %box;
+        position: absolute;
+        width: 800px;
+        top: 100px;
+        margin-left: -400px;
+        left: 50%;
+        background-color: #fff;
+        box-shadow: 0 0 11px rgba(0,0,0,0.5);
+    }
+}
+
+.topbar {
+    background-color: #333;
+}
+
+nav {
+    @extend %layout;
+    @extend %layout--flush;
+    color: #fff;
+    @include inuit-font-size(13px);
+
+    h1 {
+        @extend %layout__item;
+        @extend %box;
+        @extend %box--small;
+        @include inuit-font-size(17px);
+        width: 20%;
+        margin: 0;
+        padding: 0 $inuit-base-spacing-unit;
+        line-height: 2 * $inuit-base-spacing-unit;
+    }
+
+    a {
+        color: #fff;
+        white-space: nowrap;
+
+        &:hover {
+            text-decoration: none;
+        }
+    }
+
+    > ul {
+        @extend %layout__item;
+        @extend %layout;
+        @extend %layout--flush;
+        @extend %layout--right;
+        width: 80%;
+        padding: 0 $inuit-base-spacing-unit;
+
+        > li {
+            @extend %layout__item;
+            width: auto;
+            position: relative;
+
+            &.divider {
+                border-right: 1px solid #555;
+                height: 2 * $inuit-base-spacing-unit;
+            }
+
+            a {
+                @extend %box;
+                @extend %box--small;
+                padding: 0 $inuit-base-spacing-unit;
+                line-height: 2 * $inuit-base-spacing-unit;
+
+                &:hover {
+                    background-color: #222;
+                }
+            }
+        }
+    }
+
+    .dropdown {
+        @extend %block-list;
+        @extend %block-list--small;
+        background-color: #333;
+        position: absolute;
+        width: 100%;
+        left: -9999px;
+
+        li {
+            padding: 0;
+        }
+    }
+
+    li:hover .dropdown {
+        left: 0;
+    }
+}
+
+.breadcrumbs {
+    @extend %bare-list;
+    @extend %panel;
+    @include inuit-font-size(11px);
+    text-transform: uppercase;
+    padding: quarter($inuit-base-spacing-unit) halve($inuit-base-spacing-unit);
+    margin: halve($inuit-base-spacing-unit) $inuit-base-spacing-unit 0;
+
+    li {
+        display: inline-block;
+    }
+
+    > *:before {
+        content: "/";
+        color: #aaa;
+        margin: 0 halve($inuit-base-spacing-unit);
+    }
+
+    > :first-child:before {
+        content: "";
+        margin: 0;
+    }
+
+    a {
+        text-decoration: none;
+    }
+}
+
+.view {
+    &--account {
+        @extend %box;
+
+        form {
+            @extend %form--aligned;
+
+            .current-password {
+                @extend %animated;
+            }
+        }
+    }
+
+    &--login {
+        @extend %layout;
+        padding-top: 150px;
+
+        h1 {
+            @extend %layout__item;
+            width: 66.66666666%;
+            font-size: 8em;
+            line-height: 1.75em;
+            margin: 0;
+        }
+
+        form {
+            @extend %layout__item;
+            @extend %box;
+            @extend %panel;
+            @extend %form--stacked;
+            width: 33.3333333%;
+
+            input {
+                width: 100%;
+                display: block;
+            }
+
+            button {
+                margin-right: $inuit-base-spacing-unit;
+            }
+
+            .links {
+                display: inline-block;
+                vertical-align: middle;
+            }
+        }
+    }
+
+    &--projects,
+    &--project {
+        @extend %box;
+
+        label {
+            @extend %label--inline;
+        }
+
+        input {
+            @extend %input--inline;
+        }
+    }
+
+    &--recovery {
+        padding: 60px 300px 0;
+
+        form {
+            @extend %box;
+            @extend %form--stacked;
+        }
+    }
+
+    &--signup {
+        padding: 60px 200px 0;
+
+        form {
+            @extend %box;
+            @extend %form--aligned;
+        }
     }
 }

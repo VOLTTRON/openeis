@@ -211,6 +211,14 @@
     ], 
     "dimensionless": [
         {
+            "key": "boolean", 
+            "value": "T/F"
+        },
+        {
+            "key": "percent", 
+            "value": "%"
+        },
+        {
             "key": "percent", 
             "value": "%"
         }, 
@@ -440,34 +448,10 @@
             "value": "MWh"
         }, 
         {
-            "key": "btu", 
-            "value": "BTU"
-        }, 
-        {
-            "key": "kilobtu", 
-            "value": "kBTU"
-        }, 
-        {
-            "key": "megabtu", 
-            "other": "MMBTU", 
-            "value": "MBTU"
-        }, 
-        {
             "key": "horsepower_hour", 
             "value": "hph"
         }, 
-        {
-            "key": "calorie", 
-            "value": "cal"
-        }, 
-        {
-            "key": "therm", 
-            "value": "therm"
-        }, 
-        {
-            "key": "tons_refrigeration_hour", 
-            "value": "tonrefh"
-        }, 
+        
         {
             "key": "megajoule", 
             "value": "MJ"
@@ -489,6 +473,34 @@
             "value": "ft\u00c2\u00b3_gas"
         }
     ], 
+    "thermal_energy": [
+    	{
+            "key": "calorie", 
+            "value": "cal"
+        }, 
+        {
+            "key": "therm", 
+            "value": "therm"
+        }, 
+        {
+            "key": "tons_refrigeration_hour", 
+            "value": "tonrefh"
+        }, 
+               {
+            "key": "btu", 
+            "value": "BTU"
+        }, 
+        {
+            "key": "kilobtu", 
+            "value": "kBTU"
+        }, 
+        {
+            "key": "megabtu", 
+            "other": "MMBTU", 
+            "value": "MBTU"
+  		}
+    
+    ],
     "energy_by_area": [
         {
             "key": "joules_per_square_meter", 
