@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 
@@ -264,7 +265,54 @@ class AccountViewSet(mixins.CreateModelMixin,
                 user.save()
                 #user.email_user('OpenEIS Account Change Notification',
                 #                'Your password changed!', 'openeis@pnnl.gov')
-                return Response(status=status.HTTP_201_CREATED)
+                return Response(status=status.HTTP_204_NO_CONTENT)
             return Response({'old_password': 'Invalid password.'},
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['POST'],
+            serializer_class=serializers.ResetRequestSerializer)
+    def request_reset(self, request, *args, **kwargs):
+        '''Request password reset.'''
+        serializer = serializers.ResetRequestSerializer(data=request.DATA)
+        if serializer.is_valid():
+            username_or_email = serializer.object
+            query = Q(username=username_or_email) | Q(email=username_or_email)
+            user = get_object_or_404(models.User, query)
+            models.AccountVerification.objects.filter(
+                    account=user, what='password-reset').delete()
+            verify = models.AccountVerification(
+                    account=user, what='password-reset')
+            verify.save()
+            # XXX: The email should come from a template.
+            user.email_user('OpenEIS Account Reset Verification',
+                            'Username: {}\nCode: {}'.format(
+                                    user.username, verify.code),
+                            'openeis@pnnl.gov')
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['POST'],
+            serializer_class=serializers.PasswordResetSerializer)
+    def reset_password(self, request, *args, **kwargs):
+        '''Reset user password.'''
+        serializer = serializers.PasswordResetSerializer(data=request.DATA)
+        if serializer.is_valid():
+            username, code, password = serializer.object
+            user = get_object_or_404(models.User, username=username)
+            verify = get_object_or_404(models.AccountVerification, account=user,
+                                       what='password-reset', code=code)
+            user.set_password(password)
+            user.save()
+            verify.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['POST'],
+            permission_classes=(permissions.IsAuthenticated,))
+    def clear_reset(self, request, *args, **kwargs):
+        '''Clear password reset request.'''
+        user = self.get_object()
+        models.AccountVerification.objects.filter(
+                account=user, what='password-reset').delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

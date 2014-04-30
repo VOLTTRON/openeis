@@ -190,3 +190,21 @@ class DeleteAccountSerializer(serializers.Serializer):
 
     def restore_object(self, attrs, instance=None):
         return attrs.get('password', instance)
+
+
+class ResetRequestSerializer(serializers.Serializer):
+    username_or_email = serializers.CharField(required=True)
+
+    def restore_object(self, attrs, instance=None):
+        return attrs.get('username_or_email', instance)
+
+
+class PasswordResetSerializer(serializers.Serializer):
+    username = serializers.CharField(required=True)
+    code = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+
+    def restore_object(self, attrs, instance=None):
+        return (attrs.get('username', instance and instance[0]),
+                attrs.get('code', instance and instance[1]),
+                attrs.get('password', instance and instance[2]))
