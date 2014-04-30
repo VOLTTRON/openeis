@@ -178,6 +178,7 @@ class FileViewSet(mixins.ListModelMixin,
 class UserViewSet(mixins.ListModelMixin,
                   mixins.RetrieveModelMixin,
                   viewsets.GenericViewSet):
+    '''List active users.'''
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.MinimalUserSerializer
     permission_classes = (permissions.IsAuthenticated,)
@@ -185,64 +186,85 @@ class UserViewSet(mixins.ListModelMixin,
     filter_fields = ('last_name', 'first_name', 'username')
 
 
-def send_traceback(fn):
-    def wrapper(*args, **kwargs):
-        try:
-            return fn(*args, **kwargs)
-        except Exception:
-            tb = traceback.format_exc()
-        response = HttpResponse(tb, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        response['Content-Type'] = 'text/plain'
-        return response
-    wrapper.__name__ = fn.__name__
-    wrapper.__doc__ = fn.__doc__
-    wrapper.__dict__ = fn.__dict__
-    return wrapper
-
-
 class AccountViewSet(mixins.CreateModelMixin,
                      mixins.RetrieveModelMixin,
                      mixins.UpdateModelMixin,
-                     mixins.DestroyModelMixin,
                      viewsets.GenericViewSet):
+    '''Create, update, and delete user accounts.'''
+
     permission_classes = (IsAuthenticatedOrPost,)
 
     def get_serializer_class(self):
+        '''Return appropriate serializer class for POST.'''
         if self.request.method == 'POST':
             return serializers.CreateUserSerializer
         return serializers.UserSerializer
 
     def get_object(self):
+        '''Operate on currently logged in user or raise 404 error.'''
         user = self.request.user
         if user.pk is None:
             raise Http404()
         return user
 
     def pre_save(self, user):
-        if self.request.method == 'POST':
-            user.is_active = False
+        '''Check if email changed and that all user fields are valid.'''
         user.full_clean()
+        self.verify_email = not User.objects.filter(
+                pk=user.pk, email=user.email).exists()
 
     def post_save(self, user, created=False):
-        if created:
-            try:
-                verify = models.AccountVerification(
-                        account=user, data={'verify': 'create'})
-                verify.save()
-                user.email_user('OpenEIS Account Creation Verification',
-                        self.request.build_absolute_uri(reverse('account-verify',
-                                kwargs={'code': verify.code})), 'openeis@pnnl.gov')
-            except Exception:
-                user.delete()
-                raise
-            return
+        '''Send email verification if email address changed.'''
+        if (created or self.verify_email) and user.email:
+            models.AccountVerification.objects.filter(
+                    account=user, what='email').delete()
+            verify = models.AccountVerification(account=user, what='email')
+            verify.save()
+            # XXX: The email should come from a template.
+            user.email_user('OpenEIS E-mail Verification',
+                self.request.build_absolute_uri(reverse('account-verify',
+                kwargs={'id': user.id, 'pk': verify.pk, 'code': verify.code})),
+                'openeis@pnnl.gov')
 
-    def verify(self, request, *args, code=None, **kwargs):
-        verify = get_object_or_404(models.AccountVerification, code=code)
-        if verify.data.get('verify') == 'create':
-            user = verify.account
-            user.is_active = True
-            user.save()
-        verify.delete()
-        # XXX: Respond with success page or JS depending on Accept header
-        return HttpResponseRedirect('/')
+    def destroy(self, request, *args, **kwargs):
+        '''Request account deletion.'''
+        # Rename account and set inactive rather than delete.
+        user = self.get_object()
+        serializer = serializers.DeleteAccountSerializer(data=request.DATA)
+        if serializer.is_valid():
+            if user.check_password(serializer.object):
+                prefix = datetime.now().strftime('__DELETED_%Y%m%d%H%M%S%f_')
+                user.username = prefix + user.username
+                user.is_active = False
+                user.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({'password': 'Invalid password.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def verify(self, request, *args, id=None, pk=None, code=None, **kwargs):
+        '''Verify account update.'''
+        get_object_or_404(models.AccountVerification,
+                          account__id=id, pk=pk, code=code).delete()
+        # XXX: Respond with success page or JS depending on Accept header.
+        #      Or perhaps we should redirect to the main app.
+        return Response('Verification succeeded. Thank you!')
+
+    @action(methods=['POST'],
+            serializer_class=serializers.ChangePasswordSerializer,
+            permission_classes=(permissions.IsAuthenticated,))
+    def change_password(self, request, *args, **kwargs):
+        '''Change user password.'''
+        user = self.get_object()
+        serializer = serializers.ChangePasswordSerializer(data=request.DATA)
+        if serializer.is_valid():
+            old, new = serializer.object
+            if user.check_password(old):
+                user.set_password(new)
+                user.save()
+                #user.email_user('OpenEIS Account Change Notification',
+                #                'Your password changed!', 'openeis@pnnl.gov')
+                return Response(status=status.HTTP_201_CREATED)
+            return Response({'old_password': 'Invalid password.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

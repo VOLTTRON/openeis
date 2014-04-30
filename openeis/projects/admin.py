@@ -35,7 +35,8 @@ class ProjectAdmin(admin.ModelAdmin):
 
 class AccountVerificationAdmin(admin.ModelAdmin):
     model = AccountVerification
-    list_display = ('account', 'initiated')
+    list_display = ('account', 'initiated', 'what')
+    list_filter = ('initiated', 'what')
 
 
 admin.site.unregister(User)

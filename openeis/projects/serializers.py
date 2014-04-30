@@ -1,8 +1,6 @@
 import csv
 import posixpath
 
-from django.contrib.auth.models import User
-
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -142,15 +140,24 @@ class FileSerializer(serializers.ModelSerializer):
 
 class MinimalUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = models.User
         fields = ('id', 'username', 'last_name', 'first_name')
 
 
-class UserSerializer(serializers.ModelSerializer):
+class VerificationSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = models.AccountVerification
+        fields = ('id', 'initiated', 'what')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    verifications = VerificationSerializer(source='accountverification_set',
+                                           many=True, read_only=True)
+
+    class Meta:
+        model = models.User
         fields = ('id', 'username', 'email', 'last_name', 'first_name',
-                  'date_joined', 'last_login', 'groups')
+                  'date_joined', 'last_login', 'groups', 'verifications')
         read_only_fields = ('username', 'last_login', 'date_joined', 'groups')
 
 
@@ -158,6 +165,7 @@ class CreateUserSerializer(UserSerializer):
     password = serializers.CharField(required=True, write_only=True)
 
     class Meta(UserSerializer.Meta):
+        fields = UserSerializer.Meta.fields + ('password',)
         read_only_fields = UserSerializer.Meta.read_only_fields[1:]
 
     def restore_object(self, attrs, instance=None):
@@ -166,3 +174,19 @@ class CreateUserSerializer(UserSerializer):
         if password:
             instance.set_password(password)
         return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+
+    def restore_object(self, attrs, instance=None):
+        return (attrs.get('old_password', instance and instance[0]),
+                attrs.get('new_password', instance and instance[1]))
+
+
+class DeleteAccountSerializer(serializers.Serializer):
+    password = serializers.CharField(required=True, write_only=True)
+
+    def restore_object(self, attrs, instance=None):
+        return attrs.get('password', instance)
