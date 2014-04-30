@@ -1,4 +1,7 @@
+import json
 import posixpath
+import random
+import string
 
 from django.contrib.auth.models import User
 from django.db import models
@@ -67,6 +70,48 @@ class DataFile(models.Model):
         return self.file.name
 
 
+class JSONString(str):
+    pass
+
+
+class JSONField(models.TextField, metaclass=models.SubfieldBase):
+
+    description = 'JSON encoded object'
+
+    def to_python(self, value):
+        if not value:
+            return None
+        if not isinstance(value, str) or isinstance(value, JSONString):
+            return value
+        try:
+            result = json.loads(value)
+        except ValueError:
+            raise models.ValidationError('Invalid JSON data')
+        if isinstance(result, str):
+            return JSONString(result)
+        return result
+
+    def get_prep_value(self, value):
+        try:
+            return json.dumps(value, separators=(',', ':'))
+        except TypeError:
+            raise models.ValidationError('Cannot serialize object to JSON')
+
+
+_CODE_CHOICES = string.ascii_letters + string.digits
+
+def _verification_code():
+    return ''.join(random.choice(_CODE_CHOICES) for i in range(50))
+
+
+class AccountVerification(models.Model):
+    account = models.ForeignKey(User)
+    initiated = models.DateTimeField(auto_now_add=True)
+    code = models.CharField(max_length=50, unique=True,
+                            default=_verification_code)
+    what = models.CharField(max_length=20)
+    data = JSONField(blank=True)
+
 
 class Address(models.Model):
     "An address that will "
@@ -74,6 +119,7 @@ class Address(models.Model):
     city = models.CharField(max_length=50)
     state = models.CharField(max_length=50)
     zip_code = models.CharField(max_length=10)    
+
 
 class UnitType(models.Model):
     grouping = models.CharField(max_length=50)
@@ -96,18 +142,22 @@ class Site(models.Model):
 #             raise ValidationError("Something doesn't exist")
 #        
 
+
 class Building(models.Model):
     building_name = models.CharField(max_length=50)
     site = models.ForeignKey(Site, related_name='sites')    
+
     
 class SystemType(models.Model):
     "Specifies the classification of a specific system i.e. RTU"
     system_name = models.CharField(max_length=50)
     system_type = models.CharField(max_length=50)
 
+
 class System(models.Model):
     system_name = models.CharField(max_length=50)
     system_type = models.ForeignKey(SystemType)
+
 
 # class SubSystem(models.Model):
 #     parent = models.ForeignKey(System)
@@ -136,18 +186,11 @@ class Sensor(models.Model):
     # type between the classes.
     class Meta:
         abstract=True
+
     
 class BoolSensor(Sensor):
     value = models.BooleanField(default=False)
 
+
 class FloatSensor(Sensor):
     value = models.FloatField()
-
-
-    
-
-
-
-    
-    
-    

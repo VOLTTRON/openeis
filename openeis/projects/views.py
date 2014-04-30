@@ -1,8 +1,16 @@
 from contextlib import closing
+import posixpath
+import traceback
+
 from django.contrib.auth.decorators import user_passes_test
-from django.http import HttpResponseRedirect, HttpResponse
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.db import transaction
+from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.shortcuts import get_object_or_404
 
 from rest_framework import filters, mixins, permissions, status, viewsets
+from rest_framework import decorators
 from rest_framework.decorators import action, link
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -31,6 +39,12 @@ class IsProjectOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.project.owner == request.user
 
+class IsAuthenticatedOrPost(permissions.BasePermission):
+    '''Restrict access to authenticated users or to POSTs.'''
+    def has_object_permission(self, request, view, obj):
+        print('is-authenticated-or-is-post')
+        return (request.method == 'POST') ^ (request.user is not None)
+
 
 class ProjectViewSet(viewsets.ModelViewSet):
     '''List all projects owned by the active user.'''
@@ -48,7 +62,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         user = self.request.user
         return user.projects.all()
 
-    @action(methods=['POST'], serializer_class=serializers.CreateFileSerializer)
+    @action(methods=['POST'],
+            serializer_class=serializers.CreateFileSerializer,
+            permission_classes=permission_classes)
     def add_file(self, request, *args, **kwargs):
         '''Always set the owning project when adding files.'''
         project = self.get_object()
@@ -157,3 +173,98 @@ class FileViewSet(mixins.ListModelMixin,
                     break
                 lines.append(line.decode('utf-8'))
         return Response(lines)
+
+
+class UserViewSet(mixins.ListModelMixin,
+                  mixins.RetrieveModelMixin,
+                  viewsets.GenericViewSet):
+    '''List active users.'''
+    queryset = User.objects.filter(is_active=True)
+    serializer_class = serializers.MinimalUserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_fields = ('last_name', 'first_name', 'username')
+
+
+class AccountViewSet(mixins.CreateModelMixin,
+                     mixins.RetrieveModelMixin,
+                     mixins.UpdateModelMixin,
+                     viewsets.GenericViewSet):
+    '''Create, update, and delete user accounts.'''
+
+    permission_classes = (IsAuthenticatedOrPost,)
+
+    def get_serializer_class(self):
+        '''Return appropriate serializer class for POST.'''
+        if self.request.method == 'POST':
+            return serializers.CreateUserSerializer
+        return serializers.UserSerializer
+
+    def get_object(self):
+        '''Operate on currently logged in user or raise 404 error.'''
+        user = self.request.user
+        if user.pk is None:
+            raise Http404()
+        return user
+
+    def pre_save(self, user):
+        '''Check if email changed and that all user fields are valid.'''
+        user.full_clean()
+        self.verify_email = not User.objects.filter(
+                pk=user.pk, email=user.email).exists()
+
+    def post_save(self, user, created=False):
+        '''Send email verification if email address changed.'''
+        if (created or self.verify_email) and user.email:
+            models.AccountVerification.objects.filter(
+                    account=user, what='email').delete()
+            verify = models.AccountVerification(account=user, what='email')
+            verify.save()
+            # XXX: The email should come from a template.
+            user.email_user('OpenEIS E-mail Verification',
+                self.request.build_absolute_uri(reverse('account-verify',
+                kwargs={'id': user.id, 'pk': verify.pk, 'code': verify.code})),
+                'openeis@pnnl.gov')
+
+    def destroy(self, request, *args, **kwargs):
+        '''Request account deletion.'''
+        # Rename account and set inactive rather than delete.
+        user = self.get_object()
+        serializer = serializers.DeleteAccountSerializer(data=request.DATA)
+        if serializer.is_valid():
+            if user.check_password(serializer.object):
+                prefix = datetime.now().strftime('__DELETED_%Y%m%d%H%M%S%f_')
+                user.username = prefix + user.username
+                user.is_active = False
+                user.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({'password': 'Invalid password.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def verify(self, request, *args, id=None, pk=None, code=None, **kwargs):
+        '''Verify account update.'''
+        get_object_or_404(models.AccountVerification,
+                          account__id=id, pk=pk, code=code).delete()
+        # XXX: Respond with success page or JS depending on Accept header.
+        #      Or perhaps we should redirect to the main app.
+        return Response('Verification succeeded. Thank you!')
+
+    @action(methods=['POST'],
+            serializer_class=serializers.ChangePasswordSerializer,
+            permission_classes=(permissions.IsAuthenticated,))
+    def change_password(self, request, *args, **kwargs):
+        '''Change user password.'''
+        user = self.get_object()
+        serializer = serializers.ChangePasswordSerializer(data=request.DATA)
+        if serializer.is_valid():
+            old, new = serializer.object
+            if user.check_password(old):
+                user.set_password(new)
+                user.save()
+                #user.email_user('OpenEIS Account Change Notification',
+                #                'Your password changed!', 'openeis@pnnl.gov')
+                return Response(status=status.HTTP_201_CREATED)
+            return Response({'old_password': 'Invalid password.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
