@@ -14,7 +14,8 @@ from jsonschema import validate, RefResolver, Draft4Validator
 import sys
 import os
 import copy
-from schema.schema import BUILDING_NAME, BUILDINGS, DATA_TYPE, SENSOR_NAME, SENSOR_TYPE, SENSOR_UNIT_TYPE, SITE_NAME, SITES, SENSORS, SYSTEM_NAME, SYSTEM_TYPE, SYSTEMS
+from schema.schema import (BUILDING_NAME, BUILDINGS, DATA_TYPE, SENSOR_NAME, SENSOR_TYPE, SENSOR_UNIT_TYPE, SITE_NAME, SITES, SENSORS, 
+                SYSTEM_NAME, SYSTEM_TYPE, SYSTEMS, SENSOR_DATA_FILE, SCHEMA_FILE, UNIT_DATA_FILE)
 
 class SchemaTestCase(unittest.TestCase):
 
@@ -39,12 +40,8 @@ class SchemaTestCase(unittest.TestCase):
         
         self.good_building_sensor = copy.deepcopy(self.good_system)
         self.good_system[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS] = [{SENSOR_NAME: "A System Sensor", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"MixedAirTemperature"}]                         
-                         
         
-        # Path relative to the tests directory.
-        full_schema_file = "../schema.json"
-        
-        self.full_schema = json.load(open(full_schema_file))
+        self.full_schema = json.load(open(SCHEMA_FILE))
         
     def test_cant_add_properties_to_any_object(self):
         """
@@ -67,8 +64,7 @@ class SchemaTestCase(unittest.TestCase):
         instance = copy.deepcopy(self.good_system)
         instance['bogus_property'] = 'hello world'
         self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
-        
-        
+                
         
         
         

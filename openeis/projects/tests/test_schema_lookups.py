@@ -14,19 +14,8 @@ class SchemaLookupTestCase(unittest.TestCase):
     '''
     classdocs
     '''
-    @classmethod
-    def setUpClass(cls):
-        # Change cwd to the schema directory.
-        newCwd = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
-        os.chdir(newCwd)
 
-
-    def __init__(self, params):
-        '''
-        Constructor
-        '''
-    
-    def test_TemperatureLookupHas3Results(self):
+    def test_temp_lookup_has_correct_3_results(self):
         testUnitType = "temperature"
         results = schema.getUnitSelectionType(testUnitType)
         
