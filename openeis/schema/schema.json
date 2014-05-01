@@ -79,40 +79,7 @@
 				} 
 			}		
 		},
-		
-		"rtu": {
-			"allOf": [ { "$ref": "#/definitions/system" },
-
-   
-			"properties": {
-				"type": "array",
-					"items": [
-						"OutdoorAirTemperature",
-						"OutdoorAirRelativeHumidity",
-						"MixedAirTemperature",
-						"MixedAirRelativeHumidity",
-						"ReturnAirTemperature",
-						"ReturnAirRelativeHumidity",
-						"DischargeAirTemperature",
-						"DischargeAirRelativeHumidity",
-						"FirstStageCooling",
-						"SecondStageCooling",
-						"FirstStageHeating",
-						"SecondStageHeating",
-						"TotalPower",
-						"SupplyFanPower",
-						"CondenserFanPower",
-						"OutdoorDamperSignal",
-						"EconomizerMode",
-						"OccupancyMode",
-						"ZoneSetpoint",
-						"ZoneTemperature",
-						"SupplyFanSpeed"
-					]
-					
-			}		
-		},
-		
+				
 		"subsystem": {
 			"type": "object",
 			"required":["sytem_name", "system_type"],
@@ -146,6 +113,12 @@
 			}
 		},
 		
+		"rtu": {
+			"allOf": [ { "$ref": "#/definitions/system" }],						
+			"properties": {
+			
+			}
+		},		
 		
 		
 		"sensor": {
