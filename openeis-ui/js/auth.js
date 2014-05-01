@@ -28,15 +28,20 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
             controller: 'SignUpCtrl',
             templateUrl: 'partials/signup.html',
         })
+        .whenAnon('/recovery', {
+            controller: 'RecoveryCtrl',
+            templateUrl: 'partials/recovery.html',
+        })
         .whenAuth('/account', {
             controller: 'AccountCtrl',
             templateUrl: 'partials/account.html',
         });
 })
-.service('Auth', function ($resource, API_URL, $q, ANON_HOME, AUTH_HOME, $location) {
+.service('Auth', function ($resource, API_URL, $q, LOGIN_PAGE, AUTH_HOME, $location) {
     var authenticated = null,
         username = 'Anonymous',
-        resource = $resource(API_URL + '/auth');
+        resource = $resource(API_URL + '/auth'),
+        loginRedirect = null;
 
     this.username = function () {
         return username;
@@ -63,6 +68,12 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         resource.save(credentials, function (response) {
             authenticated = true;
             username = response.username;
+            if (loginRedirect !== null) {
+                $location.url(loginRedirect);
+                loginRedirect = null;
+            } else {
+                $location.url(AUTH_HOME);
+            }
             deferred.resolve();
         }, function (rejection) {
             deferred.reject(rejection);
@@ -77,6 +88,7 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         resource.delete(function () {
             authenticated = false;
             username = 'Anonymous';
+            $location.url(LOGIN_PAGE);
             deferred.resolve();
         }, function (rejection) {
             deferred.reject(rejection);
@@ -113,7 +125,8 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
 
         function check() {
             if (!authenticated) {
-                $location.url(ANON_HOME);
+                loginRedirect = $location.url();
+                $location.url(LOGIN_PAGE);
                 deferred.reject();
             } else {
                 deferred.resolve();
@@ -131,14 +144,12 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         return deferred.promise;
     };
 })
-.controller('LoginCtrl', function ($scope, $location, Auth, AUTH_HOME) {
+.controller('LoginCtrl', function ($scope, Auth) {
     $scope.logIn = function () {
         Auth.logIn({
             username: $scope.form.username,
             password: $scope.form.password,
-        }).then(function () {
-            $location.url(AUTH_HOME);
-        }, function (response) {
+        }).catch(function (response) {
             $scope.form.error = response.status;
         });
     };
@@ -149,6 +160,12 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
 .controller('SignUpCtrl', function ($scope, $location, Auth, AUTH_HOME) {
     $scope.form = {};
     $scope.signUp = function () {
+        console.log($scope.form);
+    };
+})
+.controller('RecoveryCtrl', function ($scope, $location, Auth) {
+    $scope.form = {};
+    $scope.submit = function () {
         console.log($scope.form);
     };
 })
@@ -171,12 +188,10 @@ angular.module('openeis-ui.auth', ['ngResource', 'ngRoute'])
         }
     });
 })
-.controller('TopBarCtrl', function ($scope, Auth, $location, ANON_HOME) {
+.controller('TopBarCtrl', function ($scope, Auth) {
     $scope.username = Auth.username();
 
     $scope.logOut = function () {
-        Auth.logOut().then(function () {
-            $location.url(ANON_HOME);
-        });
+        Auth.logOut();
     };
 });

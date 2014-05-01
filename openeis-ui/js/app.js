@@ -5,7 +5,7 @@ angular.module('openeis-ui', [
 // URL of OpenEIS API, without trailing slash
 .constant('API_URL', '/api')
 // Route redirect for anonymous users (root-relative to HTML base)
-.constant('ANON_HOME', '/')
+.constant('LOGIN_PAGE', '/')
 // Route redirect for authenticated users (root-relative to HTML base)
 .constant('AUTH_HOME', '/projects')
 .config(function ($routeProvider, $locationProvider, $httpProvider) {

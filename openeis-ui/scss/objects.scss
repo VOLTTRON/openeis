@@ -1,3 +1,9 @@
+.form__group,
+%form__group {
+    margin: 0 0 $inuit-base-spacing-unit;
+}
+
+.form--aligned,
 %form--aligned {
     label {
         @extend %label--inline;
@@ -6,7 +12,7 @@
     }
 
     input {
-        width: 12 * $inuit-base-spacing-unit;
+        width: 16 * $inuit-base-spacing-unit;
     }
 
     :not(label) + input {
@@ -21,16 +27,25 @@
     }
 }
 
+.form--stacked,
+%form--stacked {
+    label, input {
+        display: block;
+        width: 100%;
+        line-height: 2.14286
+    }
+
+    :not(label) + input {
+        margin-top: halve($inuit-base-spacing-unit);
+    }
+}
+
 .label--inline,
 %label--inline {
     display: inline-block;
     line-height: 2 * $inuit-base-spacing-unit;
     margin-right: halve($inuit-base-spacing-unit);
     vertical-align: middle;
-
-    &:after {
-        content: ":";
-    }
 }
 
 .input--inline,

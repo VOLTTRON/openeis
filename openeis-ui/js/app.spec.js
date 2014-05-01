@@ -20,8 +20,8 @@ describe('openeis-ui', function () {
         expect(API_URL).toBeDefined();
     }));
 
-    it('should define the constant ANON_HOME', inject(function (ANON_HOME) {
-        expect(ANON_HOME).toBeDefined();
+    it('should define the constant LOGIN_PAGE', inject(function (LOGIN_PAGE) {
+        expect(LOGIN_PAGE).toBeDefined();
     }));
 
     it('should define the constant AUTH_HOME', inject(function (AUTH_HOME) {

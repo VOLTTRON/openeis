@@ -8,7 +8,7 @@
 //     Trumps -- Overrides and helper classes.
 
 $inuit-base-font-size: 14px;
-$inuit-base-line-height: 22px;
+$inuit-base-line-height: 20px;
 $primary-action-color: #58b;
 @import "inuit-defaults/settings.defaults";
 
@@ -212,6 +212,7 @@ nav {
             @extend %layout__item;
             @extend %box;
             @extend %panel;
+            @extend %form--stacked;
             width: 33.3333333%;
 
             input {
@@ -221,6 +222,11 @@ nav {
 
             button {
                 margin-right: $inuit-base-spacing-unit;
+            }
+
+            .links {
+                display: inline-block;
+                vertical-align: middle;
             }
         }
     }
@@ -235,6 +241,15 @@ nav {
 
         input {
             @extend %input--inline;
+        }
+    }
+
+    &--recovery {
+        padding: 60px 300px 0;
+
+        form {
+            @extend %box;
+            @extend %form--stacked;
         }
     }
 
