@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes import generic
 
 from .protectedmedia import ProtectedFileSystemStorage
+from .validation import is_valid_name
 
 
 class Organization(models.Model):
@@ -87,18 +88,41 @@ class Site(models.Model):
     site_name = models.CharField(max_length=50)
     site_address = models.ForeignKey(Address)
     
-    #buildings = models.ManyToOneRel(field, to, field_name, related_name, limit_choices_to, parent_link, on_delete, related_query_name)
-    
-#     def validate(self):
-#         "This function raises ValidationError if any of the model data is invalid"
-#         
-#         if not hasattr(self, 'site_name'):
-#             raise ValidationError("Something doesn't exist")
-#        
+    def validate(self):
+        """
+        The site must have a valid name.
+        
+        returns a list of validation errors or None
+        """
+        errors = []
+        
+        if is_valid_name(self.site_name):
+            errors.append("Invalid site name specified!")
+                    
+        return errors
 
 class Building(models.Model):
     building_name = models.CharField(max_length=50)
-    site = models.ForeignKey(Site, related_name='sites')    
+    site = models.ForeignKey(Site, related_name='sites')   
+    
+    def validate(self):
+        """
+        The building must have a building name and a site associated with it.
+        
+        returns a list of validation errors or None
+        """
+        errors = []
+        
+        if is_valid_name(self.building_name):
+            errors.append("Invalid building name specified!")
+            
+        if not isinstance(self.site, Site):
+            errors.append("Site object must be specified!")
+            
+        return errors
+        
+        
+             
     
 class SystemType(models.Model):
     "Specifies the classification of a specific system i.e. RTU"
