@@ -13,7 +13,8 @@ class TestModelsValidate(TestCase):
     def test_site_requires_site_name(self):
         
         site = models.Site()
-        self.assertRaises(ValidationError, site.validate)
+        self.assertTrue(site.validate, "Validations were not setup correctly for site.")
+        
         
         
     
