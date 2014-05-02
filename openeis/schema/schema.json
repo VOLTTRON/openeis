@@ -61,7 +61,15 @@
 					"items": [
 						{"$ref": "#definitions/system"}
 					]
-				}
+				},
+				"sensors": {
+					"type": "array",
+					"description": "There can be one or more sensors for a site",
+					"additionalItems": {"$ref": "#definitions/sensor"},
+					"items": [
+						{"$ref": "#definitions/sensor"}
+					]
+				}	
 			}			
 		},
 		
@@ -76,7 +84,15 @@
 					"items": [
 						{"$ref": "#definitions/subsystem"}
 					]
-				} 
+				},
+				"sensors": {
+					"type": "array",
+					"description": "There can be one or more sensors for a site",
+					"additionalItems": {"$ref": "#definitions/sensor"},
+					"items": [
+						{"$ref": "#definitions/sensor"}
+					]
+				}	 
 			}		
 		},
 				
@@ -251,7 +267,8 @@
 			
 		
 		"rtu_sensor": {
-			"allOf": [ { "$ref": "#/definitions/sensor" }],					
+			"allOf": [ { "$ref": "#/definitions/sensor" }],			
+			"required": ["sensor_name","unit_type", "data_type", "sensor_type"],		
 			"properties": {
 				"sensor_type": {
 					"enum": [

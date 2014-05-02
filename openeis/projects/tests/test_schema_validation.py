@@ -31,6 +31,9 @@ class SchemaTestCase(unittest.TestCase):
         
         self.good_building = copy.deepcopy(self.good_site)
         self.good_building[SITES][0][BUILDINGS] = [{BUILDING_NAME:"ISB1"}]
+
+        self.good_building_sensor = copy.deepcopy(self.good_building)
+        self.good_building_sensor[SITES][0][BUILDINGS][0][SENSORS] = [{SENSOR_NAME: "Building Sensor", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"FirstStageCooling"}]
         
         self.good_sensor = copy.deepcopy(self.good_site)
         self.good_sensor[SITES][0][SENSORS] = [{SENSOR_NAME: "Test One", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "acceleration", SENSOR_TYPE:"OutdoorAirTemperature"}]
@@ -38,13 +41,16 @@ class SchemaTestCase(unittest.TestCase):
         self.good_system = copy.deepcopy(self.good_building)
         self.good_system[SITES][0][BUILDINGS][0][SYSTEMS] = [{SYSTEM_NAME: "HVAC_1", SYSTEM_TYPE: "Chiller" }]
         
+        self.good_system_sensor = copy.deepcopy(self.good_system)
+        self.good_system_sensor[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS] = [{SENSOR_NAME: "Some other name", DATA_TYPE: "integer", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"FirstStageCooling"}]
+        
         self.good_rtu = copy.deepcopy(self.good_building)
         self.good_rtu[SITES][0][BUILDINGS][0][SYSTEMS] = [{SYSTEM_NAME: "RTU_1", SYSTEM_TYPE: "rtu" }]
         
         
-        self.good_building_sensor = copy.deepcopy(self.good_system)
-        self.good_system[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS] = [{SENSOR_NAME: "A System Sensor", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"MixedAirTemperature"}]                         
-        
+#         self.good_building_sensor = copy.deepcopy(self.good_system)
+#         self.good_system[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS] = [{SENSOR_NAME: "A System Sensor", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"MixedAirTemperature"}]                         
+#         
         self.good_rtu_sensor = copy.deepcopy(self.good_rtu)
         self.good_rtu_sensor[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS] = [{SENSOR_NAME: "An RTU Sensor", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"MixedAirTemperature"}]
         
@@ -153,26 +159,67 @@ class SchemaTestCase(unittest.TestCase):
         # Fully valid sensor type
         self.assertIsNone(validate(instance, self.full_schema))
         
-        #Test with no SENSOR_TYPE specified
+        #Test with no SYSTEM_TYPE specified
         instance[SITES][0][BUILDINGS][0][SYSTEMS][0].pop(SYSTEM_TYPE)
         self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
         
+        #Test with no SENSOR_TYPE specified
+        instance = copy.deepcopy(self.good_system_sensor)
+        instance[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS][0].pop(SENSOR_TYPE)
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+        
+    def test_system_can_have_no_sensors(self):
+        instance = self.good_system
+        # Fully valid sensor type
+        self.assertIsNone(validate(instance, self.full_schema))
+        
+        
+        #Test a system with no sensors attached
+        instance = copy.deepcopy(self.good_system_sensor)
+        instance[SITES][0][BUILDINGS][0][SYSTEMS][0].pop(SENSORS)
+        self.assertIsNone(validate(instance, self.full_schema))
+    
+    def test_system_cant_have_random_child(self):
+        instance = self.good_system
+        # Fully valid sensor type
+        self.assertIsNone(validate(instance, self.full_schema))
+        
+        
+        #Test a system with no sensors attached
+        instance = copy.deepcopy(self.good_system_sensor)
+        instance[SITES][0][BUILDINGS][0][SYSTEMS][0]["blah"] =  {"hello": "barf"}
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
         
     def test_rtu_has_allowed_sensor_types(self):
         instance = self.good_rtu_sensor
         # Fully valid sensor type
-        print (instance)
         self.assertIsNone(validate(instance, self.full_schema))
         
         #Test with no SENSOR_TYPE specified
         instance[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS][0].pop(SENSOR_TYPE)
-        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+#         self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
         
         #Test with no SENSOR_TYPE specified
         instance = copy.deepcopy(self.good_rtu_sensor)
         instance[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSOR_TYPE] = 'junk_sensor'
+#         self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+
+    def test_building_sensor_has_type(self):
+        instance = self.good_building_sensor
+        # Fully valid sensor type
+        print (instance)
+        self.assertIsNone(validate(instance, self.full_schema))
+        
+        #Test with no SENSOR_TYPE specified 
+        
+        instance[SITES][0][BUILDINGS][0][SENSORS][0].pop(SENSOR_TYPE)
         self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
         
+        #Test with no bad type specified
+        instance = copy.deepcopy(self.good_building_sensor)
+        instance[SITES][0][BUILDINGS][0][SENSOR_TYPE] = 'junk_sensor'
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+    
         
           
       
