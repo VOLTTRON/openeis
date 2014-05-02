@@ -67,7 +67,7 @@
 		
 		"system": {
 			"type": "object",
-			"required":["sytem_name", "system_type"],
+			"required":["system_name", "system_type"],
 			"properties": {
 				"system_name": {"type": "string"},
 				"system_type": {"type": "string"},
@@ -82,7 +82,7 @@
 				
 		"subsystem": {
 			"type": "object",
-			"required":["sytem_name", "system_type"],
+			"required":["system_name", "system_type"],
 			"properties": {
 				"system_name": {"type": "string"},
 				"system_type": {"type": "string"}
@@ -115,9 +115,38 @@
 		
 		"rtu": {
 			"allOf": [ { "$ref": "#/definitions/system" }],						
+			"required":["system_name", "system_type", "sensor_type"],
 			"properties": {
+		
+				"sensor_type": {
+					"enum": [
+                            "OutdoorAirTemperature",
+                            "OutdoorAirRelativeHumidity",
+                            "MixedAirTemperature",
+                            "MixedAirRelativeHumidity",
+                            "ReturnAirTemperature",
+                            "ReturnAirRelativeHumidity",
+                            "DischargeAirTemperature",
+                            "DischargeAirRelativeHumidity",
+                            "FirstStageCooling",
+                            "SecondStageCooling",
+                            "FirstStageHeating",
+                            "SecondStageHeating",
+                            "TotalPower",
+                            "SupplyFanPower",
+                            "CondenserFanPower",
+                            "OutdoorDamperSignal",
+                            "EconomizerMode",
+                            "OccupancyMode",
+                            "ZoneSetpoint",
+                            "ZoneTemperature",
+                            "SupplyFanSpeed"
+                    ]
+                    
+	            }                        
 			
 			}
+			
 		},		
 		
 		
@@ -220,6 +249,37 @@
 			}
 		},
 			
+		
+		"rtu_sensor": {
+			"allOf": [ { "$ref": "#/definitions/sensor" }],					
+			"properties": {
+				"sensor_type": {
+					"enum": [
+						"OutdoorAirTemperature",
+		                "OutdoorAirRelativeHumidity",
+		                "MixedAirTemperature",
+		                "MixedAirRelativeHumidity",
+		                "ReturnAirTemperature",
+		                "ReturnAirRelativeHumidity",
+		                "DischargeAirTemperature",
+		                "DischargeAirRelativeHumidity",
+		                "FirstStageCooling",
+		                "SecondStageCooling",
+		                "FirstStageHeating",
+		                "SecondStageHeating",
+		                "TotalPower",
+		                "SupplyFanPower",
+		                "CondenserFanPower",
+		                "OutdoorDamperSignal",
+		                "EconomizerMode",
+		                "OccupancyMode",
+		                "ZoneSetpoint",
+		                "ZoneTemperature",
+		                "SupplyFanSpeed"
+		             ]
+				}
+			}
+		},
 		
 		"keyvaluepair":{
 			"type": "object",

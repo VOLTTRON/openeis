@@ -38,8 +38,15 @@ class SchemaTestCase(unittest.TestCase):
         self.good_system = copy.deepcopy(self.good_building)
         self.good_system[SITES][0][BUILDINGS][0][SYSTEMS] = [{SYSTEM_NAME: "HVAC_1", SYSTEM_TYPE: "Chiller" }]
         
+        self.good_rtu = copy.deepcopy(self.good_building)
+        self.good_rtu[SITES][0][BUILDINGS][0][SYSTEMS] = [{SYSTEM_NAME: "RTU_1", SYSTEM_TYPE: "rtu" }]
+        
+        
         self.good_building_sensor = copy.deepcopy(self.good_system)
         self.good_system[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS] = [{SENSOR_NAME: "A System Sensor", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"MixedAirTemperature"}]                         
+        
+        self.good_rtu_sensor = copy.deepcopy(self.good_rtu)
+        self.good_rtu_sensor[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS] = [{SENSOR_NAME: "An RTU Sensor", DATA_TYPE: "float", SENSOR_UNIT_TYPE: "temperature", SENSOR_TYPE:"MixedAirTemperature"}]
         
         self.full_schema = json.load(open(SCHEMA_FILE))
         
@@ -140,5 +147,32 @@ class SchemaTestCase(unittest.TestCase):
           
         # Should return None if valid data.
         self.assertIsNone(validate(instance, self.full_schema))
+        
+    def test_system_must_have_name_and_type(self):
+        instance = self.good_system
+        # Fully valid sensor type
+        self.assertIsNone(validate(instance, self.full_schema))
+        
+        #Test with no SENSOR_TYPE specified
+        instance[SITES][0][BUILDINGS][0][SYSTEMS][0].pop(SYSTEM_TYPE)
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+        
+        
+    def test_rtu_has_allowed_sensor_types(self):
+        instance = self.good_rtu_sensor
+        # Fully valid sensor type
+        print (instance)
+        self.assertIsNone(validate(instance, self.full_schema))
+        
+        #Test with no SENSOR_TYPE specified
+        instance[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSORS][0].pop(SENSOR_TYPE)
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+        
+        #Test with no SENSOR_TYPE specified
+        instance = copy.deepcopy(self.good_rtu_sensor)
+        instance[SITES][0][BUILDINGS][0][SYSTEMS][0][SENSOR_TYPE] = 'junk_sensor'
+        self.assertRaises(jsonschema.exceptions.ValidationError, lambda: validate(instance, self.full_schema))
+        
+        
           
       
