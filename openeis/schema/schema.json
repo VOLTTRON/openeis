@@ -80,6 +80,15 @@
 			}		
 		},
 		
+		
+		"integrated_sensor_platform": {
+			"allOf": [ { "$ref": "#/definitions/system" },
+			"properties": {
+				"type": "array",
+				"sensors": 
+			
+		}
+		
 		"rtu": {
 			"allOf": [ { "$ref": "#/definitions/system" },
 

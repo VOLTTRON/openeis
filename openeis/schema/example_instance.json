@@ -42,7 +42,7 @@
                     "systems": [
                         {
                             "system_name": "RTU_1",
-                            "system_type": "RTU"
+                            "system_type": "rtu"
                             "sensors": [
                             
                             {
