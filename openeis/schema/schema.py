@@ -4,6 +4,7 @@ Created on Mar 31, 2014
 @author: Craig Allwardt
 '''
 import json
+import os
 from jsonschema import validate
 
 SITES = 'sites'
@@ -19,14 +20,18 @@ SYSTEMS = "systems"
 SYSTEM_NAME = "system_name"
 SYSTEM_TYPE = "system_type"
 
-
-with open('schema.json') as jsonFile:
+schema_folder = os.path.abspath(os.path.dirname(__file__))
+SCHEMA_FILE = '{0}/schema.json'.format(schema_folder) 
+SENSOR_DATA_FILE = '{0}/sensor_data.json'.format(schema_folder)
+UNIT_DATA_FILE = '{0}/unit_data.json'.format(schema_folder)
+ 
+with open(SCHEMA_FILE) as jsonFile:
     schema = json.load(jsonFile)
     
-with open('sensor_data.json') as sensordatafile:
+with open(SENSOR_DATA_FILE) as sensordatafile:
     sensordata = json.load(sensordatafile)
     
-with open('unit_data.json') as unitdatafile:
+with open(UNIT_DATA_FILE) as unitdatafile:
     unitdata = json.load(unitdatafile)
 
 def getSensors():

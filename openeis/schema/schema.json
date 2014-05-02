@@ -61,13 +61,21 @@
 					"items": [
 						{"$ref": "#definitions/system"}
 					]
-				}
+				},
+				"sensors": {
+					"type": "array",
+					"description": "There can be one or more sensors for a site",
+					"additionalItems": {"$ref": "#definitions/sensor"},
+					"items": [
+						{"$ref": "#definitions/sensor"}
+					]
+				}	
 			}			
 		},
 		
 		"system": {
 			"type": "object",
-			"required":["sytem_name", "system_type"],
+			"required":["system_name", "system_type"],
 			"properties": {
 				"system_name": {"type": "string"},
 				"system_type": {"type": "string"},
@@ -76,46 +84,21 @@
 					"items": [
 						{"$ref": "#definitions/subsystem"}
 					]
-				} 
-			}		
-		},
-		
-		"rtu": {
-			"allOf": [ { "$ref": "#/definitions/system" },
-
-   
-			"properties": {
-				"type": "array",
+				},
+				"sensors": {
+					"type": "array",
+					"description": "There can be one or more sensors for a site",
+					"additionalItems": {"$ref": "#definitions/sensor"},
 					"items": [
-						"OutdoorAirTemperature",
-						"OutdoorAirRelativeHumidity",
-						"MixedAirTemperature",
-						"MixedAirRelativeHumidity",
-						"ReturnAirTemperature",
-						"ReturnAirRelativeHumidity",
-						"DischargeAirTemperature",
-						"DischargeAirRelativeHumidity",
-						"FirstStageCooling",
-						"SecondStageCooling",
-						"FirstStageHeating",
-						"SecondStageHeating",
-						"TotalPower",
-						"SupplyFanPower",
-						"CondenserFanPower",
-						"OutdoorDamperSignal",
-						"EconomizerMode",
-						"OccupancyMode",
-						"ZoneSetpoint",
-						"ZoneTemperature",
-						"SupplyFanSpeed"
+						{"$ref": "#definitions/sensor"}
 					]
-					
+				}	 
 			}		
 		},
-		
+				
 		"subsystem": {
 			"type": "object",
-			"required":["sytem_name", "system_type"],
+			"required":["system_name", "system_type"],
 			"properties": {
 				"system_name": {"type": "string"},
 				"system_type": {"type": "string"}
@@ -146,6 +129,41 @@
 			}
 		},
 		
+		"rtu": {
+			"allOf": [ { "$ref": "#/definitions/system" }],						
+			"required":["system_name", "system_type", "sensor_type"],
+			"properties": {
+		
+				"sensor_type": {
+					"enum": [
+                            "OutdoorAirTemperature",
+                            "OutdoorAirRelativeHumidity",
+                            "MixedAirTemperature",
+                            "MixedAirRelativeHumidity",
+                            "ReturnAirTemperature",
+                            "ReturnAirRelativeHumidity",
+                            "DischargeAirTemperature",
+                            "DischargeAirRelativeHumidity",
+                            "FirstStageCooling",
+                            "SecondStageCooling",
+                            "FirstStageHeating",
+                            "SecondStageHeating",
+                            "TotalPower",
+                            "SupplyFanPower",
+                            "CondenserFanPower",
+                            "OutdoorDamperSignal",
+                            "EconomizerMode",
+                            "OccupancyMode",
+                            "ZoneSetpoint",
+                            "ZoneTemperature",
+                            "SupplyFanSpeed"
+                    ]
+                    
+	            }                        
+			
+			}
+			
+		},		
 		
 		
 		"sensor": {
@@ -247,6 +265,38 @@
 			}
 		},
 			
+		
+		"rtu_sensor": {
+			"allOf": [ { "$ref": "#/definitions/sensor" }],			
+			"required": ["sensor_name","unit_type", "data_type", "sensor_type"],		
+			"properties": {
+				"sensor_type": {
+					"enum": [
+						"OutdoorAirTemperature",
+		                "OutdoorAirRelativeHumidity",
+		                "MixedAirTemperature",
+		                "MixedAirRelativeHumidity",
+		                "ReturnAirTemperature",
+		                "ReturnAirRelativeHumidity",
+		                "DischargeAirTemperature",
+		                "DischargeAirRelativeHumidity",
+		                "FirstStageCooling",
+		                "SecondStageCooling",
+		                "FirstStageHeating",
+		                "SecondStageHeating",
+		                "TotalPower",
+		                "SupplyFanPower",
+		                "CondenserFanPower",
+		                "OutdoorDamperSignal",
+		                "EconomizerMode",
+		                "OccupancyMode",
+		                "ZoneSetpoint",
+		                "ZoneTemperature",
+		                "SupplyFanSpeed"
+		             ]
+				}
+			}
+		},
 		
 		"keyvaluepair":{
 			"type": "object",

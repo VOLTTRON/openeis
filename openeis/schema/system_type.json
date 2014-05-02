@@ -1,7 +1,9 @@
 {
+
+
 		{
 			"sytem_name": "RTU",
-			"system_type": "RTU",
+			"system_type": "rtu",
 			"sensors": [
 				"OutdoorAirTemperature",
 				"OutdoorAirRelativeHumidity",

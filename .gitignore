@@ -16,3 +16,4 @@ __pycache__/
 /openeis-ui/node_modules/
 /openeis-ui/build/js/
 !/openeis-ui/build/js/app.min.js
+/openeis-ui/ui-tests-junit-results.xml

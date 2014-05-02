@@ -1,44 +1,35 @@
 describe('openeis-ui.auth', function () {
-    var provider, $location, $httpBackend,
-        ANON_HOME = '/path/to/anon/home',
+    var LOGIN_PAGE = '/path/to/login/page',
         AUTH_HOME = '/path/to/auth/home';
 
     beforeEach(function () {
-        module('openeis-ui.auth', function (authRouteProvider) {
-            provider = authRouteProvider;
-        });
-
-        $location = {
-            currentPath: '',
-            path: function () { return $location.currentPath; },
-            url: jasmine.createSpy('url'),
-        };
-
-        spyOn($location, 'path').andCallThrough();
+        module('openeis-ui.auth');
 
         module(function($provide) {
             $provide.constant('API_URL', '/api');
-            $provide.constant('$location', $location);
-            $provide.constant('ANON_HOME', ANON_HOME);
+            $provide.constant('LOGIN_PAGE', LOGIN_PAGE);
             $provide.constant('AUTH_HOME', AUTH_HOME);
         });
-
-        inject(function (_$httpBackend_) {
-            $httpBackend = _$httpBackend_;
-        });
-    });
-
-    afterEach(function () {
-        $httpBackend.verifyNoOutstandingExpectation();
     });
 
     describe('authRoute provider', function () {
+        var authRouteProvider;
+
+        beforeEach(module(function ($provide, _authRouteProvider_) {
+            $provide.value('Auth', {
+                requireAnon: function () {},
+                requireAuth: function () {},
+            });
+
+            authRouteProvider = _authRouteProvider_;
+        }));
+
         describe('whenAnon method', function () {
             it('should add an anon resolve', function () {
                 inject(function (authRoute) {
                     expect(authRoute.routes['/anon-test']).not.toBeDefined();
 
-                    provider.whenAnon('/anon-test', {});
+                    authRouteProvider.whenAnon('/anon-test', {});
 
                     expect(authRoute.routes['/anon-test'].resolve.anon).toBeDefined();
                 });
@@ -50,7 +41,7 @@ describe('openeis-ui.auth', function () {
                     expect(authRoute.routes['/anon-test-2']).not.toBeDefined();
                     expect(authRoute.routes['/auth-test']).not.toBeDefined();
 
-                    provider
+                    authRouteProvider
                         .whenAnon('/anon-test', {})
                         .whenAnon('/anon-test-2', {})
                         .whenAuth('/auth-test', {});
@@ -67,7 +58,7 @@ describe('openeis-ui.auth', function () {
                 inject(function (authRoute) {
                     expect(authRoute.routes['/auth-test']).not.toBeDefined();
 
-                    provider.whenAuth('/auth-test', {});
+                    authRouteProvider.whenAuth('/auth-test', {});
 
                     expect(authRoute.routes['/auth-test'].resolve.auth).toBeDefined();
                 });
@@ -79,7 +70,7 @@ describe('openeis-ui.auth', function () {
                     expect(authRoute.routes['/auth-test-2']).not.toBeDefined();
                     expect(authRoute.routes['/anon-test']).not.toBeDefined();
 
-                    provider
+                    authRouteProvider
                         .whenAuth('/auth-test', {})
                         .whenAuth('/auth-test-2', {})
                         .whenAnon('/anon-test', {});
@@ -93,12 +84,17 @@ describe('openeis-ui.auth', function () {
     });
 
     describe('Auth service', function () {
-        var Auth;
+        var Auth, $httpBackend;
 
         beforeEach(function () {
-            inject(function (_Auth_) {
+            inject(function (_Auth_, _$httpBackend_) {
                 Auth = _Auth_;
+                $httpBackend = _$httpBackend_;
             });
+        });
+
+        afterEach(function () {
+            $httpBackend.verifyNoOutstandingExpectation();
         });
 
         describe('init method', function () {
@@ -151,38 +147,78 @@ describe('openeis-ui.auth', function () {
         });
 
         describe('requireAnon method', function () {
-            it('should redirect authenticated users to AUTH_HOME', function () {
+            var ANONYMOUS_PAGE = '/path/to/anonymous/page';
+
+            it('should redirect authenticated users to AUTH_HOME', inject(function ($location) {
+                $location.url(ANONYMOUS_PAGE);
+                expect($location.url()).toEqual(ANONYMOUS_PAGE);
+
                 $httpBackend.expectGET('/api/auth').respond('{"username":"TestUser"}');
                 Auth.requireAnon();
                 $httpBackend.flush();
 
-                expect($location.url).toHaveBeenCalledWith(AUTH_HOME);
-            });
+                expect($location.url()).toEqual(AUTH_HOME);
+            }));
+
+            it('should not redirect anonymous users', inject(function ($location) {
+                $location.url(ANONYMOUS_PAGE);
+                expect($location.url()).toEqual(ANONYMOUS_PAGE);
+
+                $httpBackend.expectGET('/api/auth').respond(403, '');
+                Auth.requireAnon();
+                $httpBackend.flush();
+
+                expect($location.url()).toEqual(ANONYMOUS_PAGE);
+            }));
         });
 
         describe('requireAuth method', function () {
-            it('should redirect anonymous users to ANON_HOME', function () {
+            var RESTRICTED_PAGE = '/path/to/restricted/page';
+
+            it('should redirect anonymous users to LOGIN_PAGE and redirect back after login', inject(function ($location) {
+                $location.url(RESTRICTED_PAGE);
+                expect($location.url()).toEqual(RESTRICTED_PAGE);
+
                 $httpBackend.expectGET('/api/auth').respond(403, '');
                 Auth.requireAuth();
                 $httpBackend.flush();
 
-                expect($location.url).toHaveBeenCalledWith(ANON_HOME);
-            });
+                expect($location.url()).toEqual(LOGIN_PAGE);
+
+                $httpBackend.expectPOST('/api/auth').respond('{"username":"TestUser"}');
+                Auth.logIn({ username: 'TestUser', password: 'testpassword' });
+                $httpBackend.flush();
+
+                expect($location.url()).toEqual(RESTRICTED_PAGE);
+            }));
+
+            it('should not redirect authenticated users', inject(function ($location) {
+                $location.url(RESTRICTED_PAGE);
+                expect($location.url()).toEqual(RESTRICTED_PAGE);
+
+                $httpBackend.expectGET('/api/auth').respond('{"username":"TestUser"}');
+                Auth.requireAuth();
+                $httpBackend.flush();
+
+                expect($location.url()).toEqual(RESTRICTED_PAGE);
+            }));
         });
     });
 
     describe('LoginCtrl controller', function () {
-        var controller, scope;
+        var controller, scope, $httpBackend, $location;
 
         beforeEach(function () {
-            inject(function($controller, $rootScope) {
+            inject(function($controller, $rootScope, _$httpBackend_, _$location_) {
                 scope = $rootScope.$new();
                 controller = $controller('LoginCtrl', { $scope: scope });
+                $httpBackend = _$httpBackend_;
+                $location = _$location_;
             });
         });
 
-        it('should define a function for logging in', function () {
-            expect(scope.logIn).toBeDefined();
+        afterEach(function () {
+            $httpBackend.verifyNoOutstandingExpectation();
         });
 
         it('should redirect to AUTH_HOME on successful login', function () {
@@ -191,11 +227,14 @@ describe('openeis-ui.auth', function () {
                 password: 'testpassword',
             };
 
+            $location.url(LOGIN_PAGE);
+            expect($location.url()).toEqual(LOGIN_PAGE);
+
             $httpBackend.expectPOST('/api/auth').respond('{"username":"TestUser"}');
             scope.logIn();
             $httpBackend.flush();
 
-            expect($location.url).toHaveBeenCalledWith(AUTH_HOME);
+            expect($location.url()).toEqual(AUTH_HOME);
         });
 
         it('should assign error statuses to form.error', function () {
@@ -203,6 +242,8 @@ describe('openeis-ui.auth', function () {
                 username: 'TestUser',
                 password: 'testpassword',
             };
+
+            spyOn($location, 'url');
 
             $httpBackend.expectPOST('/api/auth').respond(403, '');
             scope.logIn();
@@ -221,25 +262,30 @@ describe('openeis-ui.auth', function () {
     });
 
     describe('TopBarCtrl controller', function () {
-        var controller, scope;
+        var controller, scope, $httpBackend, $location;
 
         beforeEach(function () {
-            inject(function($controller, $rootScope) {
+            inject(function($controller, $rootScope, _$httpBackend_, _$location_) {
                 scope = $rootScope.$new();
                 controller = $controller('TopBarCtrl', { $scope: scope });
+                $httpBackend = _$httpBackend_;
+                $location = _$location_;
             });
         });
 
-        it('should define a function for logging out', function () {
-            expect(scope.logOut).toBeDefined();
+        afterEach(function () {
+            $httpBackend.verifyNoOutstandingExpectation();
         });
 
-        it('should redirect to ANON_HOME on successful logout', function () {
+        it('should redirect to LOGIN_PAGE on successful logout', function () {
+            $location.url(AUTH_HOME);
+            expect($location.url()).toEqual(AUTH_HOME);
+
             $httpBackend.expectDELETE('/api/auth').respond(204, '');
             scope.logOut();
             $httpBackend.flush();
 
-            expect($location.url).toHaveBeenCalledWith(ANON_HOME);
+            expect($location.url()).toEqual(LOGIN_PAGE);
         });
     });
 });
