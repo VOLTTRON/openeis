@@ -87,7 +87,7 @@ class JSONField(models.TextField, metaclass=models.SubfieldBase):
         try:
             result = json.loads(value)
         except ValueError:
-            raise models.ValidationError('Invalid JSON data')
+            raise ValidationError('Invalid JSON data')
         if isinstance(result, str):
             return JSONString(result)
         return result
@@ -96,7 +96,7 @@ class JSONField(models.TextField, metaclass=models.SubfieldBase):
         try:
             return json.dumps(value, separators=(',', ':'))
         except TypeError:
-            raise models.ValidationError('Cannot serialize object to JSON')
+            raise ValidationError('Cannot serialize object to JSON')
 
 
 _CODE_CHOICES = string.ascii_letters + string.digits
@@ -211,10 +211,44 @@ class Sensor(models.Model):
     class Meta:
         abstract=True
 
-    
-class BoolSensor(Sensor):
-    value = models.BooleanField(default=False)
-
-
-class FloatSensor(Sensor):
-    value = models.FloatField()
+ 
+class Table(models.Model):
+    name = models.CharField(max_length=30)
+    row_count = models.PositiveIntegerField()
+ 
+class TableColumn(models.Model):
+    table = models.ForeignKey(Table)
+    column = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=30)
+    db_type = models.CharField(max_length=30)
+    oeis_type = models.CharField(max_length=30)
+ 
+class IntTableData(models.Model):
+    row = models.IntegerField()
+    column = models.ForeignKey(TableColumn)
+    table = models.ForeignKey(Table)
+    value = models.IntegerField() 
+     
+class FloatTableData(models.Model):
+    row = models.IntegerField()
+    column = models.ForeignKey(TableColumn)
+    table = models.ForeignKey(Table)
+    value = models.FloatField() 
+     
+class StringTableData(models.Model):
+    row = models.IntegerField()
+    column = models.ForeignKey(TableColumn)
+    table = models.ForeignKey(Table)
+    value = models.TextField() 
+     
+class BooleanTableData(models.Model):
+    row = models.IntegerField()
+    column = models.ForeignKey(TableColumn)
+    table = models.ForeignKey(Table)
+    value = models.BooleanField() 
+     
+class TimeTableData(models.Model):
+    row = models.IntegerField()
+    column = models.ForeignKey(TableColumn)
+    table=models.ForeignKey(Table)
+    value=models.DateTimeField()     
