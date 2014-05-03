@@ -12,6 +12,7 @@ from django.contrib.contenttypes import generic
 from .protectedmedia import ProtectedFileSystemStorage
 from .validation import is_valid_name
 
+DEFAULT_CHAR_MAX_LEN = 30
 
 class Organization(models.Model):
     '''Group and manage users by organization.'''
@@ -113,26 +114,22 @@ class AccountVerification(models.Model):
     what = models.CharField(max_length=20)
     data = JSONField(blank=True)
 
-
-class Address(models.Model):
-    "An address that will "
-    street_address = models.CharField(max_length=50)
-    city = models.CharField(max_length=50)
-    state = models.CharField(max_length=50)
-    zip_code = models.CharField(max_length=10)    
-
-
 class UnitType(models.Model):
-    grouping = models.CharField(max_length=50)
-    key = models.CharField(max_length=50)
-    value = models.CharField(max_length=50)
-    other = models.CharField(max_length=50)
+    grouping = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    key = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    value = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    other = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     
         
 class Site(models.Model):
-    '''Site specific data.'''
-    site_name = models.CharField(max_length=50)
-    site_address = models.ForeignKey(Address)
+    """
+    Site specific data.
+    """    
+    site_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    site_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    site_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    site_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    
     
     def validate(self):
         """
@@ -149,8 +146,11 @@ class Site(models.Model):
 
 
 class Building(models.Model):
-    building_name = models.CharField(max_length=50)
+    building_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     site = models.ForeignKey(Site, related_name='sites')   
+    building_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    building_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    building_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     
     def validate(self):
         """
@@ -174,12 +174,12 @@ class Building(models.Model):
     
 class SystemType(models.Model):
     "Specifies the classification of a specific system i.e. RTU"
-    system_name = models.CharField(max_length=50)
-    system_type = models.CharField(max_length=50)
+    system_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    system_type = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
 
 
 class System(models.Model):
-    system_name = models.CharField(max_length=50)
+    system_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     system_type = models.ForeignKey(SystemType)
 
 
@@ -188,7 +188,7 @@ class System(models.Model):
     
 
 class SensorType(models.Model):
-    sensor_type_name = models.CharField(max_length=50)
+    sensor_type_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     unit_type = models.ForeignKey(UnitType)
         
     
@@ -213,11 +213,14 @@ class Sensor(models.Model):
 
  
 class Table(models.Model):
+    """
+    A Table is akin to a csv file.
+    """
     name = models.CharField(max_length=30)
-    row_count = models.PositiveIntegerField()
+    row_count = models.PositiveIntegerField(default=0)
  
 class TableColumn(models.Model):
-    table = models.ForeignKey(Table)
+    table = models.ForeignKey(Table, related_name="columns")
     column = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30)
     db_type = models.CharField(max_length=30)
