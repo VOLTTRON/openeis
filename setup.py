@@ -16,7 +16,8 @@ setup(
         'django-rest-swagger',
         'jsonschema',
         'nose',
-        'django-nose'
+        'django-nose',
+        'django-extensions',
     ],
     entry_points = '''
         [console_scripts]
