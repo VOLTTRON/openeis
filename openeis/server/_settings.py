@@ -48,8 +48,7 @@ INSTALLED_APPS = (
     'openeis.projects',
     'rest_framework',
     'rest_framework_swagger',
-    'django_nose',
-    'django_extensions',
+    'django_nose'
 )
 
 MIDDLEWARE_CLASSES = (
