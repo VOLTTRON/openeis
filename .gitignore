@@ -11,9 +11,5 @@ __pycache__/
 /data/
 /openeis/local/
 
-/openeis-ui/.sass-cache/
-/openeis-ui/bower_components/
-/openeis-ui/node_modules/
 /openeis-ui/build/js/
 !/openeis-ui/build/js/app.min.js
-/openeis-ui/ui-tests-junit-results.xml
