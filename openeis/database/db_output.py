@@ -52,6 +52,7 @@ class DatabaseOutput:
             #TODO: report an error.
             return
         table, column_models = col_table_tuple
+        row_index = table.row_count
         
         for column_name, value in row_data.iter_items():
             col_model_tuple  = column_models.get(column_name)
@@ -59,5 +60,5 @@ class DatabaseOutput:
                 #TODO :report an error
                 continue
             column_model, table_data_klass = col_model_tuple
-            table_data_klass(column=column_model,table=table)
-        table.row_cout++
+            table_data_klass(column=column_model,table=table,row=row_index, value=value)
+        table.row_cout += 1
