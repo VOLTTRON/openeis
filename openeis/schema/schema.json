@@ -133,10 +133,26 @@
 			"allOf": [ { "$ref": "#/definitions/system" }],						
 			"required":["system_name", "system_type", "sensor_type"],
 			"properties": {
-		
+				"sensors": {
+						"type": "array",
+						"description": "There can be one or more sensors for a site",
+						"additionalItems": {"$ref": "#definitions/rtu_sensor"},
+						"items": [
+							{"$ref": "#definitions/rtu_sensor"}
+						]
+					}	 
+				                        
+			
+			}
+			
+		},		
+		"rtu_sensor": {
+			"allOf": [ { "$ref": "#/definitions/sensor" }],		
+			"type": "object",
+			"properties": {
 				"sensor_type": {
 					"enum": [
-                            "OutdoorAirTemperature",
+							"OutdoorAirTemperature",
                             "OutdoorAirRelativeHumidity",
                             "MixedAirTemperature",
                             "MixedAirRelativeHumidity",
@@ -157,15 +173,11 @@
                             "ZoneSetpoint",
                             "ZoneTemperature",
                             "SupplyFanSpeed"
-                    ]
-                    
-	            }                        
-			
+					]
+				}
 			}
-			
-		},		
-		
-		
+		},
+	
 		"sensor": {
 			"type": "object",
 			"required": ["sensor_name","unit_type", "data_type", "sensor_type"],
