@@ -114,71 +114,88 @@ class AccountVerification(models.Model):
     what = models.CharField(max_length=20)
     data = JSONField(blank=True)
 
-class UnitType(models.Model):
-    grouping = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+class UnitType(models.Model):   
+    unit_type_group = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    
+class Unit(models.Model):
     key = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     value = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     other = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    
+    unit_type = models.ForeignKey(UnitType, related_name="units")
         
-class Site(models.Model):
+class ValidateOnSaveMixin(object):
+    def save(self, force_insert=False, force_update=False, **kwargs):
+        if not (force_insert or force_update):
+            self.full_clean()
+        super(ValidateOnSaveMixin, self).save(force_insert, force_update,
+                                              **kwargs)
+    
+    
+class Site(ValidateOnSaveMixin, models.Model):
     """
     Site specific data.
     """    
-    site_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    site_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    site_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    site_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    site_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN )
+    site_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
+    site_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
+    site_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
     
-    
-    def validate(self):
+    def is_valid(self):
         """
         The site must have a valid name.
         
-        returns a list of validation errors or None
+        raises ValidationError if the data is not valid
         """
-        errors = []
+        if not is_valid_name(self.site_name):
+            raise ValidationError("Invalid site name specified!")
         
-        if is_valid_name(self.site_name):
-            errors.append("Invalid site name specified!")
-                    
-        return errors
-
-
-class Building(models.Model):
+        return True
+    
+    def clean(self):
+        """
+        This will be called when the object is saved.
+        """        
+        self.is_valid()
+        
+        
+class Building(ValidateOnSaveMixin, models.Model):
     building_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     site = models.ForeignKey(Site, related_name='sites')   
     building_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     building_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     building_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     
-    def validate(self):
+    
+    def is_valid(self):
         """
-        The building must have a building name and a site associated with it.
+        The site must have a valid name.
         
-        returns a list of validation errors or None
+        raises ValidationError if the data is not valid
         """
-        errors = []
-        
-        if is_valid_name(self.building_name):
-            errors.append("Invalid building name specified!")
-            
+        if not is_valid_name(self.building_name):
+            raise ValidationError("Invalid site name specified!")
         if not isinstance(self.site, Site):
-            errors.append("Site object must be specified!")
-            
-        return errors
+            raise ValidationError("Site object must be specified!")
+        
+        return True
+    
+    def clean(self):
+        """
+        This will be called when the object is saved.
+        """        
+        self.is_valid()
         
         
              
 
     
-class SystemType(models.Model):
+class SystemType(ValidateOnSaveMixin, models.Model):
     "Specifies the classification of a specific system i.e. RTU"
     system_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     system_type = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
 
 
-class System(models.Model):
+class System(ValidateOnSaveMixin, models.Model):
     system_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     system_type = models.ForeignKey(SystemType)
 
