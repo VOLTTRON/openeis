@@ -5,14 +5,29 @@ Created on Apr 22, 2014
 '''
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+from django.db.models.fields import FieldDoesNotExist
 from projects import models    
+
 
 class TestModelsValidate(TestCase):
     #fixtures = ['all.json'] #, 'initial_data.json']
     
-    def test_building_requrires_site_and_building_name(self):
-        site = models.Site(site_name="PNNL")
+    def test_building_requires_site_and_building_name(self):
+        site = models.Site.objects.create(site_name="PNNL")
+        site.save()
+        
+        building = models.Building(building_name="ISB1")
+                 
+        with self.assertRaises(ValidationError):
+            building.save()
     
+        self.assertFalse(building.is_valid())
+        
+        building.site = site
+        building.save()
+        self.assertEqual(building.pk, 1, "Invalid building primary key")
+                
+        
     
     def test_site_requires_site_name(self):
         """
@@ -21,12 +36,10 @@ class TestModelsValidate(TestCase):
         """        
         with self.assertRaises(ValidationError):
             models.Site().save()
-        
-        saved_site = models.Site(site_name="PNNL").save()
-        print(saved_site)
-        #self.assertTrue(site.validate(), "Validations were not setup correctly for site.")
-        
-        #site.site_name = "PNNL"
-        #self.assertFalse(site.validate())
+                
+        site = models.Site(site_name="PNNL")
+        site.save()
+        self.assertEqual(site.pk, 1, "Invalid primary key")
+        self.assertEqual(site.site_name, "PNNL", "Invalid site name.")
                
     

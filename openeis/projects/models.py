@@ -11,6 +11,7 @@ from django.contrib.contenttypes import generic
 
 from .protectedmedia import ProtectedFileSystemStorage
 from .validation import is_valid_name
+from django.core import validators
 
 DEFAULT_CHAR_MAX_LEN = 30
 
@@ -146,17 +147,21 @@ class Site(ValidateOnSaveMixin, models.Model):
         
         raises ValidationError if the data is not valid
         """
-        if not is_valid_name(self.site_name):
-            raise ValidationError("Invalid site name specified!")
-        
+        try:
+            self.clean()
+        except:
+            return False
+    
         return True
     
     def clean(self):
-        """
-        This will be called when the object is saved.
-        """        
-        self.is_valid()
         
+        if not is_valid_name(self.site_name):
+            raise ValidationError("Site name is invalid.")
+            
+        
+    
+                   
         
 class Building(ValidateOnSaveMixin, models.Model):
     building_name = models.TextField()
@@ -172,10 +177,10 @@ class Building(ValidateOnSaveMixin, models.Model):
         
         raises ValidationError if the data is not valid
         """
-        if not is_valid_name(self.building_name):
-            raise ValidationError("Invalid site name specified!")
-        if not isinstance(self.site, Site):
-            raise ValidationError("Site object must be specified!")
+        try:
+            self.clean()
+        except:
+            return False       
         
         return True
     
@@ -183,7 +188,14 @@ class Building(ValidateOnSaveMixin, models.Model):
         """
         This will be called when the object is saved.
         """        
-        self.is_valid()
+        if not is_valid_name(self.building_name):
+            raise ValidationError("Invalid building name name specified!")
+        
+        try:
+            if not isinstance(self.site, Site):
+                raise ValidationError("Invalid site name specified!")
+        except:
+            raise ValidationError("Invalid site name specified!")
         
         
              
@@ -205,7 +217,7 @@ class System(ValidateOnSaveMixin, models.Model):
     
 
 class SensorType(ValidateOnSaveMixin, models.Model):
-    sensor_type_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    sensor_type_name = models.TextField()
     unit_type = models.ForeignKey(UnitType)
         
     
