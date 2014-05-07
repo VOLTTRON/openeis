@@ -115,12 +115,12 @@ class AccountVerification(models.Model):
     data = JSONField(blank=True)
 
 class UnitType(models.Model):   
-    unit_type_group = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    unit_type_group = models.TextField()
     
 class Unit(models.Model):
-    key = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    value = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    other = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    key = models.TextField()
+    value = models.TextField()
+    other = models.TextField()
     unit_type = models.ForeignKey(UnitType, related_name="units")
         
 class ValidateOnSaveMixin(object):
@@ -135,10 +135,10 @@ class Site(ValidateOnSaveMixin, models.Model):
     """
     Site specific data.
     """    
-    site_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN )
-    site_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
-    site_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
-    site_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
+    site_name = models.TextField()
+    site_address = models.TextField(blank=True)
+    site_city = models.TextField(blank=True)
+    site_state = models.TextField(blank=True)
     
     def is_valid(self):
         """
@@ -159,11 +159,11 @@ class Site(ValidateOnSaveMixin, models.Model):
         
         
 class Building(ValidateOnSaveMixin, models.Model):
-    building_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    building_name = models.TextField()
     site = models.ForeignKey(Site, related_name='sites')   
-    building_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
-    building_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
-    building_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
+    building_address = models.TextField(blank=True)
+    building_city = models.TextField(blank=True)
+    building_state = models.TextField(blank=True)
     
     
     def is_valid(self):
@@ -191,12 +191,12 @@ class Building(ValidateOnSaveMixin, models.Model):
     
 class SystemType(ValidateOnSaveMixin, models.Model):
     "Specifies the classification of a specific system i.e. RTU"
-    system_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    system_type = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    system_name = models.TextField()
+    system_type = models.TextField()
 
 
 class System(ValidateOnSaveMixin, models.Model):
-    system_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    system_name = models.TextField()
     system_type = models.ForeignKey(SystemType)
 
 
