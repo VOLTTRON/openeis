@@ -242,33 +242,26 @@ class TableColumn(models.Model):
     name = models.CharField(max_length=30)
     db_type = models.CharField(max_length=30)
     oeis_type = models.CharField(max_length=30)
- 
-class IntTableData(models.Model):
+    
+class BaseTableData(models.Model):
     row = models.IntegerField()
     column = models.ForeignKey(TableColumn)
-    table = models.ForeignKey(Table)
+    table = models.ForeignKey(Table) 
+    
+    class Meta:
+        abstract = True
+ 
+class IntTableData(BaseTableData):
     value = models.IntegerField() 
      
-class FloatTableData(models.Model):
-    row = models.IntegerField()
-    column = models.ForeignKey(TableColumn)
-    table = models.ForeignKey(Table)
+class FloatTableData(BaseTableData):
     value = models.FloatField() 
      
-class StringTableData(models.Model):
-    row = models.IntegerField()
-    column = models.ForeignKey(TableColumn)
-    table = models.ForeignKey(Table)
+class StringTableData(BaseTableData):
     value = models.TextField() 
      
-class BooleanTableData(models.Model):
-    row = models.IntegerField()
-    column = models.ForeignKey(TableColumn)
-    table = models.ForeignKey(Table)
+class BooleanTableData(BaseTableData):
     value = models.BooleanField() 
      
-class TimeTableData(models.Model):
-    row = models.IntegerField()
-    column = models.ForeignKey(TableColumn)
-    table=models.ForeignKey(Table)
+class TimeTableData(BaseTableData):
     value=models.DateTimeField()     
