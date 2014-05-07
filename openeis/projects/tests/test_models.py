@@ -18,14 +18,12 @@ class TestModelsValidate(TestCase):
         """
         Test that validate method returns a list of things that are wrong.
         Tests that validate returns an empty set (False) when the 
-        """
-        
+        """        
         with self.assertRaises(ValidationError):
             models.Site().save()
         
         saved_site = models.Site(site_name="PNNL").save()
         print(saved_site)
-        site = models.Site.objects.get(site_name="PNNL")
         #self.assertTrue(site.validate(), "Validations were not setup correctly for site.")
         
         #site.site_name = "PNNL"

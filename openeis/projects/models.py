@@ -161,9 +161,9 @@ class Site(ValidateOnSaveMixin, models.Model):
 class Building(ValidateOnSaveMixin, models.Model):
     building_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     site = models.ForeignKey(Site, related_name='sites')   
-    building_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    building_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    building_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
+    building_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
+    building_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
+    building_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN, null=True, blank=True)
     
     
     def is_valid(self):
@@ -204,12 +204,12 @@ class System(ValidateOnSaveMixin, models.Model):
 #     parent = models.ForeignKey(System)
     
 
-class SensorType(models.Model):
+class SensorType(ValidateOnSaveMixin, models.Model):
     sensor_type_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
     unit_type = models.ForeignKey(UnitType)
         
     
-class Sensor(models.Model):
+class Sensor(ValidateOnSaveMixin, models.Model):
     
     # See for details about Generic Relations that we are dealing with here
     # for the first time.
