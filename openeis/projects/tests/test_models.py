@@ -10,7 +10,15 @@ from projects import models
 
 
 class TestModelsValidate(TestCase):
-    #fixtures = ['all.json'] #, 'initial_data.json']
+    
+    def test_can_save_site_sensor(self):
+        site = models.Site.objects.create(site_name="PNNL")
+        site.save()
+    
+    def test_can_save_building_sensor(self):
+        pass
+    
+    
     
     def test_building_requires_site_and_building_name(self):
         site = models.Site.objects.create(site_name="PNNL")

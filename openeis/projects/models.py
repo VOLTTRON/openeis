@@ -13,7 +13,6 @@ from .protectedmedia import ProtectedFileSystemStorage
 from .validation import is_valid_name
 from django.core import validators
 
-DEFAULT_CHAR_MAX_LEN = 30
 
 class Organization(models.Model):
     '''Group and manage users by organization.'''
@@ -130,115 +129,100 @@ class ValidateOnSaveMixin(object):
             self.full_clean()
         super(ValidateOnSaveMixin, self).save(force_insert, force_update,
                                               **kwargs)
-    
-    
-class Site(ValidateOnSaveMixin, models.Model):
-    """
-    Site specific data.
-    """    
-    site_name = models.TextField()
-    site_address = models.TextField(blank=True)
-    site_city = models.TextField(blank=True)
-    site_state = models.TextField(blank=True)
-    
-    def is_valid(self):
-        """
-        The site must have a valid name.
-        
-        raises ValidationError if the data is not valid
-        """
-        try:
-            self.clean()
-        except:
-            return False
-    
-        return True
-    
-    def clean(self):
-        
-        if not is_valid_name(self.site_name):
-            raise ValidationError("Site name is invalid.")
-            
-        
-    
-                   
-        
-class Building(ValidateOnSaveMixin, models.Model):
-    building_name = models.TextField()
-    site = models.ForeignKey(Site, related_name='sites')   
-    building_address = models.TextField(blank=True)
-    building_city = models.TextField(blank=True)
-    building_state = models.TextField(blank=True)
-    
-    
-    def is_valid(self):
-        """
-        The site must have a valid name.
-        
-        raises ValidationError if the data is not valid
-        """
-        try:
-            self.clean()
-        except:
-            return False       
-        
-        return True
-    
-    def clean(self):
-        """
-        This will be called when the object is saved.
-        """        
-        if not is_valid_name(self.building_name):
-            raise ValidationError("Invalid building name name specified!")
-        
-        try:
-            if not isinstance(self.site, Site):
-                raise ValidationError("Invalid site name specified!")
-        except:
-            raise ValidationError("Invalid site name specified!")
-        
-        
-             
 
+def validate_path_name(value):
+    if '/' in value:
+        raise ValidationError("{} contains an invalid character".format(value))
     
-class SystemType(ValidateOnSaveMixin, models.Model):
-    "Specifies the classification of a specific system i.e. RTU"
-    system_name = models.TextField()
-    system_type = models.TextField()
-
-
-class System(ValidateOnSaveMixin, models.Model):
-    system_name = models.TextField()
-    system_type = models.ForeignKey(SystemType)
-
-
-# class SubSystem(models.Model):
-#     parent = models.ForeignKey(System)
+class SensorTree(models.Model):
+    parent = models.ForeignKey("self")
+    name = models.CharField(max_length=100, validators=[validate_path_name])
+    extra = JSONField()
+    # site, building, system, subsystem
+    level = models.CharField(max_length=20)
     
-
-class SensorType(ValidateOnSaveMixin, models.Model):
-    sensor_type_name = models.TextField()
-    unit_type = models.ForeignKey(UnitType)
-        
-    
-class Sensor(ValidateOnSaveMixin, models.Model):
-    
-    # See for details about Generic Relations that we are dealing with here
-    # for the first time.
-    #
-    # The following three fields allow the parent to be one of Site,
-    # Buildng, or System.
-    content_type = models.ForeignKey(ContentType, null=True)
-    object_id = models.PositiveIntegerField()
-    parent_object = generic.GenericForeignKey('content_type', 'object_id')
-    
-    sensor_type = models.ForeignKey(SensorType)
-    
-    # https://docs.djangoproject.com/en/dev/topics/db/models/#abstract-base-classes
-    # Abstract becaus we have common information but the value is going to be of a different
-    # type between the classes.
     class Meta:
-        abstract=True
+        unique_together = ('name', 'map_definition')
+    
+    @property
+    def full_path(self):
+        names = []
+        node = self
+        while node:
+            names.append(node.name)
+            node = node.parent
+        names.reverse()
+        return '/'.join(names)
+    
+    def __str__(self):
+        return self.name
+    
+    def __repr__(self):
+        return '<{}: {}>'.format(self.__class__.__name__, self.full_path)
+ 
+
+class MapDefinition(models.Model):    
+    root = models.ForeignKey(SensorTree)
+    name = models.CharField(max_length=100)
+    extra = JSONField()
+    project = models.ForeignKey(Project)
+    
+    class Meta:
+        unique_together = ('name', 'project')
+    
+    def __str__(self):
+        return self.name
+    
+    def __repr__(self):
+        return '<{}: {}>'.format(self.__class__.__name__, self.name)
+
+    
+class SensorMapFile(models.Model):
+    name = models.CharField(max_length=100)
+    extra = JSONField()
+    signature = models.CharField(max_lenght=32)
+    ts_fields = models.CharField(max_lenght=255)
+    ts_format = models.CharField(max_length=32)
+    map_definition = models.ForeignKey(MapDefinition, related_name="map_files")
+    
+    class Meta:
+        unique_together = ('name', 'map_definition')
+    
+    def __str__(self):
+        return self.name
+    
+    def __repr__(self):
+        return '<{}: {}>'.format(self.__class__.__name__, self.name)
+
+    
+class Sensor(models.Model):
+    name = models.CharField(max_length=100, validators=[validate_path_name])
+    extra = JSONField()
+    tree = models.ForeignKey(SensorTree, related_name="sensors")
+    extra = models.TextField()
+    source_file = models.ForeignKey(SensorMapFile)
+    source_column = models.CharField(max_length=255)
+    unit_key = models.CharField(max_length=50)
+    type_key = models.CharField(max_length=50)
+    
+    class Meta:
+        unique_together = ('name', 'tree')
+    
+    @property
+    def full_path(self):
+        names = [self.name]
+        node = self.tree
+        while node:
+            names.append(node.name)
+            node = node.parent
+        names.reverse()
+        return '/'.join(names)
+    
+    def __str__(self):
+        return self.name
+    
+    def __repr__(self):
+        return '<{}: {}>'.format(self.__class__.__name__, self.full_path)
 
  
 class Table(models.Model):
