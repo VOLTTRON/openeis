@@ -1,0 +1,69 @@
+On older versions of Ubuntu, it may be necessary to enable the deadsnakes PPA
+to install Python 3.3 or newer. Only perform this step if Python 3.3 or newer
+is unavailable in the official repositories for the version of Ubuntu you are
+using. The easiest way to enable the PPA is to execute the following command:
+
+   $ sudo add-apt-repository ppa:fkrull/deadsnakes
+
+Some firewalls may block the request to the PGP key server. In that case, the
+repository may be installed directly from the deadsnakes-ppa directory:
+
+   $ sudo apt-key add deadsnakes-ppa/deadsnakes-ppa.key
+   $ sudo cp deadsnakes/deadsnakes-ppa.list /etc/apt/sources.list.d/
+
+Alternatively, the deadsnakes-ppa package can be built and installed:
+
+   $ (cd deadsnakes-ppa && dpkg-buildpackage -tc -b)
+   $ sudo dpkg -i deadsnakes-ppa_1.0_all.deb
+
+More information on the deadsnakes PPA can be found here:
+
+   https://launchpad.net/~fkrull/+archive/deadsnakes
+
+
+Nginx version 1.4 or newer is recommended and is generally not in the official
+repositories, so it will likely be necessary to enable the nginx repository.
+The easiest method for enabling the repository is to build and install the
+nginx-repo package:
+
+   $ (cd nginx-repo && dpkg-buildpackage -tc -b)
+   $ sudo dpkg -i nginx-keys_1.0_all.deb nginx-stable_1.0_all.deb
+
+You may also follow the instructions on the Nginx website to install it
+manually:
+
+   http://nginx.org/en/linux_packages.html
+
+
+Now that the appropriate Python and Nginx repositories are available, the
+openeis-support packages must be built and installed:
+
+   $ (cd openeis-support && dpkg-buildpackage -tc -b)
+   $ sudo dpkg -i openeis-support*.deb
+   $ sudo apt-get install -f
+
+openeis-support expects the openeis-repository to be checked out and built in
+/var/lib/openeis. The directory is owned by openeis and has a sticky group of
+openeis. This means that any files and directories created in will have their
+group automatically set to openeis and be writable by all members of openeis.
+
+To make ensure there are no permission issues, perform the following steps
+as theopeneis user, which was created by the openeis-support-config package:
+
+   $ sudo su -l -s /bin/bash openeis
+
+Check out the code into /var/lib/openeis:
+
+   [openeis /var/lib/openeis]$ git clone https://git.pnnl.gov/openeis .
+
+Bootstrap OpenEIS and install extra python dependencies:
+
+   [openeis /var/lib/openeis]$ python3 bootstrap.py
+   [openeis /var/lib/openeis]$ env/bin/pip install uwsgi psycopg2
+   [openeis /var/lib/openeis]$ env/bin/openeis syncdb
+   [openeis /var/lib/openeis]$ env/bin/openeis linkstatic
+
+Now start the openeis service:
+
+   $ sudo initctl start openeis
+
