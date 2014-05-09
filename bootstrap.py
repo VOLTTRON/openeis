@@ -139,6 +139,8 @@ def stage2():
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', '.'])
     if not os.path.exists('data'):
         os.mkdir('data')
+    if not os.path.exists('data/static'):
+        os.mkdir('data/static')
 
 
 def main(directory='env', prompt='(openeis)'):
