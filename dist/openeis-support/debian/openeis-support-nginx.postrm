@@ -1,0 +1,28 @@
+#!/bin/sh
+# postrm script for openeis-support-nginx
+
+set -e
+
+case "$1" in
+  purge)
+    [ ! /etc/openeis/openeis.key -ef /etc/openeis/default.key ] || rm -f /etc/openeis/openeis.key || true
+    [ ! /etc/openeis/openeis.crt -ef /etc/openeis/default.crt ] || rm -f /etc/openeis/openeis.crt || true
+    rm -f /etc/openeis/default.key /etc/openeis/default.crt || true
+  ;;
+
+  remove|abort-install|disappear)
+    dpkg-divert --package openeis-support-nginx --rename --divert /etc/nginx/conf.d/default.conf.nginx --remove /etc/nginx/conf.d/default.conf
+  ;;
+
+  upgrade|failed-upgrade|abort-upgrade)
+  ;;
+
+  *)
+    echo "postrm called with unknown argument \`$1'" >&2
+    exit 1
+  ;;
+esac
+
+#DEBHELPER#
+
+exit 0
