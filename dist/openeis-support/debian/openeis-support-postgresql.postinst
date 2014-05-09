@@ -1,0 +1,23 @@
+#!/bin/sh
+# postinst script for openeis-support-postgresql
+
+set -e
+
+case "$1" in
+  configure)
+    sudo -H -u postgres createuser --no-createdb --no-createrole --no-superuser --no-password openeis || true
+    sudo -H -u postgres createdb --owner openeis --no-password openeis || true
+  ;;
+
+  abort-upgrade|abort-remove|abort-deconfigure)
+  ;;
+
+  *)
+    echo "postinst called with unknown argument \`$1'" >&2
+    exit 1
+  ;;
+esac
+
+#DEBHELPER#
+
+exit 0
