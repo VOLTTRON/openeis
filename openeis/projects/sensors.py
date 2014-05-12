@@ -1,20 +1,13 @@
 '''
-Created on May 11, 2014
-
-@author: D3M614
+This python module contains sensor definitions for the openeis application.  It contains
+a json generation tool for generating a static .json file for use in the client application.
 '''
 from _ctypes import ArgumentError
 
-# class Sensors:
-#     
-#     def __init__(cls,name,bases,cls_dict):
-#         type.__init__(cls,name,bases,cls_dict)
-#         cls._subclasses = set()
-#         for base in bases:
-#             if isinstance(base,Sensors):
-#                 base._subclasses.add(cls)
-
 class Sensor:
+    """
+    Base class for all sensors in OpenEis
+    """
     
     #__metaclass__ = Sensors
     
@@ -112,6 +105,40 @@ SupplyFanSpeed = type("SupplyFanSpeed", (Sensor,), {'unit_type':'dimensionless'}
 TotalPower = type("TotalPower", (Sensor,), {"unit_type": "energy"})
 ZoneSetpoint = type("ZoneSetpoint", (Sensor,), {"unit_type": "temperature"})
 ZoneTemperature = type("ZoneTemperature", (Sensor,), {"unit_type": "temperature"})
+
+building_sensors = {}
+site_sensors ={}
+system_sensors = {}
+sensors = {}
+
+sensors = {
+           "CondenserFanPower": CondenserFanPower(),
+           "DischargeAirRelativeHumidity": DischargeAirRelativeHumidity(),
+           "DischargeAirTemperature": DischargeAirTemperature(),
+           "EconomizerMode": EconomizerMode(),
+           "FirstStageCooling": FirstStageCooling(),
+           "FirstStageHeating": FirstStageHeating(),
+           "MixedAirRelativeHumidity": MixedAirRelativeHumidity(),
+           "MixedAirTemperature": MixedAirTemperature(),
+           "OccupancyMode": OccupancyMode(),
+           "OutdoorAirRelativeHumidity": OutdoorAirRelativeHumidity(),
+           "OutdoorAirTemperature": OutdoorAirTemperature(),
+           "OutdoorDamperSignal": OutdoorDamperSignal(),
+           "ReturnAirRelativeHumidity": ReturnAirRelativeHumidity(),
+           "ReturnAirTemperature": ReturnAirTemperature(),
+           "SecondStageCooling": SecondStageCooling(),
+           "SecondStageHeating": SecondStageHeating(),
+           "SupplyFanPower": SupplyFanPower(),
+           "SupplyFanSpeed": SupplyFanSpeed(),
+           "TotalPower": TotalPower(),
+           "ZoneSetpoint": ZoneSetpoint(),
+           "ZoneTemperature":ZoneTemperature
+           }
+           
+
+
+def generate_static_json():
+    pass
 
 
 

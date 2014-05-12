@@ -4,7 +4,7 @@ Created on May 11, 2014
 @author: D3M614
 '''
 import unittest
-from schema import sensors
+from projects import sensors
 from _ctypes import ArgumentError
 
 class TestSensor(unittest.TestCase):
@@ -21,8 +21,7 @@ class TestSensor(unittest.TestCase):
         self.assertIsNone(test.minimum, "Minimum isn't none!")
         self.assertIsNone(test.maximum, "Maximum isn't none!")
         self.assertIsNotNone(test.sensor_type, 'sensor_type is none!')       
-
-    
+        
     
     
 
