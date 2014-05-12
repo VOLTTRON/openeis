@@ -217,3 +217,8 @@ class LoginSerializer(serializers.Serializer):
     def restore_object(self, attrs, instance=None):
         return (attrs.get('username', instance and instance[0]),
                 attrs.get('password', instance and instance[1]))
+
+
+class SensorMapDefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SensorMapDefinition
