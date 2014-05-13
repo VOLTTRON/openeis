@@ -10,6 +10,7 @@ from django.core.exceptions import ValidationError
 import jsonschema.exceptions
 
 from .protectedmedia import ProtectedFileSystemStorage
+from . import sensormap
 
 
 class Organization(models.Model):
@@ -131,93 +132,14 @@ class SensorMapDefinition(models.Model):
     def clean_fields(self, exclude=None):
         '''Validate JSON against sensor map schema.'''
         super().clean_fields(exclude=exclude)
-        validator = jsonschema.Draft4Validator(SensorMapDefinition.get_schema())
-        try:
-            validator.validate(self.map)
-        except jsonschema.exceptions.ValidationError as e:
-            path = ''.join('[{!r}]'.format(name) for name in e.path)
-            raise ValidationError({'map{}'.format(path): [e.message]})
-
-    @staticmethod
-    def get_schema():
-        '''Return JSON schema to validate sensor map definition.'''
-        return {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "description": "Schema for input data to sensor map definition.",
-            "type": "object",
-            "required": ["version", "files", "sensors"],
-            "properties": {
-                "version": {
-                    "type": "integer",
-                    "enum": [1]
-                },
-                "files": {
-                    "type": "object",
-                    "minProperties": 1,
-                    "additionalProperties": {
-                        "type": "object",
-                        "required": ["signature", "ts"],
-                        "properties": {
-                            "signature": {
-                                "type": "object",
-                                "required": ["headers"],
-                                "properties": {
-                                    "headers": {
-                                        "type": "array",
-                                        "items": {"type": ["string", "null"]},
-                                        "minItems": 2
-                                    }
-                                }
-                            },
-                            "ts": {
-                                "type": "object",
-                                "required": ["columns", "format"],
-                                "properties": {
-                                    "columns": {
-                                        "type": "array",
-                                        "items": {"type": ["string", "integer"]},
-                                        "minItems": 1
-                                    },
-                                    "format": {"type": "string"}
-                                }
-                            },
-                            "extra": {"type": "object"}
-                        }
-                    }
-                },
-                "sensors": {
-                    "type": "object",
-                    "minProperties": 1,
-                    "additionalProperties": {
-                        "type": "object",
-                        "properties": {
-                            "extra": {"type": "object"}
-                        },
-                        "dependencies" : {
-                            "level": {
-                                "type": "object",
-                                "required": ["level"],
-                                "properties": {
-                                    "level": {"type": "string"},
-                                    "attributes": {"type": "object"}
-                                }
-                            },
-                            "type": {
-                                "type": "object",
-                                "required": ["type", "unit", "file", "column"],
-                                "properties": {
-                                    "type": {"type": "string"},
-                                    "unit": {"type": ["string", "null"]},
-                                    "file": {"type": "string"},
-                                    "column": {"type": ["string", "integer"]}
-                                }
-                            }
-                        }
-                    }
-                },
-                "extra": {"type": "object"}
-            }
-        }
+        if exclude and 'map' in exclude:
+            return
+        errors = sensormap.validate(self.map)
+        if not errors:
+            return
+        raise ValidationError({('map' + ''.join('[{!r}]'.format(name)
+                                for name in path)): value
+                               for path, value in errors.items()})
     
 
 #class UnitType(models.Model):   
