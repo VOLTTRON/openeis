@@ -1,0 +1,22 @@
+#!/bin/sh
+# postrm script for nginx-keys
+
+set -e
+
+case "$1" in
+    remove)
+        rm -f /etc/apt/trusted.gpg.d/nginx.gpg
+    ;;
+
+    purge|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+    ;;
+
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

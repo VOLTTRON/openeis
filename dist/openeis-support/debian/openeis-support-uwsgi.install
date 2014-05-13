@@ -1,0 +1,2 @@
+uwsgi/uwsgi.ini etc/openeis
+upstart/openeis.conf etc/init

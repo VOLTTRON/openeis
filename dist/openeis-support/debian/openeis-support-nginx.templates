@@ -1,0 +1,6 @@
+Template: openeis-support-nginx/server-name
+Type: string
+Default: example.com
+Description: What DNS name(s) shall the web server use?
+ Enter the fully-qualified domain name assigned to the web server. Seperate
+ multiple names by a space.

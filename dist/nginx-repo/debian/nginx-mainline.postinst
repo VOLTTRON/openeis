@@ -1,0 +1,26 @@
+#!/bin/sh
+# postinst script for nginx-mainline
+
+set -e
+
+case "$1" in
+    configure)
+        . /etc/lsb-release && . /etc/os-release && \
+            [ -n "$DISTRIB_CODENAME" ] && [ -n "$ID" ] && \
+            sed -i 's@/[^/]\+/\s\+\w\+\\s\+nginx\s*$@/'$ID'/ '$DISTRIB_CODENAME' nginx@' \
+            /usr/share/nginx/nginx-mainline.list
+        ln -sf /usr/share/nginx/nginx-mainline.list /etc/apt/sources.list.d/nginx-mainline.list
+    ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+    ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

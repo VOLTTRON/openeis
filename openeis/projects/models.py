@@ -6,13 +6,12 @@ import string
 from django.contrib.auth.models import User
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
+
+import jsonschema.exceptions
 
 from .protectedmedia import ProtectedFileSystemStorage
-from .validation import is_valid_name
+from . import sensormap
 
-DEFAULT_CHAR_MAX_LEN = 30
 
 class Organization(models.Model):
     '''Group and manage users by organization.'''
@@ -87,8 +86,8 @@ class JSONField(models.TextField, metaclass=models.SubfieldBase):
             return value
         try:
             result = json.loads(value)
-        except ValueError:
-            raise ValidationError('Invalid JSON data')
+        except ValueError as e:
+            raise ValidationError('Invalid JSON data: {}'.format(e))
         if isinstance(result, str):
             return JSONString(result)
         return result
@@ -114,137 +113,179 @@ class AccountVerification(models.Model):
     what = models.CharField(max_length=20)
     data = JSONField(blank=True)
 
-class UnitType(models.Model):
-    grouping = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    key = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    value = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    other = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    
-        
-class Site(models.Model):
-    """
-    Site specific data.
-    """    
-    site_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    site_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    site_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    site_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    
-    
-    def validate(self):
-        """
-        The site must have a valid name.
-        
-        returns a list of validation errors or None
-        """
-        errors = []
-        
-        if is_valid_name(self.site_name):
-            errors.append("Invalid site name specified!")
-                    
-        return errors
 
+class SensorMapDefinition(models.Model):
+    project = models.ForeignKey(Project, related_name='sensor_maps')
+    name = models.CharField(max_length=100)
+    map = JSONField()
 
-class Building(models.Model):
-    building_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    site = models.ForeignKey(Site, related_name='sites')   
-    building_address = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    building_city = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    building_state = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    
-    def validate(self):
-        """
-        The building must have a building name and a site associated with it.
-        
-        returns a list of validation errors or None
-        """
-        errors = []
-        
-        if is_valid_name(self.building_name):
-            errors.append("Invalid building name specified!")
-            
-        if not isinstance(self.site, Site):
-            errors.append("Site object must be specified!")
-            
-        return errors
-        
-        
-             
-
-    
-class SystemType(models.Model):
-    "Specifies the classification of a specific system i.e. RTU"
-    system_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    system_type = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-
-
-class System(models.Model):
-    system_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    system_type = models.ForeignKey(SystemType)
-
-
-# class SubSystem(models.Model):
-#     parent = models.ForeignKey(System)
-    
-
-class SensorType(models.Model):
-    sensor_type_name = models.CharField(max_length=DEFAULT_CHAR_MAX_LEN)
-    unit_type = models.ForeignKey(UnitType)
-        
-    
-class Sensor(models.Model):
-    
-    # See for details about Generic Relations that we are dealing with here
-    # for the first time.
-    #
-    # The following three fields allow the parent to be one of Site,
-    # Buildng, or System.
-    content_type = models.ForeignKey(ContentType, null=True)
-    object_id = models.PositiveIntegerField()
-    parent_object = generic.GenericForeignKey('content_type', 'object_id')
-    
-    sensor_type = models.ForeignKey(SensorType)
-    
-    # https://docs.djangoproject.com/en/dev/topics/db/models/#abstract-base-classes
-    # Abstract becaus we have common information but the value is going to be of a different
-    # type between the classes.
     class Meta:
-        abstract=True
+        unique_together = ('project', 'name')
 
- 
-class Table(models.Model):
-    """
-    A Table is akin to a csv file.
-    """
-    name = models.CharField(max_length=30)
-    row_count = models.PositiveIntegerField(default=0)
- 
-class TableColumn(models.Model):
-    table = models.ForeignKey(Table, related_name="columns")
-    column = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=30)
-    db_type = models.CharField(max_length=30)
-    oeis_type = models.CharField(max_length=30)
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return '<{}: {}, {}>'.format(
+                self.__class__.__name__, self.project, self.name)
+
+    def clean_fields(self, exclude=None):
+        '''Validate JSON against sensor map schema.'''
+        super().clean_fields(exclude=exclude)
+        if exclude and 'map' in exclude:
+            return
+        errors = sensormap.validate(self.map)
+        if not errors:
+            return
+        raise ValidationError({('map' + ''.join('[{!r}]'.format(name)
+                                for name in path)): value
+                               for path, value in errors.items()})
     
-class BaseTableData(models.Model):
-    row = models.IntegerField()
-    column = models.ForeignKey(TableColumn)
-    table = models.ForeignKey(Table) 
-    
-    class Meta:
-        abstract = True
- 
-class IntTableData(BaseTableData):
-    value = models.IntegerField() 
-     
-class FloatTableData(BaseTableData):
-    value = models.FloatField() 
-     
-class StringTableData(BaseTableData):
-    value = models.TextField() 
-     
-class BooleanTableData(BaseTableData):
-    value = models.BooleanField() 
-     
-class TimeTableData(BaseTableData):
-    value=models.DateTimeField()     
+
+#class UnitType(models.Model):   
+#    unit_type_group = models.TextField()
+#    
+#class Unit(models.Model):
+#    key = models.TextField()
+#    value = models.TextField()
+#    other = models.TextField()
+#    unit_type = models.ForeignKey(UnitType, related_name="units")
+#        
+#class ValidateOnSaveMixin(object):
+#    def save(self, force_insert=False, force_update=False, **kwargs):
+#        if not (force_insert or force_update):
+#            self.full_clean()
+#        super(ValidateOnSaveMixin, self).save(force_insert, force_update,
+#                                              **kwargs)
+#
+#def validate_path_name(value):
+#    if '/' in value:
+#        raise ValidationError("{} contains an invalid character".format(value))
+#    
+#class SensorTree(models.Model):
+#    parent = models.ForeignKey("self")
+#    name = models.CharField(max_length=100, validators=[validate_path_name])
+#    extra = JSONField()
+#    # site, building, system, subsystem
+#    level = models.CharField(max_length=20)
+#    
+#    class Meta:
+#        unique_together = ('name', 'map_definition')
+#    
+#    @property
+#    def full_path(self):
+#        names = []
+#        node = self
+#        while node:
+#            names.append(node.name)
+#            node = node.parent
+#        names.reverse()
+#        return '/'.join(names)
+#    
+#    def __str__(self):
+#        return self.name
+#    
+#    def __repr__(self):
+#        return '<{}: {}>'.format(self.__class__.__name__, self.full_path)
+# 
+#
+#class MapDefinition(models.Model):    
+#    root = models.ForeignKey(SensorTree)
+#    name = models.CharField(max_length=100)
+#    extra = JSONField()
+#    project = models.ForeignKey(Project)
+#    
+#    class Meta:
+#        unique_together = ('name', 'project')
+#    
+#    def __str__(self):
+#        return self.name
+#    
+#    def __repr__(self):
+#        return '<{}: {}>'.format(self.__class__.__name__, self.name)
+#
+#    
+#class SensorMapFile(models.Model):
+#    name = models.CharField(max_length=100)
+#    extra = JSONField()
+#    signature = models.CharField(max_length=32)
+#    ts_fields = models.CharField(max_length=255)
+#    ts_format = models.CharField(max_length=32)
+#    map_definition = models.ForeignKey(MapDefinition, related_name="map_files")
+#    
+#    class Meta:
+#        unique_together = ('name', 'map_definition')
+#    
+#    def __str__(self):
+#        return self.name
+#    
+#    def __repr__(self):
+#        return '<{}: {}>'.format(self.__class__.__name__, self.name)
+#
+#    
+#class Sensor(models.Model):
+#    name = models.CharField(max_length=100, validators=[validate_path_name])
+#    extra = JSONField()
+#    tree = models.ForeignKey(SensorTree, related_name="sensors")
+#    extra = models.TextField()
+#    source_file = models.ForeignKey(SensorMapFile)
+#    source_column = models.CharField(max_length=255)
+#    unit_key = models.CharField(max_length=50)
+#    type_key = models.CharField(max_length=50)
+#    
+#    class Meta:
+#        unique_together = ('name', 'tree')
+#    
+#    @property
+#    def full_path(self):
+#        names = [self.name]
+#        node = self.tree
+#        while node:
+#            names.append(node.name)
+#            node = node.parent
+#        names.reverse()
+#        return '/'.join(names)
+#    
+#    def __str__(self):
+#        return self.name
+#    
+#    def __repr__(self):
+#        return '<{}: {}>'.format(self.__class__.__name__, self.full_path)
+#
+# 
+#class Table(models.Model):
+#    """
+#    A Table is akin to a csv file.
+#    """
+#    name = models.CharField(max_length=30)
+#    row_count = models.PositiveIntegerField(default=0)
+# 
+#class TableColumn(models.Model):
+#    table = models.ForeignKey(Table, related_name="columns")
+#    column = models.AutoField(primary_key=True)
+#    name = models.CharField(max_length=30)
+#    db_type = models.CharField(max_length=30)
+#    oeis_type = models.CharField(max_length=30)
+#    
+#class BaseTableData(models.Model):
+#    row = models.IntegerField()
+#    column = models.ForeignKey(TableColumn)
+#    table = models.ForeignKey(Table) 
+#    
+#    class Meta:
+#        abstract = True
+# 
+#class IntTableData(BaseTableData):
+#    value = models.IntegerField() 
+#     
+#class FloatTableData(BaseTableData):
+#    value = models.FloatField() 
+#     
+#class StringTableData(BaseTableData):
+#    value = models.TextField() 
+#     
+#class BooleanTableData(BaseTableData):
+#    value = models.BooleanField() 
+#     
+#class TimeTableData(BaseTableData):
+#    value=models.DateTimeField()     

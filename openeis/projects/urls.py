@@ -38,6 +38,7 @@ router = DefaultRouter(trailing_slash=False)
 router.register(r'projects', views.ProjectViewSet)
 router.register(r'files', views.FileViewSet)
 router.register(r'users', views.UserViewSet)
+router.register(r'sensormaps', views.SensorMapDefViewSet)
 api_urls = list(router.urls)
 
 router = SingleObjectRouter(trailing_slash=False)

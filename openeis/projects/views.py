@@ -16,6 +16,7 @@ from rest_framework import decorators
 from rest_framework.decorators import action, link
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
+from rest_framework import exceptions as rest_exceptions
 
 from . import models
 from .protectedmedia import protected_media, ProtectedMediaResponse
@@ -338,3 +339,27 @@ class AccountViewSet(mixins.CreateModelMixin,
             return Response({'detail': 'Invalid username/password.'},
                             status=status.HTTP_403_FORBIDDEN)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SensorMapDefViewSet(viewsets.ModelViewSet):
+    '''Manipulate all sensor maps owned by the active user.'''
+
+    model = models.SensorMapDefinition
+    serializer_class = serializers.SensorMapDefSerializer
+    permission_classes = (permissions.IsAuthenticated, IsProjectOwner)
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_fields = ('project', 'name')
+
+    def get_queryset(self):
+        '''Only allow users to see sensor maps they own.'''
+        user = self.request.user
+        return models.SensorMapDefinition.objects.filter(project__owner=user)
+
+    def pre_save(self, obj):
+        '''Check the project owner against the current user.'''
+        user = self.request.user
+        if not models.Project.objects.filter(
+                owner=user, pk=obj.project.pk).exists():
+            raise rest_exceptions.PermissionDenied(
+                    "Invalid project pk '{}' - "
+                    'permission denied.'.format(obj.project.pk))

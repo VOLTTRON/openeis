@@ -25,7 +25,7 @@ class CSVFile:
         self.dialect, self.has_header = self._sniff(sample_size)
         self.reader = csv.reader(self._iterlines(), self.dialect)
 
-    def _sniff(self, size=10000):
+    def _sniff(self, size=10000, delimiters=', \t|'):
         '''Detect a header and the dialect within the first size bytes.'''
         self.file.seek(0)
         sample = self.file.read(size)
@@ -35,7 +35,7 @@ class CSVFile:
             raise csv.Error('Encountered invalid Unicode character')
         self.file.seek(0)
         sniffer = csv.Sniffer()
-        return sniffer.sniff(sample), sniffer.has_header(sample)
+        return sniffer.sniff(sample, delimiters), sniffer.has_header(sample)
 
     def _iterlines(self):
         '''Iterate over the lines of the file.'''
@@ -217,3 +217,8 @@ class LoginSerializer(serializers.Serializer):
     def restore_object(self, attrs, instance=None):
         return (attrs.get('username', instance and instance[0]),
                 attrs.get('password', instance and instance[1]))
+
+
+class SensorMapDefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SensorMapDefinition

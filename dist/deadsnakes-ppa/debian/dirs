@@ -1,0 +1,3 @@
+etc/apt/sources.list.d
+etc/apt/trusted.gpg.d
+usr/share/deadsnakes-ppa

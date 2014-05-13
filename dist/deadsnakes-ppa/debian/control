@@ -1,0 +1,14 @@
+Source: deadsnakes-ppa
+Section: main
+Priority: optional
+Maintainer: Brandon Carpenter <brandon.carpenter@pnnl.gov>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+
+Package: deadsnakes-ppa
+Architecture: all
+Depends: ${misc:Depends}, coreutils, gnupg, sed
+Description: GPG keys and sources.list for deadsnake PPA.
+ Includes GPG keys and sources.list for fkrull's deadsnake PPA which includes
+ many Python builds and is useful for installing Python versions not available
+ in the official Ubuntu repositories.

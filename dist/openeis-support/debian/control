@@ -1,0 +1,45 @@
+Source: openeis-support
+Section: main
+Priority: extra
+Maintainer: Brandon Carpenter <brandon.carpenter@pnnl.gov>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.4
+
+Package: openeis-support
+Architecture: all
+Depends: ${misc:Depends}, build-essential, python3-dev (>= 3.3)
+Recommends: openeis-support-database, openeis-support-webserver
+Description: OpenEIS simple deployment
+ Scripts, configuration, and dependency loading to simplify the installation of
+ OpenEIS on an Ubuntu server.
+
+Package: openeis-support-config
+Architecture: all
+Depends: ${misc:Depends}, openeis-support
+Description: OpenEIS simple deployment
+ Scripts, configuration, and dependency loading to simplify the installation of
+ OpenEIS on an Ubuntu server.
+
+Package: openeis-support-uwsgi
+Architecture: all
+Depends: ${misc:Depends}, openeis-support-config
+Description: OpenEIS simple deployment
+ Scripts, configuration, and dependency loading to simplify the installation of
+ OpenEIS on an Ubuntu server.
+
+Package: openeis-support-nginx
+Architecture: all
+Provides: openeis-support-webserver
+Depends: ${misc:Depends}, debconf (>= 0.5), nginx (>= 1.4),
+ openeis-support-config, openeis-support-uwsgi, openssl
+Description: OpenEIS simple deployment
+ Scripts, configuration, and dependency loading to simplify the installation of
+ OpenEIS on an Ubuntu server.
+
+Package: openeis-support-postgresql
+Architecture: all
+Provides: openeis-support-database
+Depends: ${misc:Depends}, libpq-dev, postgresql, openeis-support-config
+Description: OpenEIS simple deployment
+ Scripts, configuration, and dependency loading to simplify the installation of
+ OpenEIS on an Ubuntu server.
