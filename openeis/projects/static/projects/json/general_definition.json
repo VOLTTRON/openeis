@@ -3,12 +3,9 @@
 		"site_type": {
 			"data_type": "string"
 		},
-		"site_address": {
-            "address": { "data_type": "string"},
-            "city": { "data_type": "string"},
-            "state": { "data_type": "string"},
-            "zip_code": { "data_type": "string"}            
-        },
+		"attribute_list": [
+            "Address"
+        ],
         "sensor_list": ["OutdoorAirTemperature"]
 	},
 	"building": {
@@ -18,13 +15,9 @@
 		"building_type": {
 			"data_type": "string"
 		},	
-		"building_address": {
-            "address": { "data_type": "string"},
-            "city": { "data_type": "string"},
-            "state": { "data_type": "string"},
-            "zip_code": { "data_type": "string"}            
-        },
-	     
+		"attribute_list": [
+            "Address"
+        ],
         "sensor_list": [
         	"OutdoorAirTemperature", 
             "OutdoorAirRelativeHumidity", 
@@ -74,6 +67,14 @@
 	            ]
 	        }
 		}        
+    },
+    "attributes": {
+        "Address": {
+            "address": { "data_type": "string"},
+            "city": { "data_type": "string"},
+            "state": { "data_type": "string"},
+            "zip_code": { "data_type": "string"}
+        }
     },
     "sensors": {        
         "CondenserFanPower": {
