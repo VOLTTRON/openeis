@@ -27,33 +27,38 @@ example input map:
 
 input_map = 
 {
-    'OAT_TEMPS': ((DateTableColumn,TableColumn), (DateTableColumn,TableColumn), (DateTableColumn,TableColumn)),
-    'OCC_MODE': ((DateTableColumn,TableColumn),)
+    'OAT_TEMPS': ('topic1','topic2', 'topic3'),
+    'OCC_MODE': ('topic4',)
 }
 
 '''
 
+from foo import get_sensor
+
 
 class DatabaseInput:
     
-    def __init__(self,input_map):
+    def __init__(self,input_id, topic_map):
         '''
-        Expected input map:
+        Expected input_map:
+        {
+            'OAT_TEMPS': ('topic1','topic2', 'topic3'),
+            'OCC_MODE': ('topic4',)
+        }        
+        '''
         
-        '''
-        self.create_column_map(input_map)        
+        self.topic_map = topic_map.copy()
+        
+        self.sensor_map = {}
+        for input_name, topics in self.topic_map.items():
+            self.column_map[input_name] = tuple(get_sensor(input_id,x) for x in topics)
         
              
-    def create_column_map(self,input_map):
-        self.column_map = {}
-        for input_name, inputs in input_map:
-            managers = []
-            for date_column, data_column in inputs:
-                date_manager = date_column.timetabledata_set
-                data_manager = getattr(data_column, db_type_map[data_column.db_type])
-                managers.append(date_manager, data_manager)
-            self.column_map[input_name] = tuple(managers)
-                
+    def get_topics(self):
+        return self.topic_map.copy()    
+    
+    def get_start_end_times(self):
+        pass
          
 
     def query_range(self, ):

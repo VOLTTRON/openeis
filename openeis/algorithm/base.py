@@ -10,18 +10,28 @@ class InputDescriptor:
     def __init__(self,
                  sensor_type,
                  desc,
-                 minimum=1,
-                 maximum=1):
+                 count=1,
+                 maximum=1,
+                 _id=None):
         #TODO: check and throw exception if self.sensor_data is none
         self.sensor_data = sensordata.get(sensor_type)
         self.desc = desc
-        self.minimum = minimum
-        if(maximum is not None and minimum > maximum):
-            maximum = minimum
+        self.count = count
+        if(maximum is not None and count > maximum):
+            maximum = count
         self.maximum = maximum
         
+class OutputDescriptor:
+    
+    def __init__(self,
+                 output_type,
+                 topic):
+        #TODO: check and throw exception if self.sensor_data is none
+        self.output_type = sensordata.get(sensor_type)
+        self.topic = topic
+        
 
-class DriverBaseClass(metaclass=ABCMeta):
+class DriverApplicationBaseClass(metaclass=ABCMeta):
     
     def __init__(self,inp=None,out=None,**kwargs):
         super().__init__(**kwargs)
@@ -50,11 +60,16 @@ class DriverBaseClass(metaclass=ABCMeta):
     
     @classmethod
     @abstractmethod
-    def output_format(cls):
-        """output schema description
-           {TableName1: {name1:type1, name2:type2,...},....}
-           eg: {'OAT': {'Timestamp':datetime,'OAT':float}, 
-                'Sensor': {'SomeValue':int, 'SomeOtherValue':boolean}} 
+    def output_format(cls, input_object):
+        """
+        The output object takes the resulting input object as a argument
+         so that it may give correct topics to it's outputs if needed.
+         
+        output schema description
+           {TableName1: {name1:OutputDescriptor1, name2:OutputDescriptor2,...},....}
+           
+           eg: {'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, 
+                'Sensor': {'SomeValue':OutputDescriptor('int', 'some_output/value), 'SomeOtherValue':OutputDescriptor('boolean', 'some_output/value)}} 
         """
         
     @classmethod
@@ -70,7 +85,7 @@ class DriverBaseClass(metaclass=ABCMeta):
             {
                 'matemp_missing': (int,0),
                 'mat_low': (float, 50.4)
-                'output_label': (str, None)
+                'output_label': (str, '')
             }
         """
     
