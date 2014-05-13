@@ -7,6 +7,8 @@ from django.contrib.auth.models import User
 from django.db import models
 from django.core.exceptions import ValidationError
 
+import jsonschema.exceptions
+
 from .protectedmedia import ProtectedFileSystemStorage
 
 
@@ -83,8 +85,8 @@ class JSONField(models.TextField, metaclass=models.SubfieldBase):
             return value
         try:
             result = json.loads(value)
-        except ValueError:
-            raise ValidationError('Invalid JSON data')
+        except ValueError as e:
+            raise ValidationError('Invalid JSON data: {}'.format(e))
         if isinstance(result, str):
             return JSONString(result)
         return result
@@ -110,6 +112,113 @@ class AccountVerification(models.Model):
     what = models.CharField(max_length=20)
     data = JSONField(blank=True)
 
+
+class SensorMapDefinition(models.Model):
+    project = models.ForeignKey(Project, related_name='sensor_maps')
+    name = models.CharField(max_length=100)
+    map = JSONField()
+
+    class Meta:
+        unique_together = ('project', 'name')
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return '<{}: {}, {}>'.format(
+                self.__class__.__name__, self.project, self.name)
+
+    def clean_fields(self, exclude=None):
+        '''Validate JSON against sensor map schema.'''
+        super().clean_fields(exclude=exclude)
+        validator = jsonschema.Draft4Validator(SensorMapDefinition.get_schema())
+        try:
+            validator.validate(self.map)
+        except jsonschema.exceptions.ValidationError as e:
+            path = ''.join('[{!r}]'.format(name) for name in e.path)
+            raise ValidationError({'map{}'.format(path): [e.message]})
+
+    @staticmethod
+    def get_schema():
+        '''Return JSON schema to validate sensor map definition.'''
+        return {
+            "$schema": "http://json-schema.org/draft-04/schema#",
+            "description": "Schema for input data to sensor map definition.",
+            "type": "object",
+            "required": ["version", "files", "sensors"],
+            "properties": {
+                "version": {
+                    "type": "integer",
+                    "enum": [1]
+                },
+                "files": {
+                    "type": "object",
+                    "minProperties": 1,
+                    "additionalProperties": {
+                        "type": "object",
+                        "required": ["signature", "ts"],
+                        "properties": {
+                            "signature": {
+                                "type": "object",
+                                "required": ["headers"],
+                                "properties": {
+                                    "headers": {
+                                        "type": "array",
+                                        "items": {"type": ["string", "null"]},
+                                        "minItems": 2
+                                    }
+                                }
+                            },
+                            "ts": {
+                                "type": "object",
+                                "required": ["columns", "format"],
+                                "properties": {
+                                    "columns": {
+                                        "type": "array",
+                                        "items": {"type": ["string", "integer"]},
+                                        "minItems": 1
+                                    },
+                                    "format": {"type": "string"}
+                                }
+                            },
+                            "extra": {"type": "object"}
+                        }
+                    }
+                },
+                "sensors": {
+                    "type": "object",
+                    "minProperties": 1,
+                    "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                            "extra": {"type": "object"}
+                        },
+                        "dependencies" : {
+                            "level": {
+                                "type": "object",
+                                "required": ["level"],
+                                "properties": {
+                                    "level": {"type": "string"},
+                                    "attributes": {"type": "object"}
+                                }
+                            },
+                            "type": {
+                                "type": "object",
+                                "required": ["type", "unit", "file", "column"],
+                                "properties": {
+                                    "type": {"type": "string"},
+                                    "unit": {"type": ["string", "null"]},
+                                    "file": {"type": "string"},
+                                    "column": {"type": ["string", "integer"]}
+                                }
+                            }
+                        }
+                    }
+                },
+                "extra": {"type": "object"}
+            }
+        }
+    
 
 #class UnitType(models.Model):   
 #    unit_type_group = models.TextField()
