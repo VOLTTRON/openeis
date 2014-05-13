@@ -9,8 +9,43 @@
                       "WholeBuildingGas"
                    }
     },
-    "system_sensors": {
-        "sensor_list": [
+    "systems": {
+        "RTU": {
+            "sensor_list": [
+                "OutdoorAirTemperature",
+                "OutdoorAirRelativeHumidity",
+                "MixedAirTemperature",
+                "MixedAirRelativeHumidity",
+                "ReturnAirTemperature",
+                "ReturnAirRelativeHumidity",
+                "DischargeAirTemperature",
+                "DischargeAirRelativeHumidity",
+                "FirstStageCooling",
+                "SecondStageCooling",
+                "FirstStageHeating",
+                "SecondStageHeating",
+                "TotalPower",
+                "SupplyFanPower",
+                "CondenserFanPower",
+                "OutdoorDamperSignal",
+                "EconomizerMode",
+                "OccupancyMode",
+                "ZoneSetpoint",
+                "ZoneTemperature",
+                "SupplyFanSpeed"
+            ],
+        },
+        "Chiller": {
+            subsystem: [ 
+                "Pump"
+            ],                
+            "sensor_list": [
+            ]
+        },
+        "Pump": {
+            "sensor_list": [
+            ]
+        }        
     },
     "sensors": {
         
