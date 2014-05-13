@@ -1,72 +1,72 @@
 {
-	"site": {
-		"site_type": {
-			"data_type": "string"
-		},
-		"attribute_list": [
+    "site": {
+        "site_type": {
+            "data_type": "string"
+        },
+        "attribute_list": [
             "Address"
         ],
         "sensor_list": ["OutdoorAirTemperature"]
-	},
-	"building": {
-		"site": {
-			"refers": {"data_type": "site"}	
-		},
-		"building_type": {
-			"data_type": "string"
-		},	
-		"attribute_list": [
+    },
+    "building": {
+        "site": {
+            "refers": {"data_type": "site"}
+        },
+        "building_type": {
+            "data_type": "string"
+        },
+        "attribute_list": [
             "Address"
         ],
         "sensor_list": [
-        	"OutdoorAirTemperature", 
-            "OutdoorAirRelativeHumidity", 
-            "WholeBuildingElectricity",  
+            "OutdoorAirTemperature",
+            "OutdoorAirRelativeHumidity",
+            "WholeBuildingElectricity",
             "WholeBuildingGas"
         ]
-	},
+    },
     "system": {
-    	"building": {
-    		"refers": {"data_type": "building"}
-    	},
-    	"system_types": {
-	        "RTU": {
-	            "sensor_list": [
-	                "OutdoorAirTemperature",
-	                "OutdoorAirRelativeHumidity",
-	                "MixedAirTemperature",
-	                "MixedAirRelativeHumidity",
-	                "ReturnAirTemperature",
-	                "ReturnAirRelativeHumidity",
-	                "DischargeAirTemperature",
-	                "DischargeAirRelativeHumidity",
-	                "FirstStageCooling",
-	                "SecondStageCooling",
-	                "FirstStageHeating",
-	                "SecondStageHeating",
-	                "TotalPower",
-	                "SupplyFanPower",
-	                "CondenserFanPower",
-	                "OutdoorDamperSignal",
-	                "EconomizerMode",
-	                "OccupancyMode",
-	                "ZoneSetpoint",
-	                "ZoneTemperature",
-	                "SupplyFanSpeed"
-	            ]
-	        },
-	        "Chiller": {
-	            "subsystem": [ 
-	                "Pump"
-	            ],                
-	            "sensor_list": [
-	            ]
-	        },
-	        "Pump": {
-	            "sensor_list": [
-	            ]
-	        }
-		}        
+        "building": {
+            "refers": {"data_type": "building"}
+        },
+        "system_types": {
+            "RTU": {
+                "sensor_list": [
+                    "OutdoorAirTemperature",
+                    "OutdoorAirRelativeHumidity",
+                    "MixedAirTemperature",
+                    "MixedAirRelativeHumidity",
+                    "ReturnAirTemperature",
+                    "ReturnAirRelativeHumidity",
+                    "DischargeAirTemperature",
+                    "DischargeAirRelativeHumidity",
+                    "FirstStageCooling",
+                    "SecondStageCooling",
+                    "FirstStageHeating",
+                    "SecondStageHeating",
+                    "TotalPower",
+                    "SupplyFanPower",
+                    "CondenserFanPower",
+                    "OutdoorDamperSignal",
+                    "EconomizerMode",
+                    "OccupancyMode",
+                    "ZoneSetpoint",
+                    "ZoneTemperature",
+                    "SupplyFanSpeed"
+                ]
+            },
+            "Chiller": {
+                "subsystem": [
+                    "Pump"
+                ],
+                "sensor_list": [
+                ]
+            },
+            "Pump": {
+                "sensor_list": [
+                ]
+            }
+        }
     },
     "attributes": {
         "Address": {
@@ -76,7 +76,7 @@
             "zip_code": { "data_type": "string"}
         }
     },
-    "sensors": {        
+    "sensors": {
         "CondenserFanPower": {
             "Maximum": "",
             "Minimum": "",
