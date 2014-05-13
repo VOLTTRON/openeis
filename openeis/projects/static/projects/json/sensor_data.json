@@ -202,6 +202,22 @@
             "sensor_type": "TotalPower",
             "unit_type": "energy"
         },
+        "WholeBuildingElectricity":{
+            "Maximum": "",
+            "Minimum": "",
+            "data_type": "float",
+            "sensor_name": "WholeBuildingElectricity",
+            "sensor_type": "WholeBuildingElectricity",
+            "unit_type": "energy"
+        },
+        "WholeBuildingGas":{
+            "Maximum": "",
+            "Minimum": "",
+            "data_type": "float",
+            "sensor_name": "WholeBuildingGas",
+            "sensor_type": "WholeBuildingGas",
+            "unit_type": "energy"
+        },
         "ZoneSetpoint": {
             "Maximum": "",
             "Minimum": "",
