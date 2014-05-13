@@ -6,6 +6,8 @@ Created on May 11, 2014
 import unittest
 from projects import sensors
 from _ctypes import ArgumentError
+import os
+import json
 
 class TestSensor(unittest.TestCase):
     
@@ -23,5 +25,13 @@ class TestSensor(unittest.TestCase):
         self.assertIsNotNone(test.sensor_type, 'sensor_type is none!')       
         
     
-    
-
+    def test_json_is_parsable(self):
+        data = os.path.dirname(os.path.realpath(__file__))
+        sensor_data_path = os.path.join(data, "../static/projects/json/sensor_data.json")
+        
+        jsonObj = json.load(open(sensor_data_path, 'r'))
+        self.assertIsNotNone(jsonObj, "Invalid json object!")
+        
+        
+        
+        

@@ -3,11 +3,12 @@
         "sensor_list": ["OutdoorAirTemperature"]
     },
     "building_sensors": {
-        "sensor_list": ["OutdoorAirTemperature", 
-                      "OutdoorAirRelativeHumidity", 
-                      "WholeBuildingElectricity",  
-                      "WholeBuildingGas"
-                   }
+        "sensor_list": [
+        	"OutdoorAirTemperature", 
+            "OutdoorAirRelativeHumidity", 
+            "WholeBuildingElectricity",  
+            "WholeBuildingGas"
+        ]
     },
     "systems": {
         "RTU": {
@@ -33,10 +34,10 @@
                 "ZoneSetpoint",
                 "ZoneTemperature",
                 "SupplyFanSpeed"
-            ],
+            ]
         },
         "Chiller": {
-            subsystem: [ 
+            "subsystem": [ 
                 "Pump"
             ],                
             "sensor_list": [
