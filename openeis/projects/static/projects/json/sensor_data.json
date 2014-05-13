@@ -39,7 +39,7 @@
     	"building": {
     		"refers": {"data_type": "building"}
     	},
-    	"custom_systems": {
+    	"system_types": {
 	        "RTU": {
 	            "sensor_list": [
 	                "OutdoorAirTemperature",
