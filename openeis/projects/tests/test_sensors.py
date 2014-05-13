@@ -11,26 +11,42 @@ import json
 
 class TestSensor(unittest.TestCase):
     
-    def test_sensor_error_when_unit_type_not_set(self):
-        self.assertRaises(ArgumentError, lambda: sensors.Sensor())
-
-
-    def test_sensor_instance(self):
-        test = sensors.CondenserFanPower()
+    def test_sensors_are_loaded(self):
+        self.assertIsNotNone(sensors.sensors)
+        self.assertTrue(len(sensors.sensors) > 0)
         
-        self.assertEqual("boolean", test.data_type, "Data type isn't boolean")
-        self.assertTrue(isinstance(test, sensors.Sensor), "It's not a sensor!")
-        self.assertIsNone(test.minimum, "Minimum isn't none!")
-        self.assertIsNone(test.maximum, "Maximum isn't none!")
-        self.assertIsNotNone(test.sensor_type, 'sensor_type is none!')       
+        self.assertIsNotNone(sensors.building_sensors)
+        self.assertTrue(len(sensors.building_sensors) > 0)
+         
+        self.assertIsNotNone(sensors.site_sensors)
+        self.assertTrue(len(sensors.site_sensors) > 0)
         
     
-    def test_json_is_parsable(self):
+    def test_systems_are_loaded(self):
+        self.assertIsNotNone(sensors.systems)
+        self.assertTrue(len(sensors.systems) > 0)
+    
+    def test_rtu_system(self):
+        self.assertIsNotNone(sensors.systems['RTU'])
+        rtu = sensors.systems['RTU']
+        self.assertEqual(21, len(rtu.sensors))
+        
+
+          
+        
+    
+    def test_json_and_verify_top_level(self):
         data = os.path.dirname(os.path.realpath(__file__))
         sensor_data_path = os.path.join(data, "../static/projects/json/sensor_data.json")
         
         jsonObj = json.load(open(sensor_data_path, 'r'))
         self.assertIsNotNone(jsonObj, "Invalid json object!")
+        self.assertEqual(4, len(jsonObj.keys()), "Invalid keys in json dictionary.")
+        
+        self.assertTrue("sensors" in jsonObj.keys(), "sensors dict is None")
+        self.assertTrue("systems" in jsonObj.keys(), "systems dict is None")
+        self.assertTrue("site_sensors" in jsonObj.keys(), "site_sensors dict is None")
+        self.assertTrue("building_sensors" in jsonObj.keys(), "building_sensors dict is None")
         
         
         
