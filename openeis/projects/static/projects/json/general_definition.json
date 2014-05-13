@@ -9,9 +9,7 @@
             "state": { "data_type": "string"},
             "zip_code": { "data_type": "string"}            
         },
-	    "site_sensors": {
-	        "sensor_list": ["OutdoorAirTemperature"]
-	    }
+        "sensor_list": ["OutdoorAirTemperature"]
 	},
 	"building": {
 		"site": {
@@ -26,14 +24,13 @@
             "state": { "data_type": "string"},
             "zip_code": { "data_type": "string"}            
         },
-	    "building_sensors": {  
-	        "sensor_list": [
-	        	"OutdoorAirTemperature", 
-	            "OutdoorAirRelativeHumidity", 
-	            "WholeBuildingElectricity",  
-	            "WholeBuildingGas"
-	        ]
-	    }
+	     
+        "sensor_list": [
+        	"OutdoorAirTemperature", 
+            "OutdoorAirRelativeHumidity", 
+            "WholeBuildingElectricity",  
+            "WholeBuildingGas"
+        ]
 	},
     "system": {
     	"building": {
