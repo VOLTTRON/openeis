@@ -1,8 +1,0 @@
-{
-	"type": "object",
-	"units": 
-	{
-    	"acceleration": {"type":"object"}},
-    	"angular_acceleration":{{"type":"object"}}
-    }
-}
