@@ -1,3 +1,6 @@
+"""
+    Creates the units.json file from the haystack_units.txt input file.
+"""
 import json
 
 OUTPUT_FILE = 'static/projects/json/units.json'
