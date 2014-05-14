@@ -876,10 +876,6 @@
             "key":"milliwatt",
             "value":"mW"
         },
-        "therms_per_hour":{
-            "key":"therms_per_hour",
-            "value":"therm/h"
-        },
         "tons_refrigeration":{
             "key":"tons_refrigeration",
             "value":"tonref"
