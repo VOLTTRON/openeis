@@ -58,8 +58,15 @@ class DatabaseInput:
         return self.topic_map.copy()    
     
     def get_start_end_times(self):
+        """Return a tuple of datetime objects representing the start and end times of the data."""
         pass
          
-
-    def query_range(self, ):
+    def group_by(self, group, start, end, period, column=0, aggrigation_func=sum):
+        pass
+    
+    @staticmethod
+    def merge(*args):
+        pass
+    
+    def query_range(self, group, start, end):
         pass

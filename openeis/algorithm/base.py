@@ -4,6 +4,7 @@ Created on Apr 23, 2014
 '''
 from abc import ABCMeta,abstractmethod
 from schema.schema import sensordata
+import logging
 
 class InputDescriptor:
     
@@ -37,6 +38,11 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         super().__init__(**kwargs)
         self.inp = inp
         self.out = out
+        
+    @classmethod
+    def single_file_input(cls):
+        #change this to true if all input must come from the same file.
+        return False
     
     @classmethod
     @abstractmethod
@@ -68,8 +74,10 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         output schema description
            {TableName1: {name1:OutputDescriptor1, name2:OutputDescriptor2,...},....}
            
-           eg: {'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, 
-                'Sensor': {'SomeValue':OutputDescriptor('int', 'some_output/value), 'SomeOtherValue':OutputDescriptor('boolean', 'some_output/value)}} 
+           eg: {'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, 
+                'Sensor': {'SomeValue':OutputDescriptor('int', 'some_output/value'), 
+                           'SomeOtherValue':OutputDescriptor('boolean', 'some_output/value),
+                           'SomeString':OutputDescriptor('string', 'some_output/string)}} 
         """
         
     @classmethod
@@ -90,5 +98,52 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         """
     
     @abstractmethod
-    def run(self):
-        "runs algorithm"
+    def execute(self):
+        "The algorithm to run."
+        
+    @abstractmethod
+    def report(self):
+        """describe output"""
+
+
+class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
+    @classmethod
+    def single_file_input(cls):
+        return True
+    
+    def execute(self):
+        '''Iterate over input calling run each time'''
+        pass
+    
+    @classmethod
+    @abstractmethod
+    def inputs(cls):
+        return True
+    
+    @abstractmethod
+    def run(self, time, inputs):
+        '''Do work for each batch of timestamped inputs
+           time- current time
+           inputs - dict of point name -> value  
+           
+           Must return a results object.'''
+        pass
+    
+    def shutdown(self):
+        '''Override this to add shutdown routines.'''
+        return Results()
+
+class Results:
+    def __init__(self, terminate=False):
+        self.commands = {}
+        self.log_messages = []
+        self.terminate = terminate
+        
+    def command(self, point, value):
+        self.commands[point]=value
+    
+    def log(self, message, level=logging.DEBUG):
+        self.log_messages.append((level, message))
+        
+    def terminate(self, terminate):
+        self.terminate = bool(terminate)
