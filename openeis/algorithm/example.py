@@ -44,7 +44,7 @@ class ExampleApp(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-                    'OAT':InputDescriptor('OutdoorAirTemperature','Outdoor Temp'),
+                    'OAT':InputDescriptor('OutdoorAirTemperature','Outdoor Temp', count=1,max_count=None),
                     'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                     'natgas':InputDescriptor('NaturalGas','Natural Gas usage')
                 }

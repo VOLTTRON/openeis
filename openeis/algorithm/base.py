@@ -12,13 +12,13 @@ class InputDescriptor:
                  sensor_type,
                  desc,
                  count=1,
-                 maximum=1,
+                 max_count=1,
                  _id=None):
         #TODO: check and throw exception if self.sensor_data is none
         self.sensor_data = sensordata.get(sensor_type)
         self.desc = desc
         self.count = count
-        if(maximum is not None and count > maximum):
+        if(max_count is not None and count > max_count):
             maximum = count
         self.maximum = maximum
         
