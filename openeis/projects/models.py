@@ -10,7 +10,7 @@ from django.core.exceptions import ValidationError
 import jsonschema.exceptions
 
 from .protectedmedia import ProtectedFileSystemStorage
-from . import sensormap
+from .storage import sensormap
 
 
 class Organization(models.Model):
@@ -134,7 +134,8 @@ class SensorMapDefinition(models.Model):
         super().clean_fields(exclude=exclude)
         if exclude and 'map' in exclude:
             return
-        errors = sensormap.validate(self.map)
+        schema = sensormap.Schema()
+        errors = schema.validate(self.map)
         if not errors:
             return
         raise ValidationError({('map' + ''.join('[{!r}]'.format(name)

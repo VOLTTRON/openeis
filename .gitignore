@@ -10,6 +10,9 @@ __pycache__/
 /env/
 /data/
 /openeis/local/
+/dist/*.changes
+/dist/*.deb
+/dist/*.tar.gz
 
 /openeis-ui/build/js/
 !/openeis-ui/build/js/app.min.js
