@@ -35,6 +35,10 @@ class OutputDescriptor:
 class DriverApplicationBaseClass(metaclass=ABCMeta):
     
     def __init__(self,inp=None,out=None,**kwargs):
+        """
+        When applications extend this base class, they need to make
+        use of any kwargs that were setup in config_param
+        """
         super().__init__(**kwargs)
         self.inp = inp
         self.out = out
@@ -47,7 +51,11 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def required_input(cls):
-        """required input schema
+        """
+        Applications will override this method to return a dictionary specifying their
+        data needs. This method will be called by the UI to do the mapping based on this.
+        
+        required input schema
                 {
                     'key1':InputDescriptor1,
                     'key2':InputDescriptor2
@@ -83,7 +91,9 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
     @classmethod
     @abstractmethod
     def get_config_parameters(cls):
-        """default config schema description
+        """default config schema description used by the UI to get user input 
+            which will be passed into the application
+            Default values are used to prepopulate the UI, not to pass into the app by default
             {
                 'Key1':(Type1,DefaultValue1),
                 'Key2':(Type2,DefaultValue2)
@@ -99,6 +109,9 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
     
     @abstractmethod
     def execute(self):
+        """
+        Called when user says Go! in the UI
+        """
         "The algorithm to run."
         
     @abstractmethod

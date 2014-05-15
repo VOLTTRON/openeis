@@ -4,6 +4,9 @@ Created on Apr 28, 2014
 - assumes that each algo run would create a new table with a unique id
 TODO: import database Table object and TableColumn object from Django database model
 '''
+
+import logging
+
 from schema.schema import sensordata
 from projects.models import (Table, 
                              TableColumn,
@@ -43,5 +46,5 @@ class DatabaseOutput:
         #Dictionary of name and values based on the outputschema of the application
         pass
         
-    def log(self, level, msg, timestamp=None):
+    def log(self, msg, level=logging.DEBUG, timestamp=None):
         pass
