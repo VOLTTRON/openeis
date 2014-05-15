@@ -61,7 +61,7 @@ class DatabaseInput:
         """Return a tuple of datetime objects representing the start and end times of the data."""
         pass
          
-    def group_by(self, group, start, end, period, column=0, aggrigation_func=sum):
+    def group_by(self, group, start, end, period, aggregation_func=sum):
         pass
     
     @staticmethod

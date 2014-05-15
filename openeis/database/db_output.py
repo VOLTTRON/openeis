@@ -40,6 +40,7 @@ class DatabaseOutput:
             
             
     def insert_row(self,table_name,row_data):
+        #Dictionary of name and values based on the outputschema of the application
         pass
         
     def log(self, level, msg, timestamp=None):
