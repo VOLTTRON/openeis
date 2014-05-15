@@ -14,13 +14,15 @@ setup(
         'django-guardian',
         'djangorestframework',
         'django-rest-swagger',
+        'django-nose',
         'jsonschema',
-        'nose',
-        'django-nose'        
     ],
     entry_points = '''
         [console_scripts]
         openeis = openeis.server.manage:main
     ''',
+    package_data = {
+        'openeis.projects': ['storage/sensormap-schema.json'],
+    }
 )
 
