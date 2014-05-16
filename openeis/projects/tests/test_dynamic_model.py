@@ -21,7 +21,7 @@ class TestDynamicModelCreation(TestCase):
         print(dir(User.Meta))
         Person = create_model("Person", {'name':models.CharField(max_length=10)}, app_label='openeis.projects', module= 'dynamicmodels')
         print(dir(Person))
-        call_command('syncdb')
+        
         p = Person(name='doah')
         self.assertEqual('doah', p.name)
         
