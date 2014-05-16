@@ -1,0 +1,506 @@
+[
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "logentry", 
+        "app_label": "admin", 
+        "name": "log entry"
+    }, 
+    "pk": 1
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "permission", 
+        "app_label": "auth", 
+        "name": "permission"
+    }, 
+    "pk": 2
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "group", 
+        "app_label": "auth", 
+        "name": "group"
+    }, 
+    "pk": 3
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "user", 
+        "app_label": "auth", 
+        "name": "user"
+    }, 
+    "pk": 4
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "contenttype", 
+        "app_label": "contenttypes", 
+        "name": "content type"
+    }, 
+    "pk": 5
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "session", 
+        "app_label": "sessions", 
+        "name": "session"
+    }, 
+    "pk": 6
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "organization", 
+        "app_label": "projects", 
+        "name": "organization"
+    }, 
+    "pk": 7
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "membership", 
+        "app_label": "projects", 
+        "name": "membership"
+    }, 
+    "pk": 8
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "project", 
+        "app_label": "projects", 
+        "name": "project"
+    }, 
+    "pk": 9
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "datafile", 
+        "app_label": "projects", 
+        "name": "data file"
+    }, 
+    "pk": 10
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "accountverification", 
+        "app_label": "projects", 
+        "name": "account verification"
+    }, 
+    "pk": 11
+},
+{
+    "model": "contenttypes.contenttype", 
+    "fields": {
+        "model": "sensormapdefinition", 
+        "app_label": "projects", 
+        "name": "sensor map definition"
+    }, 
+    "pk": 12
+},
+{
+    "model": "sessions.session", 
+    "fields": {
+        "session_data": "MDljOTUwNTg0NGNlM2Q3ZWU1ZTlmZGRkNTBlN2Q4ODc0NjIwNTk3Yzp7Il9hdXRoX3VzZXJfYmFja2VuZCI6ImRqYW5nby5jb250cmliLmF1dGguYmFja2VuZHMuTW9kZWxCYWNrZW5kIiwiX2F1dGhfdXNlcl9pZCI6MX0=", 
+        "expire_date": "2014-05-29T20:43:12.536Z"
+    }, 
+    "pk": "kz5vvb4pj88h8zl5wia5yux9nxetybjh"
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 1, 
+        "codename": "add_logentry", 
+        "name": "Can add log entry"
+    }, 
+    "pk": 1
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 1, 
+        "codename": "change_logentry", 
+        "name": "Can change log entry"
+    }, 
+    "pk": 2
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 1, 
+        "codename": "delete_logentry", 
+        "name": "Can delete log entry"
+    }, 
+    "pk": 3
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 2, 
+        "codename": "add_permission", 
+        "name": "Can add permission"
+    }, 
+    "pk": 4
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 2, 
+        "codename": "change_permission", 
+        "name": "Can change permission"
+    }, 
+    "pk": 5
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 2, 
+        "codename": "delete_permission", 
+        "name": "Can delete permission"
+    }, 
+    "pk": 6
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 3, 
+        "codename": "add_group", 
+        "name": "Can add group"
+    }, 
+    "pk": 7
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 3, 
+        "codename": "change_group", 
+        "name": "Can change group"
+    }, 
+    "pk": 8
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 3, 
+        "codename": "delete_group", 
+        "name": "Can delete group"
+    }, 
+    "pk": 9
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 4, 
+        "codename": "add_user", 
+        "name": "Can add user"
+    }, 
+    "pk": 10
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 4, 
+        "codename": "change_user", 
+        "name": "Can change user"
+    }, 
+    "pk": 11
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 4, 
+        "codename": "delete_user", 
+        "name": "Can delete user"
+    }, 
+    "pk": 12
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 5, 
+        "codename": "add_contenttype", 
+        "name": "Can add content type"
+    }, 
+    "pk": 13
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 5, 
+        "codename": "change_contenttype", 
+        "name": "Can change content type"
+    }, 
+    "pk": 14
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 5, 
+        "codename": "delete_contenttype", 
+        "name": "Can delete content type"
+    }, 
+    "pk": 15
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 6, 
+        "codename": "add_session", 
+        "name": "Can add session"
+    }, 
+    "pk": 16
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 6, 
+        "codename": "change_session", 
+        "name": "Can change session"
+    }, 
+    "pk": 17
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 6, 
+        "codename": "delete_session", 
+        "name": "Can delete session"
+    }, 
+    "pk": 18
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 7, 
+        "codename": "add_organization", 
+        "name": "Can add organization"
+    }, 
+    "pk": 19
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 7, 
+        "codename": "change_organization", 
+        "name": "Can change organization"
+    }, 
+    "pk": 20
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 7, 
+        "codename": "delete_organization", 
+        "name": "Can delete organization"
+    }, 
+    "pk": 21
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 8, 
+        "codename": "add_membership", 
+        "name": "Can add membership"
+    }, 
+    "pk": 22
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 8, 
+        "codename": "change_membership", 
+        "name": "Can change membership"
+    }, 
+    "pk": 23
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 8, 
+        "codename": "delete_membership", 
+        "name": "Can delete membership"
+    }, 
+    "pk": 24
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 9, 
+        "codename": "add_project", 
+        "name": "Can add project"
+    }, 
+    "pk": 25
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 9, 
+        "codename": "change_project", 
+        "name": "Can change project"
+    }, 
+    "pk": 26
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 9, 
+        "codename": "delete_project", 
+        "name": "Can delete project"
+    }, 
+    "pk": 27
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 10, 
+        "codename": "add_datafile", 
+        "name": "Can add data file"
+    }, 
+    "pk": 28
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 10, 
+        "codename": "change_datafile", 
+        "name": "Can change data file"
+    }, 
+    "pk": 29
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 10, 
+        "codename": "delete_datafile", 
+        "name": "Can delete data file"
+    }, 
+    "pk": 30
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 11, 
+        "codename": "add_accountverification", 
+        "name": "Can add account verification"
+    }, 
+    "pk": 31
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 11, 
+        "codename": "change_accountverification", 
+        "name": "Can change account verification"
+    }, 
+    "pk": 32
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 11, 
+        "codename": "delete_accountverification", 
+        "name": "Can delete account verification"
+    }, 
+    "pk": 33
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 12, 
+        "codename": "add_sensormapdefinition", 
+        "name": "Can add sensor map definition"
+    }, 
+    "pk": 34
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 12, 
+        "codename": "change_sensormapdefinition", 
+        "name": "Can change sensor map definition"
+    }, 
+    "pk": 35
+},
+{
+    "model": "auth.permission", 
+    "fields": {
+        "content_type": 12, 
+        "codename": "delete_sensormapdefinition", 
+        "name": "Can delete sensor map definition"
+    }, 
+    "pk": 36
+},
+{
+    "model": "auth.user", 
+    "fields": {
+        "first_name": "", 
+        "last_login": "2014-05-15T20:43:12.532Z", 
+        "user_permissions": [], 
+        "password": "pbkdf2_sha256$12000$35DnKNFJu7Vl$WUP2DpmnkWapNNjPJ90PHPD2LnEyTdEaMWrQcoWkQRc=", 
+        "is_active": true, 
+        "last_name": "", 
+        "username": "super_user", 
+        "date_joined": "2014-05-15T20:40:34.767Z", 
+        "is_superuser": true, 
+        "email": "super_user@pnnl.gov", 
+        "groups": [], 
+        "is_staff": true
+    }, 
+    "pk": 1
+},
+{
+    "model": "auth.user", 
+    "fields": {
+        "first_name": "", 
+        "last_login": "2014-05-15T20:43:29.289Z", 
+        "user_permissions": [], 
+        "password": "pbkdf2_sha256$12000$afRdirn1fKDH$y0uT5QfbzaFEiXTBaBYylOXfN74x4BxUrDx+jsvbDKE=", 
+        "is_active": true, 
+        "last_name": "", 
+        "username": "test_user", 
+        "date_joined": "2014-05-15T20:43:29.289Z", 
+        "is_superuser": false, 
+        "email": "", 
+        "groups": [], 
+        "is_staff": false
+    }, 
+    "pk": 2
+},
+{
+    "model": "projects.organization", 
+    "fields": {
+        "name": "Default Organization"
+    }, 
+    "pk": 1
+},
+{
+    "model": "projects.project", 
+    "fields": {
+        "owner": 1, 
+        "name": "Default Project"
+    }, 
+    "pk": 1
+},
+{
+    "model": "admin.logentry", 
+    "fields": {
+        "change_message": "", 
+        "user": 1, 
+        "object_repr": "test_user", 
+        "content_type": 4, 
+        "object_id": "2", 
+        "action_flag": 1, 
+        "action_time": "2014-05-15T20:43:29.348Z"
+    }, 
+    "pk": 1
+}
+]
