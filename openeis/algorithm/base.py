@@ -12,13 +12,13 @@ class InputDescriptor:
                  sensor_type,
                  desc,
                  count=1,
-                 maximum=1,
+                 max_count=1,
                  _id=None):
         #TODO: check and throw exception if self.sensor_data is none
         self.sensor_data = sensordata.get(sensor_type)
         self.desc = desc
         self.count = count
-        if(maximum is not None and count > maximum):
+        if(max_count is not None and count > max_count):
             maximum = count
         self.maximum = maximum
         
@@ -31,6 +31,20 @@ class OutputDescriptor:
         self.output_type = sensordata.get(sensor_type)
         self.topic = topic
         
+class ConfigDescriptor:
+    def __init__(self,
+                 config_type,
+                 desc,
+                 optional=False,
+                 default=None,
+                 min_value=None,
+                 max_value=None):
+        
+        self.config_type = config_type
+        self.desc = desc
+        self.default = default
+        self.min_value = min_value
+        self.max_value = max_value 
 
 class DriverApplicationBaseClass(metaclass=ABCMeta):
     
@@ -94,16 +108,18 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         """default config schema description used by the UI to get user input 
             which will be passed into the application
             Default values are used to prepopulate the UI, not to pass into the app by default
+            
+            See ConfigDescriptor for all arguments.
             {
-                'Key1':(Type1,DefaultValue1),
-                'Key2':(Type2,DefaultValue2)
+                'Key1':ConfigDescriptor(Type1,Description1),
+                'Key2':ConfigDescriptor(Type2,Description2)
             }
             
             e.g.: 
             {
-                'matemp_missing': (int,0),
-                'mat_low': (float, 50.4)
-                'output_label': (str, '')
+                "building_sq_ft": ConfigDescriptor(float, "Square footage"),
+                "building_year_constructed": ConfigDescriptor(int, "Consruction Year"),
+                "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
         """
     

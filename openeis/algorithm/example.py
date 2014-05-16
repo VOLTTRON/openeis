@@ -1,4 +1,4 @@
-from base import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor
+from base import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
 import datetime
 import django.db.models as django
@@ -33,9 +33,9 @@ class ExampleApp(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": (float, None, True),
-                    "building_year_constructed": (int, None, True),
-                    "building_name": (str, "", False)
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", minimum=200),
+                    "building_year_constructed": ConfigDescriptor(int, "Consruction Year", minimum=1800, maximum=2014),
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
                 
                 }
         
@@ -44,7 +44,7 @@ class ExampleApp(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-                    'OAT':InputDescriptor('OutdoorAirTemperature','Outdoor Temp'),
+                    'OAT':InputDescriptor('OutdoorAirTemperature','Outdoor Temp', count=1,max_count=None),
                     'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                     'natgas':InputDescriptor('NaturalGas','Natural Gas usage')
                 }
