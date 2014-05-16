@@ -3,6 +3,32 @@ Created on May 15, 2014
 '''
 from django.db import models
 
+def install(model):
+    from django.core.management import sql, color
+    from django.db import connection
+
+    # Standard syncdb expects models to be in reliable locations,
+    # so dynamic models need to bypass django.core.management.syncdb.
+    # On the plus side, this allows individual models to be installed
+    # without installing the entire project structure.
+    # On the other hand, this means that things like relationships and
+    # indexes will have to be handled manually.
+    # This installs only the basic table definition.
+
+    # disable terminal colors in the sql statements
+    style = color.no_style()
+
+    cursor = connection.cursor()
+    known_models = set()
+    output, references = connection.creation.sql_create_model(model, style, known_models)
+    print(output)
+    
+    for expr in output:
+        cursor.execute(expr)
+    #statements, pending = sql.sql_model_create(model, style)
+#     for sql in statements:
+#          cursor.execute(sql)
+
 def create_model(name, fields=None, app_label='', module='', options=None, admin_opts=None):
     """
     Create specified model
@@ -38,6 +64,7 @@ def create_model(name, fields=None, app_label='', module='', options=None, admin
 #             setattr(Admin, key, value)
 #         admin.site.register(model, Admin)
 
+    install(model)
     return model
 
 def create_table_models(basename):
