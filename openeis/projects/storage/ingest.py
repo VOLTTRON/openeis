@@ -233,13 +233,13 @@ def get_sensor_parsers(sensormap):
         return column
     path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                         'static', 'projects', 'json', 'general_definition.json')
-    files = {name: [(None, TimeColumn.output_type,
+    columns = {name: [(None, TimeColumn.output_type,
                      TimeColumn(column_number(name, file['timestamp']['columns']),
                                    formats=[file['timestamp'].get('format')]))]
              for name, file in sensormap['files'].items()}
     with open(path) as file:
         prototypes = json.load(file)['sensors']
-    for name, sensor in sensormap['sensors'].items():
+    for name, sensor in sorted(sensormap['sensors'].items()):
         if 'type' not in sensor:
             continue
         type = sensor['type']
@@ -251,8 +251,8 @@ def get_sensor_parsers(sensormap):
         data_type = proto['data_type']
         cls = globals()[data_type.capitalize() + 'Column']
         obj = cls(column, minimum=minimum, maximum=maximum)
-        files[filename].append((name, cls.output_type, obj))
-    return files
+        columns[filename].append((name, cls.output_type, obj))
+    return columns
 
 
 IngestFile = namedtuple('IngestFile', 'name sensors types data')
