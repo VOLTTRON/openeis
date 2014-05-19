@@ -363,3 +363,9 @@ class SensorMapDefViewSet(viewsets.ModelViewSet):
             raise rest_exceptions.PermissionDenied(
                     "Invalid project pk '{}' - "
                     'permission denied.'.format(obj.project.pk))
+
+
+class SensorIngestViewSet(viewsets.ModelViewSet):
+    model = models.SensorIngest
+    serializer_class = serializers.SensorIngestSerializer
+    permission_classes = (permissions.IsAuthenticated,)

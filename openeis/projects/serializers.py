@@ -164,3 +164,34 @@ class LoginSerializer(serializers.Serializer):
 class SensorMapDefSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SensorMapDefinition
+
+
+class SensorIngestFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SensorIngestFile
+        fields = ('name', 'file')
+
+
+class SensorIngestSerializer(serializers.ModelSerializer):
+    files = SensorIngestFileSerializer(many=True, required=True)
+
+    class Meta:
+        model = models.SensorIngest
+        read_only_fields = ('start', 'end')
+
+    def validate(self, attrs):
+        map = attrs['map'].map
+        map_files = set(map['files'].keys())
+        files = {f.name for f in attrs['files']}
+        missing = map_files - files
+        errors = []
+        if missing:
+            errors.append('missing file(s): {!r}'.format(list(missing)))
+        extra = files - map_files
+        if extra:
+            errors.append('extra file(s): {!r}'.format(list(extra)))
+        # XXX: check for duplicate DataFiles
+        # XXX: check that file signatures match
+        if errors:
+            raise serializers.ValidationError({'files': errors})
+        return attrs

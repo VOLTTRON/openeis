@@ -49,7 +49,7 @@ class BaseColumn:
                                            for opt in options))
 
 
-class TimeColumn(BaseColumn):
+class DateTimeColumn(BaseColumn):
     '''Parse columns of date/time data.
 
     In this case column can be a single column or a list or tuple of
@@ -59,7 +59,7 @@ class TimeColumn(BaseColumn):
     formats argument. Final parsing is attempted by dateutil.
     '''
 
-    output_type = datetime
+    data_type = 'datetime'
 
     def __init__(self, column, *, formats=(), sep=' ', **kwargs):
         super().__init__(column, **kwargs)
@@ -90,7 +90,7 @@ class TimeColumn(BaseColumn):
 class StringColumn(BaseColumn):
     '''Parse a column as string data (this one is easy).'''
 
-    output_type = str
+    data_type = 'string'
 
     def __call__(self, row):
         return row[self.column] or self.default
@@ -103,7 +103,7 @@ class IntegerColumn(BaseColumn):
     is tested against the minimum and maximum, if given.
     '''
 
-    output_type = int
+    data_type = 'integer'
 
     def __init__(self, column, *,
                  minimum=None, maximum=None, **kwargs):
@@ -137,7 +137,7 @@ class IntegerColumn(BaseColumn):
 class FloatColumn(BaseColumn):
     '''Parse a float column.'''
 
-    output_type = float
+    data_type = 'float'
 
     def __init__(self, column, *, minimum=None, maximum=None, **kwargs):
         super().__init__(column, **kwargs)
@@ -161,7 +161,7 @@ class FloatColumn(BaseColumn):
 class BooleanColumn(BaseColumn):
     '''Parse a boolean column.'''
 
-    output_type = bool
+    data_type = 'boolean'
     parse_map = {
         'true': True,
         'yes': True,
@@ -233,8 +233,8 @@ def get_sensor_parsers(sensormap):
         return column
     path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                         'static', 'projects', 'json', 'general_definition.json')
-    columns = {name: [(None, TimeColumn.output_type,
-                     TimeColumn(column_number(name, file['timestamp']['columns']),
+    columns = {name: [(None, DateTimeColumn.data_type,
+                     DateTimeColumn(column_number(name, file['timestamp']['columns']),
                                    formats=[file['timestamp'].get('format')]))]
              for name, file in sensormap['files'].items()}
     with open(path) as file:
@@ -251,7 +251,7 @@ def get_sensor_parsers(sensormap):
         data_type = proto['data_type']
         cls = globals()[data_type.capitalize() + 'Column']
         obj = cls(column, minimum=minimum, maximum=maximum)
-        columns[filename].append((name, cls.output_type, obj))
+        columns[filename].append((name, cls.data_type, obj))
     return columns
 
 
