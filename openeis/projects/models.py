@@ -143,3 +143,47 @@ class SensorMapDefinition(models.Model):
                                for path, value in errors.items()})
     
 
+'''
+class Sensor(models.Model):
+    # name matches the sensor path in the definition
+    name = models.CharField(max_length=255)
+    map = models.ForeignKey(SensorMapDefinition, related_name='sensors')
+
+class SensorIngest(models.Model):
+    sensor = models.ForeignKey(Sensor, related_name='ingests')
+    file = models.ForeignKey(
+            DataFile, on_delete=models.SET_NULL, related_name='ingests')
+    # time of ingest
+    time = models.DateTimeField(auto_now_add=True)
+
+
+class SensorIngestLog(models.Model):
+    ingest = models.ForeignKey(SensorIngest, related_name='logs')
+    row = models.IntegerField()
+    # Timestamps can include multiple columns
+    column = models.CommaSeparatedIntegerField()
+    error = models.CharField(max_length=255)
+
+
+class BaseSensorData(models.Model):
+    ingest = models.ForeignKey(SensorIngest, related_name='series')
+    # We store time series, so include the time here
+    # to avoid an expensive join. Can also be used
+    # to recombine a file rather than using the row.
+    time = models.DateTimeField()
+
+    class Meta:
+        abstract = True
+
+class IntSensorData(BaseSensorData):
+    value = models.IntegerField(null=True)
+
+class FloatSensorData(BaseSensorData):
+    value = models.FloatField(null=True)
+
+class StringSensorData(BaseSensorData):
+    value = models.TextField(null=True)
+
+class BooleanSensorData(BaseSensorData):
+    value = models.BooleanField(null=True)
+'''
