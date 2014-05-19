@@ -136,7 +136,8 @@ def stage2():
             ensurepip.bootstrap(upgrade=True, default_pip=True)
         except ImportError:
             get_pip()
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', '.'])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', '.',
+        '-f', 'http://openeis-dev.pnl.gov/dist/openeis-ui/'])
     if not os.path.exists('data'):
         os.mkdir('data')
     if not os.path.exists('data/static'):
