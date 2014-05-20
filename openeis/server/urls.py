@@ -3,6 +3,7 @@ from django.conf.urls import include, patterns, url
 from django.contrib import admin
 
 from openeis.projects.urls import urlpatterns as projects_urls
+from openeis.ui.urls import urlpatterns as ui_urls
 
 
 admin.autodiscover()
@@ -14,9 +15,6 @@ urlpatterns = patterns('',
 )
 
 if settings.DEBUG:
-    urlpatterns += patterns('',
-        url(r'^(?P<path>(?:css|js|partials)/.+)$', 'django.views.static.serve',
-            {'document_root': settings.STATIC_UI_DIR}),
-        url(r'^(?:index.html)?$', 'django.views.static.serve',
-            {'path': 'index.html', 'document_root': settings.STATIC_UI_DIR}),
-    )
+    urlpatterns += [
+        url(r'', include(ui_urls)),
+    ]
