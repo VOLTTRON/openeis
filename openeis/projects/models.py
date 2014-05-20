@@ -5,6 +5,7 @@ import string
 
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models.query import QuerySet
 from django.core.exceptions import ValidationError
 
 import jsonschema.exceptions
@@ -143,3 +144,32 @@ class SensorMapDefinition(models.Model):
                                for path, value in errors.items()})
     
 
+class TableDataQuerySet(QuerySet):
+    sqlite_querys = {
+                     "minute":"""strftime('%%Y-%%m-%%d %%H:%%M', time_stamp)""",
+                     "hour":"""strftime('%%Y-%%m-%%d %%H', time_stamp)""",
+                     "day":"""strftime('%%Y-%%m-%%d', time_stamp)""",
+                     #"week":"""strftime('%%Y-%%m %W', time_stamp)""",
+                     "month":"""strftime('%%Y-%%m', time_stamp)""",
+                     "year":"""strftime('%%Y', time_stamp)""",
+                     }
+    
+    is_sqlite = False
+    
+    def group_by(self, period, func):  
+        if period not in self.sqlite_querys:
+            raise ValueError('Invalid Period for grouping.')   
+        if self.is_sqlite:
+            select_data = {'d':self.sqlite_querys[period]}
+        else:
+            #Relax people... We validate the period above.
+            select_data = {'d':"""date_trunc({0},time_stamp)""".format(period)}
+            
+        q = self.extra(select = select_data).values('d').annotate(aggregated_value=func('values'))
+        return q
+
+class TableDataManager(models.Manager):
+    def get_query_set(self):
+        return TableDataQuerySet(self.model)
+    def __getattr__(self, name):
+        return getattr(self.get_query_set(), name)
