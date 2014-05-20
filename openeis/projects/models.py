@@ -142,7 +142,6 @@ class SensorMapDefinition(models.Model):
         raise ValidationError({('map' + ''.join('[{!r}]'.format(name)
                                 for name in path)): value
                                for path, value in errors.items()})
-    
 
 class TableDataQuerySet(QuerySet):
     sqlite_querys = {
@@ -173,3 +172,71 @@ class TableDataManager(models.Manager):
         return TableDataQuerySet(self.model)
     def __getattr__(self, name):
         return getattr(self.get_query_set(), name)
+
+class SensorIngest(models.Model):
+    map = models.ForeignKey(SensorMapDefinition, related_name='ingests')
+    # time of ingest
+    start = models.DateTimeField(auto_now_add=True)
+    end = models.DateTimeField(null=True, default=None)
+
+
+class SensorIngestFile(models.Model):
+    ingest = models.ForeignKey(SensorIngest, related_name='files')
+    # name matches a file in the sensor map definition
+    name = models.CharField(max_length=255)
+    file = models.ForeignKey(DataFile, related_name='ingests')
+
+
+class SensorIngestLog(models.Model):
+    INFO = 20
+    WARNING = 30
+    ERROR = 40
+    LOG_LEVEL_CHOICES = (('Info', INFO), ('Warning', WARNING), ('Error', ERROR))
+
+    ingest = models.ForeignKey(SensorIngestFile, related_name='logs')
+    row = models.IntegerField()
+    # Timestamps can include multiple columns
+    column = models.CommaSeparatedIntegerField(max_length=20)
+    level = models.SmallIntegerField(choices=LOG_LEVEL_CHOICES)
+    error = models.CharField(max_length=255)
+
+
+class Sensor(models.Model):
+    BOOLEAN = 'b'
+    FLOAT = 'f'
+    INTEGER = 'i'
+    STRING = 's'
+
+    DATA_TYPE_CHOICES = (('boolean', BOOLEAN), ('float', FLOAT),
+                         ('integer', INTEGER), ('string', STRING))
+
+    map = models.ForeignKey(SensorMapDefinition, related_name='sensors')
+    # name matches the sensor path in the definition
+    name = models.CharField(max_length=255)
+    data_type = models.CharField(max_length=1, choices=DATA_TYPE_CHOICES)
+
+    @property
+    def data(self):
+        return getattr(self, self.data_type + 'sensordata_set')
+
+
+class BaseSensorData(models.Model):
+    sensor = models.ForeignKey(Sensor)
+    ingest = models.ForeignKey(SensorIngest)
+    time = models.DateTimeField()
+
+    class Meta:
+        abstract = True
+
+
+class BooleanSensorData(BaseSensorData):
+    value = models.NullBooleanField()
+
+class FloatSensorData(BaseSensorData):
+    value = models.FloatField(null=True)
+
+class IntegerSensorData(BaseSensorData):
+    value = models.IntegerField(null=True)
+
+class StringSensorData(BaseSensorData):
+    value = models.TextField(null=True)

@@ -48,7 +48,8 @@ INSTALLED_APPS = (
     'openeis.projects',
     'rest_framework',
     'rest_framework_swagger',
-    'django_nose'
+    'django_nose',
+    'openeis.ui',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -89,15 +90,9 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(DATA_DIR, 'static')
 
-STATIC_UI_DIR = os.path.abspath(os.path.join(DATA_DIR, '../openeis-ui/build'))
-
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-)
-
-STATICFILES_DIRS = (
-    ('openeis-ui', STATIC_UI_DIR),
 )
 
 TEMPLATE_DIRS = (
