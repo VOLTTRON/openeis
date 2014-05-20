@@ -188,32 +188,41 @@ class BooleanColumn(BaseColumn):
             raise ValueError('invalid boolean value: {!r}'.format(raw_value))
 
 
-def ingest_file(file, columns, log):
-    '''Return an iterator to parse a file according to a column map.
+Row = namedtuple('Row', 'line_num position columns errors')
+ParseError = namedtuple('ParseError', 'line_num column index exc')
+
+
+def ingest_file(file, columns):
+    '''Return a generator to parse a file according to a column map.
 
     The file should be seekable and opened for reading. columns should
     be a list or tuple of column parser instances. For each row read
     from file, a list of parsed columns is generated in the order they
-    were specified in the columns argument. Any parse errors will
-    produce a call to log with the current line number, column number,
-    and exception instance as arguments. This function will not close
-    the file object.
+    were specified in the columns argument and returned in the columns
+    attribute of a Row instances. Parse errors will be included in the
+    errors attribute. This function will not close the file object.
     '''
     csv_file = CSVFile(file)
-    def get_value(row, col):
-        try:
-            return col(row)
-        except ValueError as e:
-            if isinstance(col.column, int):
-                colnum = col.column + 1
-            else:
-                colnum = [i + 1 for i in col.column]
-            log(csv_file.reader.line_num, colnum, e)
-        return None
     if csv_file.has_header:
         next(csv_file)
-    return ([get_value(row, col) for col in columns]
-            for row in csv_file if row)
+    for row in csv_file:
+        if not row:
+            continue
+        line_num = csv_file.reader.line_num
+        parsed = []
+        errors = []
+        for index, col in enumerate(columns):
+            try:
+                value = col(row)
+            except ValueError as e:
+                if isinstance(col.column, int):
+                    colnum = col.column + 1
+                else:
+                    colnum = [i + 1 for i in col.column]
+                errors.append(ParseError(line_num, colnum, index, e))
+                value = None
+            parsed.append(value)
+        yield Row(line_num, file.tell(), parsed, errors)
 
 
 def get_sensor_parsers(sensormap):
@@ -255,33 +264,37 @@ def get_sensor_parsers(sensormap):
     return columns
 
 
-IngestFile = namedtuple('IngestFile', 'name sensors types data')
+IngestFile = namedtuple('IngestFile', 'name size sensors types rows')
 
 
-def ingest_files(sensormap, files, log):
-    '''Iterate each file in files an return a file parser iterator.
+def ingest_files(sensormap, files):
+    '''Iterate over each file in files to return a file parser iterator.
     
     Creates a generator to iterate over each file in files and yield 
     IngestFile objects with the following attributes:
 
       name - File name mapping keys from files to sensormap['files'].
+      size - Total size of the file.
       sensors - List of sensor names from sensormap['sensors'].
       types - List of data types to expect in data.
-      data - Iterator to return rows of data parsed from file.
+      rows - Iterator to return Row instances of parsed file data.
 
     There are the same number of elements in sensors, types, and each
-    row of data representing columns of sensors.  The first item in
-    sensors, types, and data is the timestamp and is represented by a
-    sensor name of None.
+    row.columns representing columns of sensors.  The first item in
+    sensors, types, and rows.columns is the timestamp and is represented
+    by a sensor name of None.
     '''
     columnmap = get_sensor_parsers(sensormap)
     if hasattr(files, 'items'):
         files = files.items()
     for file_id, file in files:
+        try:
+            size = file.size
+        except AttributeError:
+            size = os.stat(file.fileno()).st_size
         names, types, columns = zip(*columnmap[file_id])
-        file_log = lambda *args: log(file_id, *args)
-        data = ingest_file(file, columns, file_log)
-        yield IngestFile(file_id, names, types, data)
+        rows = ingest_file(file, columns)
+        yield IngestFile(file_id, size, names, types, rows)
 
 
 def main(argv=sys.argv):
@@ -297,11 +310,14 @@ def main(argv=sys.argv):
         sensormap = json.load(file)
     files = zip(argv[2::2],
                 [open(filename, 'rb') for filename in argv[3::2]])
-    for file in ingest_files(sensormap, files, log):
+    errmsg = 'error: {0.name}:{1.line_num}:{1.column}[{1.index}]: {1.exc}\n'
+    for file in ingest_files(sensormap, files):
         print(file.name)
         print(file.sensors)
-        for row in file.data:
-            print(row)
+        for row in file.rows:
+            for error in row.errors:
+                sys.stderr.write(errmsg.format(file, error))
+            print(row.columns, row.position * 100 // file.size)
 
 
 if __name__ == '__main__':
