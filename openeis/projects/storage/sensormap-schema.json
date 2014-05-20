@@ -48,15 +48,21 @@
             "required": ["columns", "format"],
             "properties": {
                 "columns": {
-                    "type": "array",
-                    "items": {
-                        "oneOf": [
-                            {"type": "string"},
-                            {"type": "integer", "minimum": 0}
-                        ]
-                    },
-                    "minItems": 1,
-                    "uniqueItems": true
+                    "oneOf": [
+                        {
+                            "type": "array",
+                            "items": {
+                                "oneOf": [
+                                    {"type": "string"},
+                                    {"type": "integer", "minimum": 0}
+                                ]
+                            },
+                            "minItems": 1,
+                            "uniqueItems": true
+                        },
+                        {"type": "string"},
+                        {"type": "integer", "minimum": 0}
+                    ]
                 },
                 "format": {"type": "string"}
             },
