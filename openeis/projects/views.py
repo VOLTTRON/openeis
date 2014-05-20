@@ -1,4 +1,5 @@
 from contextlib import closing
+from multiprocessing import Process
 import posixpath
 import traceback
 
@@ -22,6 +23,7 @@ from . import models
 from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
+from .storage.ingest import ingest_files
 
 
 @protected_media
@@ -365,7 +367,61 @@ class SensorMapDefViewSet(viewsets.ModelViewSet):
                     'permission denied.'.format(obj.project.pk))
 
 
+processes = {}
+def get_files_for_ingestion(obj):
+    name_file_map = {}
+    for f in obj.files.all():
+        name_file_map[f.name] = f.file.file.file
+    return name_file_map
+
+def perform_ingestion(sensormap, ingest_id):
+    print("perform_ingestion")
+    
+    ingest = models.SensorIngest.objects.get(pk=ingest_id)
+    files = get_files_for_ingestion(ingest)
+    ingestion = ingest_files(sensormap, files)
+    processes[ingest_id] = {
+                                'status': 'processing',
+                                'percent': 0.0,
+                                'current_file_percent': 0.0,
+                                'current_file': None,                                           
+                            }
+    
+    total_bytes = 0.0
+    
+    for file in ingest_files(sensormap, files):
+        total_bytes += file.size
+    
+    print(total_bytes)
+    
+    
+    processed_bytes = 0.0
+    for file in ingest_files(sensormap, files):
+        processes[ingest_id]['current_file'] = file.name
+        previous_bytes = 0
+        for row in file.rows:
+            if len(row.errors) > 0:
+                print("logging error")
+            else:
+                
+                pass
+            
+            processes[ingest_id]['current_file_percent'] = row.position * 100 // file.size
+            
+            processed_bytes += row.position - previous_bytes
+            processes[ingest_id]['percent'] = processed_bytes * 100  // total_bytes ## * 100
+            print(processes[ingest_id]['current_file_percent'], processes[ingest_id]['percent'])
+            previous_bytes = row.position
+            
+    del(processes[ingest_id])
+              
+    print("perform_ingestion complete")
+            
 class SensorIngestViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
     serializer_class = serializers.SensorIngestSerializer
     permission_classes = (permissions.IsAuthenticated,)
+    def post_save(self, obj, created):
+        
+        process = Process(target=perform_ingestion, args=(obj.map.map, obj.id)) #jsonmap, files))
+        process.start()
