@@ -27,6 +27,62 @@
     "additionalProperties": false,
 
     "definitions": {
+        "fileset": {
+            "title": "Input file specification",
+            "description": "Defines the structure of intput files.",
+            "type": "object",
+            "minProperties": 1,
+            "patternProperties": {
+                "^.{1,255}$": {
+                    "type": "object",
+                    "required": ["signature", "timestamp"],
+                    "properties": {
+                        "signature": {"$ref": "#/definitions/signature"},
+                        "timestamp": {"$ref": "#/definitions/timestamp_format"},
+                        "extra": {"type": "object"}
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+
+        "sensorset": {
+            "title": "File column to sensor mapping",
+            "description": "Define how a columns from files in the fileset map to sensors. Sensor names are like file paths, separated by the slash (/) character.",
+            "type": "object",
+
+            "allOf": [
+                {
+                    "description": "Limit the name to 255 characters.",
+                    "patternProperties": {
+                        "^.{1,255}$": {}
+                    },
+                    "additionalProperties": false
+                },
+                {
+                    "patternProperties": {
+                        "^[^/]+(/[^/]+)*$": {
+                            "oneOf": [
+                                {
+                                    "allOf": [
+                                        {"$ref": "#/definitions/level"}
+                                    ]
+                                },
+                                {
+                                    "allOf": [
+                                        {"$ref": "#/definitions/sensor"}
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "minProperties": 1,
+                    "additionalProperties": false
+                }
+            ]
+        },
+
         "signature": {
             "title": "File signature",
             "description": "Describes the header names expected in the file. There must be one value per column, which may be null if the name is unknown, listed in the order expected. Since the data is a time series, a minimum of two columns are expected.",
@@ -41,6 +97,7 @@
             },
             "additionalProperties": false
         },
+
         "timestamp_format": {
             "title": "Timestamp format mapping",
             "description": "Indicates the columns in the file used to generate the timestamp and the format string used to parse the columns, which are concatenated together and separated by a single space.",
@@ -64,67 +121,70 @@
                         {"type": "integer", "minimum": 0}
                     ]
                 },
-                "format": {"type": "string"}
+                "format": {"type": ["string", "null"]}
             },
             "additionalProperties": false
         },
-        "fileset": {
-            "title": "Input file specification",
-            "description": "Defines the structure of intput files.",
-            "type": "object",
-            "minProperties": 1,
-            "additionalProperties": {
-                "type": "object",
-                "required": ["signature", "timestamp"],
-                "properties": {
-                    "signature": {"$ref": "#/definitions/signature"},
-                    "timestamp": {"$ref": "#/definitions/timestamp_format"},
-                    "extra": {"type": "object"}
-                },
-                "additionalProperties": false
-            }
-        },
+
         "level": {
             "title": "Sensor container",
             "description": "Defines the level of child sensors and provides a way to attach attributes to the container.",
             "type": "object",
+            "required": ["level"],
             "properties": {
+                "level": {"type": "string"},
                 "attributes": {"type": "object"},
                 "extra": {"type": "object"}
             },
             "additionalProperties": false,
 
-            "site": {
-                "title": "Site level attributes",
-                "properties": {
-                    "attributes": {
-                        "properties": {
-                            "address": {"$ref": "#/definitions/attributes/address"}
-                        },
-                        "additionalProperties": false
+            "anyOf": [
+                {
+                    "title": "Site level attributes",
+                    "properties": {
+                        "level": {"enum": ["site"]},
+                        "attributes": {
+                            "properties": {
+                                "address": {"$ref": "#/definitions/attributes/address"}
+                            },
+                            "additionalProperties": false
+                        }
                     }
-                }
-            },
-            "building": {
-                "title": "Building level attributes",
-                "properties": {
-                    "attributes": {
-                        "properties": {
-                            "address": {"$ref": "#/definitions/attributes/address"}
-                        },
-                        "additionalProperties": false
+                },
+                {
+                    "title": "Building level attributes",
+                    "properties": {
+                        "level": {"enum": ["building"]},
+                        "attributes": {
+                            "properties": {
+                                "address": {"$ref": "#/definitions/attributes/address"}
+                            },
+                            "additionalProperties": false
+                        }
                     }
-                }
-            },
-            "system": {
-                "title": "System level attributes",
-                "properties": {
-                    "attributes": {
-                        "not": {}
+                },
+                {
+                    "title": "System level attributes",
+                    "properties": {
+                        "level": {"enum": ["system"]},
+                        "attributes": {
+                            "not": {}
+                        }
                     }
+                },
+                {
+                    "title": "Custom level attributes.",
+                    "properties": {
+                        "level": {"not": {"enum": ["site", "building", "system"]}},
+                        "attributes": {
+                            "not": {}
+                        }
+                    },
+                    "addtionalProperties": false
                 }
-            }
+            ]
         },
+
         "sensor": {
             "title": "Sensor map base schema",
             "description": "Defines base constraints on all sensors. Uses allOf as to enforce valid type and unit.",
@@ -144,238 +204,20 @@
                 "extra": {"type": "object"}
             },
             "additionalProperties": false,
-
-            "units": {
-                "title": "Sensor type and unit definitions",
-                "description": "Uses enums on the type property to select the correct schema and to enforce the type name and units.",
-                "oneOf": [
-                    {
-                        "properties": {
-                            "type": {
-                                "enum": [
-                                    "ZoneSetpoint",
-                                    "ZoneTemperature",
-                                    "ReturnAirTemperature",
-                                    "OutdoorAirTemperature",
-                                    "DischargeAirTemperature",
-                                    "MixedAirTemperature"
-                                ]
-                            },
-                            "unit": {"$ref": "#/definitions/units/temperature"}
-                        },
-                        "required": ["unit"]
-                    },
-                    {
-                        "properties": {
-                            "type": {
-                                "enum": [
-                                    "WholeBuildingElectricity",
-                                    "CondenserFanPower",
-                                    "TotalPower",
-                                    "SupplyFanPower",
-                                    "WholeBuildingGas"
-                                ]
-                            },
-                            "unit": {"$ref": "#/definitions/units/energy"}
-                        },
-                        "required": ["unit"]
-                    },
-                    {
-                        "properties": {
-                            "type": {
-                                "enum": [
-                                    "OutdoorDamperSignal",
-                                    "OutdoorAirRelativeHumidity",
-                                    "MixedAirRelativeHumidity",
-                                    "SupplyFanSpeed",
-                                    "ReturnAirRelativeHumidity",
-                                    "DischargeAirRelativeHumidity"
-                                ]
-                            },
-                            "unit": {"not": {}}
-                        }
-                    },
-                    {
-                        "properties": {
-                            "type": {
-                                "enum": [
-                                    "SecondStageCooling",
-                                    "FirstStageHeating",
-                                    "EconomizerMode",
-                                    "FirstStageCooling",
-                                    "OccupancyMode",
-                                    "SecondStageHeating"
-                                ]
-                            },
-                            "unit": {"not": {}}
-                        }
-                    }
-                ]
-            },
-            "site": {
-                "properties": {
-                    "system": {"not": {}},
-                    "type": {
-                        "enum": [
-                            "OutdoorAirTemperature"
-                        ]
-                    }
-                }
-            },
-            "building": {
-                "properties": {
-                    "system": {"not": {}},
-                    "type": {
-                        "enum": [
-                            "OutdoorAirTemperature",
-                            "OutdoorAirRelativeHumidity",
-                            "WholeBuildingElectricity",
-                            "WholeBuildingGas"
-                        ]
-                    }
-                }
-            },
-            "system": {
-                "required": ["system"],
-                "oneOf": [
-                    {"$ref": "#/definitions/sensor/systems/rtu"},
-                    {"$ref": "#/definitions/sensor/systems/chiller"},
-                    {"$ref": "#/definitions/sensor/systems/pump"}
-                ]
-            },
-            "subsystem": {
-                "required": ["system"],
-                "oneOf": [
-                    {"$ref": "#/definitions/sensor/systems/pump"}
-                ]
-            },
-
-            "systems": {
-                "rtu": {
-                    "title": "Rooftop Unit",
-                    "description": "Valid sensor types for RTUs.",
+            "anyOf": [
+                {
                     "properties": {
-                        "system": {"enum": ["RTU"]},
-                        "type": {
-                            "enum": [
-                                "OutdoorAirTemperature",
-                                "OutdoorAirRelativeHumidity",
-                                "MixedAirTemperature",
-                                "MixedAirRelativeHumidity",
-                                "ReturnAirTemperature",
-                                "ReturnAirRelativeHumidity",
-                                "DischargeAirTemperature",
-                                "DischargeAirRelativeHumidity",
-                                "FirstStageCooling",
-                                "SecondStageCooling",
-                                "FirstStageHeating",
-                                "SecondStageHeating",
-                                "TotalPower",
-                                "SupplyFanPower",
-                                "CondenserFanPower",
-                                "OutdoorDamperSignal",
-                                "EconomizerMode",
-                                "OccupancyMode",
-                                "ZoneSetpoint",
-                                "ZoneTemperature",
-                                "SupplyFanSpeed"
-                            ]
+                        "system": {
+                            "enum": ["RTU", "Chiller", "Pump", "Chiller/Pump"]
                         }
                     }
                 },
-                "chiller": {
-                    "title": "Chiller",
-                    "description": "Valid sensor types for chillers.",
+                {
                     "properties": {
-                        "system": {"enum": ["Chiller"]},
-                        "type": {"enum": []}
-                    }
-                },
-                "pump": {
-                    "title": "Pump",
-                    "description": "Valid sensor types for pumps.",
-                    "properties": {
-                        "system": {"enum": ["Pump"]},
-                        "type": {"enum": []}
+                        "system": {"not": {}}
                     }
                 }
-            }
-        },
-        "sensorset": {
-            "title": "File column to sensor mapping",
-            "description": "Define how a columns from files in the fileset map to sensors. Sensor names are like file paths, separated by the slash (/) character.",
-            "type": "object",
-            "patternProperties": {
-                "^[^/]+$": {
-                    "allOf": [
-                        {"$ref": "#/definitions/level"},
-                        {"$ref": "#/definitions/level/site"}
-                    ]
-                },
-                "^[^/]+/[^/]+$": {
-                    "oneOf": [
-                        {
-                            "allOf": [
-                                {"$ref": "#/definitions/level"},
-                                {"$ref": "#/definitions/level/building"}
-                            ]
-                        },
-                        {
-                            "allOf": [
-                                {"$ref": "#/definitions/sensor"},
-                                {"$ref": "#/definitions/sensor/units"},
-                                {"$ref": "#/definitions/sensor/site"}
-                            ]
-                        }
-                    ]
-                },
-                "^[^/]+(/[^/]+){2}$": {
-                    "oneOf": [
-                        {
-                            "allOf": [
-                                {"$ref": "#/definitions/level"},
-                                {"$ref": "#/definitions/level/system"}
-                            ]
-                        },
-                        {
-                            "allOf": [
-                                {"$ref": "#/definitions/sensor"},
-                                {"$ref": "#/definitions/sensor/units"},
-                                {"$ref": "#/definitions/sensor/building"}
-                            ]
-                        }
-                    ]
-                },
-                "^[^/]+(/[^/]+){3}$": {
-                    "oneOf": [
-                        {
-                            "allOf": [
-                                {"$ref": "#/definitions/sensor"},
-                                {"$ref": "#/definitions/sensor/units"},
-                                {"$ref": "#/definitions/sensor/system"}
-                            ]
-                        }
-                    ]
-                },
-                "^[^/]+(/[^/]+){4}$": {
-                    "oneOf": [
-                        {
-                            "allOf": [
-                                {"$ref": "#/definitions/sensor"},
-                                {"$ref": "#/definitions/sensor/units"},
-                                {"$ref": "#/definitions/sensor/subsystem"}
-                            ]
-                        }
-                    ]
-                }
-            },
-            "minProperties": 1,
-            "additionalProperties": false
-        },
-
-        "sensor_units": {
-            "title": "Sensor type and unit definitions",
-            "description": "Uses enums on the type property to select the correct schema and to enforce the type name and units.",
+            ],
             "oneOf": [
                 {
                     "properties": {
