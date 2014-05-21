@@ -39,6 +39,8 @@ from foo import get_sensor
 
 from itertools import dropwhile, takewhile
 
+from datetime import datetime
+from collections import defaultdict
 
 class DatabaseInput:
     
@@ -67,9 +69,41 @@ class DatabaseInput:
     
     @staticmethod
     def merge(*args, drop_partial_lines=True):
+        '''
+            args  - one or more results returned from get_query_sets() method
+            drop_partial_lines - whether to drop incomplete sets, missing values are represented by None
+        '''
+        def q_drop_generator(q_set):
+            next_timestamp = datetime(1,1,1) #In the beginning...
+            for result in q_set:
+                if result['time'] >= next_timestamp:
+                    next_timestamp = yield result
+            
         def merge_drop():
-            "Drop incomplete rows"
-            pass
+            "Drop incomplete rows"            
+            managed_query_sets = []
+            
+            for group, query_set_list in args:
+                for query_set in query_set_list:                    
+                    managed_query_sets.append((group,q_drop_generator(query_set)))
+            try:
+                current = [x[1].next() for x in managed_query_sets]
+                newest = max(current, key=lambda x:x['time'] )['time']                
+            except StopIteration:
+                return
+            
+            while True:
+                if all(x['time'] == newest for x in current):
+                    values = defaultdict(list)
+                    result = {'time': newest, 'values':values }
+                    for value, query in zip(current, managed_query_sets):
+                        values[query[0]].append(value['values'])
+                        
+                    yield result
+                        
+                for group, qs in managed_query_sets:
+                    pass
+                
         
         def merge_no_drop():
             "Incomplete rows provide a None for missing values."
