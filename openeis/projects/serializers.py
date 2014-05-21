@@ -171,6 +171,10 @@ class SensorIngestFileSerializer(serializers.ModelSerializer):
         model = models.SensorIngestFile
         fields = ('name', 'file')
 
+class SensorIngestLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.SensorIngestLog
+        fields = ('error', 'level', 'column', 'row' )
 
 class SensorIngestSerializer(serializers.ModelSerializer):
     files = SensorIngestFileSerializer(many=True, required=True)
