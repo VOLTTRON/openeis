@@ -86,11 +86,8 @@ class DatabaseInput:
             for group, query_set_list in args:
                 for query_set in query_set_list:                    
                     managed_query_sets.append((group,q_drop_generator(query_set)))
-            try:
-                current = [x[1].next() for x in managed_query_sets]
-                newest = max(current, key=lambda x:x['time'] )['time']                
-            except StopIteration:
-                return
+            current = [x[1].next() for x in managed_query_sets]
+            newest = max(current, key=lambda x:x['time'] )['time']                
             
             while True:
                 if all(x['time'] == newest for x in current):
@@ -100,11 +97,25 @@ class DatabaseInput:
                         values[query[0]].append(value['values'])
                         
                     yield result
+                    current = [x[1].next() for x in managed_query_sets]
+                    newest = max(current, key=lambda x:x['time'] )['time']     
+                else:
+                    new_current = []
+                    terminate = False
+                    for value, query in zip(current, managed_query_sets):
+                        if value['time'] == newest:
+                            new_current.append(value)
+                        else:
+                            try:
+                                new_current.append(query.next())
+                            except StopIteration:
+                                terminate = True
+                                break
+                    if terminate: 
+                        break
+                    current = new_current
+                    newest = max(current, key=lambda x:x['time'] )['time']
                         
-                for group, qs in managed_query_sets:
-                    pass
-                
-        
         def merge_no_drop():
             "Incomplete rows provide a None for missing values."
             pass
@@ -150,3 +161,8 @@ class DatabaseInput:
                 return {group_name: [x.aggragate(value=group_by_aggregation('values'))['value'] for x in qs]}
         
         return {group_name: [x.order_by(order_by).values('time', 'values').iterator() for x in qs]}
+    
+
+if __name__ == '__main__':
+    args = []
+    DatabaseInput.merge(*args)

@@ -11,15 +11,41 @@ import dateutil.parser
 from .csv import CSVFile
 
 
-class OutOfRangeError(ValueError):
-    def __init__(self, value, minimum, maximum):
-        msg = '{} is out of range [{},{}]'.format(value,
-                '' if minimum is None else minimum,
-                '' if maximum is None else maximum)
-        super().__init__(value, msg)
+class IngestError(ValueError):
+    def __init__(self, value, column, exc=None):
         self.value = value
-        self.minimum = minimum
-        self.maximum = maximum
+        self.column = column
+        msg = self.__class__._fmt.format(self)
+        super().__init__(msg, value, column)
+        if exc is not None:
+            self.__cause__ = exc
+
+    @property
+    def column_num(self):
+        '''Get the one-based index of the column source(s).'''
+        column = self.column.column
+        if not isinstance(column, int):
+            return [i + 1 for i in column]
+        return column + 1
+
+    @property
+    def data_type(self):
+        return self.column.data_type
+
+
+class ParseError(IngestError):
+    _fmt = 'could not convert string to {0.data_type}: {0.value!r}'
+
+class OutOfRangeError(IngestError):
+    _fmt = '{0.value} is out of range [{0._min},{0._max}]'
+
+    @property
+    def _min(self):
+        return self.column.minimum or ''
+
+    @property
+    def _max(self):
+        return self.column.maximum or ''
 
 
 class BaseColumn:
@@ -80,7 +106,7 @@ class DateTimeColumn(BaseColumn):
             return dateutil.parser.parse(raw_value)
         except (ValueError, TypeError):
             pass
-        raise ValueError('invalid timestamp: {!r}'.format(raw_value))
+        return ParseError(raw_value, self)
 
     def __repr__(self):
         kwargs = {'sep': self.sep} if self.sep != ' ' else {}
@@ -124,10 +150,13 @@ class IntegerColumn(BaseColumn):
                 base = 8
             elif prefix == '0b':
                 base = 2
-        value = int(raw_value, base)
+        try:
+            value = int(raw_value, base)
+        except ValueError as e:
+            return ParseError(raw_value, self)
         if ((self.minimum and value < self.minimum) or
                 (self.maximum and value > self.maximum)):
-            raise OutOfRangeError(value, self.minimum, self.maximum)
+            return OutOfRangeError(value, self)
         return value
 
     def __repr__(self):
@@ -148,10 +177,13 @@ class FloatColumn(BaseColumn):
         raw_value = row[self.column]
         if not raw_value:
             return self.default
-        value = float(raw_value)
+        try:
+            value = float(raw_value)
+        except ValueError as e:
+            return ParseError(raw_value, self)
         if ((self.minimum and value < self.minimum) or
                 (self.maximum and value > self.maximum)):
-            raise OutOfRangeError(value, self.minimum, self.maximum)
+            return OutOfRangeError(value, self)
         return value
 
     def __repr__(self):
@@ -185,11 +217,10 @@ class BooleanColumn(BaseColumn):
         try:
             return self.parse_map[raw_value.strip().lower()]
         except KeyError:
-            raise ValueError('invalid boolean value: {!r}'.format(raw_value))
+            return ParseError(raw_value, self)
 
 
-Row = namedtuple('Row', 'line_num position columns errors')
-ParseError = namedtuple('ParseError', 'line_num column index exc')
+Row = namedtuple('Row', 'line_num position columns')
 
 
 def ingest_file(file, columns):
@@ -199,30 +230,15 @@ def ingest_file(file, columns):
     be a list or tuple of column parser instances. For each row read
     from file, a list of parsed columns is generated in the order they
     were specified in the columns argument and returned in the columns
-    attribute of a Row instances. Parse errors will be included in the
-    errors attribute. This function will not close the file object.
+    attribute of a Row instances. Errors are indicated by the column
+    value being an instance of IngestError. This function will not close
+    the file object.
     '''
     csv_file = CSVFile(file)
     if csv_file.has_header:
         next(csv_file)
-    for row in csv_file:
-        if not row:
-            continue
-        line_num = csv_file.reader.line_num
-        parsed = []
-        errors = []
-        for index, col in enumerate(columns):
-            try:
-                value = col(row)
-            except ValueError as e:
-                if isinstance(col.column, int):
-                    colnum = col.column + 1
-                else:
-                    colnum = [i + 1 for i in col.column]
-                errors.append(ParseError(line_num, colnum, index, e))
-                value = None
-            parsed.append(value)
-        yield Row(line_num, file.tell(), parsed, errors)
+    return (Row(csv_file.reader.line_num, file.tell(),
+                [col(row) for col in columns]) for row in csv_file if row)
 
 
 def get_sensor_parsers(sensormap):
@@ -315,8 +331,6 @@ def main(argv=sys.argv):
         print(file.name)
         print(file.sensors)
         for row in file.rows:
-            for error in row.errors:
-                sys.stderr.write(errmsg.format(file, error))
             print(row.columns, row.position * 100 // file.size)
 
 
