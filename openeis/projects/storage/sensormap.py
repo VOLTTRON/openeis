@@ -40,9 +40,17 @@ def add_instance_constraints(schema, obj):
                     "timestamp": {
                         "properties": {
                             "columns": {
-                                "items": {
-                                    "$ref": "#/definitions/header_reqs/{}".format(i)
-                                }
+                                "oneOf": [
+                                    {
+                                        "type": "array",
+                                        "items": {
+                                "$ref": "#/definitions/header_reqs/{}".format(i)
+                                        }
+                                    },
+                                    {
+                                "$ref": "#/definitions/header_reqs/{}".format(i)
+                                    }
+                                ]
                             }
                         }
                     }
