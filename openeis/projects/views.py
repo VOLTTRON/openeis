@@ -433,6 +433,21 @@ class SensorIngestViewSet(viewsets.ModelViewSet):
             return Response(json.dumps(processes[id], status.HTTP_200_OK))
         else:
             return Response("Complete")
+        
+    @link()
+    def errors(self, request, *args, **kwargs):
+        '''
+        Retrieves all errors that occured during an ingestion.
+        '''
+        ingest = self.get_object()
+        logs = []
+        
+        for file in ingest.files.all():
+            for l in file.logs.all():
+                logs.append(l)
+                
+        serializer = serializers.SensorIngestLogSerializer(logs, many=True)
+        return Response(serializer.data)
              
     
         
