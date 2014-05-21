@@ -2,6 +2,7 @@ from contextlib import closing
 from multiprocessing import Process
 import posixpath
 import traceback
+import json
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
@@ -13,7 +14,6 @@ from django.http import HttpResponseRedirect, HttpResponse, Http404
 from django.shortcuts import get_object_or_404
 
 from rest_framework import filters, mixins, permissions, status, viewsets
-from rest_framework import decorators
 from rest_framework.decorators import action, link
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
@@ -374,13 +374,16 @@ def get_files_for_ingestion(obj):
         name_file_map[f.name] = f.file.file.file
     return name_file_map
 
+@transaction.atomic
 def perform_ingestion(sensormap, ingest_id):
-    print("perform_ingestion")
+    '''
+    Ingest into the common schema tables from the DataFiles.
+    '''
     
     ingest = models.SensorIngest.objects.get(pk=ingest_id)
     files = get_files_for_ingestion(ingest)
-    ingestion = ingest_files(sensormap, files)
     processes[ingest_id] = {
+                                'id': ingest_id,
                                 'status': 'processing',
                                 'percent': 0.0,
                                 'current_file_percent': 0.0,
@@ -388,17 +391,15 @@ def perform_ingestion(sensormap, ingest_id):
                             }
     
     total_bytes = 0.0
-    
+    # Get the total bytes for progress.
     for file in ingest_files(sensormap, files):
         total_bytes += file.size
-    
-    print(total_bytes)
-    
-    
+        
     processed_bytes = 0.0
     for file in ingest_files(sensormap, files):
         processes[ingest_id]['current_file'] = file.name
         previous_bytes = 0
+        print(file.columns)
         for row in file.rows:
             if len(row.errors) > 0:
                 print("logging error")
@@ -421,7 +422,30 @@ class SensorIngestViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
     serializer_class = serializers.SensorIngestSerializer
     permission_classes = (permissions.IsAuthenticated,)
-    def post_save(self, obj, created):
+
+ 
+    @link()
+    def status(self, request, *args, **kwargs):
+        ingest = self.get_object()
+        #ingest = get_object_or_404(models.SensorIngest)
+        print("ingest id:", ingest.id)                
+        if ingest.id in processes:
+            return Response(json.dumps(processes[id], status.HTTP_200_OK))
+        else:
+            return Response("Complete")
+             
+    
         
-        process = Process(target=perform_ingestion, args=(obj.map.map, obj.id)) #jsonmap, files))
-        process.start()
+    def post_save(self, obj, created):
+        '''
+        After the SensorIngest object has been saved start a threaded
+        data ingestion process.
+        '''
+        if created:
+            process = Process(target=perform_ingestion, args=(obj.map.map, obj.id)) #jsonmap, files))
+            process.start()
+        
+        
+            
+    def get_queryset(self):
+        return models.SensorIngest.objects.all() # (Response({'abc': 2, "def":4}))        
