@@ -1,7 +1,7 @@
 '''Ingest CSV files and parse them according to a sensor defintion.'''
 
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import os
 import sys
@@ -87,10 +87,16 @@ class DateTimeColumn(BaseColumn):
 
     data_type = 'datetime'
 
-    def __init__(self, column, *, formats=(), sep=' ', **kwargs):
+    def __init__(self, column, *, formats=(), sep=' ', tzinfo=timezone.utc, **kwargs):
         super().__init__(column, **kwargs)
         self.formats = formats
         self.sep = sep
+        self.tzinfo = tzinfo
+
+    def _ensure_tz(self, dt):
+        if not dt.tzinfo and self.tzinfo:
+            return dt.replace(tzinfo=self.tzinfo)
+        return dt
 
     def __call__(self, row):
         columns = [self.column] if isinstance(self.column, int) else self.column
@@ -99,11 +105,11 @@ class DateTimeColumn(BaseColumn):
             return self.default
         for fmt in self.formats:
             try:
-                return datetime.strptime(raw_value, fmt)
+                return self._ensure_tz(datetime.strptime(raw_value, fmt))
             except ValueError:
                 pass
         try:
-            return dateutil.parser.parse(raw_value)
+            return self._ensure_tz(dateutil.parser.parse(raw_value))
         except (ValueError, TypeError):
             pass
         return ParseError(raw_value, self)
@@ -146,7 +152,7 @@ class IntegerColumn(BaseColumn):
             prefix = raw_value[:2].lower()
             if prefix == '0x':
                 base = 16
-            elif prefix == '0o' or isdigit(prefix[1]):
+            elif prefix == '0o' or prefix[1].isdigit():
                 base = 8
             elif prefix == '0b':
                 base = 2

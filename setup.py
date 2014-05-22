@@ -18,6 +18,7 @@ setup(
         'django-nose',
         'jsonschema',
         'openeis-ui',
+        'pytz',
     ],
     entry_points = '''
         [console_scripts]

@@ -1,7 +1,13 @@
 from base import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
 import datetime
+from datetime import timedelta
 import django.db.models as django
+from django.db.models import Max, Min,Avg
+from django.db import models
+from dateutil.relativedelta import relativedelta
+
+import dateutil
 
 class ExampleApp(DriverApplicationBaseClass):
     
@@ -57,7 +63,7 @@ class ExampleApp(DriverApplicationBaseClass):
         output_needs =  {'Analysis_Table': 
                             {'Metric':OutputDescriptor('String', 'site/building/analysis/description'),'value':OutputDescriptor('String', 'site/building/analysis/value')},  
                         'HeatMap': 
-                            {'SomeValue':OutputDescriptor('int', 'site/building/analysis/description'), 'SomeOtherValue':OutputDescriptor('boolean', 'site/building/analysis/description')}}
+                            {'Times by day':OutputDescriptor('String', 'site/building/analysis/times'), 'Loads by Day':OutputDescriptor('String', 'site/building/analysis/load')}}
         return output_needs
         
     def report(self):
@@ -78,10 +84,54 @@ class ExampleApp(DriverApplicationBaseClass):
         self.out.log("Starting analysis", logging.INFO)
         #Go through some data
         data_start, data_end = self.inp.get_start_end_times()
-        oat_query_set = self.inp.query_range('OAT',data_start, data_end)
-        oat_stddev = django.StdDev(oat_query_set)
         
-        self.out.insert_row("Analaysis_Table", {"Metric": "OAT StdDev", "value": str(oat_stddev)})
+        #A year ago ignoring time info
+        year_ago = (data_end - relativedelta(year=1)).replace(hour=0,minute=0,second=0)
+        
+        #A month ago ignoring time info
+        month_ago = (data_end - relativedelta(month=1)).replace(hour=0,minute=0,second=0)
+        
+        #
+        
+        
+        #To be used for generating an energy signature plot
+        oat_year_by_day = self.inp.group_by('OAT',year_ago, data_end, "day")
+        load_year_by_day = self.inp.group_by('laod',year_ago, data_end, "day")
+        natgas_year_by_day = self.inp.group_by('natgas',year_ago, data_end, "day")
+        
+        oat_month_by_day = self.inp.group_by('OAT',month_ago, data_end, "day")
+        load_month_by_day = self.inp.group_by('laod',month_ago, data_end, "day")
+        natgas_month_by_day = self.inp.group_by('natgas',month_ago, data_end, "day")
+        
+        
+        
+        #loads by day for dailysummary stats
+        #peak95
+        #mbase5
+        #bpratio
+        #range
+        self.out.insert_row("Analaysis_Table", {"Metric": "Load Max", "value": str(django.Max(load_month_by_day))})
+        self.out.insert_row("Analaysis_Table", {"Metric": "Load Min", "value": str(django.Min(load_month_by_day))})
+        self.out.insert_row("Analaysis_Table", {"Metric": "Load StdDev", "value": str(django.StdDev(load_month_by_day))})
+        self.out.insert_row("Analaysis_Table", {"Metric": "Load Mean", "value": str(django.Avg(load_month_by_day))})
+        self.out.insert_row("Analaysis_Table", {"Metric": "Load Variance", "value": str(django.Variance(load_month_by_day))})
+        
+        
+        #Setup heat map
+        
+        
+#         success = gr_bldg.genEnergySignaturePlot(oatsCurrYear, loadsCurrYear,
+#             bldgMetaData['oat-units'], bldgMetaData['load-units'],
+#             figWritePath=os.path.join(outDirName,figRelPath))
+ 
+#         for 
+#         self.out.insert_row("HeatMap", {"Times by Day": thing, "Loads by Day": str(django.Max(load_month_by_day))})
+        
+        
+        
+        
+        
+        
         
         
         oat_sum = self.inp.group_by('OAT',data_start, data_end, "hour")
