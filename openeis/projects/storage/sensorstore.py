@@ -5,7 +5,7 @@ This module will contain the api associated with the application/algorithm stori
 and retrieving data.
 '''
 
-from .dynamictables import create_table_models 
+from .. import models
 
 def put_output():
     pass
@@ -36,7 +36,7 @@ def put_sensors(sensormap_id, topicstreams):
 
 
 
-def get_sensors(sensormap_id, topics, *kwarg):
+def get_sensors(sensormap_id, topics):
     '''
     Get sensors returns a list of two-tuples.   The first element in the
     tuple will be a meta object that will hold the mapping definition and
@@ -44,7 +44,23 @@ def get_sensors(sensormap_id, topics, *kwarg):
     take no arguments and will return a new queryset.  The queryset will hold
     two columns of data, the time and the data point value.  
     '''
-    pass
+    if isinstance(topics, str):
+        topics = [topics]
+    result = []
+    mapdef = models.SensorMapDefinition.objects.get(pk=sensormap_id)
+    sensormap = mapdef.map
+    for topic in topics:
+        meta = sensormap['sensors'][topic]
+        # XXX: Augment metadata by adding general definition properties
+        if 'type' in meta:
+            sensor = mapdef.sensors.get(name=topic)
+            def get_queryset():
+                return sensor.data
+        else:
+            get_queryset = None
+        result.append((meta, get_queryset))
+    return result
+
 
 def __generate_table_name(sensormap):
     pass
