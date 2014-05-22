@@ -33,9 +33,10 @@ input_map =
 
 '''
 
-from  django.db.models import Sum
+#from  django.db.models import Sum
 
-from foo import get_sensor
+#from foo import get_sensor
+
 
 from itertools import dropwhile, takewhile
 
@@ -73,31 +74,26 @@ class DatabaseInput:
             args  - one or more results returned from get_query_sets() method
             drop_partial_lines - whether to drop incomplete sets, missing values are represented by None
         '''
-        def q_drop_generator(q_set):
-            next_timestamp = datetime(1,1,1) #In the beginning...
-            for result in q_set:
-                if result['time'] >= next_timestamp:
-                    next_timestamp = yield result
-            
         def merge_drop():
             "Drop incomplete rows"            
             managed_query_sets = []
             
-            for group, query_set_list in args:
-                for query_set in query_set_list:                    
-                    managed_query_sets.append((group,q_drop_generator(query_set)))
-            current = [x[1].next() for x in managed_query_sets]
+            for arg in args:
+                for group, query_set_list in arg.items():
+                    for query_set in query_set_list:                    
+                        managed_query_sets.append((group,query_set.__iter__()))
+            current = [x[1].__next__() for x in managed_query_sets]
             newest = max(current, key=lambda x:x['time'] )['time']                
             
             while True:
                 if all(x['time'] == newest for x in current):
-                    values = defaultdict(list)
-                    result = {'time': newest, 'values':values }
+                    result = defaultdict(list) 
+                    result['time']  = newest
                     for value, query in zip(current, managed_query_sets):
-                        values[query[0]].append(value['values'])
+                        result[query[0]].append(value['values'])
                         
                     yield result
-                    current = [x[1].next() for x in managed_query_sets]
+                    current = [x[1].__next__() for x in managed_query_sets]
                     newest = max(current, key=lambda x:x['time'] )['time']     
                 else:
                     new_current = []
@@ -107,7 +103,7 @@ class DatabaseInput:
                             new_current.append(value)
                         else:
                             try:
-                                new_current.append(query.next())
+                                new_current.append(query.__next__())
                             except StopIteration:
                                 terminate = True
                                 break
@@ -118,17 +114,47 @@ class DatabaseInput:
                         
         def merge_no_drop():
             "Incomplete rows provide a None for missing values."
-            pass
+            managed_query_sets = []
             
+            for arg in args:
+                for group, query_set_list in arg.items():
+                    for query_set in query_set_list:                    
+                        managed_query_sets.append((group,query_set.__iter__()))
+            current = [x[1].__next__() for x in managed_query_sets]
+            oldest = min(current, key=lambda x:x['time'] )['time']               
+            
+            while True:
+                result = defaultdict(list) 
+                result['time']  = oldest
+                
+                for value, query in zip(current, managed_query_sets):
+                    if value['time'] == oldest:
+                        result[query[0]].append(value['values'])
+                    else:
+                        result[query[0]].append(None)
+                        
+                yield result
+                new_current = []
+                for value, query in zip(current, managed_query_sets):
+                    if value['time'] != oldest:
+                        new_current.append(value)
+                    else:
+                        try:
+                            new_current.append(query.__next__())
+                        except StopIteration:
+                            new_current.append(value)
+                            break
+                current = [x[1].__next__() for x in managed_query_sets]
+                oldest = min(current, key=lambda x:x['time'] )['time']     
             
         
-        return merge_drop if drop_partial_lines else merge_no_drop
+        return merge_drop() if drop_partial_lines else merge_no_drop()
     
     def get_query_sets(self, group_name, 
                        order_by='time',
                        filter_=None, 
                        exclude=None, 
-                       group_by=None, group_by_aggregation=Sum):
+                       group_by=None, group_by_aggregation=None):
         """
         group - group of columns to retrieve.
         order_by - column to order_by ('time' or 'values'), defaults to 'time'
@@ -163,6 +189,35 @@ class DatabaseInput:
         return {group_name: [x.order_by(order_by).values('time', 'values').iterator() for x in qs]}
     
 
+
 if __name__ == '__main__':
     args = []
-    DatabaseInput.merge(*args)
+    
+    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0},
+                 {'time':datetime(2000,1,1,11,0,0), 'values':53.0},
+                ],
+                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0},
+                 {'time':datetime(2000,1,1,11,0,0), 'values':52.0},
+                ],
+                [{'time':datetime(2000,1,1,8,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':53.0},
+                 {'time':datetime(2000,1,1,11,0,0), 'values':53.0},
+                ]]}
+    
+    args.append(t)
+    
+    t = {'Energy':[[{'time':datetime(2000,1,1,8,0,0), 'values':100},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':100},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':100},
+                 {'time':datetime(2000,1,1,11,0,0), 'values':100},
+                ]]}
+    
+    args.append(t)
+    
+    for result in DatabaseInput.merge(*args):
+        print(result)

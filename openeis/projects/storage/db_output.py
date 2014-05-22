@@ -7,26 +7,9 @@ TODO: import database Table object and TableColumn object from Django database m
 
 import logging
 
-from schema.schema import sensordata
-from projects.models import (Table, 
-                             TableColumn,
-                             IntTableData, 
-                             StringTableData, 
-                             FloatTableData, 
-                             BooleanTableData, 
-                             TimeTableData)
-
-db_type_map = {
-               "int":IntTableData,
-               "string":StringTableData,
-               "float":FloatTableData,
-               "boolean":BooleanTableData,
-               "datetime":TimeTableData
-               }
-
 class DatabaseOutput:
     
-    def __init__(self,input_id, topic_map):
+    def __init__(self,output_id, topic_map):
         '''
         Expected output_map:
         {
@@ -40,6 +23,29 @@ class DatabaseOutput:
         self.sensor_map = {}
         for input_name, topics in self.topic_map.items():
             self.column_map[input_name] = tuple(get_sensor(input_id,x) for x in topics)
+            
+            
+    def insert_row(self,table_name,row_data):
+        #Dictionary of name and values based on the outputschema of the application
+        pass
+        
+    def log(self, msg, level=logging.DEBUG, timestamp=None):
+        pass
+
+import csv    
+class DatabaseOutputFile:
+    def __init__(self,output_id, topic_map):
+        '''
+        Expected output_map:
+        {
+            'OAT_TEMPS': ('topic1','topic2', 'topic3'),
+            'OCC_MODE': ('topic4',)
+        }        
+        '''
+        
+        self.sensor_map = {}
+        for output_name, topics in self.topic_map.items():
+            self.column_map[output_name] = csv.DictWriter(output_name+'csv', topics)
             
             
     def insert_row(self,table_name,row_data):
