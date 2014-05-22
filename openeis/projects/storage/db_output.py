@@ -32,13 +32,13 @@ class DatabaseOutput:
     def log(self, msg, level=logging.DEBUG, timestamp=None):
         pass
 
-import csv   
+import csv
 from datetime import datetime 
 
 class DatabaseOutputFile:
     def __init__(self, algo_name, topic_map):
         '''
-        output_id  - AlgoName_Timestamp
+        output_id  - name identifying the algortihm
         Expected output_map:
            {
                'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, 
@@ -47,16 +47,52 @@ class DatabaseOutputFile:
                           'SomeString':OutputDescriptor('string', 'some_output/string)}
            } 
         '''
-        file_prefix = algo_name+'_'+str(datetime.now())
-        self.sensor_map = {}
-        for output_name, topics in self.topic_map.items():
-            self.column_map[output_name] = csv.DictWriter(file_prefix+'_'+output_name+'.csv', topics.keys())
-            self.column_map[output_name].writeheader()
+        file_prefix = algo_name+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
+        
+        log_file = file_prefix + '.log'
+        self._logger = logging.getLogger()
+        formatter = logging.Formatter('%(levelname)s:%(name)s %(message)s')
+        self._logger.setLevel(logging.INFO)
+        
+        str_handler = logging.StreamHandler()
+        str_handler.setLevel(logging.ERROR)
+        str_handler.setFormatter(formatter)
+        self._logger.addHandler(str_handler)
+        
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setFormatter(formatter)
+        self._logger.addHandler(file_handler)
+        
+        self.table_map = {}
+        for table_name, topics in topic_map.items():
+            csv_file = file_prefix+'_'+table_name+'.csv'
+            self.table_map[table_name] = csv.DictWriter(open(csv_file,'wb'), topics.keys())
+            self.table_map[table_name].writeheader()
+        
             
             
     def insert_row(self,table_name,row_data):
         #Dictionary of name and values based on the outputschema of the application
-        pass
+        self.table_map[table_name].writerow(row_data)
         
+    
     def log(self, msg, level=logging.DEBUG, timestamp=None):
-        pass
+        if timestamp is not None:
+            self._logger.log(level, '{time} - {msg}'.format(time=timestamp.strftime('%m/%d/%Y %H:%M:%S'),msg=msg))
+        else:
+            self.logger.log(level, 'NO TIME GIVEN - {msg}'.format(msg=msg))
+            
+
+if __name__ == '__main__':
+
+    from algorithm.base import OutputDescriptor
+      
+    topic_map = {'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, }
+    output  = DatabaseOutputFile('test_algo', topic_map)
+    
+    row_data = {'Timestamp': datetime(2000,1,1,8,0,0),
+                'OAT': 52.3}
+    output.insert_row('OAT', row_data)
+    
+    output.log('test message', logging.ERROR, datetime.now())
+    
