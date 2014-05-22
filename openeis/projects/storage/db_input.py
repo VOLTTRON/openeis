@@ -103,7 +103,7 @@ class DatabaseInput:
                             new_current.append(value)
                         else:
                             try:
-                                new_current.append(query.__next__())
+                                new_current.append(query[1].__next__())
                             except StopIteration:
                                 terminate = True
                                 break
@@ -140,12 +140,13 @@ class DatabaseInput:
                         new_current.append(value)
                     else:
                         try:
-                            new_current.append(query.__next__())
+                            new_current.append(query[1].__next__())
                         except StopIteration:
-                            new_current.append(value)
-                            break
-                current = [x[1].__next__() for x in managed_query_sets]
-                oldest = min(current, key=lambda x:x['time'] )['time']     
+                            new_current.append({'time':datetime.max, 'values':None})
+                current = new_current
+                oldest = min(current, key=lambda x:x['time'] )['time']
+                if oldest == datetime.max:
+                    break     
             
         
         return merge_drop() if drop_partial_lines else merge_no_drop()
@@ -191,33 +192,119 @@ class DatabaseInput:
 
 
 if __name__ == '__main__':
+    
     args = []
     
     t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
                  {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0},
-                 {'time':datetime(2000,1,1,11,0,0), 'values':53.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
                 ],
                 [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
                  {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0},
-                 {'time':datetime(2000,1,1,11,0,0), 'values':52.0},
-                ],
-                [{'time':datetime(2000,1,1,8,0,0), 'values':51.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':53.0},
-                 {'time':datetime(2000,1,1,11,0,0), 'values':53.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
                 ]]}
     
     args.append(t)
     
     t = {'Energy':[[{'time':datetime(2000,1,1,8,0,0), 'values':100},
                  {'time':datetime(2000,1,1,9,0,0), 'values':100},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':100},
-                 {'time':datetime(2000,1,1,11,0,0), 'values':100},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':100}
                 ]]}
     
     args.append(t)
     
+    print('Test merge no drop')
+    for result in DatabaseInput.merge(*args,drop_partial_lines=False):
+        print(result)
+       
+    print('Test merge with drop')
     for result in DatabaseInput.merge(*args):
         print(result)
+        
+    args = []
+    
+    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                ],
+                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                ]]}
+    
+    args.append(t)
+    
+    t = {'Energy':[[
+                {'time':datetime(2000,1,1,8,0,0), 'values':100},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':100}
+                ]]}
+    
+    args.append(t)
+    
+    
+    print('Test merge no drop with missing timestamp in middle')
+    for result in DatabaseInput.merge(*args,drop_partial_lines=False):
+        print(result)
+        
+    print('Test merge with drop  with missing timestamp in middle')
+    for result in DatabaseInput.merge(*args):
+        print(result)
+        
+    args = []
+    
+    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                ],
+                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                ]]}
+    
+    args.append(t)
+    
+    t = {'Energy':[[
+                    {'time':datetime(2000,1,1,9,0,0), 'values':100},
+                    {'time':datetime(2000,1,1,10,0,0), 'values':100}
+                ]]}
+    
+    args.append(t)
+    
+    
+    print('Test merge no drop with missing first timestamp')
+    for result in DatabaseInput.merge(*args,drop_partial_lines=False):
+        print(result)
+        
+    print('Test merge with drop  with missing first timestamp') 
+    for result in DatabaseInput.merge(*args):
+        print(result)
+        
+    args = []
+    
+    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                ],
+                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                ]]}
+    
+    args.append(t)
+    
+    t = {'Energy':[[{'time':datetime(2000,1,1,8,0,0), 'values':100},
+                    {'time':datetime(2000,1,1,9,0,0), 'values':100},
+                    ]]}
+    
+    args.append(t)
+    
+    
+    print('Test merge no drop with missing last timestamp') 
+    for result in DatabaseInput.merge(*args,drop_partial_lines=False):
+        print(result)
+        
+    print('Test merge with drop  with missing last timestamp') 
+    for result in DatabaseInput.merge(*args):
+        print(result)
+    
+    

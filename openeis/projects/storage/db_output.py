@@ -14,7 +14,7 @@ class DatabaseOutput:
         Expected output_map:
         {
             'OAT_TEMPS': ('topic1','topic2', 'topic3'),
-            'OCC_MODE': ('topic4',)
+            'OCC_MODE': ('topic4')
         }        
         '''
         
@@ -32,20 +32,26 @@ class DatabaseOutput:
     def log(self, msg, level=logging.DEBUG, timestamp=None):
         pass
 
-import csv    
+import csv   
+from datetime import datetime 
+
 class DatabaseOutputFile:
-    def __init__(self,output_id, topic_map):
+    def __init__(self, algo_name, topic_map):
         '''
+        output_id  - AlgoName_Timestamp
         Expected output_map:
-        {
-            'OAT_TEMPS': ('topic1','topic2', 'topic3'),
-            'OCC_MODE': ('topic4',)
-        }        
+           {
+               'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, 
+               'Sensor': {'SomeValue':OutputDescriptor('int', 'some_output/value'), 
+                          'SomeOtherValue':OutputDescriptor('boolean', 'some_output/value),
+                          'SomeString':OutputDescriptor('string', 'some_output/string)}
+           } 
         '''
-        
+        file_prefix = algo_name+'_'+str(datetime.now())
         self.sensor_map = {}
         for output_name, topics in self.topic_map.items():
-            self.column_map[output_name] = csv.DictWriter(output_name+'csv', topics)
+            self.column_map[output_name] = csv.DictWriter(file_prefix+'_'+output_name+'.csv', topics.keys())
+            self.column_map[output_name].writeheader()
             
             
     def insert_row(self,table_name,row_data):
