@@ -152,7 +152,7 @@ class IntegerColumn(BaseColumn):
             prefix = raw_value[:2].lower()
             if prefix == '0x':
                 base = 16
-            elif prefix == '0o' or isdigit(prefix[1]):
+            elif prefix == '0o' or prefix[1].isdigit():
                 base = 8
             elif prefix == '0b':
                 base = 2
