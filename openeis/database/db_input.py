@@ -189,6 +189,35 @@ class DatabaseInput:
         return {group_name: [x.order_by(order_by).values('time', 'values').iterator() for x in qs]}
     
 
+
 if __name__ == '__main__':
     args = []
-    DatabaseInput.merge(*args)
+    
+    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0},
+                 {'time':datetime(2000,1,1,11,0,0), 'values':53.0},
+                ],
+                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0},
+                 {'time':datetime(2000,1,1,11,0,0), 'values':52.0},
+                ],
+                [{'time':datetime(2000,1,1,8,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':53.0},
+                 {'time':datetime(2000,1,1,11,0,0), 'values':53.0},
+                ]]}
+    
+    args.append(t)
+    
+    t = {'Energy':[[{'time':datetime(2000,1,1,8,0,0), 'values':100},
+                 {'time':datetime(2000,1,1,9,0,0), 'values':100},
+                 {'time':datetime(2000,1,1,10,0,0), 'values':100},
+                 {'time':datetime(2000,1,1,11,0,0), 'values':100},
+                ]]}
+    
+    args.append(t)
+    
+    for result in DatabaseInput.merge(*args):
+        print(result)
