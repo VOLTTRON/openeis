@@ -16,6 +16,7 @@ from django.contrib.auth.models import User
 from rest_framework.test import APISimpleTestCase
 
 from projects.storage.ingest import ingest_files, IngestError
+from projects.views import perform_ingestion
 
 
 SENSOR_MAP_JSON = '''
@@ -38,6 +39,7 @@ SENSOR_MAP_JSON = '''
       "column": "Hillside OAT [F]"
     },
     "Site 1/Building 1": {
+      "level": "building",
       "attributes": {
         "address": {
           "address": "123 Main St",
@@ -48,6 +50,7 @@ SENSOR_MAP_JSON = '''
       }
     },
     "Site 1": {
+      "level": "site",
       "attributes": {
         "address": {
           "address": "123 Main St",
@@ -118,7 +121,7 @@ ERROR_DATA = '''Date,Hillside OAT [F],Main Meter [kW],Boiler Gas [kBtu/hr]
 18:00,76.19,145.24,54.74
 9/29/2009 19:00,76.72,121.85,11.58
 9/29/2009 20:00,76.3,113.72,11.17
-9/29/2009 21:00,
+9/29/2009 21:00,76.3,113.72,11.17
 9/29/2009 22:00,77.16,107.01,29.2
 9/29/2009 23:00,76.44,108.45,81.02
 9/30/2009,76.9,116.66,170.73
@@ -136,33 +139,42 @@ class TestIngestApi(TestCase):
     These functions test the ingest_files method of openeis.projects.storage.ingest module.  For testing  
     we are using the an io.StringIO object created from different inputs.
     '''        
+    # Use the fixture with a test_user|test and a project 1.
+    fixtures = ['db_dump_test_userPWtest_project.json']
         
     
     def setUp(self):
-        
+        '''
+        Initializes the sensor map and sets up a good_data and error_data instance variables
+        to run tests against.
+        '''
         # Set this up so that we are ready to use whichever we need in the functions.        
         self.sensormap = json.loads(SENSOR_MAP_JSON)
         # Create file like object for reading from.
-        good_data_io = io.StringIO(GOOD_DATA)
         # Add size attribute so that it works with the ingest.py correctly
-        good_data_io.size = len(GOOD_DATA)
-        self.good_data = [('File 1', good_data_io)]
+        data_io = io.StringIO(GOOD_DATA)        
+        data_io.size = len(GOOD_DATA)
+        self.good_data = [('File 1', data_io)]
         
-        
+        # Do the same as above for the error data.
+        data_io = io.StringIO(ERROR_DATA)
+        data_io.size = len(ERROR_DATA)
+        self.error_data = [('File 1', data_io)]
+    
+    
         
 
     def test_ingest_good_data_all_rows_ingested(self):
         
-        # Ignore the header
-        expected_rows = len(GOOD_DATA.split(sep='\n')) - 1
+        expected_rows = len(GOOD_DATA.split(sep='\n'))
         files = ingest_files(self.sensormap, self.good_data)
         
         self.assertIsNotNone(files, "ingest_files returned none value")
-        rowcount = 0
+        rowcount = 1
         for fileIngest in files:
             self.assertIsNotNone(fileIngest)
             self.assertEqual(4, len(fileIngest.sensors))
-            print(fileIngest)
+            
             for row in fileIngest.rows:
                 for col in row.columns:
                     self.assertFalse(isinstance(col, IngestError), "The column had an error!")
@@ -170,6 +182,33 @@ class TestIngestApi(TestCase):
                 rowcount += 1
         # Returns 1 based numbering from where the data actually starts.
         self.assertEqual(expected_rows, rowcount, 'Invalid rowcount.')
-            
         
+    '''
+    def test_ingest_bad_data(self):
+        # Ignore the header
+        expected_rows = len(ERROR_DATA.split(sep='\n')) - 1
+        files = ingest_files(self.sensormap, self.error_data)
+        
+        self.assertIsNotNone(files, "ingest_files returned none value")
+        rowcount = 2 # Data starts at line 2
+        for fileIngest in files:
+            self.assertIsNotNone(fileIngest)
+            self.assertEqual(4, len(fileIngest.sensors))
+            
+            for row in fileIngest.rows:
+                self.assertEqual(rowcount, row.line_num)
+                self.assertTrue(row.line_num > 0)
+                self.assertTrue(isinstance(row.line_num, int), "Invalid row.line_number on {}".format(rowcount))
+                print(row.line_num)
+                for col in row.columns:
+                    self.assertFalse(isinstance(col, IngestError), "The column had an error!")
+                
+                rowcount += 1
+        # Returns 1 based numbering from where the data actually starts.
+        self.assertEqual(expected_rows, rowcount, 'Invalid rowcount.')
+    '''
+                 
+    def test_save_good_data(self):
+        expected_rows = len(ERROR_DATA.split(sep='\n')) - 1
+        files = ingest_files(self.sensormap, self.error_data)
     
