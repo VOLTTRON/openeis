@@ -60,6 +60,22 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(data['name'], response.data['name'])
         response = client.get("/api/projects")
         self.assertEqual(projects_before+1, len(response.data))
+        
+    def test_bad_delim_response(self):
+        bad_delim = '''Date,Hillside OAT [F],Main Meter [kW],Boiler Gas [kBtu/hr]
+9/29/2009 15:00,74.72,280.08,186.52
+9/29/2009 16:00
+9/29/2009 17:00,75.78,221.92,113.88'''
+        expected_response = {'file': ['Could not determine delimiter']}
+        client = self.get_authenticated_client()
+        
+        # Create a temp file for uploading to the server.        
+        tf = tempfile.NamedTemporaryFile(suffix='.cxv')
+        tf.write(bytes(bad_delim, 'utf-8'))
+        tf.flush()
+        tf.seek(0)
+        response = client.post('/api/projects/1/add_file', {'file':tf})
+        self.assertEqual(expected_response, response.data)
     
     def test_can_add_files(self):
         client = self.get_authenticated_client()
