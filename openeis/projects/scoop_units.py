@@ -1,11 +1,12 @@
 """
     Creates the units.json file from the haystack_units.txt input file.
 """
+from codecs import open
 import json
 
 OUTPUT_FILE = 'static/projects/json/units.json'
 
-with open('haystack_units.txt') as builder:
+with open('haystack_units.txt', encoding='utf-8') as builder:
     groups = {}
     current_group = None
     for line in builder:
