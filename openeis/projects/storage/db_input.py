@@ -33,15 +33,13 @@ input_map =
 
 '''
 
-#from  django.db.models import Sum
+from  django.db.models import Sum
 
 #from foo import get_sensor
 
-
-from itertools import dropwhile, takewhile
-
 from datetime import datetime
 from collections import defaultdict
+from openeis.projects.storage.sensorstore import get_sensors
 
 class DatabaseInput:
     
@@ -58,7 +56,7 @@ class DatabaseInput:
         
         self.sensor_map = {}
         for input_name, topics in self.topic_map.items():
-            self.column_map[input_name] = tuple(get_sensor(input_id,x) for x in topics)
+            self.column_map[input_name] = tuple(get_sensors(input_id,x) for x in topics)
         
              
     def get_topics(self):
@@ -83,23 +81,23 @@ class DatabaseInput:
                     for query_set in query_set_list:                    
                         managed_query_sets.append((group,query_set.__iter__()))
             current = [x[1].__next__() for x in managed_query_sets]
-            newest = max(current, key=lambda x:x['time'] )['time']                
+            newest = max(current, key=lambda x:x[0] )[0]                
             
             while True:
-                if all(x['time'] == newest for x in current):
+                if all(x[0] == newest for x in current):
                     result = defaultdict(list) 
                     result['time']  = newest
                     for value, query in zip(current, managed_query_sets):
-                        result[query[0]].append(value['values'])
+                        result[query[0]].append(value[1])
                         
                     yield result
                     current = [x[1].__next__() for x in managed_query_sets]
-                    newest = max(current, key=lambda x:x['time'] )['time']     
+                    newest = max(current, key=lambda x:x[0] )[0]     
                 else:
                     new_current = []
                     terminate = False
                     for value, query in zip(current, managed_query_sets):
-                        if value['time'] == newest:
+                        if value[0] == newest:
                             new_current.append(value)
                         else:
                             try:
@@ -110,7 +108,7 @@ class DatabaseInput:
                     if terminate: 
                         break
                     current = new_current
-                    newest = max(current, key=lambda x:x['time'] )['time']
+                    newest = max(current, key=lambda x:x[0] )[0]
                         
         def merge_no_drop():
             "Incomplete rows provide a None for missing values."
@@ -121,30 +119,30 @@ class DatabaseInput:
                     for query_set in query_set_list:                    
                         managed_query_sets.append((group,query_set.__iter__()))
             current = [x[1].__next__() for x in managed_query_sets]
-            oldest = min(current, key=lambda x:x['time'] )['time']               
+            oldest = min(current, key=lambda x:x[0] )[0]               
             
             while True:
                 result = defaultdict(list) 
                 result['time']  = oldest
                 
                 for value, query in zip(current, managed_query_sets):
-                    if value['time'] == oldest:
-                        result[query[0]].append(value['values'])
+                    if value[0] == oldest:
+                        result[query[0]].append(value[1])
                     else:
                         result[query[0]].append(None)
                         
                 yield result
                 new_current = []
                 for value, query in zip(current, managed_query_sets):
-                    if value['time'] != oldest:
+                    if value[0] != oldest:
                         new_current.append(value)
                     else:
                         try:
                             new_current.append(query[1].__next__())
                         except StopIteration:
-                            new_current.append({'time':datetime.max, 'values':None})
+                            new_current.append((datetime.max,None))
                 current = new_current
-                oldest = min(current, key=lambda x:x['time'] )['time']
+                oldest = min(current, key=lambda x:x[0] )[0]
                 if oldest == datetime.max:
                     break     
             
@@ -155,7 +153,7 @@ class DatabaseInput:
                        order_by='time',
                        filter_=None, 
                        exclude=None, 
-                       group_by=None, group_by_aggregation=None):
+                       group_by=None, group_by_aggregation=Sum):
         """
         group - group of columns to retrieve.
         order_by - column to order_by ('time' or 'values'), defaults to 'time'
@@ -185,9 +183,9 @@ class DatabaseInput:
             if group_by != 'all':
                 qs = (x.group_by(group_by, group_by_aggregation) for x in qs)
             else:
-                return {group_name: [x.aggragate(value=group_by_aggregation('values'))['value'] for x in qs]}
+                return {group_name: [x.aggragate(value=group_by_aggregation('value'))['value'] for x in qs]}
         
-        return {group_name: [x.order_by(order_by).values('time', 'values').iterator() for x in qs]}
+        return {group_name: [x.order_by(order_by).iterator() for x in qs]}
     
 
 
@@ -195,20 +193,20 @@ if __name__ == '__main__':
     
     args = []
     
-    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+    t = {'OAT':[[(datetime(2000,1,1,8,0,0), 50.0),
+                 (datetime(2000,1,1,9,0,0), 51.0),
+                 (datetime(2000,1,1,10,0,0), 52.0)
                 ],
-                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                [(datetime(2000,1,1,8,0,0), 50.0),
+                 (datetime(2000,1,1,9,0,0), 50.0),
+                 (datetime(2000,1,1,10,0,0), 52.0)
                 ]]}
     
     args.append(t)
     
-    t = {'Energy':[[{'time':datetime(2000,1,1,8,0,0), 'values':100},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':100},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':100}
+    t = {'Energy':[[(datetime(2000,1,1,8,0,0), 100),
+                 (datetime(2000,1,1,9,0,0), 100),
+                 (datetime(2000,1,1,10,0,0), 100)
                 ]]}
     
     args.append(t)
@@ -223,20 +221,20 @@ if __name__ == '__main__':
         
     args = []
     
-    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+    t = {'OAT':[[(datetime(2000,1,1,8,0,0), 50.0),
+                 (datetime(2000,1,1,9,0,0), 51.0),
+                 (datetime(2000,1,1,10,0,0), 52.0)
                 ],
-                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                [(datetime(2000,1,1,8,0,0), 50.0),
+                 (datetime(2000,1,1,9,0,0), 50.0),
+                 (datetime(2000,1,1,10,0,0), 52.0)
                 ]]}
     
     args.append(t)
     
     t = {'Energy':[[
-                {'time':datetime(2000,1,1,8,0,0), 'values':100},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':100}
+                (datetime(2000,1,1,8,0,0), 100),
+                 (datetime(2000,1,1,10,0,0), 100)
                 ]]}
     
     args.append(t)
@@ -252,20 +250,20 @@ if __name__ == '__main__':
         
     args = []
     
-    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+    t = {'OAT':[[(datetime(2000,1,1,8,0,0), 50.0),
+                 (datetime(2000,1,1,9,0,0), 51.0),
+                 (datetime(2000,1,1,10,0,0), 52.0)
                 ],
-                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                [(datetime(2000,1,1,8,0,0), 50.0),
+                 (datetime(2000,1,1,9,0,0), 50.0),
+                 (datetime(2000,1,1,10,0,0), 52.0)
                 ]]}
     
     args.append(t)
     
     t = {'Energy':[[
-                    {'time':datetime(2000,1,1,9,0,0), 'values':100},
-                    {'time':datetime(2000,1,1,10,0,0), 'values':100}
+                    (datetime(2000,1,1,9,0,0), 100),
+                    (datetime(2000,1,1,10,0,0), 100)
                 ]]}
     
     args.append(t)
@@ -281,19 +279,19 @@ if __name__ == '__main__':
         
     args = []
     
-    t = {'OAT':[[{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':51.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+    t = {'OAT':[[(datetime(2000,1,1,8,0,0), 50.0),
+                 (datetime(2000,1,1,9,0,0), 51.0),
+                 (datetime(2000,1,1,10,0,0), 52.0)
                 ],
-                [{'time':datetime(2000,1,1,8,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,9,0,0), 'values':50.0},
-                 {'time':datetime(2000,1,1,10,0,0), 'values':52.0}
+                [(datetime(2000,1,1,8,0,0), 50.0),
+                 (datetime(2000,1,1,9,0,0), 50.0),
+                 (datetime(2000,1,1,10,0,0), 52.0)
                 ]]}
     
     args.append(t)
     
-    t = {'Energy':[[{'time':datetime(2000,1,1,8,0,0), 'values':100},
-                    {'time':datetime(2000,1,1,9,0,0), 'values':100},
+    t = {'Energy':[[(datetime(2000,1,1,8,0,0), 100),
+                    (datetime(2000,1,1,9,0,0), 100),
                     ]]}
     
     args.append(t)

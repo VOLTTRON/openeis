@@ -80,6 +80,8 @@ class DataFile(models.Model):
         rows = []
         with contextlib.closing(file):
             csv_file = CSVFile(file)
+            if (csv_file.has_header):
+                count += 1;
             for row in csv_file:
                 rows.append(row)
                 if len(rows) >= count:

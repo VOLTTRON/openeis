@@ -66,7 +66,7 @@ class DatabaseOutputFile:
         self.table_map = {}
         for table_name, topics in topic_map.items():
             csv_file = file_prefix+'_'+table_name+'.csv'
-            self.table_map[table_name] = csv.DictWriter(open(csv_file,'wb'), topics.keys())
+            self.table_map[table_name] = csv.DictWriter(open(csv_file,'w', newline=''), topics.keys())
             self.table_map[table_name].writeheader()
         
             
@@ -85,7 +85,7 @@ class DatabaseOutputFile:
 
 if __name__ == '__main__':
 
-    from algorithm.base import OutputDescriptor
+    from openeis.algorithm.base import OutputDescriptor
       
     topic_map = {'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, }
     output  = DatabaseOutputFile('test_algo', topic_map)
