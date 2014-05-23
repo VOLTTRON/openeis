@@ -1,3 +1,4 @@
+import contextlib
 import json
 import posixpath
 import random
@@ -12,6 +13,7 @@ import jsonschema.exceptions
 
 from .protectedmedia import ProtectedFileSystemStorage
 from .storage import sensormap
+from .storage.csvfile import CSVFile
 
 
 class Organization(models.Model):
@@ -70,6 +72,21 @@ class DataFile(models.Model):
 
     def __str__(self):
         return self.file.name
+
+    def csv_head(self, count=15):
+        file = self.file
+        if file.closed:
+            file.open()
+        rows = []
+        with contextlib.closing(file):
+            csv_file = CSVFile(file)
+            if (csv_file.has_header):
+                count += 1;
+            for row in csv_file:
+                rows.append(row)
+                if len(rows) >= count:
+                    break
+            return csv_file.has_header, rows
 
 
 class JSONString(str):

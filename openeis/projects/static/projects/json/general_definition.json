@@ -4,7 +4,7 @@
             "data_type": "string"
         },
         "attribute_list": [
-            "Address"
+            "address"
         ],
         "sensor_list": ["OutdoorAirTemperature"]
     },
@@ -16,7 +16,7 @@
             "data_type": "string"
         },
         "attribute_list": [
-            "Address"
+            "address"
         ],
         "sensor_list": [
             "OutdoorAirTemperature",
@@ -69,7 +69,7 @@
         }
     },
     "attributes": {
-        "Address": {
+        "address": {
             "address": { "data_type": "string"},
             "city": { "data_type": "string"},
             "state": { "data_type": "string"},

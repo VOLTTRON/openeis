@@ -6,6 +6,8 @@ import json
 import datetime
 import warnings
 
+import dateutil
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
@@ -133,8 +135,10 @@ class FileViewSet(mixins.ListModelMixin,
         return response
 
     @link()
-    def top(self, request, *args, **kwargs):
-        '''Return the top rows of the file split into columns.
+    def head(self, request, *args, **kwargs):
+        '''Return the first N rows of the file, split into columns.
+
+        If a header row is detected, it does not count towards N.
 
         N defaults to FILE_HEAD_ROWS_DEFAULT projects setting and can be
         overridden using the rows query parameter. However, rows may not
@@ -145,43 +149,50 @@ class FileViewSet(mixins.ListModelMixin,
         except (KeyError, ValueError):
             count = proj_settings.FILE_HEAD_ROWS_DEFAULT
         count = min(count, proj_settings.FILE_HEAD_ROWS_MAX)
-        rows = []
-        file = self.get_object().file
-        file.open()
-        with closing(file):
-            csv_file = serializers.CSVFile(file)
-            for row in csv_file:
-                rows.append(row)
-                if len(rows) >= count:
-                    break
-        return Response({'has_header': csv_file.has_header, 'rows': rows})
+        has_header, rows = self.get_object().csv_head(count)
+        return Response({'has_header': has_header, 'rows': rows})
 
 
     @link()
-    def head(self, request, *args, **kwargs):
-        '''Return the first lines of the file.
-
-        N defaults to FILE_HEAD_ROWS_DEFAULT projects setting and can be
-        overridden using the rows query parameter. However, rows may not
-        exceed FILE_HEAD_ROWS_MAX projects setting.
-        '''
+    def timestamps(self, request, *args, **kwargs):
+        columns = request.QUERY_PARAMS.get('columns', '0').split(',')
+        fmt = request.QUERY_PARAMS.get('format')
         try:
-            rows = int(request.QUERY_PARAMS['rows'])
-        except (KeyError, ValueError):
-            rows = proj_settings.FILE_HEAD_ROWS_DEFAULT
-        rows = min(rows, proj_settings.FILE_HEAD_ROWS_MAX)
-        lines = []
-        file = self.get_object().file
-        file.open()
-        with closing(file):
-            while len(lines) < rows:
-                # File iteration is broken in Django FileSystemStorage,
-                # but readline() still works, so we do it this way.
-                line = file.readline()
-                if not line:
-                    break
-                lines.append(line.decode('utf-8'))
-        return Response(lines)
+            count = min(int(request.QUERY_PARAMS['rows']),
+                        settings.FILE_HEAD_ROWS_MAX)
+        except KeyError:
+            count = proj_settings.FILE_HEAD_ROWS_DEFAULT
+        except ValueError as e:
+            return Response({'rows': [str(e)]},
+                            status=status.HTTP_400_BAD_REQUEST)
+        has_header, rows = self.get_object().csv_head(count)
+        headers = rows.pop(0) if has_header else []
+        for i, column in enumerate(columns):
+            try:
+                column = int(column)
+                if column >= len(columns):
+                    return Response(
+                        {'columns': ['invalid column: {!r}'.format(columns[i])]},
+                        status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                if column[:1] in '\'"' and column[:1] == column[-1:]:
+                    column = column[1:-1]
+                try:
+                    column = columns.index(column)
+                except ValueError:
+                    return Response(
+                        {'columns': ['invalid column: {!r}'.format(columns[i])]},
+                        status=status.HTTP_400_BAD_REQUEST)
+            columns[i] = column
+        parse = dateutil.parser.parse
+        times = []
+        for row in rows:
+            ts = ' '.join(row[i] for i in columns)
+            dt = parse(ts)
+            #if not dt.tzinfo:
+            #    dt.replace(tzinfo=utc)
+            times.append([ts, dt])
+        return Response(times)
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -241,7 +252,7 @@ class AccountViewSet(mixins.CreateModelMixin,
         serializer = serializers.DeleteAccountSerializer(data=request.DATA)
         if serializer.is_valid():
             if user.check_password(serializer.object):
-                prefix = datetime.now().strftime('__DELETED_%Y%m%d%H%M%S%f_')
+                prefix = datetime.datetime.now().strftime('__DELETED_%Y%m%d%H%M%S%f_')
                 user.username = prefix + user.username
                 user.is_active = False
                 user.save()
@@ -383,7 +394,7 @@ def perform_ingestion(sensormap, ingest_id):
     '''
     Ingest into the common schema tables from the DataFiles.
     '''
-    
+
     with warnings.catch_warnings() as w:
         warnings.simplefilter("ignore")
         ingest = models.SensorIngest.objects.get(pk=ingest_id)
@@ -393,37 +404,37 @@ def perform_ingestion(sensormap, ingest_id):
                                     'status': 'processing',
                                     'percent': 0.0,
                                     'current_file_percent': 0.0,
-                                    'current_file': None,                                           
+                                    'current_file': None,
                                 }
-        
+
         total_bytes = 0.0
         # Get the total bytes for progress.
         for file in ingest_files(sensormap, files):
             total_bytes += file.size
-        
+
         processed_bytes = 0.0
-        sensor_indx = 0    
-            
+        sensor_indx = 0
+
         was_sensor_list_0 = False
         if ingest.map.sensors.count() == 0:
             was_sensor_list_0 = True
-            
+
         file_indx = 0
         for file in ingest_files(sensormap, files):
             ingest_file = models.SensorIngestFile.objects.filter(name = file.name, ingest__id=ingest.id)[0]
             processes[ingest_id]['current_file'] = file.name
             previous_bytes = 0
             db_sensor_list = []
-            
+
             if was_sensor_list_0:
-                
+
                 for sensor_indx in range(len(file.sensors)):
                     sensor_name = file.sensors[sensor_indx]
                     data_type = file.types[sensor_indx]
                     # No datetime fields in this list
                     if sensor_name == None:
                         continue
-                    
+
                     # Add senor_list to the database
                     sensor = models.Sensor()
                     sensor.name =sensor_name
@@ -437,8 +448,8 @@ def perform_ingestion(sensormap, ingest_id):
                     if sensor_name == None:
                         continue
                     db_sensor_list.append(models.Sensor.objects.filter(map__id=ingest.map.id, name=sensor_name)[0])
-            
-                                
+
+
             for row in file.rows:
                 time = None
                 col_indx = 0
@@ -456,49 +467,49 @@ def perform_ingestion(sensormap, ingest_id):
                             time = column
                             continue
                         elif isinstance(column, bool):
-                            dbcolumn = models.BooleanSensorData()                        
-                        elif isinstance(column, int):                        
+                            dbcolumn = models.BooleanSensorData()
+                        elif isinstance(column, int):
                             dbcolumn = models.IntegerSensorData()
-                        elif isinstance(column, float):                        
+                        elif isinstance(column, float):
                             dbcolumn = models.FloatSensorData()
-                        elif isinstance(column, str):                        
+                        elif isinstance(column, str):
                             dbcolumn = models.StringSensorData()
                         dbcolumn.value = column
                         dbcolumn.time = time
                         dbcolumn.sensor = db_sensor_list[col_indx]
                         dbcolumn.ingest = ingest
                         dbcolumn.save()
-                    
+
                     col_indx += 1
-                    
-                     
-                        
+
+
+
                 processes[ingest_id]['current_file_percent'] = row.position * 100 // file.size
-                
+
                 processed_bytes += row.position - previous_bytes
                 processes[ingest_id]['percent'] = processed_bytes * 100  // total_bytes ## * 100
                 previous_bytes = row.position
-            
-            file_indx += 1 
+
+            file_indx += 1
         ingest.end = datetime.datetime.utcnow().replace(tzinfo=utc) #get_current_timezone datetime.datetime.now()
         ingest.save()
         del(processes[ingest_id])
-            
+
 class SensorIngestViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
     serializer_class = serializers.SensorIngestSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
- 
+
     @link()
     def status(self, request, *args, **kwargs):
         ingest = self.get_object()
-        
+
         if ingest.id in processes:
             return Response(json.dumps(processes[id], status.HTTP_200_OK))
         else:
             return Response("Complete")
-        
+
     @link()
     def errors(self, request, *args, **kwargs):
         '''
@@ -506,16 +517,16 @@ class SensorIngestViewSet(viewsets.ModelViewSet):
         '''
         ingest = self.get_object()
         logs = []
-        
+
         for file in ingest.files.all():
             for l in file.logs.all():
                 logs.append(l)
-                
+
         serializer = serializers.SensorIngestLogSerializer(logs, many=True)
         return Response(serializer.data)
-             
-    
-        
+
+
+
     def post_save(self, obj, created):
         '''
         After the SensorIngest object has been saved start a threaded
@@ -524,8 +535,8 @@ class SensorIngestViewSet(viewsets.ModelViewSet):
         if created:
             process = Process(target=perform_ingestion, args=(obj.map.map, obj.id)) #jsonmap, files))
             process.start()
-        
-        
-            
+
+
+
     def get_queryset(self):
-        return models.SensorIngest.objects.all() # (Response({'abc': 2, "def":4}))        
+        return models.SensorIngest.objects.all() # (Response({'abc': 2, "def":4}))
