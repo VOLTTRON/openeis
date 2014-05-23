@@ -5,11 +5,10 @@ import json
 import io
 import tempfile
   
+from rest_framework import status
 from rest_framework.test import APIClient
-from django.test import TestCase
-from django.http.response import HttpResponseForbidden
 from django.contrib.auth.models import User
-from .openeistest import OpenEISTestBase
+from openeis.projects.tests.openeistest import OpenEISTestBase
   
 TEST_USER = 'test_user'
 TEST_PASS = 'test_pass'
@@ -49,7 +48,17 @@ class TestRestApi(OpenEISTestBase):
         response = client.get("/api/projects")
         self.assertIsNotNone(response)
         self.assertEqual(response.data[0]['id'], 1)
-         
+
+    def test_can_add_project(self):
+        client = self.get_authenticated_client()
+        response = client.get("/api/projects")
+        projects_before = len(response.data)
+        data = {"name": "New Project"}
+        response = client.post("/api/projects", data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(data['name'], response.data['name'])
+        response = client.get("/api/projects")
+        self.assertEqual(projects_before+1, len(response.data))
     '''
     def test_can_upload_files(self):
         client = self.get_authenticated_client()
