@@ -4,6 +4,7 @@ Created on May 2, 2014
 import json
 import io
 import tempfile
+import time
   
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -59,27 +60,31 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(data['name'], response.data['name'])
         response = client.get("/api/projects")
         self.assertEqual(projects_before+1, len(response.data))
-    '''
-    def test_can_upload_files(self):
+    
+    def test_can_add_files(self):
         client = self.get_authenticated_client()
-        response = client.get('/api/files')
+        response = client.get('/api/files?project=1')
         self.assertEqual(0, len(response.data))
-         
-        with open('junk.csv', 'w') as f:
-            f.write(DATA)
-            f.close()
-         
-        with open('junk.csv') as f:        
-            response = client.post('/api/files', {'project': 1, 'attachment':'junk.csv'})
-         
-        print(response.data)
-        response = client.get('/api/files')
-        print(response.data)
-        self.assertEqual(1, len(response.data))
-    ''' 
+        
+        # Create a temp file for uploading to the server.        
+        tf = tempfile.NamedTemporaryFile(suffix='.cxv')
+        tf.write(bytes(DATA, 'utf-8'))
+        tf.flush()
+        tf.seek(0)
+                         
+        response = client.post('/api/projects/1/add_file', {'file':tf})
+        
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(1, response.data['id'])
+        self.assertEqual(1, response.data['project'])
+        
+        
+    
     def test_can_authenticate(self):
         """
         Testing of /api/auth
         """
         client = APIClient()
         self.assertTrue(client.login(username='test_user', password='test'))
+        
+        
