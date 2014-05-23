@@ -9,11 +9,10 @@ import io
 from rest_framework.test import APIRequestFactory
 from rest_framework.test import APIClient
 from rest_framework import status
-from django.test.client import Client
 from django.test import TestCase
+from django.test.client import Client
 from django.http.response import HttpResponseForbidden
 from django.contrib.auth.models import User
-from rest_framework.test import APISimpleTestCase
 
 from projects.storage.ingest import ingest_files, IngestError
 from projects.views import perform_ingestion
