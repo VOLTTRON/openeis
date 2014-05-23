@@ -1,3 +1,4 @@
+import os.path
 from pip.exceptions import DistributionNotFound, BestVersionAlreadyInstalled
 from pip.index import PackageFinder
 from pip.req import InstallRequirement
@@ -5,7 +6,7 @@ from pip.req import InstallRequirement
 # See pip.basecommand.Command._build_session for adding certificates to
 # the verification chain. The resulting session object must be passed in
 # the PackageFinder constructor using the session argument.
-#from pip.download import PipSession
+from pip.download import PipSession
 from pip.util import get_installed_distributions
 from pip.log import logger
 import sys
@@ -22,7 +23,8 @@ class Command(runserver.Command):
         return super().handle(*args, **kwargs)
 
 
-def get_latest_version(name, index_urls=(), find_links=(), prereleases=True):
+def get_latest_version(name, index_urls=(), find_links=(),
+                       prereleases=True, session=None):
     installed_packages = {d.key: d for d in get_installed_distributions()}
     try:
         dist = installed_packages[name]
@@ -31,7 +33,7 @@ def get_latest_version(name, index_urls=(), find_links=(), prereleases=True):
         return
     req = InstallRequirement.from_line(dist.key, None, prereleases=prereleases)
     finder = PackageFinder(find_links=find_links, index_urls=index_urls,
-                           allow_all_prereleases=prereleases)
+                           allow_all_prereleases=prereleases, session=session)
     try:
         link = finder.find_requirement(req, True)
     except DistributionNotFound:
@@ -45,9 +47,10 @@ def get_latest_version(name, index_urls=(), find_links=(), prereleases=True):
     return dist, raw_version, parsed_version
 
 
-def check_version(name, index_urls=(), find_links=(), prereleases=True):
-    version = get_latest_version(name,
-        index_urls=index_urls, find_links=find_links, prereleases=prereleases)
+def check_version(name, index_urls=(), find_links=(),
+                  prereleases=True, session=None):
+    version = get_latest_version(name, index_urls=index_urls,
+             find_links=find_links, prereleases=prereleases, session=session)
     if version is None:
         return 1
     dist, raw_version, parsed_version = version
@@ -61,8 +64,16 @@ def check_version(name, index_urls=(), find_links=(), prereleases=True):
 
 def main():
     logger.add_consumers((logger.NOTIFY, sys.stdout))
-    return check_version('openeis-ui',
-            find_links=['http://openeis-dev.pnl.gov/dist/openeis-ui'])
+    session = None
+    if sys.prefix != sys.base_prefix:
+        capath = os.path.join(os.path.dirname(sys.prefix),
+                              'dist', 'certs', 'pnnl.crt')
+        if os.path.exists(capath):
+            session = PipSession()
+            session.verify = capath
+            session.prompting = False
+    url = ('https' if session else 'http') + '://openeis-dev.pnl.gov/dist/openeis-ui/'
+    return check_version('openeis-ui', session=session, find_links=[url])
 
 
 if __name__ == '__main__':

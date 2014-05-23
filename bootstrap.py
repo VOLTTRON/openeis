@@ -65,6 +65,9 @@ vEsXCS+0yx5DaMkHJ8HSXPfqIbloEpw8nL+e/IBcm2PN7EeqJSdnoDfzAIJ9VNep
 '''
 
 
+_path = os.path.dirname(__file__) or os.getcwd()
+
+
 def get_pip():
     # Download and execute the get-pip.py bootstrap script to install pip.
     import shutil
@@ -92,7 +95,7 @@ def get_pip():
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
-def stage1(directory='env', prompt='(openeis)'):
+def stage1(directory=os.path.join(_path, 'env'), prompt='(openeis)'):
     import venv
 
     class EnvBuilder(venv.EnvBuilder):
@@ -121,13 +124,13 @@ def stage1(directory='env', prompt='(openeis)'):
                     file.write('import os, sys; os.environ.setdefault("VIRTUAL_ENV", sys.prefix)\n')
 
     # Install the virtual environment.
-    builder = EnvBuilder(upgrade=os.path.exists(directory), prompt='(openeis)')
+    builder = EnvBuilder(upgrade=os.path.exists(directory), prompt=prompt)
     builder.create(directory)
     # Run this script within the virtual environment for stage2
     subprocess.check_call([builder.context.env_exe, __file__])
 
 
-def stage2():
+def stage2(directory=_path):
     try:
         import pip
     except ImportError:
@@ -136,17 +139,18 @@ def stage2():
             ensurepip.bootstrap(upgrade=True, default_pip=True)
         except ImportError:
             get_pip()
+    capath = os.path.join(directory, 'dist', 'certs', 'pnnl.crt')
     subprocess.call([sys.executable, '-m', 'pip', 'install', '-U',
-        '-f', 'http://openeis-dev.pnl.gov/dist/openeis-ui/',
-        '--no-index', '--pre', 'openeis-ui'])
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', '.'])
-    if not os.path.exists('data'):
-        os.mkdir('data')
-    if not os.path.exists('data/static'):
-        os.mkdir('data/static')
+        '-f', 'https://openeis-dev.pnl.gov/dist/openeis-ui/',
+        '--cert', capath, '--no-index', '--pre', 'openeis-ui'])
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', directory])
+    for names in [('data',), ('data', 'static')]:
+        path = os.path.join(directory, *names)
+        if not os.path.exists(path):
+            os.mkdir(path)
 
 
-def main(directory='env', prompt='(openeis)'):
+def main(directory=os.path.join(_path, 'env'), prompt='(openeis)'):
     # venv and other features used in openeis were introduced in Python 3.3.
     if sys.version_info[:2] < (3, 3):
         sys.stderr.write('error: Python 3.3 or greater is required\n')
