@@ -3,4 +3,4 @@
 # use the default settings.
 
 export DJANGO_SETTINGS_MODULE=openeis.server.settings
-nosetests --with-xunit
+nosetests --with-xunit -v
