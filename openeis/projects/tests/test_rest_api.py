@@ -81,23 +81,5 @@ class TestRestApi(OpenEISTestBase):
         """
         Testing of /api/auth
         """
-        # Simulate the login of test_user
-        #user = User.objects.get(username="test_user")
         client = APIClient()
         self.assertTrue(client.login(username='test_user', password='test'))
-         
-        response = client.get("/api/projects")
-        #response.render()
-        print(response.data)
-          
-#         response = self.client.get("/api/auth")
-#         self.assertTrue(isinstance(response, HttpResponseForbidden))
-        #user = User.objects.get(username="test_user")
-        #self.client.
-        #auth_params = {"username":"test_user","password":"test_pass"}
-        #response = self.client.post("/api-token-auth/",auth_params, 'application/json')
-        #print(response.streaming_content)
-        #print(response.status_code)
-        #response = self.client.post("/api/auth", auth_params)
-                         
-          
