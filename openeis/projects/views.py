@@ -6,6 +6,8 @@ import json
 import datetime
 import warnings
 
+import dateutil
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib.auth.models import User
@@ -145,16 +147,8 @@ class FileViewSet(mixins.ListModelMixin,
         except (KeyError, ValueError):
             count = proj_settings.FILE_HEAD_ROWS_DEFAULT
         count = min(count, proj_settings.FILE_HEAD_ROWS_MAX)
-        rows = []
-        file = self.get_object().file
-        file.open()
-        with closing(file):
-            csv_file = serializers.CSVFile(file)
-            for row in csv_file:
-                rows.append(row)
-                if len(rows) >= count:
-                    break
-        return Response({'has_header': csv_file.has_header, 'rows': rows})
+        has_header, rows = self.get_object().csv_head(count)
+        return Response({'has_header': has_header, 'rows': rows})
 
 
     @link()
@@ -182,6 +176,47 @@ class FileViewSet(mixins.ListModelMixin,
                     break
                 lines.append(line.decode('utf-8'))
         return Response(lines)
+
+    @link()
+    def timestamps(self, request, *args, **kwargs):
+        columns = request.QUERY_PARAMS.get('columns', '0').split(',')
+        fmt = request.QUERY_PARAMS.get('format')
+        try:
+            count = min(int(request.QUERY_PARAMS['rows']),
+                        settings.FILE_HEAD_ROWS_MAX)
+        except KeyError:
+            count = proj_settings.FILE_HEAD_ROWS_DEFAULT
+        except ValueError as e:
+            return Response({'rows': [str(e)]},
+                            status=status.HTTP_400_BAD_REQUEST)
+        has_header, rows = self.get_object().csv_head(count)
+        headers = rows.pop(0) if has_header else []
+        for i, column in enumerate(columns):
+            try:
+                column = int(column)
+                if column >= len(columns):
+                    return Response(
+                        {'columns': ['invalid column: {!r}'.format(columns[i])]},
+                        status=status.HTTP_400_BAD_REQUEST)
+            except ValueError:
+                if column[:1] in '\'"' and column[:1] == column[-1:]:
+                    column = column[1:-1]
+                try:
+                    column = columns.index(column)
+                except ValueError:
+                    return Response(
+                        {'columns': ['invalid column: {!r}'.format(columns[i])]},
+                        status=status.HTTP_400_BAD_REQUEST)
+            columns[i] = column
+        parse = dateutil.parser.parse
+        times = []
+        for row in rows:
+            ts = ' '.join(row[i] for i in columns)
+            dt = parse(ts)
+            #if not dt.tzinfo:
+            #    dt.replace(tzinfo=utc)
+            times.append([ts, dt])
+        return Response(times)
 
 
 class UserViewSet(viewsets.ReadOnlyModelViewSet):
@@ -241,7 +276,7 @@ class AccountViewSet(mixins.CreateModelMixin,
         serializer = serializers.DeleteAccountSerializer(data=request.DATA)
         if serializer.is_valid():
             if user.check_password(serializer.object):
-                prefix = datetime.now().strftime('__DELETED_%Y%m%d%H%M%S%f_')
+                prefix = datetime.datetime.now().strftime('__DELETED_%Y%m%d%H%M%S%f_')
                 user.username = prefix + user.username
                 user.is_active = False
                 user.save()
