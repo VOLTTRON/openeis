@@ -9,6 +9,7 @@ from rest_framework.test import APIClient
 from django.test import TestCase
 from django.http.response import HttpResponseForbidden
 from django.contrib.auth.models import User
+from .openeistest import OpenEISTestBase
   
 TEST_USER = 'test_user'
 TEST_PASS = 'test_pass'
@@ -40,13 +41,8 @@ DATA = '''Date,Hillside OAT [F],Main Meter [kW],Boiler Gas [kBtu/hr]
 9/30/2009 14:00,71.81,258.76,205.13
 9/30/2009 15:00,71.14,261.77,204.11'''
       
-class TestRestApi(TestCase):
+class TestRestApi(OpenEISTestBase):
     fixtures = ['db_dump_test_userPWtest_project.json']
-     
-    def get_authenticated_client(self):
-        client = APIClient()
-        self.assertTrue(client.login(username='test_user', password='test'))
-        return client
       
     def test_can_get_default_project(self):        
         client = self.get_authenticated_client()
