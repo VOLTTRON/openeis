@@ -179,8 +179,19 @@ class FileViewSet(mixins.ListModelMixin,
 
     @link()
     def timestamps(self, request, *args, **kwargs):
+        '''Parse the timestamps of the first lines of the file.
+        
+        The rows query parameter matches that of top and head. If
+        columns is provided, it is a comma separated list of column
+        names or 0-based numerical indexes of columns containing the
+        timestamp. All portions are concatenated, with a single space
+        separating each, and used as the timestamp to be parsed.  If no
+        column is given, the first column is used. If datefmt is given,
+        it is used to parse the time instead of performing automatic
+        parsing.
+        '''
         columns = request.QUERY_PARAMS.get('columns', '0').split(',')
-        fmt = request.QUERY_PARAMS.get('format')
+        fmt = request.QUERY_PARAMS.get('datefmt')
         try:
             count = min(int(request.QUERY_PARAMS['rows']),
                         settings.FILE_HEAD_ROWS_MAX)
@@ -208,14 +219,20 @@ class FileViewSet(mixins.ListModelMixin,
                         {'columns': ['invalid column: {!r}'.format(columns[i])]},
                         status=status.HTTP_400_BAD_REQUEST)
             columns[i] = column
-        parse = dateutil.parser.parse
+        parse = ((lambda s: datetime.datetime.strptime(s, fmt))
+                 if fmt else dateutil.parser.parse)
         times = []
         for row in rows:
             ts = ' '.join(row[i] for i in columns)
-            dt = parse(ts)
-            #if not dt.tzinfo:
-            #    dt.replace(tzinfo=utc)
-            times.append([ts, dt])
+            try:
+                dt = parse(ts)
+            except ValueError:
+                parsed = None
+            else:
+                if not dt.tzinfo:
+                    dt = dt.replace(tzinfo=utc)
+                parsed = dt.isoformat()
+            times.append([ts, parsed])
         return Response(times)
 
 
