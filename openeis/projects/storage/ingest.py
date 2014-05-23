@@ -8,7 +8,7 @@ import sys
 
 import dateutil.parser
 
-from .csv import CSVFile
+from .csvfile import CSVFile
 
 
 class IngestError(ValueError):
