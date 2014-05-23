@@ -3,7 +3,7 @@ Created on Apr 23, 2014
 
 '''
 from abc import ABCMeta,abstractmethod
-from schema.schema import sensordata
+#from schema.schema import sensordata
 import logging
 
 class InputDescriptor:
@@ -15,7 +15,7 @@ class InputDescriptor:
                  max_count=1,
                  _id=None):
         #TODO: check and throw exception if self.sensor_data is none
-        self.sensor_data = sensordata.get(sensor_type)
+        self.sensor_type = sensor_type
         self.desc = desc
         self.count = count
         if(max_count is not None and count > max_count):
@@ -28,7 +28,8 @@ class OutputDescriptor:
                  output_type,
                  topic):
         #TODO: check and throw exception if self.sensor_data is none
-        self.output_type = sensordata.get(sensor_type)
+        #self.output_type = sensordata.get(sensor_type)
+        self.output_type = output_type
         self.topic = topic
         
 class ConfigDescriptor:
