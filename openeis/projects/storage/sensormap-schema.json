@@ -235,6 +235,18 @@
                     },
                     "required": ["unit"]
                 },
+                 {
+                    "properties": {
+                        "type": {
+                            "enum": [
+                                "WholeBuildingElectricity",
+                                "WholeBuildingGas"
+                            ]
+                        },
+                        "unit": {"$ref": "#/definitions/units/power"}
+                    },
+                    "required": ["unit"]
+                },
                 {
                     "properties": {
                         "type": {
@@ -308,7 +320,11 @@
                     "tons_refrigeration_hour",
                     "watt_hour"
                 ]
+            },
+            "power": {
+                "enum": ["kilowatt","kilobtus_per_hour"]
             }
+            
         },
 
         "attributes": {

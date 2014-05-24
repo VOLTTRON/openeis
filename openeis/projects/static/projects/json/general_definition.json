@@ -193,17 +193,17 @@
             "sensor_type": "TotalPower",
             "unit_type": "energy"
         },
-        "WholeBuildingElectricity":{
+       "WholeBuildingElectricity":{
             "data_type": "float",
             "sensor_name": "WholeBuildingElectricity",
             "sensor_type": "WholeBuildingElectricity",
-            "unit_type": "energy"
+            "unit_type": "power"
         },
         "WholeBuildingGas":{
             "data_type": "float",
             "sensor_name": "WholeBuildingGas",
             "sensor_type": "WholeBuildingGas",
-            "unit_type": "energy"
+            "unit_type": "power"
         },
         "ZoneSetpoint": {
             "data_type": "float",
@@ -217,5 +217,4 @@
             "sensor_type": "ZoneTemperature",
             "unit_type": "temperature"
         }
-    }
-}
+    
