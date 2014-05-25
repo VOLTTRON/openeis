@@ -217,4 +217,5 @@
             "sensor_type": "ZoneTemperature",
             "unit_type": "temperature"
         }
-    
+    }
+  }
