@@ -2,6 +2,11 @@ from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 
+from openeis.projects.storage.db_output import DatabaseOutputFile
+from openeis.projects.storage.db_input import DatabaseInput
+
+from configparser import ConfigParser
+
 
 class Command(BaseCommand):
     help = 'Run an application from the command-line.'
@@ -18,14 +23,33 @@ class Command(BaseCommand):
         from openeis.projects.storage import sensorstore
 
         verbosity = int(verbosity)
-
-        def log(msg, level=2):
-            '''Utility to write log message at appropriate log level.'''
-            if verbosity >= level:
-                self.stdout.write(msg)
-
-        # Application running logic goes here.
-        # args holds positional arguments from the command-line.
-        # options are stored in options or keyword arguments.
-        sensors = sensorstore.get_sensors(2, 'a/b/c')
+        
+        config = ConfigParser()
+        
+        config.read(args[0])
+        
+        application = config['global_settings']['application']
+        exec('from {0} import Application'.format(application))
+        
+        project_id = int(config['global_settings']['project_id'])
+        
+        topic_map = {}
+        
+        inputs = config['inputs']
+        for group, topics in inputs.items():
+            topic_map[group] = topics.split()
+        
+        
+        db_input = DatabaseInput(project_id, topic_map)
+        
+        output_format = Application.output_format(db_input)
+        file_output = DatabaseOutputFile(application, output_format)
+        
+        if config.has_section('application_config'):
+            kwargs = dict(config['application_config'])
+        else:
+            kwargs = {}
+        
+        app = Application(db_input, file_output, **kwargs)
+        app.execute()
 
