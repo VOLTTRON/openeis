@@ -1,4 +1,4 @@
-from algorithm.base import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.algorithm.base import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
 import datetime
 from datetime import timedelta

@@ -45,11 +45,15 @@ class Command(BaseCommand):
         output_format = Application.output_format(db_input)
         file_output = DatabaseOutputFile(application, output_format)
         
+        kwargs = {}
         if config.has_section('application_config'):
-            kwargs = dict(config['application_config'])
-        else:
-            kwargs = {}
+            for arg, str_val in config['application_config'].items():
+                kwargs[arg] = eval(str_val)
         
-        app = Application(db_input, file_output, **kwargs)
-        app.execute()
+        print('Project id:', project_id)
+        print('Topic map:', topic_map)
+        print('Output format:', output_format)
+        
+        #app = Application(db_input, file_output, **kwargs)
+        #app.execute()
 
