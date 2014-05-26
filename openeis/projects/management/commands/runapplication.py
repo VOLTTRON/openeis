@@ -5,6 +5,8 @@ from django.core.management.base import BaseCommand, CommandError
 from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
 
+from openeis.algorithm import get_algorithm_class
+
 from configparser import ConfigParser
 
 
@@ -29,7 +31,7 @@ class Command(BaseCommand):
         config.read(args[0])
         
         application = config['global_settings']['application']
-        exec('from {0} import Application'.format(application))
+        klass = get_algorithm_class(application)
         
         project_id = int(config['global_settings']['project_id'])
         
@@ -42,7 +44,7 @@ class Command(BaseCommand):
         
         db_input = DatabaseInput(project_id, topic_map)
         
-        output_format = Application.output_format(db_input)
+        output_format = klass.output_format(db_input)
         file_output = DatabaseOutputFile(application, output_format)
         
         kwargs = {}
@@ -54,6 +56,6 @@ class Command(BaseCommand):
         print('Topic map:', topic_map)
         print('Output format:', output_format)
         
-        #app = Application(db_input, file_output, **kwargs)
+        #app = klass(db_input, file_output, **kwargs)
         #app.execute()
 
