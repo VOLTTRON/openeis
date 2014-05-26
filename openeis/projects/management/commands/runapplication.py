@@ -56,6 +56,6 @@ class Command(BaseCommand):
         print('Topic map:', topic_map)
         print('Output format:', output_format)
         
-        #app = klass(db_input, file_output, **kwargs)
-        #app.execute()
+        app = klass(db_input, file_output, **kwargs)
+        app.execute()
 

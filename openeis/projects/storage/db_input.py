@@ -39,6 +39,7 @@ from  django.db.models import Sum
 
 from datetime import datetime
 from collections import defaultdict
+from pprint import pprint
 from openeis.projects.storage.sensorstore import get_sensors
 
 class DatabaseInput:
@@ -56,7 +57,10 @@ class DatabaseInput:
         
         self.sensor_map = {}
         for input_name, topics in self.topic_map.items():
-            self.column_map[input_name] = tuple(get_sensors(input_id,x) for x in topics)
+            print(get_sensors(input_id,topics[0]))
+            self.sensor_map[input_name] = tuple(get_sensors(input_id,x)[0] for x in topics)
+        
+        pprint(self.sensor_map)
         
              
     def get_topics(self):
@@ -171,7 +175,7 @@ class DatabaseInput:
         returns => {group:result list}
         This preps output to be input to self.merge()
         """
-        qs = (x() for _,x in self.column_map[group_name])
+        qs = (x() for _,x in self.sensor_map[group_name])
         
         if filter_ is not None:
             qs = (x.filter(**filter_) for x in qs)
