@@ -167,6 +167,10 @@ class SensorIngest(models.Model):
     start = models.DateTimeField(auto_now_add=True)
     end = models.DateTimeField(null=True, default=None)
 
+    @property
+    def logs(self):
+        return [log for file in self.files.all() for log in file.logs.all()]
+
 
 class SensorIngestFile(models.Model):
     ingest = models.ForeignKey(SensorIngest, related_name='files')
@@ -212,6 +216,10 @@ class Sensor(models.Model):
     @property
     def data(self):
         return getattr(self, self.get_data_type_display() + 'sensordata_set')
+
+    @property
+    def data_class(self):
+        return globals()[self.get_data_type_display().capitalize() + 'SensorData']
 
 
 class SensorDataQuerySet(QuerySet):
