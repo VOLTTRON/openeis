@@ -27,7 +27,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class CreateFileSerializer(serializers.ModelSerializer):
     '''Serializer used to create/upload file.
-    
+
     It ensures the file is associated with the appropriate project.
     '''
     class Meta:

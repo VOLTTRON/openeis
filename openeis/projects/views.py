@@ -162,7 +162,7 @@ class FileViewSet(mixins.ListModelMixin,
     @link()
     def timestamps(self, request, *args, **kwargs):
         '''Parse the timestamps of the first lines of the file.
-        
+
         The rows query parameter matches that of top and head. If
         columns is provided, it is a comma separated list of column
         names or 0-based numerical indexes of columns containing the
@@ -470,12 +470,12 @@ def perform_ingestion(ingest):
         ingest.save()
         del _processes[ingest.id]
 
-            
+
 class SensorIngestViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
     serializer_class = serializers.SensorIngestSerializer
     permission_classes = (permissions.IsAuthenticated, IsSensorMapDefOwner)
- 
+
     @link(permission_classes = (permissions.IsAuthenticated,))
     def status(self, request, *args, **kwargs):
         ingest = self.get_object()
@@ -489,7 +489,7 @@ class SensorIngestViewSet(viewsets.ModelViewSet):
             'current_file_percent': 0.0,
             'current_file': None
         })
-        
+
     @link()
     def errors(self, request, *args, **kwargs):
         '''Retrieves all errors that occured during an ingestion.'''
@@ -497,7 +497,7 @@ class SensorIngestViewSet(viewsets.ModelViewSet):
         serializer = serializers.SensorIngestLogSerializer(
                 ingest.logs, many=True)
         return Response(serializer.data)
-        
+
     def post_save(self, obj, created):
         '''After the SensorIngest object has been saved start a threaded
         data ingestion process.
@@ -512,7 +512,7 @@ class SensorIngestViewSet(viewsets.ModelViewSet):
             }
             thread = threading.Thread(target=perform_ingestion, args=(obj,))
             thread.start()
-        
+
     def get_queryset(self):
         '''Only allow users to see ingests they own.'''
         user = self.request.user
