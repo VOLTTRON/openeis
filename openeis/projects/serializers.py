@@ -8,6 +8,14 @@ from .storage.csvfile import CSVFile
 from . import models
 
 
+class JSONField(serializers.CharField):
+    def to_native(self, obj):
+        return obj
+
+    def from_native(self, data):
+        return data
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Project
@@ -162,6 +170,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class SensorMapDefSerializer(serializers.ModelSerializer):
+    map = JSONField()
     class Meta:
         model = models.SensorMapDefinition
 
