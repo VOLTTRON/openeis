@@ -125,8 +125,7 @@ class Application(DriverApplicationBaseClass):
         i = 0
         for iterator in querysets:
             for x in iterator:
-                time = x.time
-                reading = x.value 
+                time, reading = x
                 self.out.insert_row(table_name.format(input_group= group_topics[i].replace('/','_')), {output_topic.format(input_topic='Time'):time,
                                                                                        output_topic.format(input_topic=group_topics[i]):reading})
             i +=1 

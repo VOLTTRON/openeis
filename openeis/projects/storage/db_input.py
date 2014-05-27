@@ -189,7 +189,7 @@ class DatabaseInput:
             else:
                 return {group_name: [x.aggragate(value=group_by_aggregation('value'))['value'] for x in qs]}
         
-        return {group_name: [x.order_by(order_by).iterator() for x in qs]}
+        return {group_name: [x.order_by(order_by).timeseries().iterator() for x in qs]}
     
 
 
