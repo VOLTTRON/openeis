@@ -1,5 +1,6 @@
 import contextlib
 import json
+import jsonschema
 import posixpath
 import random
 import string
@@ -14,6 +15,35 @@ import jsonschema.exceptions
 from .protectedmedia import ProtectedFileSystemStorage
 from .storage import sensormap
 from .storage.csvfile import CSVFile
+ 
+
+class JSONString(str):
+    pass
+
+
+class JSONField(models.TextField, metaclass=models.SubfieldBase):
+
+    description = 'JSON encoded object'
+
+    def to_python(self, value):
+        if value is None or value == '':
+            return value
+        if not isinstance(value, str) or isinstance(value, JSONString):
+            return value
+        try:
+            result = json.loads(value)
+        except ValueError as e:
+            raise ValidationError('Invalid JSON data: {}'.format(e))
+        if isinstance(result, str):
+            return JSONString(result)
+        return result
+
+    def get_prep_value(self, value):
+        try:
+            return json.dumps(value, separators=(',', ':'))
+        except TypeError:
+            raise ValidationError('Cannot serialize object to JSON')
+ 
 
 
 class Organization(models.Model):
@@ -63,12 +93,39 @@ def _data_file_path(instance, filename):
 class DataFile(models.Model):
     '''Represents an uploaded data file to feed applications.'''
 
+    _ts_schema = {
+        "type": "object",
+        "required": ["columns"],
+        "properties": {
+            "columns": {
+                "oneOf": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "oneOf": [
+                                {"type": "string"},
+                                {"type": "integer", "minimum": 0}
+                            ]
+                        },
+                        "minItems": 1,
+                        "uniqueItems": True
+                    },
+                    {"type": "string"},
+                    {"type": "integer", "minimum": 0}
+                ]
+            },
+            "format": {"type": ["string"]}
+        },
+        "additionalProperties": False
+    }
+
     project = models.ForeignKey(Project, related_name='files')
     file = models.FileField(
             upload_to=_data_file_path, storage=ProtectedFileSystemStorage())
     uploaded = models.DateTimeField(
             auto_now_add=True, help_text='Date and time file was uploaded')
     comments = models.CharField(max_length=200, blank=True)
+    timestamp = JSONField(blank=True)
 
     def __str__(self):
         return self.file.name
@@ -88,33 +145,17 @@ class DataFile(models.Model):
                     break
             return csv_file.has_header, rows
 
-
-class JSONString(str):
-    pass
-
-
-class JSONField(models.TextField, metaclass=models.SubfieldBase):
-
-    description = 'JSON encoded object'
-
-    def to_python(self, value):
-        if not value:
-            return None
-        if not isinstance(value, str) or isinstance(value, JSONString):
-            return value
+    def clean_fields(self, exclude=None):
+        '''Validate JSON against schema.'''
+        super().clean_fields(exclude=exclude)
+        if exclude and 'timestamp' in exclude or not self.timestamp:
+            return
+        validator = jsonschema.Draft4Validator(self._ts_schema)
         try:
-            result = json.loads(value)
-        except ValueError as e:
-            raise ValidationError('Invalid JSON data: {}'.format(e))
-        if isinstance(result, str):
-            return JSONString(result)
-        return result
-
-    def get_prep_value(self, value):
-        try:
-            return json.dumps(value, separators=(',', ':'))
-        except TypeError:
-            raise ValidationError('Cannot serialize object to JSON')
+            validator.validate(self.timestamp)
+        except jsonschema.ValidationError as e:
+            raise ValidationError({'timestamp' + ''.join('[{!r}]'.format(name)
+                                   for name in e.path): [e.message]})
 
 
 _CODE_CHOICES = string.ascii_letters + string.digits
