@@ -41,13 +41,16 @@ class OpenEISTestBase(TestCase):
         self.assertTrue(client.login(username='test_user', password='test'))
         return client
     
-    def upload_temp_file_data(self, project):
+    def upload_temp_file_data(self, project, data=None):
         '''
         Uploads a filestream that is created from a known stream of valid data.
         '''
         # Create a temp file for uploading to the server.        
         tf = tempfile.NamedTemporaryFile(suffix='.cxv')
-        tf.write(bytes(UPLOAD_DATA, 'utf-8'))
+        if data:
+            tf.write(bytes(data), 'utf-8')
+        else:
+            tf.write(bytes(UPLOAD_DATA, 'utf-8'))
         tf.flush()
         tf.seek(0)
         
