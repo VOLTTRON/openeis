@@ -1,4 +1,4 @@
-from base import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.algorithm import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
 import datetime
 from datetime import timedelta
@@ -9,7 +9,7 @@ from dateutil.relativedelta import relativedelta
 
 import dateutil
 
-class ExampleApp(DriverApplicationBaseClass):
+class Application(DriverApplicationBaseClass):
     
     def __init__(self,building_sq_ft=-1, building_year_constructed=-1, building_name=None,**kwargs):
         #Called after app has been staged

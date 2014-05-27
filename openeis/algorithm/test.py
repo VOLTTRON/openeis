@@ -1,16 +1,8 @@
-from algorithm.base import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.algorithm import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
-import datetime
-from datetime import timedelta
-import django.db.models as django
-from django.db.models import Max, Min,Avg
-from django.db import models
-from dateutil.relativedelta import relativedelta
-import sys
-import dateutil
 
-table_name = '{input_group}_results'
-output_topic = 'site/building/analysis/{input_topic}_results'
+table_name = '{input_group}'
+output_topic = '{input_topic}'
 class Application(DriverApplicationBaseClass):
     """
     Test application for verifying application API
@@ -18,13 +10,13 @@ class Application(DriverApplicationBaseClass):
 
 
     
-    def __init__(self,building_sq_ft=-1, building_year_constructed=-1, building_name=None,**kwargs):
+    def __init__(self,*args, building_sq_ft=-1, building_year_constructed=-1, building_name=None,**kwargs):
         #Called after app has been staged
         """
         When applications extend this base class, they need to make
         use of any kwargs that were setup in config_param
         """
-        super().__init__(**kwargs)
+        super().__init__(*args,**kwargs)
         
         self.default_building_name_used = False
         
@@ -73,9 +65,10 @@ class Application(DriverApplicationBaseClass):
         #Table per topic, regardless of group
         for group in topic_map:
             for topic in topic_map[group]:
-                table = table_name.format(input_group= topic)
+                table = table_name.format(input_group= topic.replace('/','_'))
                 output_needs[table] = {}
-                output_needs['Time':OutputDescriptor('timestamp', output_topic.format(input_topic='time')), output_needs[table]][topic] = OutputDescriptor('String', output_topic.format(input_topic=topic))
+                output_needs[table]['Time']=OutputDescriptor('timestamp', output_topic.format(input_topic='Time'))
+                output_needs[table][topic] = OutputDescriptor('String', output_topic.format(input_topic=topic))
 
 #tables for groups
         
@@ -83,7 +76,7 @@ class Application(DriverApplicationBaseClass):
 #             table = table_name.format(input_group= group)
 #             output_needs[table] = {}
 #             for topic in topic_map[group]:
-#                 output_needs[output_needs[table]][topic] = OutputDescriptor('String', output_topic.format(input_topic=topic))
+#                 outputle_needs[output_needs[table]][topic] = OutputDescriptor('String', output_topic.format(input_topic=topic))
 #         
         return output_needs
         
@@ -101,7 +94,7 @@ class Application(DriverApplicationBaseClass):
         
     def execute(self):
         #Called after User hits GO
-        "Do stuff"
+        print("Do stuff")
         self.out.log("Starting analysis", logging.INFO)
 #         #Go through some data
 #         data_start, data_end = self.inp.get_start_end_times()
@@ -127,12 +120,13 @@ class Application(DriverApplicationBaseClass):
         """
         Take a group name, and output all the topics to their own tables... theoretically
         """
-        querysets = self.inp.get_query_sets(groupname)
+        querysets = self.inp.get_query_sets(groupname)[groupname]
         group_topics = self.inp.get_topics()[groupname]
         i = 0
         for iterator in querysets:
-            for time, reading in iterator: 
-                self.out.insert_row(table_name.format(input_group= group_topics[i]), {output_topic.format(input_topic='time'):time,
+            for x in iterator:
+                time, reading = x
+                self.out.insert_row(table_name.format(input_group= group_topics[i].replace('/','_')), {output_topic.format(input_topic='Time'):time,
                                                                                        output_topic.format(input_topic=group_topics[i]):reading})
             i +=1 
         

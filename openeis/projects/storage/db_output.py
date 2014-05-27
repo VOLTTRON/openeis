@@ -80,7 +80,7 @@ class DatabaseOutputFile:
         if timestamp is not None:
             self._logger.log(level, '{time} - {msg}'.format(time=timestamp.strftime('%m/%d/%Y %H:%M:%S'),msg=msg))
         else:
-            self.logger.log(level, 'NO TIME GIVEN - {msg}'.format(msg=msg))
+            self._logger.log(level, 'NO TIME GIVEN - {msg}'.format(msg=msg))
             
 
 if __name__ == '__main__':

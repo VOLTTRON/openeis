@@ -44,11 +44,15 @@ class IsOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.owner == request.user
 
-
 class IsProjectOwner(permissions.BasePermission):
     '''Restrict access to the owner of the parent project.'''
     def has_object_permission(self, request, view, obj):
         return obj.project.owner == request.user
+
+class IsSensorMapDefOwner(permissions.BasePermission):
+    '''Restrict access to the owner of the parent project.'''
+    def has_object_permission(self, request, view, obj):
+        return obj.map.project.owner == request.user
 
 class IsAuthenticatedOrPost(permissions.BasePermission):
     '''Restrict access to authenticated users or to POSTs.'''
@@ -515,45 +519,39 @@ def perform_ingestion(sensormap, ingest_id):
 class SensorIngestViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
     serializer_class = serializers.SensorIngestSerializer
-    permission_classes = (permissions.IsAuthenticated,)
-
+    permission_classes = (permissions.IsAuthenticated, IsSensorMapDefOwner)
  
     @link()
     def status(self, request, *args, **kwargs):
         ingest = self.get_object()
-        
-        if ingest.id in processes:
-            return Response(json.dumps(processes[id], status.HTTP_200_OK))
-        else:
-            return Response("Complete")
+        process = processes.get(ingest.id)
+        if process:
+            return Response(process)
+        return Response({
+            'id': ingest.id,
+            'status': 'complete',
+            'percent': 100.0,
+            'current_file_percent': 0.0,
+            'current_file': None
+        })
         
     @link()
     def errors(self, request, *args, **kwargs):
-        '''
-        Retrieves all errors that occured during an ingestion.
-        '''
+        '''Retrieves all errors that occured during an ingestion.'''
         ingest = self.get_object()
-        logs = []
-        
-        for file in ingest.files.all():
-            for l in file.logs.all():
-                logs.append(l)
-                
-        serializer = serializers.SensorIngestLogSerializer(logs, many=True)
+        serializer = serializers.SensorIngestLogSerializer(
+                ingest.logs, many=True)
         return Response(serializer.data)
-             
-    
         
     def post_save(self, obj, created):
-        '''
-        After the SensorIngest object has been saved start a threaded
+        '''After the SensorIngest object has been saved start a threaded
         data ingestion process.
         '''
         if created:
             process = Process(target=perform_ingestion, args=(obj.map.map, obj.id)) #jsonmap, files))
             process.start()
         
-        
-            
     def get_queryset(self):
-        return models.SensorIngest.objects.all() # (Response({'abc': 2, "def":4}))        
+        '''Only allow users to see ingests they own.'''
+        user = self.request.user
+        return models.SensorIngest.objects.filter(map__project__owner=user)
