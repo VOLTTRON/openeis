@@ -471,7 +471,7 @@ def perform_ingestion(ingest):
         del _processes[ingest.id]
 
 
-class SensorIngestViewSet(viewsets.ModelViewSet):
+class DataSetViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
     serializer_class = serializers.SensorIngestSerializer
     permission_classes = (permissions.IsAuthenticated, IsSensorMapDefOwner)
