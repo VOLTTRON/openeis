@@ -251,11 +251,9 @@
                     "properties": {
                         "type": {
                             "enum": [
-                                "WholeBuildingElectricity",
                                 "CondenserFanPower",
                                 "TotalPower",
-                                "SupplyFanPower",
-                                "WholeBuildingGas"
+                                "SupplyFanPower"
                             ]
                         },
                         "unit": {"$ref": "#/definitions/units/energy"}
