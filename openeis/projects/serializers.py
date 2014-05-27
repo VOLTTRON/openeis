@@ -27,7 +27,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 class CreateFileSerializer(serializers.ModelSerializer):
     '''Serializer used to create/upload file.
-    
+
     It ensures the file is associated with the appropriate project.
     '''
     class Meta:
@@ -180,10 +180,14 @@ class SensorIngestFileSerializer(serializers.ModelSerializer):
         model = models.SensorIngestFile
         fields = ('name', 'file')
 
+
 class SensorIngestLogSerializer(serializers.ModelSerializer):
+    file = serializers.CharField(source='file.name', read_only=True)
+
     class Meta:
         model = models.SensorIngestLog
-        fields = ('error', 'level', 'column', 'row' )
+        fields = ('file', 'message', 'level', 'column', 'row' )
+
 
 class SensorIngestSerializer(serializers.ModelSerializer):
     files = SensorIngestFileSerializer(many=True, required=True)
