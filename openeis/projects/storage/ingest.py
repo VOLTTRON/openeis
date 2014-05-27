@@ -262,11 +262,14 @@ def get_sensor_parsers(sensormap):
             file = sensormap['files'][filename]
             return file['signature']['headers'].index(column)
         return column
+    def date_format(file):
+        fmt = file['timestamp'].get('format')
+        return [fmt] if fmt else []
     path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                         'static', 'projects', 'json', 'general_definition.json')
     columns = {name: [(None, DateTimeColumn.data_type,
                      DateTimeColumn(column_number(name, file['timestamp']['columns']),
-                                   formats=[file['timestamp'].get('format')]))]
+                                   formats=date_format(file)))]
              for name, file in sensormap['files'].items()}
     with open(path) as file:
         prototypes = json.load(file)['sensors']
