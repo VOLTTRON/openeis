@@ -1,10 +1,10 @@
 from contextlib import closing
-from multiprocessing import Process
-import posixpath
-import traceback
-import json
 import datetime
-import warnings
+import json
+import logging
+import posixpath
+import threading
+import traceback
 
 import dateutil
 
@@ -30,6 +30,8 @@ from . import serializers
 from .conf import settings as proj_settings
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 
+
+_logger = logging.getLogger(__name__)
 
 
 @protected_media
@@ -403,128 +405,81 @@ class SensorMapDefViewSet(viewsets.ModelViewSet):
                     'permission denied.'.format(obj.project.pk))
 
 
-processes = {}
-def get_files_for_ingestion(obj):
-    name_file_map = {}
-    for f in obj.files.all():
-        name_file_map[f.name] = f.file.file.file
-    return name_file_map
-
+_processes = {}
 
 @transaction.atomic
-def perform_ingestion(sensormap, ingest_id):
-    '''
-    Ingest into the common schema tables from the DataFiles.
-    '''
-
-    with warnings.catch_warnings() as w:
-        warnings.simplefilter("ignore")
-        ingest = models.SensorIngest.objects.get(pk=ingest_id)
-        files = get_files_for_ingestion(ingest)
-        processes[ingest_id] = {
-                                    'id': ingest_id,
-                                    'status': 'processing',
-                                    'percent': 0.0,
-                                    'current_file_percent': 0.0,
-                                    'current_file': None,
-                                }
-
-        total_bytes = 0.0
-        # Get the total bytes for progress.
-        for file in ingest_files(sensormap, files):
-            total_bytes += file.size
-
+def perform_ingestion(ingest):
+    '''Ingest into the common schema tables from the DataFiles.'''
+    sensormap = ingest.map.map
+    files = {f.name: f.file.file.file for f in ingest.files.all()}
+    ingest_file = None
+    try:
+        ingested = list(ingest_files(sensormap, files))
+        total_bytes = sum(file.size for file in ingested)
         processed_bytes = 0.0
-        sensor_indx = 0
-
-        was_sensor_list_0 = False
-        if ingest.map.sensors.count() == 0:
-            was_sensor_list_0 = True
-
-        file_indx = 0
-        for file in ingest_files(sensormap, files):
-            ingest_file = models.SensorIngestFile.objects.filter(name = file.name, ingest__id=ingest.id)[0]
-            processes[ingest_id]['current_file'] = file.name
-            previous_bytes = 0
-            db_sensor_list = []
-
-            if was_sensor_list_0:
-                for sensor_indx in range(len(file.sensors)):
-                    sensor_name = file.sensors[sensor_indx]
-                    data_type = file.types[sensor_indx]
-                    # No datetime fields in this list
-                    if sensor_name == None:
-                        continue
-                    
-                    # Add senor_list to the database
-                    sensor = models.Sensor()
-                    sensor.name =sensor_name
-                    sensor.map = ingest.map
-                    sensor.data_type = data_type
+        for file in ingested:
+            _processes[ingest.id] = {
+                'id': ingest.id,
+                'status': 'processing',
+                'percent': processed_bytes * 100.0 / total_bytes,
+                'current_file_percent': 0.0,
+                'current_file': file.name,
+            }
+            sensors = []
+            for i, name in enumerate(file.sensors):
+                if name is None:
+                    continue
+                sensor, created = models.Sensor.objects.get_or_create(
+                        map=ingest.map, name=name)
+                if created:
+                    sensor.data_type = file.types[i][0]
                     sensor.save()
-                    db_sensor_list.append(sensor)
-            else:
-                for sensor_name in file.sensors:
-                    # No datetime fields in this list
-                    if sensor_name == None:
-                        continue
-                    db_sensor_list.append(models.Sensor.objects.filter(map__id=ingest.map.id, name=sensor_name)[0])
-            
-                                
+                sensors.append((sensor, sensor.data_class))
+            ingest_file = ingest.files.get(name=file.name)
+            previous_bytes = 0
             for row in file.rows:
-                time = None
-                col_indx = 0
-                for column in row.columns:
+                time = row.columns[0]
+                for (sensor, cls), column in zip(sensors, row.columns[1:]):
                     if isinstance(column, IngestError):
-                        err = models.SensorIngestLog()
-                        err.ingest = ingest_file
-                        err.row = row.line_num
-                        err.column = column.column_num
-                        err.level = models.SensorIngestLog.ERROR
-                        err.error = column
-                        err.save()
+                        models.SensorIngestLog(file=ingest_file,
+                                row=row.line_num, column=column.column_num,
+                                level=models.SensorIngestLog.ERROR,
+                                message=str(column)).save()
                     else:
-                        if isinstance(column, datetime.datetime):
-                            time = column
-                            continue
-                        elif isinstance(column, bool):
-                            dbcolumn = models.BooleanSensorData()                        
-                        elif isinstance(column, int):                        
-                            dbcolumn = models.IntegerSensorData()
-                        elif isinstance(column, float):                        
-                            dbcolumn = models.FloatSensorData()
-                        elif isinstance(column, str):                        
-                            dbcolumn = models.StringSensorData()
-                        dbcolumn.value = column
-                        dbcolumn.time = time
-                        dbcolumn.sensor = db_sensor_list[col_indx]
-                        dbcolumn.ingest = ingest
-                        dbcolumn.save()
-                    
-                    col_indx += 1
-                    
-                     
-                        
-                processes[ingest_id]['current_file_percent'] = row.position * 100 // file.size
-                
-                processed_bytes += row.position - previous_bytes
-                processes[ingest_id]['percent'] = processed_bytes * 100  // total_bytes ## * 100
-                previous_bytes = row.position
-            
-            file_indx += 1 
-        ingest.end = datetime.datetime.utcnow().replace(tzinfo=utc) #get_current_timezone datetime.datetime.now()
+                        cls(ingest=ingest, sensor=sensor, time=time,
+                            value=column).save()
+                if row.position - previous_bytes >= 1000:
+                    _processes[ingest.id] = {
+                        'id': ingest.id,
+                        'status': 'processing',
+                        'percent': (processed_bytes + row.position) * 100.0 / total_bytes,
+                        'current_file_percent': row.position * 100.0 / file.size,
+                        'current_file': file.name,
+                    }
+                    previous_bytes = row.position
+            processed_bytes += file.size
+    except Exception:
+        logging.exception('an unhandled exception occurred during sensor '
+                          'ingestion ({})'.format(ingest.id))
+        models.SensorIngestLog(file=ingest_file, row=0, column=0,
+                               level=models.SensorIngestLog.CRITICAL,
+                               message='an unhandled server error occurred '
+                                       'during ingestion').save()
+    finally:
+        ingest.end = datetime.datetime.utcnow().replace(tzinfo=utc)
         ingest.save()
-        del(processes[ingest_id])
+        del _processes[ingest.id]
+
             
 class SensorIngestViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
     serializer_class = serializers.SensorIngestSerializer
     permission_classes = (permissions.IsAuthenticated, IsSensorMapDefOwner)
  
-    @link()
+    @link(permission_classes = (permissions.IsAuthenticated,))
     def status(self, request, *args, **kwargs):
         ingest = self.get_object()
-        process = processes.get(ingest.id)
+        process = _processes.get(ingest.id)
         if process:
             return Response(process)
         return Response({
@@ -548,8 +503,15 @@ class SensorIngestViewSet(viewsets.ModelViewSet):
         data ingestion process.
         '''
         if created:
-            process = Process(target=perform_ingestion, args=(obj.map.map, obj.id)) #jsonmap, files))
-            process.start()
+            _processes[obj.id] = {
+                'id': obj.id,
+                'status': 'processing',
+                'percent': 0.0,
+                'current_file_percent': 0.0,
+                'current_file': None,
+            }
+            thread = threading.Thread(target=perform_ingestion, args=(obj,))
+            thread.start()
         
     def get_queryset(self):
         '''Only allow users to see ingests they own.'''

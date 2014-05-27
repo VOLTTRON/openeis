@@ -186,14 +186,16 @@ class SensorIngestLog(models.Model):
     INFO = 20
     WARNING = 30
     ERROR = 40
-    LOG_LEVEL_CHOICES = ((INFO, 'Info'), (WARNING, 'Warning'), (ERROR, 'Error'))
+    CRITICAL = 50
+    LOG_LEVEL_CHOICES = ((INFO, 'Info'), (WARNING, 'Warning'),
+                         (ERROR, 'Error'), (CRITICAL, 'Critical'))
 
-    ingest = models.ForeignKey(SensorIngestFile, related_name='logs')
+    file = models.ForeignKey(SensorIngestFile, related_name='logs')
     row = models.IntegerField()
     # Timestamps can include multiple columns
     column = models.CommaSeparatedIntegerField(max_length=20)
     level = models.SmallIntegerField(choices=LOG_LEVEL_CHOICES)
-    error = models.CharField(max_length=255)
+    message = models.CharField(max_length=255)
 
 
 class Sensor(models.Model):
