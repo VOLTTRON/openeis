@@ -30,7 +30,7 @@ class CreateFileSerializer(serializers.ModelSerializer):
 
     It ensures the file is associated with the appropriate project.
     '''
-    timestamp = JSONField()
+    timestamp = JSONField(required=False)
 
     class Meta:
         model = models.DataFile
@@ -72,7 +72,7 @@ class FileSerializer(serializers.ModelSerializer):
     Only the comments field of the file is updateable. If the request
     attribute is set, download_url will contain an absolute URL.
     '''
-    timestamp = JSONField()
+    timestamp = JSONField(required=False)
     download_url = serializers.CharField(source='pk', read_only=True)
     size = serializers.IntegerField(source='pk', read_only=True)
 
