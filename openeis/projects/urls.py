@@ -53,9 +53,6 @@ api_urls.extend(router.urls)
 api_urls.append(
     url(r'^account/verify/(?P<id>\d+)/(?P<pk>\d+)/(?P<code>[a-zA-Z0-9]{50})$',
         views.AccountViewSet.as_view({'get': 'verify'}), name='account-verify'))
-#api_urls.append(url(r'^dataset/preview$',
-#                    views.DataSetPreviewViewSet.as_view({'post': 'preview'}),
-#                    name='dataset-preview'))
 
 urlpatterns = patterns('openeis.projects.views',
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
