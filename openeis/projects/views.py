@@ -552,7 +552,14 @@ def preview_ingestion(sensormap, input_files, count=15):
 
 
 class DataSetPreviewViewSet(viewsets.GenericViewSet):
-    '''Return sample rows from DataSet ingestion.'''
+    '''Return sample rows from DataSet ingestion.
+
+    If map has a property of 'id', then the map with the given ID is
+    retreived from the database and used (if owned by the current user).
+    Otherwise, map should be a valid sensor map definition and will be
+    validated before processing continues. Set rows to change the number
+    of rows returned for each file.
+    '''
 
     serializer_class = serializers.DataSetPreviewSerializer
     permission_classes = (permissions.IsAuthenticated,)
