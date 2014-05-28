@@ -39,8 +39,13 @@ router.register(r'projects', views.ProjectViewSet)
 router.register(r'files', views.FileViewSet)
 router.register(r'users', views.UserViewSet)
 router.register(r'sensormaps', views.SensorMapDefViewSet)
-router.register(r'datasets', views.DataSetViewSet)
 api_urls = list(router.urls)
+api_urls.append(url(r'^datasets/preview$',
+                    views.DataSetPreviewViewSet.as_view({'post': 'preview'}),
+                    name='datasets-preview'))
+router = DefaultRouter(trailing_slash=False)
+router.register(r'datasets', views.DataSetViewSet)
+api_urls.extend(router.urls)
 
 router = SingleObjectRouter(trailing_slash=False)
 router.register(r'account', views.AccountViewSet, base_name='account')
@@ -48,6 +53,9 @@ api_urls.extend(router.urls)
 api_urls.append(
     url(r'^account/verify/(?P<id>\d+)/(?P<pk>\d+)/(?P<code>[a-zA-Z0-9]{50})$',
         views.AccountViewSet.as_view({'get': 'verify'}), name='account-verify'))
+#api_urls.append(url(r'^dataset/preview$',
+#                    views.DataSetPreviewViewSet.as_view({'post': 'preview'}),
+#                    name='dataset-preview'))
 
 urlpatterns = patterns('openeis.projects.views',
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),

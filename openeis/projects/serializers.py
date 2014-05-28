@@ -215,3 +215,9 @@ class SensorIngestSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError({'files': errors})
         return attrs
+
+
+class DataSetPreviewSerializer(serializers.Serializer):
+    map = JSONField(required=True)
+    files = SensorIngestFileSerializer(many=True, required=True)
+    rows = serializers.IntegerField(required=False)

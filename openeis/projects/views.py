@@ -29,6 +29,7 @@ from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
+from .storage.sensormap import Schema as Schema
 
 
 _logger = logging.getLogger(__name__)
@@ -517,3 +518,62 @@ class DataSetViewSet(viewsets.ModelViewSet):
         '''Only allow users to see ingests they own.'''
         user = self.request.user
         return models.SensorIngest.objects.filter(map__project__owner=user)
+
+
+def preview_ingestion(sensormap, input_files, count=15):
+    files = {f.name: f.file.file.file for f in input_files}
+    result = {}
+    for file in ingest_files(sensormap, files):
+        rows = []
+        errors = []
+        for row in file.rows:
+            columns = []
+            for column in row.columns:
+                if isinstance(column, IngestError):
+                    errors.append({
+                        'file': file.name,
+                        'row': row.line_num,
+                        'column': column.column_num,
+                        'message': str(column)
+                    })
+                    column = None
+                columns.append(column)
+            rows.append(columns)
+            if len(rows) >= count:
+                break
+        result[file.name] = {'data': rows, 'errors': errors}
+    return result
+
+
+class DataSetPreviewViewSet(viewsets.GenericViewSet):
+    '''Return sample rows from DataSet ingestion.'''
+
+    serializer_class = serializers.DataSetPreviewSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def preview(self, request, *args, **kwargs):
+        serializer = serializers.DataSetPreviewSerializer(data=request.DATA)
+        if serializer.is_valid():
+            user = self.request.user
+            obj = serializer.object
+            sensormap = obj['map']
+            if 'id' in sensormap:
+                sensormap = get_object_or_404(models.SensorMapDefinition,
+                                  pk=sensormap['id'], project__owner=user).map
+            else:
+                schema = Schema()
+                errors = schema.validate(sensormap)
+                if errors:
+                    return Response({('map' + ''.join('[{!r}]'.format(name)
+                                      for name in path)): value
+                                     for path, value in errors.items()},
+                                   status=status.HTTP_400_BAD_REQUEST)
+            files = obj['files']
+            for file in files:
+                if file.file.project.owner != user:
+                    raise rest_exceptions.PermissionDenied()
+            count = min(obj.get('rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
+                        proj_settings.FILE_HEAD_ROWS_MAX)
+            result = preview_ingestion(sensormap, files, count=count)
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
