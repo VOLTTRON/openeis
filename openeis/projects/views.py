@@ -440,6 +440,12 @@ def perform_ingestion(ingest):
             previous_bytes = 0
             for row in file.rows:
                 time = row.columns[0]
+                if isinstance(time, IngestError):
+                    models.SensorIngestLog(file=ingest_file,
+                            row=row.line_num, column=time.column_num,
+                            level=models.SensorIngestLog.ERROR,
+                            message=str(column)).save()
+                    continue
                 for (sensor, cls), column in zip(sensors, row.columns[1:]):
                     if isinstance(column, IngestError):
                         models.SensorIngestLog(file=ingest_file,
