@@ -14,8 +14,8 @@ from django.test.client import Client
 from django.http.response import HttpResponseForbidden
 from django.contrib.auth.models import User
  
-from projects.storage.ingest import ingest_files, IngestError
-from projects.views import perform_ingestion
+from openeis.projects.storage.ingest import ingest_files, IngestError
+from openeis.projects.views import perform_ingestion
  
  
 SENSOR_MAP_JSON = '''

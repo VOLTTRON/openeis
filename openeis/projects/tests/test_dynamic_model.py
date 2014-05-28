@@ -4,11 +4,11 @@ Created on May 15, 2014
 '''
 from django.test import TestCase
 from django.db import models
-from projects.storage.dynamictables import create_model
+from openeis.projects.storage.dynamictables import create_model
 from django.test.utils import setup_test_environment
 from django.conf import settings
 from django.core.management import call_command
-from projects.models import User
+from openeis.projects.models import User
 
 
 class TestDynamicModelCreation(TestCase):
