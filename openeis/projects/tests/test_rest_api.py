@@ -1,59 +1,60 @@
+'''Tests for RESTful API.
 '''
-Created on May 2, 2014
-'''
-import json
+
 import io
+import json
+import os
 import tempfile
 import time
-import os
-  
+
+from django.contrib.auth.models import User
 from django.test.utils import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient
-from django.contrib.auth.models import User
-from openeistest import OpenEISTestBase
-  
-TEST_USER = 'test_user'
-TEST_PASS = 'test_pass'
-      
+
+from .openeistest import OpenEISTestBase
+
+
 class TestRestApi(OpenEISTestBase):
     fixtures = ['db_dump_test_userPWtest_project.json']
-    
+
     def test_eis157_timestamp_parsing_endpoint(self):
         '''
         This function tests the timestamp parsing endpoint for correctness.  The test uses
         the temp upload file loaded from the base class.  The only timestamp column is
-        in the 0th column of the data.  
-        
+        in the 0th column of the data.
+
         The test will test the parsing ability of the -1 column, the 0th column, 1st column and the 30th column.
         Of these we expect that the -1, 1 and 30th column will return a 400 bad request as they are out of bounds
         or non-timestep columns.
         '''
+        expected = ['9/29/2009 15:00', '2009-09-29T15:00:00+00:00']
+
         # Upload a file
         response = self.upload_temp_file_data(1)
         file_id = response.data['id']
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         client = self.get_authenticated_client()
-        
+
         # Tests known valid
-        response = client.get('/api/files/{}/timestamps?columns=0'.format(file_id))
+        response = client.get('/api/files/{}/timestamps'.format(file_id), {'columns': 0})
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual('9/29/2009 15:00', response.data[0][0], 'Invalid data returned')
-        
+        self.assertEqual(expected, response.data[0], 'Invalid data returned')
+
         # Test no column specified
         response = client.get('/api/files/{}/timestamps'.format(file_id))
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         # Should default to the first column of data.
-        self.assertEqual('9/29/2009 15:00', response.data[0][0], 'Invalid data returned')
-        
+        self.assertEqual(expected, response.data[0], 'Invalid data returned')
+
         # Test negative column
-        response = client.get('/api/files/{}/timestamps?columns=-1'.format(file_id))
+        response = client.get('/api/files/{}/timestamps'.format(file_id), {'columns': -1})
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        
+
         # Test out of bounds
-        response = client.get('/api/files/{}/timestamps?columns=30'.format(file_id))
+        response = client.get('/api/files/{}/timestamps'.format(file_id), {'columns': 30})
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-    
+
     def test_eis157_timestamp_parsing_endpoint_multi_column_timestamp(self):
         '''
         Tests the timestamp parsing endpoint with multiple column timestamp data.
@@ -68,15 +69,15 @@ class TestRestApi(OpenEISTestBase):
 9/29/2009,21:00,76.88,111.22,21.41'''
         response = self.upload_temp_file_data(1, raw_data)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        file_id = response.data['id']        
+        file_id = response.data['id']
         client = self.get_authenticated_client()
-        
+
         # Tests known valid
-        response = client.get('/api/files/{}/timestamps?columns=0,1'.format(file_id))
+        response = client.get('/api/files/{}/timestamps'.format(file_id), {'columns': '0,1'})
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual('9/29/2009 15:00', response.data[0][0], 'Invalid data returned')
-      
-    def test_can_get_default_project(self):        
+
+    def test_can_get_default_project(self):
         client = self.get_authenticated_client()
         response = client.get("/api/projects")
         self.assertIsNotNone(response)
@@ -93,7 +94,7 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(data['name'], response.data['name'])
         response = client.get("/api/projects")
         self.assertEqual(projects_before+1, len(response.data))
-    
+
 #     def test_can_retrieve_status_change_with_large_ingest(self):
 #         client = self.get_authenticated_client()
 #         # Upload the file
@@ -101,7 +102,7 @@ class TestRestApi(OpenEISTestBase):
 #         with open(os.path.join(os.path.dirname(__file__), '../fixtures/test_4year.csv'), 'r+b') as upload_file:
 #             response = client.post('/api/projects/1/add_file', {'file':upload_file})
 #             self.assertEqual(expected_id, response.data['id'])
-        
+
     @override_settings(DEBUG=True)
     def test_bad_delim_response(self):
         bad_delim = '''Date,Hillside OAT [F],Main Meter [kW],Boiler Gas [kBtu/hr]
@@ -110,30 +111,28 @@ class TestRestApi(OpenEISTestBase):
 9/29/2009 17:00,75.78,221.92,113.88'''
         expected_response = {'file': ['Could not determine delimiter']}
         client = self.get_authenticated_client()
-        
-        # Create a temp file for uploading to the server.        
+
+        # Create a temp file for uploading to the server.
         tf = tempfile.NamedTemporaryFile(suffix='.cxv')
         tf.write(bytes(bad_delim, 'utf-8'))
         tf.flush()
         tf.seek(0)
         response = client.post('/api/projects/1/add_file', {'file':tf})
         self.assertEqual(expected_response, response.data)
-    
+
     @override_settings(DEBUG=True)
     def test_can_add_files(self):
         client = self.get_authenticated_client()
-        response = client.get('/api/files?project=1')
+        response = client.get('/api/files', {'project': 1})
         original_num_files = len(response.data)
-        
+
         response= self.upload_temp_file_data(1)
-        
+
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         self.assertEqual(1, response.data['id'])
         self.assertEqual(1, response.data['project'])
         self.assertEqual(original_num_files+1, response.data['id'])
-        
-        
-    
+
     def test_can_add_sensormap_with_OAT_site_sensors(self):
         site_sensor = '''{
   "version": 1,
@@ -156,12 +155,10 @@ class TestRestApi(OpenEISTestBase):
 }'''
         client = self.get_authenticated_client()
         client.post('/api/')
-     
+
     def test_can_authenticate(self):
         """
         Testing of /api/auth
         """
         client = APIClient()
         self.assertTrue(client.login(username='test_user', password='test'))
-        
-        
