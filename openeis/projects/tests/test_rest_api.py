@@ -47,12 +47,6 @@ class TestRestApi(OpenEISTestBase):
         # Should default to the first column of data.
         self.assertEqual('9/29/2009 15:00', response.data[0][0], 'Invalid data returned')
         
-        # Test invalid data in column
-        response = client.get('/api/files/{}/timestamps?columns=1'.format(file_id))
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(repr(response))
-        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
-        
         # Test negative column
         response = client.get('/api/files/{}/timestamps?columns=-1'.format(file_id))
         self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
