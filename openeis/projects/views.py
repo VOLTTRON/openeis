@@ -175,32 +175,28 @@ class FileViewSet(mixins.ListModelMixin,
         '''
         columns = request.QUERY_PARAMS.get('columns', '0').split(',')
         fmt = request.QUERY_PARAMS.get('datefmt')
-        try:
-            count = min(int(request.QUERY_PARAMS['rows']),
-                        settings.FILE_HEAD_ROWS_MAX)
-        except KeyError:
-            count = proj_settings.FILE_HEAD_ROWS_DEFAULT
-        except ValueError as e:
-            return Response({'rows': [str(e)]},
-                            status=status.HTTP_400_BAD_REQUEST)
+        count = min(request.QUERY_PARAMS.get(
+                     'rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
+                    proj_settings.FILE_HEAD_ROWS_MAX)
         has_header, rows = self.get_object().csv_head(count)
+        num_columns = len(rows[0])
         headers = rows.pop(0) if has_header else []
         for i, column in enumerate(columns):
             try:
                 column = int(column)
-                if column >= len(columns):
-                    return Response(
-                        {'columns': ['invalid column: {!r}'.format(columns[i])]},
-                        status=status.HTTP_400_BAD_REQUEST)
             except ValueError:
                 if column[:1] in '\'"' and column[:1] == column[-1:]:
                     column = column[1:-1]
                 try:
-                    column = columns.index(column)
+                    column = headers.index(column)
                 except ValueError:
                     return Response(
                         {'columns': ['invalid column: {!r}'.format(columns[i])]},
                         status=status.HTTP_400_BAD_REQUEST)
+            if not 0 <= column < num_columns:
+                return Response(
+                    {'columns': ['invalid column: {!r}'.format(columns[i])]},
+                    status=status.HTTP_400_BAD_REQUEST)
             columns[i] = column
         parse = ((lambda s: datetime.datetime.strptime(s, fmt))
                  if fmt else dateutil.parser.parse)
@@ -209,7 +205,7 @@ class FileViewSet(mixins.ListModelMixin,
             ts = ' '.join(row[i] for i in columns)
             try:
                 dt = parse(ts)
-            except ValueError:
+            except (ValueError, TypeError):
                 parsed = None
             else:
                 if not dt.tzinfo:
