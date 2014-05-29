@@ -25,9 +25,10 @@ class TestRestApi(OpenEISTestBase):
         the temp upload file loaded from the base class.  The only timestamp column is
         in the 0th column of the data.  
         
-        The test will test the parsing ability of the -1 column, the 0th column, 1st column and the 30th column.
-        Of these we expect that the -1, 1 and 30th column will return a 400 bad request as they are out of bounds
-        or non-timestep columns.
+        The test will test the parsing ability of the -1 column, the 0th column and the 30th column.
+        Of these we expect that the -1 and 30th column will return a 400 bad request as they are out of bounds
+        or non-timestep columns In addition we test the default behaviour which is to assume the first column
+        is a timestamp.
         '''
         # Upload a file
         response = self.upload_temp_file_data(1)
