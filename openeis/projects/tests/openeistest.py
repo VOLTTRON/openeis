@@ -48,7 +48,7 @@ class OpenEISTestBase(TestCase):
         # Create a temp file for uploading to the server.        
         tf = tempfile.NamedTemporaryFile(suffix='.cxv')
         if data:
-            tf.write(bytes(data), 'utf-8')
+            tf.write(bytes(data, 'utf-8'))
         else:
             tf.write(bytes(UPLOAD_DATA, 'utf-8'))
         tf.flush()
