@@ -22,11 +22,12 @@ class TestRestApi(OpenEISTestBase):
         '''
         This function tests the timestamp parsing endpoint for correctness.  The test uses
         the temp upload file loaded from the base class.  The only timestamp column is
-        in the 0th column of the data.
-
-        The test will test the parsing ability of the -1 column, the 0th column, 1st column and the 30th column.
-        Of these we expect that the -1, 1 and 30th column will return a 400 bad request as they are out of bounds
-        or non-timestep columns.
+        in the 0th column of the data.  
+        
+        The test will test the parsing ability of the -1 column, the 0th column and the 30th column.
+        Of these we expect that the -1 and 30th column will return a 400 bad request as they are out of bounds
+        or non-timestep columns In addition we test the default behaviour which is to assume the first column
+        is a timestamp.
         '''
         expected = ['9/29/2009 15:00', '2009-09-29T15:00:00+00:00']
 
