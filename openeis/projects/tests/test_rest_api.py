@@ -6,7 +6,6 @@ import io
 import tempfile
 import time
 import os
-import pprint
   
 from django.test.utils import override_settings
 from rest_framework import status
@@ -74,7 +73,6 @@ class TestRestApi(OpenEISTestBase):
         
         # Tests known valid
         response = client.get('/api/files/{}/timestamps?columns=0,1'.format(file_id))
-        print(response.__dict__)
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual('9/29/2009 15:00', response.data[0][0], 'Invalid data returned')
       
