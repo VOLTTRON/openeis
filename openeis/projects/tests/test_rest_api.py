@@ -12,7 +12,7 @@ from django.test.utils import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from .openeistest import OpenEISTestBase
+from openeis.projects.tests.openeistest import OpenEISTestBase
 
 
 class TestRestApi(OpenEISTestBase):
