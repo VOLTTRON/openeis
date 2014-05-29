@@ -30,6 +30,8 @@ class CreateFileSerializer(serializers.ModelSerializer):
 
     It ensures the file is associated with the appropriate project.
     '''
+    timestamp = JSONField(required=False)
+
     class Meta:
         model = models.DataFile
         exclude = ('project',)
@@ -70,6 +72,7 @@ class FileSerializer(serializers.ModelSerializer):
     Only the comments field of the file is updateable. If the request
     attribute is set, download_url will contain an absolute URL.
     '''
+    timestamp = JSONField(required=False)
     download_url = serializers.CharField(source='pk', read_only=True)
     size = serializers.IntegerField(source='pk', read_only=True)
 
@@ -212,3 +215,9 @@ class SensorIngestSerializer(serializers.ModelSerializer):
         if errors:
             raise serializers.ValidationError({'files': errors})
         return attrs
+
+
+class DataSetPreviewSerializer(serializers.Serializer):
+    map = JSONField(required=True)
+    files = SensorIngestFileSerializer(many=True, required=True)
+    rows = serializers.IntegerField(required=False)

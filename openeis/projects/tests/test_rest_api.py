@@ -8,6 +8,7 @@ import time
 import os
 import pprint
   
+from django.test.utils import override_settings
 from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth.models import User
@@ -89,6 +90,7 @@ class TestRestApi(OpenEISTestBase):
         self.assertIsNotNone(response)
         self.assertEqual(response.data[0]['id'], 1)
 
+    @override_settings(DEBUG=True)
     def test_can_add_project(self):
         client = self.get_authenticated_client()
         response = client.get("/api/projects")
@@ -108,6 +110,7 @@ class TestRestApi(OpenEISTestBase):
 #             response = client.post('/api/projects/1/add_file', {'file':upload_file})
 #             self.assertEqual(expected_id, response.data['id'])
         
+    @override_settings(DEBUG=True)
     def test_bad_delim_response(self):
         bad_delim = '''Date,Hillside OAT [F],Main Meter [kW],Boiler Gas [kBtu/hr]
 9/29/2009 15:00,74.72,280.08,186.52
@@ -124,6 +127,7 @@ class TestRestApi(OpenEISTestBase):
         response = client.post('/api/projects/1/add_file', {'file':tf})
         self.assertEqual(expected_response, response.data)
     
+    @override_settings(DEBUG=True)
     def test_can_add_files(self):
         client = self.get_authenticated_client()
         response = client.get('/api/files?project=1')

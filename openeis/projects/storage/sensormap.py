@@ -1,5 +1,6 @@
 import json
 import os.path
+import re
 import sys
 
 from jsonschema import exceptions, Draft4Validator
@@ -30,6 +31,7 @@ def add_instance_constraints(schema, obj):
         if isinstance(sensor, dict) and isinstance(sensor.get('file'), str)}
     if not used_files:
         return
+    files = [i for i in obj['files'].items() if i[0] in used_files]
     defs = schema['definitions']
     # Limit the files named under 'files' to those used by sensors and
     # ensure the timestamp columns are valid for that file.
@@ -56,13 +58,13 @@ def add_instance_constraints(schema, obj):
                     }
                 },
             }
-            for i, name in enumerate(obj['files']) if name in used_files
+            for i, (name, file) in enumerate(files)
         },
         "additionalProperties": False
     })
     # Limit the files available to sensors and ensure they reference
     # valid columns.
-    defs['sensor_reqs'].update({
+    defs['sensor_columns'].update({
         "additionalProperties": {
             "anyOf": [
                 {
@@ -71,7 +73,7 @@ def add_instance_constraints(schema, obj):
                         "column": {"$ref": "#/definitions/header_reqs/{}".format(i)}
                     }
                 }
-                for i, name in enumerate(obj['files']) if name in used_files
+                for i, (name, file) in enumerate(files)
             ]
         }
     })
@@ -90,9 +92,27 @@ def add_instance_constraints(schema, obj):
                 }
             ]
         }
-        for i, (name, file) in enumerate(obj['files'].items())
-            for headers in [pull_headers(file)] if name in used_files
+        for i, (name, file) in enumerate(files)
+            for headers in [pull_headers(file)]
     }
+    # Force levels to be properly parented.
+    levels = ['site', 'building', 'system']
+    defs['sensor_levels'].update({
+        "patternProperties": {
+            r'^{}/.*$'.format(re.escape(name)): {
+                "properties": {
+                    "level": {
+                        "not": {
+                            "enum": levels[:levels.index(sensor['level'])+1]
+                        }
+                    }
+                }
+            }
+            for name, sensor in obj['sensors'].items()
+                if isinstance(name, str) and isinstance(sensor, dict) and
+                    'type' not in sensor and sensor.get('level') in levels
+        }
+    })
 
 
 class Schema:

@@ -29,6 +29,7 @@ from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
+from .storage.sensormap import Schema as Schema
 
 
 _logger = logging.getLogger(__name__)
@@ -174,32 +175,28 @@ class FileViewSet(mixins.ListModelMixin,
         '''
         columns = request.QUERY_PARAMS.get('columns', '0').split(',')
         fmt = request.QUERY_PARAMS.get('datefmt')
-        try:
-            count = min(int(request.QUERY_PARAMS['rows']),
-                        settings.FILE_HEAD_ROWS_MAX)
-        except KeyError:
-            count = proj_settings.FILE_HEAD_ROWS_DEFAULT
-        except ValueError as e:
-            return Response({'rows': [str(e)]},
-                            status=status.HTTP_400_BAD_REQUEST)
+        count = min(request.QUERY_PARAMS.get(
+                     'rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
+                    proj_settings.FILE_HEAD_ROWS_MAX)
         has_header, rows = self.get_object().csv_head(count)
+        num_columns = len(rows[0])
         headers = rows.pop(0) if has_header else []
         for i, column in enumerate(columns):
             try:
                 column = int(column)
-                if column >= len(columns):
-                    return Response(
-                        {'columns': ['invalid column: {!r}'.format(columns[i])]},
-                        status=status.HTTP_400_BAD_REQUEST)
             except ValueError:
                 if column[:1] in '\'"' and column[:1] == column[-1:]:
                     column = column[1:-1]
                 try:
-                    column = columns.index(column)
+                    column = headers.index(column)
                 except ValueError:
                     return Response(
                         {'columns': ['invalid column: {!r}'.format(columns[i])]},
                         status=status.HTTP_400_BAD_REQUEST)
+            if not 0 <= column < num_columns:
+                return Response(
+                    {'columns': ['invalid column: {!r}'.format(columns[i])]},
+                    status=status.HTTP_400_BAD_REQUEST)
             columns[i] = column
         parse = ((lambda s: datetime.datetime.strptime(s, fmt))
                  if fmt else dateutil.parser.parse)
@@ -208,7 +205,7 @@ class FileViewSet(mixins.ListModelMixin,
             ts = ' '.join(row[i] for i in columns)
             try:
                 dt = parse(ts)
-            except ValueError:
+            except (ValueError, TypeError):
                 parsed = None
             else:
                 if not dt.tzinfo:
@@ -439,6 +436,12 @@ def perform_ingestion(ingest):
             previous_bytes = 0
             for row in file.rows:
                 time = row.columns[0]
+                if isinstance(time, IngestError):
+                    models.SensorIngestLog(file=ingest_file,
+                            row=row.line_num, column=time.column_num,
+                            level=models.SensorIngestLog.ERROR,
+                            message=str(column)).save()
+                    continue
                 for (sensor, cls), column in zip(sensors, row.columns[1:]):
                     if isinstance(column, IngestError):
                         models.SensorIngestLog(file=ingest_file,
@@ -517,3 +520,69 @@ class DataSetViewSet(viewsets.ModelViewSet):
         '''Only allow users to see ingests they own.'''
         user = self.request.user
         return models.SensorIngest.objects.filter(map__project__owner=user)
+
+
+def preview_ingestion(sensormap, input_files, count=15):
+    files = {f.name: f.file.file.file for f in input_files}
+    result = {}
+    for file in ingest_files(sensormap, files):
+        rows = []
+        errors = []
+        for row in file.rows:
+            columns = []
+            for column in row.columns:
+                if isinstance(column, IngestError):
+                    errors.append({
+                        'file': file.name,
+                        'row': row.line_num,
+                        'column': column.column_num,
+                        'message': str(column)
+                    })
+                    column = None
+                columns.append(column)
+            rows.append(columns)
+            if len(rows) >= count:
+                break
+        result[file.name] = {'data': rows, 'errors': errors}
+    return result
+
+
+class DataSetPreviewViewSet(viewsets.GenericViewSet):
+    '''Return sample rows from DataSet ingestion.
+
+    If map has a property of 'id', then the map with the given ID is
+    retreived from the database and used (if owned by the current user).
+    Otherwise, map should be a valid sensor map definition and will be
+    validated before processing continues. Set rows to change the number
+    of rows returned for each file.
+    '''
+
+    serializer_class = serializers.DataSetPreviewSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def preview(self, request, *args, **kwargs):
+        serializer = serializers.DataSetPreviewSerializer(data=request.DATA)
+        if serializer.is_valid():
+            user = self.request.user
+            obj = serializer.object
+            sensormap = obj['map']
+            if 'id' in sensormap:
+                sensormap = get_object_or_404(models.SensorMapDefinition,
+                                  pk=sensormap['id'], project__owner=user).map
+            else:
+                schema = Schema()
+                errors = schema.validate(sensormap)
+                if errors:
+                    return Response({('map' + ''.join('[{!r}]'.format(name)
+                                      for name in path)): value
+                                     for path, value in errors.items()},
+                                   status=status.HTTP_400_BAD_REQUEST)
+            files = obj['files']
+            for file in files:
+                if file.file.project.owner != user:
+                    raise rest_exceptions.PermissionDenied()
+            count = min(obj.get('rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
+                        proj_settings.FILE_HEAD_ROWS_MAX)
+            result = preview_ingestion(sensormap, files, count=count)
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

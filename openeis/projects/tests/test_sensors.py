@@ -4,7 +4,7 @@ Created on May 11, 2014
 @author: D3M614
 '''
 import unittest
-from projects import sensors
+from openeis.projects import sensors
 from _ctypes import ArgumentError
 import os
 import json
