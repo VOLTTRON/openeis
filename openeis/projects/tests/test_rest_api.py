@@ -18,7 +18,7 @@ from openeis.projects.tests.openeistest import OpenEISTestBase
 class TestRestApi(OpenEISTestBase):
     fixtures = ['db_dump_test_userPWtest_project.json']
 
-    def test_eis157_timestamp_parsing_endpoint(self):
+    def test_timestamp_parsing_endpoint(self):
         '''
         This function tests the timestamp parsing endpoint for correctness.  The test uses
         the temp upload file loaded from the base class.  The only timestamp column is
