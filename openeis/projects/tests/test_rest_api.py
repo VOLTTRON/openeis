@@ -134,28 +134,34 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(1, response.data['project'])
         self.assertEqual(original_num_files+1, response.data['id'])
 
-    def test_can_add_sensormap_with_OAT_site_sensors(self):
-        site_sensor = '''{
-  "version": 1,
-  "files": {
-    "File 1": {
-      "extra": {},
-      "signature": {
-        "headers": ["Date", "Hillside OAT [F]"]
-      },
-      "timestamp": {"columns": ["Date"], "format": "%m/%d/%Y %H:%M"}
-    }
-  },
-  "sensors": {
-    "Site 1/Sensor 1": {
-      "type": "OutdoorAirTemperature",
-      "unit": "fahrenheit",
-      "file": "File 1",
-      "column": "Hillside OAT [F]"
-    }
-}'''
+    def test_eis176_can_add_sensormap_with_OAT_site_sensors(self):
+        '''
+        Creates a sensormap, uploads default file and creates an ingestion using the file.
+        '''
+        # upload file
+        response = self.upload_temp_file_data(1)
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        file_id = response.data['id']
+        
+        sensor_map = '''{"version":1,"sensors":{"pnnl/OutdoorAirTemperature":{"type":"OutdoorAirTemperature","column":"Hillside OAT [F]","file":"0","unit":"fahrenheit"},"pnnl":{"level":"site"}},"files":{"0":{"timestamp":{"columns":[0]},"signature":{"headers":["Date","Hillside OAT [F]","Main Meter [kW]","Boiler Gas [kBtu/hr]"]}}}}'''
         client = self.get_authenticated_client()
-        client.post('/api/')
+        response = client.get('/api/sensormaps')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        
+        response = client.post('/api/sensormaps', {'project': 1, 'name': 'testmap1', 'map': sensor_map})
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        sensor_map_id = response.data['id']
+        self.assertIsNotNone(sensor_map_id)
+        self.assertTrue(sensor_map_id > 0)
+        
+        file_json = '[{"file": 0}]'
+        
+        response = client.post('/api/datasets', {'files': file_json, 'map': sensor_map_id})
+        
+        print(response.data)
+        
+        
+        
 
     def test_can_authenticate(self):
         """
