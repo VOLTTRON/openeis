@@ -1,6 +1,7 @@
 '''Tests for RESTful API.
 '''
 
+from datetime import datetime, timezone
 import io
 import json
 import os
@@ -95,6 +96,71 @@ class TestRestApi(OpenEISTestBase):
         #Test patch with known bad value
         response = client.patch('/api/files/{}'.format(file['id']),
             json.dumps({'timestamp': {'rows': [0]}}), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_eis174_dataset_preview(self):
+        sensormap = {
+            "version": 1,
+            "files": {
+                "0": {
+                    "signature": {
+                        "headers": ["Date", "Hillside OAT [F]", "Main Meter [kW]", "Boiler Gas [kBtu/hr]"]
+                    },
+                    "timestamp": {"columns": ["Date"]}
+                }
+            },
+            "sensors": {
+                "oat": {
+                    "type": "OutdoorAirTemperature",
+                    "unit": "fahrenheit",
+                    "file": "0",
+                    "column": "Hillside OAT [F]"
+                }
+            }
+        }
+        expected = {
+            '0': {
+                'errors': [],
+                'data': [
+                    [datetime(2009, 9, 29, 15, 0, tzinfo=timezone.utc), 74.72],
+                    [datetime(2009, 9, 29, 16, 0, tzinfo=timezone.utc), 75.52],
+                    [datetime(2009, 9, 29, 17, 0, tzinfo=timezone.utc), 75.78],
+                    [datetime(2009, 9, 29, 18, 0, tzinfo=timezone.utc), 76.19],
+                    [datetime(2009, 9, 29, 19, 0, tzinfo=timezone.utc), 76.72]
+                ]
+            }
+        }
+        # Add data file
+        response = self.upload_temp_file_data(1)
+        file_id = response.data['id']
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        client = self.get_authenticated_client()
+        # Generate preview from explicit sensormap.
+        data = json.dumps({'map': sensormap,
+                           'files': [{'name': '0', 'file': file_id}],
+                           'rows': 5})
+        response = client.post('/api/datasets/preview', data,
+                content_type='application/json', Accept='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, expected)
+        # Add sensor map for next test
+        data = json.dumps({'map': sensormap, 'name': 'test map', 'project': 1})
+        response = client.post('/api/sensormaps', data,
+                content_type='application/json', Accept='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        # Test preview with existing sensormap.
+        data = json.dumps({'map': {'id': response.data['id']},
+                           'files': [{'name': '0', 'file': file_id}],
+                           'rows': 5})
+        response = client.post('/api/datasets/preview', data,
+                content_type='application/json', Accept='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, expected)
+        # Test preview from invalid sensormap.
+        data = json.dumps({'map': {'version': 1, 'files': {}, 'sensors': {}},
+                           'files': [{'name': '0', 'file': file_id}]})
+        response = client.post('/api/datasets/preview', data,
+                content_type='application/json', Accept='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_can_get_default_project(self):
