@@ -78,6 +78,25 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual('9/29/2009 15:00', response.data[0][0], 'Invalid data returned')
 
+    def test_eis159_store_timestamp_with_file(self):
+        response = self.upload_temp_file_data(1)
+        file = response.data
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        # Test that timestamp is null.
+        self.assertFalse(file.pop('timestamp'))
+        client = self.get_authenticated_client()
+        # Test patch with known valid value
+        ts = {'timestamp': {'columns': [0]}}
+        response = client.patch('/api/files/{}'.format(file['id']),
+                                json.dumps(ts), content_type='application/json')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(ts['timestamp'], response.data.pop('timestamp'))
+        self.assertEqual(file, response.data)
+        #Test patch with known bad value
+        response = client.patch('/api/files/{}'.format(file['id']),
+            json.dumps({'timestamp': {'rows': [0]}}), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_can_get_default_project(self):
         client = self.get_authenticated_client()
         response = client.get("/api/projects")

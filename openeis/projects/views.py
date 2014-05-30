@@ -132,6 +132,10 @@ class FileViewSet(mixins.ListModelMixin,
         result.request = self.request
         return result
 
+    def pre_save(self, file):
+        '''Check if email changed and that all user fields are valid.'''
+        file.full_clean()
+
     @link()
     def download(self, request, *args, **kwargs):
         '''Retrieve the file.'''

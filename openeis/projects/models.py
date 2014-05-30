@@ -148,7 +148,8 @@ class DataFile(models.Model):
     def clean_fields(self, exclude=None):
         '''Validate JSON against schema.'''
         super().clean_fields(exclude=exclude)
-        if exclude and 'timestamp' in exclude or not self.timestamp:
+        if (exclude and 'timestamp' in exclude or
+                self.timestamp is None or self.timestamp == ''):
             return
         validator = jsonschema.Draft4Validator(self._ts_schema)
         try:
