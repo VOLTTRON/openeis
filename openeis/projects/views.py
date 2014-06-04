@@ -1,5 +1,6 @@
 from contextlib import closing
 import datetime
+import itertools
 import json
 import logging
 import posixpath
@@ -408,8 +409,7 @@ class SensorMapDefViewSet(viewsets.ModelViewSet):
 
 _processes = {}
 
-@transaction.atomic
-def perform_ingestion(ingest):
+def iter_ingest(ingest):
     '''Ingest into the common schema tables from the DataFiles.'''
     sensormap = ingest.map.map
     files = {f.name: f.file.file.file for f in ingest.files.all()}
@@ -419,13 +419,6 @@ def perform_ingestion(ingest):
         total_bytes = sum(file.size for file in ingested)
         processed_bytes = 0.0
         for file in ingested:
-            _processes[ingest.id] = {
-                'id': ingest.id,
-                'status': 'processing',
-                'percent': processed_bytes * 100.0 / total_bytes,
-                'current_file_percent': 0.0,
-                'current_file': file.name,
-            }
             sensors = []
             for i, name in enumerate(file.sensors):
                 if name is None:
@@ -437,45 +430,86 @@ def perform_ingestion(ingest):
                     sensor.save()
                 sensors.append((sensor, sensor.data_class))
             ingest_file = ingest.files.get(name=file.name)
-            previous_bytes = 0
             for row in file.rows:
                 time = row.columns[0]
+                objects = []
                 if isinstance(time, IngestError):
-                    models.SensorIngestLog(file=ingest_file,
+                    obj = models.SensorIngestLog(file=ingest_file,
                             row=row.line_num, column=time.column_num,
                             level=models.SensorIngestLog.ERROR,
-                            message=str(column)).save()
-                    continue
-                for (sensor, cls), column in zip(sensors, row.columns[1:]):
-                    if isinstance(column, IngestError):
-                        models.SensorIngestLog(file=ingest_file,
-                                row=row.line_num, column=column.column_num,
-                                level=models.SensorIngestLog.ERROR,
-                                message=str(column)).save()
-                    else:
-                        cls(ingest=ingest, sensor=sensor, time=time,
-                            value=column).save()
-                if row.position - previous_bytes >= 1000:
-                    _processes[ingest.id] = {
-                        'id': ingest.id,
-                        'status': 'processing',
-                        'percent': (processed_bytes + row.position) * 100.0 / total_bytes,
-                        'current_file_percent': row.position * 100.0 / file.size,
-                        'current_file': file.name,
-                    }
-                    previous_bytes = row.position
+                            message=str(time))
+                    objects.append(obj)
+                else:
+                    for (sensor, cls), column in zip(sensors, row.columns[1:]):
+                        if isinstance(column, IngestError):
+                            obj = models.SensorIngestLog(file=ingest_file,
+                                    row=row.line_num, column=column.column_num,
+                                    level=models.SensorIngestLog.ERROR,
+                                    message=str(column))
+                        else:
+                            obj = cls(ingest=ingest, sensor=sensor, time=time,
+                                value=column)
+                        objects.append(obj)
+                yield (objects, file.name, row.position, file.size,
+                       processed_bytes + row.position, total_bytes)
             processed_bytes += file.size
+    except Exception:
+        models.SensorIngestLog.create(file=ingest_file, row=0, column=0,
+                                      level=models.SensorIngestLog.CRITICAL,
+                                      message='an unhandled server error '
+                                              'occurred during ingestion')
+        raise
+
+
+def _update_progress(ingest_id, file_id, pos, size, processed, total):
+    _processes[ingest_id] = {
+        'id': ingest_id,
+        'status': 'processing',
+        'percent': processed * 100.0 / total if total else 0.0,
+        'current_file_percent': pos * 100.0 / size if size else 0.0,
+        'current_file': file_id,
+    }
+
+
+def perform_ingestion(ingest, batch_size=999, report_interval=1000):
+    '''Iterate over ingested objects, saving in batches.
+
+    Once batch_size objects are cached, they are sorted according to
+    class type and inserted using bulk_create. Progress information
+    is updated every report_interval objects.
+    '''
+    try:
+        last_file_id, next_pos = None, 0
+        keyfunc = lambda obj: obj.__class__.__name__
+        with transaction.atomic():
+            it = iter_ingest(ingest)
+            while True:
+                batch = []
+                for objects, *args in it:
+                    batch.extend(objects)
+                    file_id, pos, *_ = args
+                    if file_id != last_file_id:
+                        _update_progress(ingest.id, *args)
+                        last_file_id, next_pos = file_id, report_interval
+                    elif pos >= next_pos:
+                        _update_progress(ingest.id, *args)
+                        next_pos = pos + report_interval
+                    if len(batch) >= batch_size:
+                        break
+                if not batch:
+                    break
+                batch.sort(key=keyfunc)
+                for class_name, group in itertools.groupby(batch, keyfunc):
+                    objects = list(group)
+                    cls = objects[0].__class__
+                    cls.objects.bulk_create(objects)
     except Exception:
         logging.exception('an unhandled exception occurred during sensor '
                           'ingestion ({})'.format(ingest.id))
-        models.SensorIngestLog(file=ingest_file, row=0, column=0,
-                               level=models.SensorIngestLog.CRITICAL,
-                               message='an unhandled server error occurred '
-                                       'during ingestion').save()
     finally:
         ingest.end = datetime.datetime.utcnow().replace(tzinfo=utc)
         ingest.save()
-        del _processes[ingest.id]
+        _processes.pop(ingest.id, None)
 
 
 class DataSetViewSet(viewsets.ModelViewSet):
@@ -510,13 +544,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
         data ingestion process.
         '''
         if created:
-            _processes[obj.id] = {
-                'id': obj.id,
-                'status': 'processing',
-                'percent': 0.0,
-                'current_file_percent': 0.0,
-                'current_file': None,
-            }
+            _update_progress(obj.id, None, 0, 0, 0, 0)
             thread = threading.Thread(target=perform_ingestion, args=(obj,))
             thread.start()
 

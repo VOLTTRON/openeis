@@ -1,23 +1,24 @@
-from openeis.algorithm import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
 import datetime
 from datetime import timedelta
 import django.db.models as django
-from django.db.models import Max, Min,Avg
+from django.db.models import Max, Min,Avg,Sum,StdDev, Variance
 from django.db import models
 from dateutil.relativedelta import relativedelta
 
 import dateutil
+from django.db.models.aggregates import StdDev
 
 class Application(DriverApplicationBaseClass):
     
-    def __init__(self,building_sq_ft=-1, building_year_constructed=-1, building_name=None,**kwargs):
+    def __init__(self,*args,building_sq_ft=-1, building_year_constructed=-1, building_name=None,**kwargs):
         #Called after app has been staged
         """
         When applications extend this base class, they need to make
         use of any kwargs that were setup in config_param
         """
-        super().__init__(**kwargs)
+        super().__init__(*args,**kwargs)
         
         self.default_building_name_used = False
         
@@ -83,25 +84,48 @@ class Application(DriverApplicationBaseClass):
         "Do stuff"
         self.out.log("Starting analysis", logging.INFO)
         #Go through some data
-        data_start, data_end = self.inp.get_start_end_times()
+#         data_start, data_end = self.inp.get_start_end_times()
         
         #A year ago ignoring time info
-        year_ago = (data_end - relativedelta(year=1)).replace(hour=0,minute=0,second=0)
-        
-        #A month ago ignoring time info
-        month_ago = (data_end - relativedelta(month=1)).replace(hour=0,minute=0,second=0)
+#         year_ago = (data_end - relativedelta(year=1)).replace(hour=0,minute=0,second=0)
+#         
+#         #A month ago ignoring time info
+#         month_ago = (data_end - relativedelta(month=1)).replace(hour=0,minute=0,second=0)
         
         #
         
         
         #To be used for generating an energy signature plot
-        oat_year_by_day = self.inp.group_by('OAT',year_ago, data_end, "day")
-        load_year_by_day = self.inp.group_by('laod',year_ago, data_end, "day")
-        natgas_year_by_day = self.inp.group_by('natgas',year_ago, data_end, "day")
+#         oat_year_by_day = self.inp.group_by('OAT',year_ago, data_end, "day")
+#         load_year_by_day = self.inp.group_by('load',year_ago, data_end, "day")
+#         natgas_year_by_day = self.inp.group_by('natgas',year_ago, data_end, "day")
+#         
+#         oat_month_by_day = self.inp.group_by('OAT',month_ago, data_end, "day")
+#         load_month_by_day = self.inp.group_by('load',month_ago, data_end, "day")
+#         natgas_month_by_day = self.inp.group_by('natgas',month_ago, data_end, "day")
         
-        oat_month_by_day = self.inp.group_by('OAT',month_ago, data_end, "day")
-        load_month_by_day = self.inp.group_by('laod',month_ago, data_end, "day")
-        natgas_month_by_day = self.inp.group_by('natgas',month_ago, data_end, "day")
+        
+        load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)['load'][0]
+        load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)['load'][0]
+        
+#         month_filter ={'time__gte':month_ago}
+        
+        load_by_hour = self.inp.get_query_sets('load',group_by='hour', 
+                                                    group_by_aggregation=Sum)['load'][0]
+        by_hour = load_by_hour.filter(time__hour=1)
+        
+        
+        std_dev_load_by_hour  = load_by_hour.filter(time__hour=1).aggregate(value=Sum('value'))
+        #load_by_hour.filter(time__hour=1).timeseries(aggregate=StdDev) 
+                                
+         
+    
+        print(std_dev_load_by_hour)
+        print(load_min)
+        print(load_max)
+        
+        
+
         
         
         
@@ -110,12 +134,12 @@ class Application(DriverApplicationBaseClass):
         #mbase5
         #bpratio
         #range
-        self.out.insert_row("Analaysis_Table", {"Metric": "Load Max", "value": str(django.Max(load_month_by_day))})
-        self.out.insert_row("Analaysis_Table", {"Metric": "Load Min", "value": str(django.Min(load_month_by_day))})
-        self.out.insert_row("Analaysis_Table", {"Metric": "Load StdDev", "value": str(django.StdDev(load_month_by_day))})
-        self.out.insert_row("Analaysis_Table", {"Metric": "Load Mean", "value": str(django.Avg(load_month_by_day))})
-        self.out.insert_row("Analaysis_Table", {"Metric": "Load Variance", "value": str(django.Variance(load_month_by_day))})
-        
+#         self.out.insert_row("Analysis_Table", {"Metric": "Load Max", "value": str(load_max)})
+#         self.out.insert_row("Analysis_Table", {"Metric": "Load Min", "value": str(load_min)})
+#         self.out.insert_row("Analysis_Table", {"Metric": "Load StdDev", "value": str(django.StdDev(load_month_by_day))})
+#         self.out.insert_row("Analysis_Table", {"Metric": "Load Mean", "value": str(django.Avg(load_month_by_day))})
+#         self.out.insert_row("Analysis_Table", {"Metric": "Load Variance", "value": str(django.Variance(load_month_by_day))})
+#         
         
         #Setup heat map
         
@@ -133,13 +157,13 @@ class Application(DriverApplicationBaseClass):
         
         
         
-        
-        oat_sum = self.inp.group_by('OAT',data_start, data_end, "hour")
-        load_sum = self.inp.group_by('laod',data_start, data_end, "hour")
-        natgas_sum = self.inp.group_by('natgas',data_start, data_end, "hour")
-        
-        merged_group = self.inp.merge(oat_sum, load_sum, natgas_sum)
-        
+#         
+#         oat_sum = self.inp.group_by('OAT',data_start, data_end, "hour")
+#         load_sum = self.inp.group_by('laod',data_start, data_end, "hour")
+#         natgas_sum = self.inp.group_by('natgas',data_start, data_end, "hour")
+#         
+#         merged_group = self.inp.merge(oat_sum, load_sum, natgas_sum)
+#         
         
          
         

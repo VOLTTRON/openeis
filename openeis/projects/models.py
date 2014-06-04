@@ -232,7 +232,7 @@ class SensorIngestLog(models.Model):
     LOG_LEVEL_CHOICES = ((INFO, 'Info'), (WARNING, 'Warning'),
                          (ERROR, 'Error'), (CRITICAL, 'Critical'))
 
-    file = models.ForeignKey(SensorIngestFile, related_name='logs')
+    file = models.ForeignKey(SensorIngestFile, related_name='logs', null=True)
     row = models.IntegerField()
     # Timestamps can include multiple columns
     column = models.CommaSeparatedIntegerField(max_length=20)

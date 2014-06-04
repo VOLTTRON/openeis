@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
 
-from openeis.algorithm import get_algorithm_class
+from openeis.applications import get_algorithm_class
 
 from configparser import ConfigParser
 
@@ -23,7 +23,7 @@ class Command(BaseCommand):
         # Put of importing modules that access the database to allow
         # Django to magically install the plumbing first.
         from openeis.projects.storage import sensorstore
-
+        
         verbosity = int(verbosity)
         
         config = ConfigParser()
@@ -33,7 +33,7 @@ class Command(BaseCommand):
         application = config['global_settings']['application']
         klass = get_algorithm_class(application)
         
-        project_id = int(config['global_settings']['project_id'])
+        dataset_id = int(config['global_settings']['dataset_id'])
         
         topic_map = {}
         
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             topic_map[group] = topics.split()
         
         
-        db_input = DatabaseInput(project_id, topic_map)
+        db_input = DatabaseInput(dataset_id, topic_map)
         
         output_format = klass.output_format(db_input)
         file_output = DatabaseOutputFile(application, output_format)
@@ -52,10 +52,10 @@ class Command(BaseCommand):
             for arg, str_val in config['application_config'].items():
                 kwargs[arg] = eval(str_val)
         
-        print('Project id:', project_id)
+        print('Dataset id:', dataset_id)
         print('Topic map:', topic_map)
         print('Output format:', output_format)
         
         app = klass(db_input, file_output, **kwargs)
         app.execute()
-
+        

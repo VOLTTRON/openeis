@@ -157,7 +157,7 @@ class DatabaseInput:
                        order_by='time',
                        filter_=None, 
                        exclude=None, 
-                       group_by=None, group_by_aggregation=Sum):
+                       group_by=None, group_by_aggregation=None):
         """
         group - group of columns to retrieve.
         order_by - column to order_by ('time' or 'values'), defaults to 'time'
@@ -185,13 +185,22 @@ class DatabaseInput:
             
         if group_by is not None:
             if group_by != 'all':
-                qs = (x.group_by(group_by, group_by_aggregation) for x in qs)
+                pass
+#                 qs = (x.group_by(group_by, group_by_aggregation) for x in qs)
             else:
-                return {group_name: [x.aggragate(value=group_by_aggregation('value'))['value'] for x in qs]}
+                return {group_name: [x.aggregate(value=group_by_aggregation('value'))['value'] for x in qs]}
         
-        return {group_name: [x.order_by(order_by).timeseries().iterator() for x in qs]}
+        return {group_name: [x.order_by(order_by).timeseries(trunc_kind=group_by,
+                                        aggregate=group_by_aggregation) for x in qs]}
     
-
+#     def timeseries(self, *, trunc_kind=None, aggregate=None):
+#         '''Return timeseries pairs from the table.
+#  
+#         Returns 2-tuples of time-value pairs. If trunc_kind is given,
+#         the time is truncated to the given precision. If aggregate is
+#         given, the series values are aggregated according to the given
+#         aggregation method and grouped by the time.
+#         '''                                                               
 
 if __name__ == '__main__':
     
