@@ -45,7 +45,7 @@ with the python executable in the virtual environment.
 
   On Windows:
 
-    C:\openeis> env\Scripts\python.exe bootstrap.py
+    (openeis)C:\openeis> env\Scripts\python.exe bootstrap.py
 
   On Linux, OS-X, and other Unix-like systems:
 
