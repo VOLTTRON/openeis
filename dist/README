@@ -40,6 +40,7 @@ openeis-support packages must be built and installed:
 
    $ (cd openeis-support && dpkg-buildpackage -tc -b)
    $ sudo dpkg -i openeis-support*.deb
+   $ sudo apt-get update
    $ sudo apt-get install -f
 
 openeis-support expects the openeis-repository to be checked out and built in
@@ -54,7 +55,8 @@ as theopeneis user, which was created by the openeis-support-config package:
 
 Check out the code into /var/lib/openeis:
 
-   [openeis /var/lib/openeis]$ git clone https://git.pnnl.gov/openeis .
+   [openeis /var/lib/openeis]$ git clone \
+      https://bitbucket.org/berkeleylab/openeis.git .
 
 Bootstrap OpenEIS and install extra python dependencies:
 
@@ -62,8 +64,12 @@ Bootstrap OpenEIS and install extra python dependencies:
    [openeis /var/lib/openeis]$ env/bin/pip install uwsgi psycopg2
    [openeis /var/lib/openeis]$ env/bin/openeis syncdb
    [openeis /var/lib/openeis]$ env/bin/openeis linkstatic
+   [openeis /var/lib/openeis]$ exit
 
 Now start the openeis service:
 
    $ sudo initctl start openeis
 
+And restart nginx to ensure it picks up the changes:
+
+   $ sudo service nginx restart
