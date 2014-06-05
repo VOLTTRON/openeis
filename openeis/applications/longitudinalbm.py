@@ -58,7 +58,7 @@ class Application(DriverApplicationBaseClass):
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
-        output_topic_base = load_topic_parts[: 1]
+        output_topic_base = load_topic_parts[:-1]
         year_topic = '/'.join(output_topic_base+['longitudinalbm', 'time'])
         load_topic = '/'.join(output_topic_base+['longitudinalbm', 'load'])
         gas_topic = '/'.join(output_topic_base+['longitudinalbm', 'natgas'])
@@ -88,7 +88,9 @@ class Application(DriverApplicationBaseClass):
         
     def execute(self):
         #Called after User hits GO
-        "Do stuff"
+        """
+        CSV file has three columns: year, aggregated loads, and aggregated gas.
+        """
         self.out.log("Starting analysis", logging.INFO)
 
         #grabs data by year and reduces it
