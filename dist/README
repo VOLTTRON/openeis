@@ -66,7 +66,7 @@ Bootstrap OpenEIS and install extra python dependencies:
    [openeis /var/lib/openeis]$ env/bin/openeis linkstatic
    [openeis /var/lib/openeis]$ exit
 
-Now start the openeis service:
+Now start the openeis service as yourself (no longer the openeis user):
 
    $ sudo initctl start openeis
 
