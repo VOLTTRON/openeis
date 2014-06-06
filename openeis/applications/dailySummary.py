@@ -1,16 +1,9 @@
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
-import datetime
 import numpy
 import math
-from datetime import timedelta
-import django.db.models as django
-from django.db.models import Max, Min,Avg,Sum,StdDev
-from django.db import models
+from django.db.models import Max, Min,Avg
 from dateutil.relativedelta import relativedelta
-
-import dateutil
-from django.db.models.aggregates import StdDev
 
 class Application(DriverApplicationBaseClass):
     
@@ -98,24 +91,19 @@ class Application(DriverApplicationBaseClass):
         floorAreaSqft = self.sq_ft
         load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)['load'][0]
         load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)['load'][0]
-        
         load_query = self.inp.get_query_sets('load')['load'][0]
 
         
         #TODO: Time Zone support
-        load_values = [] 
         load_startDay = load_query.earliest()[0].date()
         load_endDay = load_query.latest()[0].date()
         current_Day = load_startDay
         load_day_list_95 = [] 
         load_day_list_5 = []
         
-        for x in load_query: 
-            load_values.append(x[1])
-        
-        peakLoad = max(load_values) * 1000
+        peakLoad = load_max * 1000
         peakLoadIntensity = peakLoad / self.sq_ft
-                        
+        
         while current_Day <= load_endDay:
             load_day_query = load_query.filter(time__year=current_Day.year,
                                             time__month=current_Day.month,
