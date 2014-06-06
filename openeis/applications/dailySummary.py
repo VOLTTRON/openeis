@@ -102,13 +102,20 @@ class Application(DriverApplicationBaseClass):
         load_query = self.inp.get_query_sets('load')['load'][0]
 
         
-        #TODO: Time Zone support 
+        #TODO: Time Zone support
+        load_values = [] 
         load_startDay = load_query.earliest()[0].date()
         load_endDay = load_query.latest()[0].date()
         current_Day = load_startDay
         load_day_list_95 = [] 
         load_day_list_5 = []
         
+        for x in load_query: 
+            load_values.append(x[1])
+        
+        peakLoad = max(load_values) * 1000
+        peakLoadIntensity = peakLoad / self.sq_ft
+                        
         while current_Day <= load_endDay:
             load_day_query = load_query.filter(time__year=current_Day.year,
                                             time__month=current_Day.month,
@@ -157,6 +164,8 @@ class Application(DriverApplicationBaseClass):
                                                     "value": str(load_day_range_mean)})
         self.out.insert_row("Daily_Summary_Table", {"Metric": "Load Variability", 
                                                     "value": str(load_variability)})
+        self.out.insert_row("Daily_Summary_Table", {"Metric": "Peak Load Benchmark",
+                                                     "value": str(peakLoadIntensity)})
         
 #         month_filter ={'time__gte':month_ago}
         
