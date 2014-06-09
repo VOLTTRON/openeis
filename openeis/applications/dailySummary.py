@@ -5,6 +5,18 @@ import math
 from django.db.models import Max, Min, Avg
 from dateutil.relativedelta import relativedelta
 
+"""
+    Application calculates the following metrics and its respective outputs.
+        -Load Max Intensity
+        -Load Min Intensity
+        -Daily Load 95th Percentile
+        -Daily Load 5th Percentile
+        -Daily Load Ratio
+        -Daily Load Range
+        -Load Variability
+        -Peak Load Benchmark
+"""
+
 class Application(DriverApplicationBaseClass):
     
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
