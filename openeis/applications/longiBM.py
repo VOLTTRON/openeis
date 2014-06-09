@@ -2,6 +2,12 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor, Ou
 import logging
 from django.db.models import Sum
 
+"""
+    Longitudinal benchmarking application will aggregate data over the year
+    and will output amounts according to the year.  This data is to be put
+    into a bar graph so user can easily see trends happening over the years.
+"""
+
 class Application(DriverApplicationBaseClass):
     
     def __init__(self, *args, building_sq_ft=-1, building_name=None,**kwargs):
@@ -85,7 +91,8 @@ class Application(DriverApplicationBaseClass):
     def execute(self):
         #Called after User hits GO
         """
-        CSV file has three columns: year, aggregated loads, and aggregated gas.
+        Will output the following: year, aggregated load amounts,
+        and aggregated gas amounts.
         """
         self.out.log("Starting analysis", logging.INFO)
 
