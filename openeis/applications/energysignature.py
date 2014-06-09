@@ -1,18 +1,14 @@
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
-import datetime
-import numpy
-import math
-from datetime import timedelta
-import django.db.models as django
-from django.db.models import Max, Min,Avg,Sum,StdDev
-from django.db import models
-from dateutil.relativedelta import relativedelta
+from django.db.models import Avg
 from .utils.spearman import findSpearmanRank
 
-import dateutil
-from django.db.models.aggregates import StdDev
-
+"""
+    Application to output the values for energy signature scatter plot
+    which is outside air temperature graphed against load.  Also calculates
+    weather sensitivity by analyzing loads against outside air temperature
+    by finding the Spearman rank.
+"""
 class Application(DriverApplicationBaseClass):
     
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
@@ -57,6 +53,12 @@ class Application(DriverApplicationBaseClass):
         
     @classmethod
     def output_format(cls, input_object):
+        """
+        Output:
+            Energy Signature: outside air temperature and loads.
+                Data will be used to scatter plot.
+            Weather Sensitivity: dependent on OAT and loads.
+        """
         #Called when app is staged
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
@@ -87,10 +89,13 @@ class Application(DriverApplicationBaseClass):
         
     def execute(self):
         #Called after User hits GO
-        "Do stuff"
+        """
+        Calculates weather sensitivity using Spearman rank.
+        Also, outputs data points for energy signature scatter plot.
+        """
         self.out.log("Starting Spearman rank", logging.INFO)
         
-        
+        # gather loads and outside air temperatures. Reduced to and hourly average
         load_query = self.inp.get_query_sets('load', group_by='hour',group_by_aggregation=Avg,
                                              exclude={'value':None})
         oat_query = self.inp.get_query_sets('oat', group_by='hour',group_by_aggregation=Avg,
@@ -100,15 +105,16 @@ class Application(DriverApplicationBaseClass):
         
         load_values = []
         oat_values = []
-         
+        
+        # Output for scatter plot
         for x in merged_load_oat: 
             load_values.append(x['load'][0])
             oat_values.append(x['oat'][0])                
             self.out.insert_row("Scatterplot", {"oat": x['oat'][0], "load": x['load'][0]})
-            
+        
+        # find the Spearman rank 
         weather_sensitivity = findSpearmanRank(load_values, oat_values)
         #TODO weather sensitivity as attribute for report generation
-        #TODO create table for scatterplot 
                             
         self.out.insert_row("Weather Sensitivity", {"value": str(weather_sensitivity)})
         
