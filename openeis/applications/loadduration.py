@@ -1,18 +1,9 @@
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
-import datetime
-import numpy
-import math
-from datetime import timedelta
-import django.db.models as django
-from django.db.models import Max, Min,Avg,Sum,StdDev
-from django.db import models
-from dateutil.relativedelta import relativedelta
-from .utils.spearman import findSpearmanRank
 
-import dateutil
-from django.db.models.aggregates import StdDev
-
+"""
+    Application outputs sorted loads to be in a line graph.
+"""
 class Application(DriverApplicationBaseClass):
     
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
@@ -41,7 +32,6 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         return {
                     "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-                
                 }
         
     
@@ -52,9 +42,13 @@ class Application(DriverApplicationBaseClass):
         return {
                     'load':InputDescriptor('WholeBuildingElectricity','Building Load')
                 }
-        
+    
+ 
     @classmethod
     def output_format(cls, input_object):
+        """
+        Output is the sorted load to be graphed later.
+        """   
         #Called when app is staged
         #TODO: find an easier way of formatting the topics
         topics = input_object.get_topics()
@@ -81,9 +75,10 @@ class Application(DriverApplicationBaseClass):
         
     def execute(self):
         #Called after User hits GO
-        "Do stuff"
+        """
+            Output is sorted loads values.
+        """
         self.out.log("Starting load duration", logging.INFO)
-        
         
         load_query = self.inp.get_query_sets('load', order_by='value',exclude={'value':None})
         
