@@ -1,6 +1,11 @@
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
 
+"""
+    Application outputs the loads according to their times, to be put in a line
+    graph later.
+"""
+
 class Application(DriverApplicationBaseClass):
     
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
@@ -30,7 +35,6 @@ class Application(DriverApplicationBaseClass):
         return {
                     "building_sq_ft": ConfigDescriptor(float, "Square footage", minimum=200),
                     "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-                
                 }
         
     
@@ -66,7 +70,6 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
         
-        
         display elements is a list of display objects specifying viz and columns for that viz 
         """
         display_elements = []
@@ -75,18 +78,13 @@ class Application(DriverApplicationBaseClass):
         
     def execute(self):
         #Called after User hits GO
-        "Do stuff"
+        "Outputs values for line graph."
         self.out.log("Starting analysis", logging.INFO)
         
         load_by_hour = self.inp.get_query_sets('load', \
                                                exclude={'value': None})
         
-        times = []
-        load_vals = []
-        
         for x in load_by_hour['load'][0]:
-            times.append(x[0])
-            load_vals.append(x[1])
             self.out.insert_row("Line Graph", \
                                 {'hour': x[0], \
                                  'value': x[1]})

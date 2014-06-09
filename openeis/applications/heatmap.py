@@ -80,7 +80,7 @@ class Application(DriverApplicationBaseClass):
         #Called after User hits GO
         #maybe can be combined with dailySummary
         """
-        Output values for heatmap.
+        Output values for Heat Map.
         """
         self.out.log("Starting analysis", logging.INFO)
 
