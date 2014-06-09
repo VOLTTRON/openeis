@@ -2,7 +2,7 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor, Ou
 import logging
 import numpy
 import math
-from django.db.models import Max, Min,Avg
+from django.db.models import Max, Min, Avg
 from dateutil.relativedelta import relativedelta
 
 class Application(DriverApplicationBaseClass):
@@ -48,6 +48,9 @@ class Application(DriverApplicationBaseClass):
         
     @classmethod
     def output_format(cls, input_object):
+        """
+        Output will be the metric followed by the value of respective metric.
+        """
         #Called when app is staged
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
@@ -74,26 +77,25 @@ class Application(DriverApplicationBaseClass):
         
     def execute(self):
         #Called after User hits GO
-        "Do stuff"
+        """
+        Calculates the following metrics and outputs.
+            -Load Max Intensity
+            -Load Min Intensity
+            -Daily Load 95th Percentile
+            -Daily Load 5th Percentile
+            -Daily Load Ratio
+            -Daily Load Range
+            -Load Variability
+            -Peak Load Benchmark
+        """
+
         self.out.log("Starting daily summary", logging.INFO)
-        #Go through some data
-#         data_start, data_end = self.inp.get_start_end_times()
-        
-        #A year ago ignoring time info
-#         year_ago = (data_end - relativedelta(year=1)).replace(hour=0,minute=0,second=0)
-#         
-#         #A month ago ignoring time info
-#         month_ago = (data_end - relativedelta(month=1)).replace(hour=0,minute=0,second=0)
-        
-        #
-        
         
         floorAreaSqft = self.sq_ft
         load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)['load'][0]
         load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)['load'][0]
         load_query = self.inp.get_query_sets('load')['load'][0]
 
-        
         #TODO: Time Zone support
         load_startDay = load_query.earliest()[0].date()
         load_endDay = load_query.latest()[0].date()
@@ -101,9 +103,11 @@ class Application(DriverApplicationBaseClass):
         load_day_list_95 = [] 
         load_day_list_5 = []
         
+        # find peak load benchmark
         peakLoad = load_max * 1000
         peakLoadIntensity = peakLoad / self.sq_ft
         
+        # gather values in the 95th and 5th percentile every day
         while current_Day <= load_endDay:
             load_day_query = load_query.filter(time__year=current_Day.year,
                                             time__month=current_Day.month,
@@ -117,12 +121,13 @@ class Application(DriverApplicationBaseClass):
             load_day_list_95.append(numpy.percentile(load_day_values,95))
             load_day_list_5.append(numpy.percentile(load_day_values,5))
             
-            
+        # average them
         load_day_95_mean = numpy.mean(load_day_list_95)
         load_day_5_mean = numpy.mean(load_day_list_5)
         load_day_ratio_mean = numpy.mean(numpy.divide(load_day_list_5, load_day_list_95))
         load_day_range_mean = numpy.mean(numpy.subtract(load_day_list_95,load_day_list_5))
 
+        # find the load variability
         hourly_variability = []
         for h in range(24):        
             hourly_mean = self.inp.get_query_sets('load',group_by='all', 
@@ -154,57 +159,3 @@ class Application(DriverApplicationBaseClass):
                                                     "value": str(load_variability)})
         self.out.insert_row("Daily_Summary_Table", {"Metric": "Peak Load Benchmark",
                                                      "value": str(peakLoadIntensity)})
-        
-#         month_filter ={'time__gte':month_ago}
-        
-#         
-#         
-#         
-#         std_dev_load_by_hour  = load_by_hour.filter(time__hour=1).aggregate(value=StdDev('values'))
-#     
-#         print(std_dev_load_by_hour)
-#         print(load_min)
-#         print(load_max)
-        
-        
-
-        
-        
-        
-        #loads by day for dailysummary stats
-        #peak95
-        #mbase5
-        #bpratio
-        #range
-
-#         self.out.insert_row("Analysis_Table", {"Metric": "Load StdDev", "value": str(django.StdDev(load_month_by_day))})
-#         self.out.insert_row("Analysis_Table", {"Metric": "Load Mean", "value": str(django.Avg(load_month_by_day))})
-#         self.out.insert_row("Analysis_Table", {"Metric": "Load Variance", "value": str(django.Variance(load_month_by_day))})
-#         
-        
-        #Setup heat map
-        
-        
-#         success = gr_bldg.genEnergySignaturePlot(oatsCurrYear, loadsCurrYear,
-#             bldgMetaData['oat-units'], bldgMetaData['load-units'],
-#             figWritePath=os.path.join(outDirName,figRelPath))
- 
-#         for 
-#         self.out.insert_row("HeatMap", {"Times by Day": thing, "Loads by Day": str(django.Max(load_month_by_day))})
-        
-        
-        
-        
-        
-        
-        
-#         
-#         oat_sum = self.inp.group_by('OAT',data_start, data_end, "hour")
-#         load_sum = self.inp.group_by('laod',data_start, data_end, "hour")
-#         natgas_sum = self.inp.group_by('natgas',data_start, data_end, "hour")
-#         
-#         merged_group = self.inp.merge(oat_sum, load_sum, natgas_sum)
-#         
-        
-         
-        
