@@ -1,14 +1,5 @@
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
-import datetime
-from datetime import timedelta
-import django.db.models as django
-from django.db.models import Max, Min,Avg,Sum,StdDev, Variance
-from django.db import models
-from dateutil.relativedelta import relativedelta
-
-import dateutil
-from django.db.models.aggregates import StdDev
 
 class Application(DriverApplicationBaseClass):
     
@@ -49,7 +40,10 @@ class Application(DriverApplicationBaseClass):
         return {
                     'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                 }
-        
+
+    """
+    Output is hour with respective load, to be put in a line graph later.
+    """        
     @classmethod
     def output_format(cls, input_object):
         #Called when app is staged
@@ -96,5 +90,3 @@ class Application(DriverApplicationBaseClass):
             self.out.insert_row("Line Graph", \
                                 {'hour': x[0], \
                                  'value': x[1]})
-
- 

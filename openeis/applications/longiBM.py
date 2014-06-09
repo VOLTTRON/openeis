@@ -1,14 +1,6 @@
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
-import datetime
-from datetime import timedelta
-import django.db.models as django
-from django.db.models import Max, Min,Avg,Sum,StdDev, Variance
-from django.db import models
-from dateutil.relativedelta import relativedelta
-
-import dateutil
-from django.db.models.aggregates import StdDev
+from django.db.models import Sum
 
 class Application(DriverApplicationBaseClass):
     
@@ -51,7 +43,11 @@ class Application(DriverApplicationBaseClass):
                     'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                     'natgas':InputDescriptor('NaturalGas', 'Natural Gas usage')
                 }
-        
+
+    """
+    Output is the year with its respective load and natural gas amounts
+    aggregated over the year.
+    """        
     @classmethod
     def output_format(cls, input_object):
         #Called when app is staged
@@ -104,15 +100,7 @@ class Application(DriverApplicationBaseClass):
         
         merge_load_gas = self.inp.merge(load_by_year, gas_by_year)
        
-        #why do we append to these lists if we don't use them... 
-        year = []
-        load_vals = []
-        gas_vals = []
-        
         for x in merge_load_gas:
-            year.append(x['time'])
-            load_vals.append(x['load'][0])
-            gas_vals.append(x['natgas'][0])
             self.out.insert_row("LongitudinalBM", \
                                 {'year': x['time'],
                                  'load': x['load'][0], \
