@@ -1,15 +1,8 @@
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
-import datetime
-from datetime import timedelta
-import django.db.models as django
-from django.db.models import Max, Min,Avg,Sum,StdDev, Variance
-from django.db import models
-from dateutil.relativedelta import relativedelta
-
-import dateutil
-from django.db.models.aggregates import StdDev
-
+"""
+    HeatMap application outputs values to be graphed in a heat map.
+"""
 class Application(DriverApplicationBaseClass):
     
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
@@ -48,9 +41,13 @@ class Application(DriverApplicationBaseClass):
         return {
                     'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                 }
-        
+      
     @classmethod
     def output_format(cls, input_object):
+        """
+        Output will have the date, hour, and respective load.
+        To be graphed in a heat map later.
+        """  
         #Called when app is staged
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
@@ -81,7 +78,10 @@ class Application(DriverApplicationBaseClass):
         
     def execute(self):
         #Called after User hits GO
-        "Do stuff"
+        #maybe can be combined with dailySummary
+        """
+        Output values for heatmap.
+        """
         self.out.log("Starting analysis", logging.INFO)
 
         load_by_hour = self.inp.get_query_sets('load', exclude={'value':None})
