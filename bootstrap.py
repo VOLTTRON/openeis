@@ -130,6 +130,27 @@ def stage1(directory=os.path.join(_path, 'env'), prompt='(openeis)'):
     subprocess.check_call([builder.context.env_exe, __file__])
 
 
+def get_dist(name):
+    from pip.util import get_installed_distributions
+    for dist in get_installed_distributions():
+        if dist.key == name:
+            return dist
+
+
+def ensure_ui():
+    dist = get_dist('openeis-ui')
+    reinstall = dist and dist.parsed_version < ('00000000', '00000002')
+    if dist and not reinstall:
+        return
+    path = os.path.join(_path, 'lib', 'openeis-ui')
+    if os.path.exists(path):
+        if reinstall:
+            subprocess.check_call(
+                [sys.executable, '-m', 'pip', 'uninstall', '-y', 'openeis-ui'])
+        subprocess.check_call(
+                [sys.executable, '-m', 'pip', 'install', '-e', path])
+
+
 def stage2(directory=_path):
     try:
         import pip
@@ -139,10 +160,7 @@ def stage2(directory=_path):
             ensurepip.bootstrap(upgrade=True, default_pip=True)
         except ImportError:
             get_pip()
-    capath = os.path.join(directory, 'dist', 'certs', 'pnnl.crt')
-    subprocess.call([sys.executable, '-m', 'pip', 'install', '-U',
-        '-f', 'https://openeis-dev.pnl.gov/dist/openeis-ui/',
-        '--cert', capath, '--no-index', '--pre', 'openeis-ui'])
+    ensure_ui()
     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', directory])
     for names in [('data',), ('data', 'static')]:
         path = os.path.join(directory, *names)

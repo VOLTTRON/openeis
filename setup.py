@@ -17,7 +17,7 @@ setup(
         'django-rest-swagger>=0.1,<0.2',
         'django-nose',
         'jsonschema',
-        'openeis-ui',
+        'openeis-ui>0.1.dev70',
         'pytz',
     ],
     entry_points = '''
