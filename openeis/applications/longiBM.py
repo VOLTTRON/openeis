@@ -1,14 +1,12 @@
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
-import datetime
-from datetime import timedelta
-import django.db.models as django
-from django.db.models import Max, Min,Avg,Sum,StdDev, Variance
-from django.db import models
-from dateutil.relativedelta import relativedelta
+from django.db.models import Sum
 
-import dateutil
-from django.db.models.aggregates import StdDev
+"""
+    Longitudinal benchmarking application will aggregate data over the year
+    and will output amounts according to the year.  This data is to be put
+    into a bar graph so user can easily see trends happening over the years.
+"""
 
 class Application(DriverApplicationBaseClass):
     
@@ -51,7 +49,11 @@ class Application(DriverApplicationBaseClass):
                     'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                     'natgas':InputDescriptor('NaturalGas', 'Natural Gas usage')
                 }
-        
+
+    """
+    Output is the year with its respective load and natural gas amounts
+    aggregated over the year.
+    """        
     @classmethod
     def output_format(cls, input_object):
         #Called when app is staged
@@ -89,7 +91,8 @@ class Application(DriverApplicationBaseClass):
     def execute(self):
         #Called after User hits GO
         """
-        CSV file has three columns: year, aggregated loads, and aggregated gas.
+        Will output the following: year, aggregated load amounts,
+        and aggregated gas amounts.
         """
         self.out.log("Starting analysis", logging.INFO)
 
@@ -104,15 +107,7 @@ class Application(DriverApplicationBaseClass):
         
         merge_load_gas = self.inp.merge(load_by_year, gas_by_year)
        
-        #why do we append to these lists if we don't use them... 
-        year = []
-        load_vals = []
-        gas_vals = []
-        
         for x in merge_load_gas:
-            year.append(x['time'])
-            load_vals.append(x['load'][0])
-            gas_vals.append(x['natgas'][0])
             self.out.insert_row("LongitudinalBM", \
                                 {'year': x['time'],
                                  'load': x['load'][0], \
