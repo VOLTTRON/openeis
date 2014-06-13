@@ -33,8 +33,12 @@ class Command(BaseCommand):
         application = config['global_settings']['application']
         klass = get_algorithm_class(application)
         
-        dataset_id = int(config['global_settings']['dataset_id'])
+        dataset_ids = None
+        if config.has_option('global_settings', 'dataset_id'):
+            dataset_id_string = config['global_settings']['dataset_id']
+            dataset_ids = [int(x) for x in dataset_id_string.split(',')]
         
+        sensormap_id = int(config['global_settings']['sensormap_id'])
         topic_map = {}
         
         inputs = config['inputs']
@@ -42,7 +46,7 @@ class Command(BaseCommand):
             topic_map[group] = topics.split()
         
         
-        db_input = DatabaseInput(dataset_id, topic_map)
+        db_input = DatabaseInput(sensormap_id, topic_map, dataset_ids=dataset_ids)
         
         output_format = klass.output_format(db_input)
         file_output = DatabaseOutputFile(application, output_format)
@@ -52,7 +56,9 @@ class Command(BaseCommand):
             for arg, str_val in config['application_config'].items():
                 kwargs[arg] = eval(str_val)
         
-        print('Dataset id:', dataset_id)
+        print('Sensor map id:', sensormap_id)
+        if dataset_ids is not None:
+            print('Data set ids:', dataset_ids)
         print('Topic map:', topic_map)
         print('Output format:', output_format)
         
