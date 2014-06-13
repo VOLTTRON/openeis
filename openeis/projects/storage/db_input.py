@@ -44,7 +44,7 @@ from openeis.projects.storage.sensorstore import get_sensors
 
 class DatabaseInput:
     
-    def __init__(self,input_id, topic_map):
+    def __init__(self, sensormap_id, topic_map, dataset_ids=None):
         '''
         Expected topic_map:
         {
@@ -55,12 +55,11 @@ class DatabaseInput:
         
         self.topic_map = topic_map.copy()
         
+        self.dataset_ids = dataset_ids
+        
         self.sensor_map = {}
         for input_name, topics in self.topic_map.items():
-            print(get_sensors(input_id,topics[0]))
-            self.sensor_map[input_name] = tuple(get_sensors(input_id,x)[0] for x in topics)
-        
-        pprint(self.sensor_map)
+            self.sensor_map[input_name] = tuple(get_sensors(sensormap_id,x)[0] for x in topics)
         
              
     def get_topics(self):
@@ -176,6 +175,9 @@ class DatabaseInput:
         This preps output to be input to self.merge()
         """
         qs = (x() for _,x in self.sensor_map[group_name])
+        
+        if self.dataset_ids is not None:
+            qs = (x.filter(ingest_id__in=self.dataset_ids) for x in qs)
         
         if filter_ is not None:
             qs = (x.filter(**filter_) for x in qs)
