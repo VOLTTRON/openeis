@@ -44,7 +44,7 @@ from openeis.projects.storage.sensorstore import get_sensors
 
 class DatabaseInput:
     
-    def __init__(self,input_id, topic_map):
+    def __init__(self, sensormap_id, topic_map, dataset_ids=None):
         '''
         Expected topic_map:
         {
@@ -55,12 +55,11 @@ class DatabaseInput:
         
         self.topic_map = topic_map.copy()
         
+        self.dataset_ids = dataset_ids
+        
         self.sensor_map = {}
         for input_name, topics in self.topic_map.items():
-            print(get_sensors(input_id,topics[0]))
-            self.sensor_map[input_name] = tuple(get_sensors(input_id,x)[0] for x in topics)
-        
-        pprint(self.sensor_map)
+            self.sensor_map[input_name] = tuple(get_sensors(sensormap_id,x)[0] for x in topics)
         
              
     def get_topics(self):
@@ -157,7 +156,7 @@ class DatabaseInput:
                        order_by='time',
                        filter_=None, 
                        exclude=None, 
-                       group_by=None, group_by_aggregation=Sum):
+                       group_by=None, group_by_aggregation=None):
         """
         group - group of columns to retrieve.
         order_by - column to order_by ('time' or 'values'), defaults to 'time'
@@ -177,6 +176,9 @@ class DatabaseInput:
         """
         qs = (x() for _,x in self.sensor_map[group_name])
         
+        if self.dataset_ids is not None:
+            qs = (x.filter(ingest_id__in=self.dataset_ids) for x in qs)
+        
         if filter_ is not None:
             qs = (x.filter(**filter_) for x in qs)
             
@@ -185,13 +187,22 @@ class DatabaseInput:
             
         if group_by is not None:
             if group_by != 'all':
-                qs = (x.group_by(group_by, group_by_aggregation) for x in qs)
+                pass
+#                 qs = (x.group_by(group_by, group_by_aggregation) for x in qs)
             else:
-                return {group_name: [x.aggragate(value=group_by_aggregation('value'))['value'] for x in qs]}
+                return {group_name: [x.aggregate(value=group_by_aggregation('value'))['value'] for x in qs]}
         
-        return {group_name: [x.order_by(order_by).timeseries().iterator() for x in qs]}
+        return {group_name: [x.order_by(order_by).timeseries(trunc_kind=group_by,
+                                        aggregate=group_by_aggregation) for x in qs]}
     
-
+#     def timeseries(self, *, trunc_kind=None, aggregate=None):
+#         '''Return timeseries pairs from the table.
+#  
+#         Returns 2-tuples of time-value pairs. If trunc_kind is given,
+#         the time is truncated to the given precision. If aggregate is
+#         given, the series values are aggregated according to the given
+#         aggregation method and grouped by the time.
+#         '''                                                               
 
 if __name__ == '__main__':
     

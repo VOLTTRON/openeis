@@ -6,7 +6,6 @@ from django.contrib import admin
 from django.http import HttpResponseRedirect, Http404
 
 from openeis.projects.urls import urlpatterns as projects_urls
-from openeis.ui.urls import urlpatterns as ui_urls
 
 
 def not_found(request, *args, **kwargs):
@@ -25,6 +24,7 @@ urlpatterns = patterns('',
 )
 
 if settings.DEBUG:
+    from openeis.ui.urls import urlpatterns as ui_urls
     urlpatterns += [
         url(r'', include(ui_urls)),
     ]
