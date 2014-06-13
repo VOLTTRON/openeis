@@ -82,5 +82,5 @@ class Application(DriverApplicationBaseClass):
         
         load_query = self.inp.get_query_sets('load', order_by='value',exclude={'value':None})
         
-        for x in load_query['load'][0]:
+        for x in load_query[0]:
             self.out.insert_row("Load Duration", {"sorted load": x[1]})

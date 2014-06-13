@@ -88,7 +88,7 @@ class Application(DriverApplicationBaseClass):
         
         date = []
         load_vals = []
-        for x in load_by_hour['load'][0]:
+        for x in load_by_hour[0]:
             date.append(x[0])
             load_vals.append(x[1])
             self.out.insert_row("Heat Map",\

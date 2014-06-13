@@ -155,7 +155,8 @@ class DatabaseInput:
     def get_query_sets(self, group_name, 
                        order_by='time',
                        filter_=None, 
-                       exclude=None, 
+                       exclude=None,
+                       wrap_for_merge=False, 
                        group_by=None, group_by_aggregation=None):
         """
         group - group of columns to retrieve.
@@ -163,16 +164,20 @@ class DatabaseInput:
         filter_ - dictionary of filter() arguments
         exclude - dictionary of exclude() arguments
         
+        wrap_for_merge - wraps the result in a dictionary ready to pass to self.merge().
+                         Defaults to False
+        
         group_by - period to group by 
                    valid arguments are "minute", "hour" "day" "month" "year" "all"
-                   All returns the aggregated value and not a query set.
+                   "all" returns the aggregated value and not a query set.
+                   wrap_for_merge has no effect on "all" output.
                    
         group_by_aggregation - Aggregation method to use. Defaults to Sum. 
                                See https://docs.djangoproject.com/en/1.6/ref/models/querysets/#aggregation-functions 
         
         
-        returns => {group:result list}
-        This preps output to be input to self.merge()
+        returns => {group:result list} if wrap_for_merge is True
+        otherwise returns => result list
         """
         qs = (x() for _,x in self.sensor_map[group_name])
         
@@ -190,10 +195,12 @@ class DatabaseInput:
                 pass
 #                 qs = (x.group_by(group_by, group_by_aggregation) for x in qs)
             else:
-                return {group_name: [x.aggregate(value=group_by_aggregation('value'))['value'] for x in qs]}
+                return [x.aggregate(value=group_by_aggregation('value'))['value'] for x in qs]
         
-        return {group_name: [x.order_by(order_by).timeseries(trunc_kind=group_by,
-                                        aggregate=group_by_aggregation) for x in qs]}
+        result = [x.order_by(order_by).timeseries(trunc_kind=group_by,
+                                        aggregate=group_by_aggregation) for x in qs]
+        
+        return {group_name:result} if wrap_for_merge else result
     
 #     def timeseries(self, *, trunc_kind=None, aggregate=None):
 #         '''Return timeseries pairs from the table.

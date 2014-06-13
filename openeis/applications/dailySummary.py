@@ -104,9 +104,9 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting daily summary", logging.INFO)
         
         floorAreaSqft = self.sq_ft
-        load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)['load'][0]
-        load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)['load'][0]
-        load_query = self.inp.get_query_sets('load')['load'][0]
+        load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)[0]
+        load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)[0]
+        load_query = self.inp.get_query_sets('load')[0]
 
         #TODO: Time Zone support
         load_startDay = load_query.earliest()[0].date()
@@ -144,9 +144,9 @@ class Application(DriverApplicationBaseClass):
         for h in range(24):        
             hourly_mean = self.inp.get_query_sets('load',group_by='all', 
                                                             group_by_aggregation=Avg,
-                                                            filter_={'time__hour':h})['load'][0]
+                                                            filter_={'time__hour':h})[0]
 
-            hour_load_query= self.inp.get_query_sets('load',filter_={'time__hour':h})['load'][0] 
+            hour_load_query= self.inp.get_query_sets('load',filter_={'time__hour':h})[0] 
             counts = hour_load_query.count()
             rootmeansq = math.sqrt(sum((x[1]-hourly_mean)**2 for x in hour_load_query)/(counts-1))
             

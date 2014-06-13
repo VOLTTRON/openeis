@@ -105,22 +105,22 @@ class Application(DriverApplicationBaseClass):
 #         natgas_month_by_day = self.inp.group_by('natgas',month_ago, data_end, "day")
         
         
-        load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)['load'][0]
-        load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)['load'][0]
+        load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)[0]
+        load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)[0]
         
 #         month_filter ={'time__gte':month_ago}
         
         load_by_hour = self.inp.get_query_sets('load',group_by='hour', 
-                                                    group_by_aggregation=Sum)['load'][0]
+                                                    group_by_aggregation=Sum)[0]
         by_hour = load_by_hour.filter(time__hour=1)
         
         
-        std_dev_load_by_hour  = load_by_hour.filter(time__hour=1).aggregate(value=Sum('value'))
+        #std_dev_load_by_hour  = load_by_hour.filter(time__hour=1).aggregate(value=Sum('values'))
         #load_by_hour.filter(time__hour=1).timeseries(aggregate=StdDev) 
                                 
          
     
-        print(std_dev_load_by_hour)
+#         print(std_dev_load_by_hour)
         print(load_min)
         print(load_max)
         

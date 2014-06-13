@@ -120,7 +120,7 @@ class Application(DriverApplicationBaseClass):
         """
         Take a group name, and output all the topics to their own tables... theoretically
         """
-        querysets = self.inp.get_query_sets(groupname)[groupname]
+        querysets = self.inp.get_query_sets(groupname)
         group_topics = self.inp.get_topics()[groupname]
         i = 0
         for iterator in querysets:

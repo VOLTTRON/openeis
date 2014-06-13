@@ -84,7 +84,7 @@ class Application(DriverApplicationBaseClass):
         load_by_hour = self.inp.get_query_sets('load', \
                                                exclude={'value': None})
         
-        for x in load_by_hour['load'][0]:
+        for x in load_by_hour[0]:
             self.out.insert_row("Line Graph", \
                                 {'hour': x[0], \
                                  'value': x[1]})

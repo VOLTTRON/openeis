@@ -97,9 +97,11 @@ class Application(DriverApplicationBaseClass):
         
         # gather loads and outside air temperatures. Reduced to and hourly average
         load_query = self.inp.get_query_sets('load', group_by='hour',group_by_aggregation=Avg,
-                                             exclude={'value':None})
+                                             exclude={'value':None},
+                                             wrap_for_merge=True)
         oat_query = self.inp.get_query_sets('oat', group_by='hour',group_by_aggregation=Avg,
-                                             exclude={'value':None})
+                                             exclude={'value':None},
+                                             wrap_for_merge=True)
         
         merged_load_oat = self.inp.merge(load_query,oat_query)
         
