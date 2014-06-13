@@ -12,7 +12,7 @@ setup(
         'python-dateutil',
         'django>=1.6,<1.7',
         'django-filter',
-        'django-guardian',
+        #'django-guardian',
         'djangorestframework>=2.3,<2.4',
         'django-rest-swagger>=0.1,<0.2',
         'django-nose',
