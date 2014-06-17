@@ -120,7 +120,7 @@ superusers with the createsuperuser command.
 
 
 Updating
-========
+=========
 
 As updates are made available in VCS, it may be necessary to perform certain
 tasks to update the local installation to use those changes. After pulling
@@ -131,7 +131,7 @@ any models (model.py) were added or modified.
 
 
 Cleaning
-========
+=========
 
 The virtual environment can be rebuilt by first removing the env directory and
 then rerunning bootstrap. A pristine copy of the source code can be had by
