@@ -43,6 +43,9 @@ class JSONField(models.TextField, metaclass=models.SubfieldBase):
             return json.dumps(value, separators=(',', ':'))
         except TypeError:
             raise ValidationError('Cannot serialize object to JSON')
+
+    def value_to_string(self, obj):
+        return super()._get_val_from_obj(obj)
  
 
 
