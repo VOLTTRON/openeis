@@ -481,28 +481,27 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
     try:
         last_file_id, next_pos = None, 0
         keyfunc = lambda obj: obj.__class__.__name__
-        with transaction.atomic():
-            it = iter_ingest(ingest)
-            while True:
-                batch = []
-                for objects, *args in it:
-                    batch.extend(objects)
-                    file_id, pos, *_ = args
-                    if file_id != last_file_id:
-                        _update_progress(ingest.id, *args)
-                        last_file_id, next_pos = file_id, report_interval
-                    elif pos >= next_pos:
-                        _update_progress(ingest.id, *args)
-                        next_pos = pos + report_interval
-                    if len(batch) >= batch_size:
-                        break
-                if not batch:
+        it = iter_ingest(ingest)
+        while True:
+            batch = []
+            for objects, *args in it:
+                batch.extend(objects)
+                file_id, pos, *_ = args
+                if file_id != last_file_id:
+                    _update_progress(ingest.id, *args)
+                    last_file_id, next_pos = file_id, report_interval
+                elif pos >= next_pos:
+                    _update_progress(ingest.id, *args)
+                    next_pos = pos + report_interval
+                if len(batch) >= batch_size:
                     break
-                batch.sort(key=keyfunc)
-                for class_name, group in itertools.groupby(batch, keyfunc):
-                    objects = list(group)
-                    cls = objects[0].__class__
-                    cls.objects.bulk_create(objects)
+            if not batch:
+                break
+            batch.sort(key=keyfunc)
+            for class_name, group in itertools.groupby(batch, keyfunc):
+                objects = list(group)
+                cls = objects[0].__class__
+                cls.objects.bulk_create(objects)
     except Exception:
         logging.exception('an unhandled exception occurred during sensor '
                           'ingestion ({})'.format(ingest.id))
