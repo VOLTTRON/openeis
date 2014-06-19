@@ -180,14 +180,6 @@ class TestRestApi(OpenEISTestBase):
         response = client.get("/api/projects")
         self.assertEqual(projects_before+1, len(response.data))
 
-#     def test_can_retrieve_status_change_with_large_ingest(self):
-#         client = self.get_authenticated_client()
-#         # Upload the file
-#         expected_id = 1
-#         with open(os.path.join(os.path.dirname(__file__), '../fixtures/test_4year.csv'), 'r+b') as upload_file:
-#             response = client.post('/api/projects/1/add_file', {'file':upload_file})
-#             self.assertEqual(expected_id, response.data['id'])
-
     def test_bad_delim_response(self):
         bad_delim = '''Date,Hillside OAT [F],Main Meter [kW],Boiler Gas [kBtu/hr]
 9/29/2009 15:00,74.72,280.08,186.52
