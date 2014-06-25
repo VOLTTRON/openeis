@@ -1,0 +1,33 @@
+<targetFinder>
+    <propertyInfo>
+        <name>Target Finder</name>
+        <address address1="1234 Street Name" city="City"
+                 postalCode="{:property-zipcode:}" state="CA" country="US"/>
+        <numberOfBuildings>1</numberOfBuildings>
+        <primaryFunction>{:property-function:}</primaryFunction>
+        <plannedConstructionCompletionYear>{:property-year-built:}</plannedConstructionCompletionYear>
+        <grossFloorArea units="Square Feet" temporary="false">
+            <value>{:property-floor-area:}</value>
+        </grossFloorArea>
+    </propertyInfo>
+    <propertyUses>
+        <{:property-type:}>
+        <name>{:property-name:}</name>
+        <useDetails>
+            <totalGrossFloorArea units="Square Feet">
+                <value>{:property-floor-area:}</value>
+            </totalGrossFloorArea>
+        </useDetails>
+        </{:property-type:}>
+    </propertyUses>
+    <estimatedEnergyList>
+        <entries>
+        {:design-entry-text:}
+        </entries>
+    </estimatedEnergyList>
+    <target>
+        <targetTypeScore>
+            <value>50</value>
+        </targetTypeScore>
+    </target>
+</targetFinder>
