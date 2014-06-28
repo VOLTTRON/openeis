@@ -17,15 +17,19 @@ class InputDescriptor:
                  sensor_type,
                  desc,
                  count=1,
-                 max_count=1,
+                 count_min=1,
+                 count_max=1,
                  _id=None):
-        #TODO: check and throw exception if self.sensor_data is none
+        # TODO: Throw exception on invalid values
         self.sensor_type = sensor_type
         self.desc = desc
         self.count = count
-        if(max_count is not None and count > max_count):
-            maximum = count
-        self.maximum = maximum
+        if(count_min is not None and count < count_min):
+            count_min = count
+        self.count_min = count_min
+        if(count_max is not None and count > count_max):
+            count_max = count
+        self.count_max = count_max
         
 class OutputDescriptor:
     
@@ -43,14 +47,14 @@ class ConfigDescriptor:
                  desc,
                  optional=False,
                  default=None,
-                 min_value=None,
-                 max_value=None):
-        
+                 value_min=None,
+                 value_max=None):
+        # TODO: Throw exception on invalid values
         self.config_type = config_type
         self.desc = desc
         self.default = default
-        self.min_value = min_value
-        self.max_value = max_value 
+        self.value_min = value_min
+        self.value_max = value_max
 
 class DriverApplicationBaseClass(metaclass=ABCMeta):
     
@@ -87,8 +91,8 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
                 
                 {
                     'OAT1':InputDescriptor('OutdoorAirTemperature','Hillside OAT'),
-                    'OAT2':InputDescriptor('OutdoorAirTemperature','Roof OATs',minimum=3)
-                    'CFP1':InputDescriptor('CondenserFanPower','CFP Desc',minimum=3,maximum=None)
+                    'OAT2':InputDescriptor('OutdoorAirTemperature','Roof OATs',count_min=3)
+                    'CFP1':InputDescriptor('CondenserFanPower','CFP Desc',count_min=3,count_max=None)
                 }
         """
     
