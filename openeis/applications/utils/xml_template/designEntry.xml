@@ -1,0 +1,5 @@
+    <designEntry>
+        <energyType>{:energy-type:}</energyType>
+        <energyUnit>{:energy-unit:}</energyUnit>
+        <estimatedAnnualEnergyUsage>{:energy-usage:}</estimatedAnnualEnergyUsage>
+    </designEntry>

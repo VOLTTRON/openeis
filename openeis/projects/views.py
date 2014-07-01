@@ -32,6 +32,7 @@ from .conf import settings as proj_settings
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 
+from openeis.applications import _applicationDict as apps
 
 _logger = logging.getLogger(__name__)
 
@@ -617,3 +618,29 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
             result = preview_ingestion(sensormap, files, count=count)
             return Response(result, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ApplicationViewSet(viewsets.ViewSet):
+    def list(self, request, *args, **kw):
+        '''Return list of applications with inputs and parameters.'''
+        appList = []
+        for appName in apps:
+            app = apps[appName]
+            parameters = {}
+            inputs = {}
+            for param, config in app.get_config_parameters().items():
+                parameters[param] = {'config_type': config.config_type.__name__,
+                                     'description': config.desc,
+                                     'default': config.default,
+                                     'value_min': config.value_min,
+                                     'value_max': config.value_max}
+            for input_, config in app.required_input().items():
+                inputs[input_] = {'sensor_type': config.sensor_type,
+                               'description': config.desc,
+                               'count': config.count,
+                               'count_min': config.count_min,
+                               'count_max': config.count_max}
+            appList.append({'name': appName,
+                            'parameters': parameters,
+                            'inputs': inputs})
+        return Response(appList)

@@ -20,7 +20,11 @@ class Application(DriverApplicationBaseClass):
 
         self.default_building_name_used = False
 
+<<<<<<< HEAD
         #match parameters 
+=======
+        #match parameters
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
         if building_sq_ft < 0:
             raise Exception("Invalid input for building_sq_ft")
         if building_name is None:
@@ -37,10 +41,15 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         #also matches parameters
         return {
+<<<<<<< HEAD
                     "building_sq_ft": ConfigDescriptor(float, "Square footage",\
                             minimum=200),
                     "building_name": ConfigDescriptor(str, "Building Name",\
                             optional=True)
+=======
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
                 }
 
 
@@ -56,7 +65,7 @@ class Application(DriverApplicationBaseClass):
     """
     Output is the year with its respective load and natural gas amounts
     aggregated over the year.
-    """        
+    """
     @classmethod
     def output_format(cls, input_object):
         #Called when app is staged
@@ -71,7 +80,7 @@ class Application(DriverApplicationBaseClass):
         #stuff needed to put inside output, will output by row, each new item
         #is a new file, title must match title in execute when writing to out
         output_needs =  {
-                         'LongitudinalBM': 
+                         'LongitudinalBM':
                             {'year':OutputDescriptor('int', year_topic),
                              'load':OutputDescriptor('float', load_topic),
                             'natgas':OutputDescriptor('float', gas_topic)}
@@ -85,8 +94,12 @@ class Application(DriverApplicationBaseClass):
         Display this viz with these columns from this table
 
 
+<<<<<<< HEAD
         display elements is a list of display objects specifying viz and columns
         for that viz
+=======
+        display elements is a list of display objects specifying viz and columns for that viz
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
         """
         display_elements = []
 

@@ -29,18 +29,26 @@ class Application(DriverApplicationBaseClass):
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
         return {
+<<<<<<< HEAD
                     "building_sq_ft": ConfigDescriptor(float, "Square footage",\
                             minimum=200),
                     "building_name": ConfigDescriptor(str, "Building Name",\
                             optional=True)
+=======
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
                 }
-        
-    
+
+
     @classmethod
     def required_input(cls):
         #Called by UI
@@ -51,7 +59,7 @@ class Application(DriverApplicationBaseClass):
 
     """
     Output is hour with respective load, to be put in a line graph later.
-    """        
+    """
     @classmethod
     def output_format(cls, input_object):
         #Called when app is staged
@@ -63,9 +71,13 @@ class Application(DriverApplicationBaseClass):
         load_topic = '/'.join(output_topic_base+['timeseries', 'load'])
 
         # Work with topics["OAT"][0] to get building topic
-        output_needs =  {'Line Graph': 
+        output_needs =  {'Line Graph':
                             {'hour':OutputDescriptor('datetime', time_topic),\
+<<<<<<< HEAD
                              'load':OutputDescriptor('float', load_topic)}  
+=======
+                             'value':OutputDescriptor('float', load_topic)}
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
                         }
         return output_needs
 
@@ -74,8 +86,12 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
+<<<<<<< HEAD
         display elements is a list of display objects specifying viz and columns\
                 for that viz 
+=======
+        display elements is a list of display objects specifying viz and columns for that viz
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
         """
         display_elements = []
 

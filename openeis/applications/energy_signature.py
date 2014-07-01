@@ -32,16 +32,29 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
         return {
+<<<<<<< HEAD
                     "building_sq_ft": ConfigDescriptor(float, "Square footage",\
                             minimum=200),
                     "building_name": ConfigDescriptor(str, "Building Name",\
                             optional=True)
                 }
 
+=======
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+
+                }
+
+
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
     @classmethod
     def required_input(cls):
         #Called by UI
@@ -65,6 +78,7 @@ class Application(DriverApplicationBaseClass):
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
+<<<<<<< HEAD
         output_topic_base = load_topic_parts[:-1] 
         value_topic = '/'.join(output_topic_base+['energysignature',\
                                                   'weather sensitivity'])
@@ -72,26 +86,45 @@ class Application(DriverApplicationBaseClass):
         load_topic = '/'.join(output_topic_base+['energysignature','load'])
 
         output_needs =  {'Weather Sensitivity': 
+=======
+        output_topic_base = load_topic_parts[:-1]
+        value_topic = '/'.join(output_topic_base+['energysignature','weather sensitivity'])
+        oat_topic = '/'.join(output_topic_base+['energysignature','oat'])
+        load_topic = '/'.join(output_topic_base+['energysignature','load'])
+
+        output_needs =  {'Weather Sensitivity':
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
                             {'value':OutputDescriptor('String', value_topic)},
                         'Scatterplot':
                             {'oat':OutputDescriptor('float', oat_topic),
-                             'load':OutputDescriptor('float', load_topic)}}  
+                             'load':OutputDescriptor('float', load_topic)}}
         return output_needs
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
     def report(self):
         #Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
 
+<<<<<<< HEAD
         display elements is a list of display objects specifying viz and 
         columns for that viz 
+=======
+
+        display elements is a list of display objects specifying viz and columns for that viz
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
         """
         display_elements = []
 
         return display_elements
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
     def execute(self):
         #Called after User hits GO
         """
@@ -100,6 +133,7 @@ class Application(DriverApplicationBaseClass):
         """
         self.out.log("Starting Spearman rank", logging.INFO)
 
+<<<<<<< HEAD
         # gather loads and outside air temperatures. Reduced to and hourly
         # average
         load_query = self.inp.get_query_sets('load', group_by='hour',\
@@ -110,6 +144,15 @@ class Application(DriverApplicationBaseClass):
                                             group_by_aggregation=Avg,
                                             exclude={'value':None},
                                             wrap_for_merge=True)
+=======
+        # gather loads and outside air temperatures. Reduced to and hourly average
+        load_query = self.inp.get_query_sets('load', group_by='hour',group_by_aggregation=Avg,
+                                             exclude={'value':None},
+                                             wrap_for_merge=True)
+        oat_query = self.inp.get_query_sets('oat', group_by='hour',group_by_aggregation=Avg,
+                                             exclude={'value':None},
+                                             wrap_for_merge=True)
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
 
         merged_load_oat = self.inp.merge(load_query,oat_query)
 
@@ -117,9 +160,10 @@ class Application(DriverApplicationBaseClass):
         oat_values = []
 
         # Output for scatter plot
-        for x in merged_load_oat: 
+        for x in merged_load_oat:
             load_values.append(x['load'][0])
             oat_values.append(x['oat'][0])
+<<<<<<< HEAD
             self.out.insert_row("Scatterplot", {"oat": x['oat'][0], \
                                 "load": x['load'][0]})
 
@@ -129,4 +173,13 @@ class Application(DriverApplicationBaseClass):
 
         self.out.insert_row("Weather Sensitivity", \
                            {"value": str(weather_sensitivity)})
+=======
+            self.out.insert_row("Scatterplot", {"oat": x['oat'][0], "load": x['load'][0]})
+
+        # find the Spearman rank
+        weather_sensitivity = findSpearmanRank(load_values, oat_values)
+        #TODO weather sensitivity as attribute for report generation
+
+        self.out.insert_row("Weather Sensitivity", {"value": str(weather_sensitivity)})
+>>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
 

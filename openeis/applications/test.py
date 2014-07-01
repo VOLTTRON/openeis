@@ -9,7 +9,7 @@ class Application(DriverApplicationBaseClass):
     """
 
 
-    
+
     def __init__(self,*args, building_sq_ft=-1, building_year_constructed=-1, building_name=None,**kwargs):
         #Called after app has been staged
         """
@@ -17,9 +17,9 @@ class Application(DriverApplicationBaseClass):
         use of any kwargs that were setup in config_param
         """
         super().__init__(*args,**kwargs)
-        
+
         self.default_building_name_used = False
-        
+
         if building_sq_ft < 0:
             raise Exception("Invalid input for building_sq_ft")
         if building_year_constructed < 0:
@@ -27,33 +27,33 @@ class Application(DriverApplicationBaseClass):
         if building_name is None:
             building_name = "None supplied"
             self.default_building_name_used = True
-        
+
         self.sq_ft = building_sq_ft
         self.building_year = building_year_constructed
         self.building_name = building_name
-        
-   
-    
+
+
+
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage", minimum=200),
-                    "building_year_constructed": ConfigDescriptor(int, "Consruction Year", minimum=1800, maximum=2014),
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+                    "building_year_constructed": ConfigDescriptor(int, "Consruction Year", value_min=1800, value_max=2014),
                     "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-                
+
                 }
-        
-    
+
+
     @classmethod
     def required_input(cls):
         #Called by UI
         return {
-                    'OAT':InputDescriptor('OutdoorAirTemperature','Outdoor Temp', count=1,max_count=None),
+                    'OAT':InputDescriptor('OutdoorAirTemperature','Outdoor Temp', count=1,count_max=None),
                     'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                     'natgas':InputDescriptor('NaturalGas','Natural Gas usage')
                 }
-        
+
     @classmethod
     def output_format(cls, input_object):
         #Called when app is staged
@@ -61,7 +61,7 @@ class Application(DriverApplicationBaseClass):
         # Work with topics["OAT"][0] to get building topic
 #         descriptor_column = 'site/building/analysis/description'
         output_needs = {}
-        
+
         #Table per topic, regardless of group
         for group in topic_map:
             for topic in topic_map[group]:
@@ -71,51 +71,51 @@ class Application(DriverApplicationBaseClass):
                 output_needs[table][topic] = OutputDescriptor('String', output_topic.format(input_topic=topic))
 
 #tables for groups
-        
+
 #         for group in topic_map:
 #             table = table_name.format(input_group= group)
 #             output_needs[table] = {}
 #             for topic in topic_map[group]:
 #                 outputle_needs[output_needs[table]][topic] = OutputDescriptor('String', output_topic.format(input_topic=topic))
-#         
+#
         return output_needs
-        
+
     def report(self):
         #Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
-        
-        
-        display elements is a list of display objects specifying viz and columns for that viz 
+
+
+        display elements is a list of display objects specifying viz and columns for that viz
         """
         display_elements = []
-        
+
         return display_elements
-        
+
     def execute(self):
         #Called after User hits GO
         print("Do stuff")
         self.out.log("Starting analysis", logging.INFO)
 #         #Go through some data
 #         data_start, data_end = self.inp.get_start_end_times()
-#         
+#
 #         #A year ago ignoring time info
 #         year_ago = (data_end - relativedelta(year=1)).replace(hour=0,minute=0,second=0)
-#         
+#
 #         #A month ago ignoring time info
 #         month_ago = (data_end - relativedelta(month=1)).replace(hour=0,minute=0,second=0)
-#         
+#
 #         #
 #         oat_qs = self.inp.get_query_sets('OAT')
 #         load_qs = self.inp.get_query_sets('OAT')
 #         gas_qs = self.inp.get_query_sets('OAT')
-        
+
         groupnames = self.inp.get_topics()
-        
+
         for groupname in groupnames:
             self.parrot_group(groupname)
-        
-        
+
+
     def parrot_group(self, groupname):
         """
         Take a group name, and output all the topics to their own tables... theoretically
@@ -128,7 +128,7 @@ class Application(DriverApplicationBaseClass):
                 time, reading = x
                 self.out.insert_row(table_name.format(input_group= group_topics[i].replace('/','_')), {output_topic.format(input_topic='Time'):time,
                                                                                        output_topic.format(input_topic=group_topics[i]):reading})
-            i +=1 
-        
-         
-        
+            i +=1
+
+
+
