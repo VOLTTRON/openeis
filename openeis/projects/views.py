@@ -621,6 +621,8 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
 
 
 class ApplicationViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+
     def list(self, request, *args, **kw):
         '''Return list of applications with inputs and parameters.'''
         appList = []
