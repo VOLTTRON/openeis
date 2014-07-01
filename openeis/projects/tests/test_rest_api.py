@@ -23,8 +23,8 @@ class TestRestApi(OpenEISTestBase):
         '''
         This function tests the timestamp parsing endpoint for correctness.  The test uses
         the temp upload file loaded from the base class.  The only timestamp column is
-        in the 0th column of the data.  
-        
+        in the 0th column of the data.
+
         The test will test the parsing ability of the -1 column, the 0th column and the 30th column.
         Of these we expect that the -1 and 30th column will return a 400 bad request as they are out of bounds
         or non-timestep columns In addition we test the default behaviour which is to assume the first column
@@ -216,26 +216,23 @@ class TestRestApi(OpenEISTestBase):
         response = self.upload_temp_file_data(1)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         file_id = response.data['id']
-        
+
         sensor_map = '''{"version":1,"sensors":{"pnnl/OutdoorAirTemperature":{"type":"OutdoorAirTemperature","column":"Hillside OAT [F]","file":"0","unit":"fahrenheit"},"pnnl":{"level":"site"}},"files":{"0":{"timestamp":{"columns":[0]},"signature":{"headers":["Date","Hillside OAT [F]","Main Meter [kW]","Boiler Gas [kBtu/hr]"]}}}}'''
         client = self.get_authenticated_client()
         response = client.get('/api/sensormaps')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
-        
+
         response = client.post('/api/sensormaps', {'project': 1, 'name': 'testmap1', 'map': sensor_map})
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         sensor_map_id = response.data['id']
         self.assertIsNotNone(sensor_map_id)
         self.assertTrue(sensor_map_id > 0)
-        
+
         file_json = '[{"file": 0}]'
-        
+
         response = client.post('/api/datasets', {'files': file_json, 'map': sensor_map_id})
-        
+
         print(response.data)
-        
-        
-        
 
     def test_can_authenticate(self):
         """
@@ -243,3 +240,22 @@ class TestRestApi(OpenEISTestBase):
         """
         client = APIClient()
         self.assertTrue(client.login(username='test_user', password='test'))
+
+    def test_application_list(self):
+        from openeis.applications import _applicationDict
+
+        client = APIClient()
+        response = client.get('/api/applications')
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+        client = self.get_authenticated_client()
+        response = client.get('/api/applications')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(len(response.data), len(_applicationDict))
+        for app in response.data:
+            self.assertTrue(app['name'] in _applicationDict)
+            dictApp = _applicationDict[app['name']]
+            self.assertEqual(len(app['parameters']),
+                             len(dictApp.get_config_parameters()))
+            self.assertEqual(len(app['inputs']),
+                             len(dictApp.required_input()))
