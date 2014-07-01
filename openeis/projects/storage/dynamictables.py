@@ -3,11 +3,14 @@
 # See this link for more information on dynamic tables:
 # https://code.djangoproject.com/wiki/DynamicModels
 
+import hashlib
 import itertools
 import sys
 
 from django.core.management.color import no_style
 from django.db import connections, models, transaction
+
+from ..models import AppOutput
 
 
 __all__ = ['table_exists', 'create_table', 'get_output_model']
@@ -78,23 +81,27 @@ _fields = {
 }
 
 
-def _create_model(model_name, db_prefix, fields, attrs=None):
+def _create_model(model_name, project_id, fields, attrs=None):
     '''Dynamically generate a table model with the given fields.'''
     if attrs is None:
         attrs = {}
     fields = fields.items() if hasattr(fields, 'items') else fields
-    field_groups = [(type_, name.lower()) for name, type_ in fields]
+    field_groups = [(type_, name) for name, type_ in fields]
     field_groups.sort()
-    signature = ''.join('{}{}'.format(type_[0], sum(1 for i in group))
+    signature = ''.join('{}{}'.format(sum(1 for i in group), type_[0])
                         for type_, group in itertools.groupby(
                                 field_groups, lambda x: x[0]))
-    table_name = '_'.join([db_prefix, signature])
+    table_name = '_'.join([model_name.lower(), str(project_id), signature])
     attrs.update({name: _fields[type_](db_column='field{}'.format(i))
              for i, (type_, name) in enumerate(field_groups)})
     attrs['Meta'] = type('Meta', (attrs.get('Meta', object),),
                          {'db_table': table_name})
     attrs.setdefault('__module__', __name__)
-    return type(model_name, (models.Model,), attrs)
+    hash = hashlib.md5()
+    for key in sorted(attrs.keys()):
+        hash.update(key.encode('utf-8'))
+        hash.update(str(attrs[key]).encode('utf-8'))
+    return type(model_name + '_' + hash.hexdigest(), (models.Model,), attrs)
 
 
 def get_output_model(project_id, fields):
@@ -116,9 +123,8 @@ def get_output_model(project_id, fields):
     may be null. In the future, timestamp fields may be indexed
     automatically, so please only use them for time-series data.
     '''
-    prefix = 'dynappout_' + str(project_id)
     attrs = {'source': models.ForeignKey(AppOutput, related_name='+')}
-    return _create_model('AppOutputData', prefix, fields, attrs)
+    return _create_model('AppOutputData', project_id, fields, attrs)
 
 
 #def main():

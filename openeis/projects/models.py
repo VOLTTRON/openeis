@@ -381,3 +381,7 @@ class IntegerSensorData(BaseSensorData):
 class StringSensorData(BaseSensorData):
     value = models.TextField(null=True)
     objects = SensorDataManager()
+
+
+class AppOutput(models.Model):
+    pass
