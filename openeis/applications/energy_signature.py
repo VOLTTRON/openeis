@@ -1,15 +1,19 @@
+"""
+Energy signature: plot power as a function of outside temperature.
+
+Shows the sensitivity of building electrical energy use to weather.
+
+Includes a weather sensitivity metric.
+"""
+
+
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 import logging
 from django.db.models import Avg
 from .utils.spearman import findSpearmanRank
 
-"""
-    Application to output the values for energy signature scatter plot
-    which is outside air temperature graphed against load.  Also calculates
-    weather sensitivity by analyzing loads against outside air temperature
-    by finding the Spearman rank.
-"""
+
 class Application(DriverApplicationBaseClass):
 
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):

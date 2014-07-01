@@ -1,3 +1,10 @@
+"""
+Cross-sectional benchmarking: retrieve an ENERGY STAR score from EPA's Target Finder.
+
+Shows the building performance relative to a comparable peer group.
+"""
+
+
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 import logging
@@ -5,12 +12,6 @@ from django.db.models import Sum
 from .utils.gen_xml_tgtfndr import gen_xml_targetFinder
 from .utils.retrieveEnergyStarScore_tgtfndr import retrieveScore
 
-"""
-    Cross-sectional benchmarking application will aggregate the required
-    data to retrieve an ENERGY STAR score from Target Finder. Required data
-    for Target Finder are building characteristics and annual energy data.
-    Application output are results from web querying the Target Finder API.
-"""
 
 class Application(DriverApplicationBaseClass):
 

@@ -1,3 +1,18 @@
+"""
+Daily summary: find daily metrics for electrical loads.
+
+Calculates the following metrics:
+    - Load Max Intensity
+    - Load Min Intensity
+    - Daily Load 95th Percentile
+    - Daily Load 5th Percentile
+    - Daily Load Ratio
+    - Daily Load Range
+    - Load Variability
+    - Peak Load Benchmark
+"""
+
+
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 import logging
@@ -6,17 +21,6 @@ import math
 from django.db.models import Max, Min, Avg
 from dateutil.relativedelta import relativedelta
 
-"""
-    Application calculates the following metrics and its respective outputs.
-        -Load Max Intensity
-        -Load Min Intensity
-        -Daily Load 95th Percentile
-        -Daily Load 5th Percentile
-        -Daily Load Ratio
-        -Daily Load Range
-        -Load Variability
-        -Peak Load Benchmark
-"""
 
 class Application(DriverApplicationBaseClass):
 

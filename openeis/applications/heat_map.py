@@ -1,9 +1,15 @@
+"""
+Heat map: show electricity use by time-of-day, across many days.
+
+Shows extent of daily, weekly, and seasonal load profiles.
+"""
+
+
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 import logging
-"""
-    HeatMap application outputs values to be graphed in a heat map.
-"""
+
+
 class Application(DriverApplicationBaseClass):
 
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):

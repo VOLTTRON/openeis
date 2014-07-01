@@ -1,3 +1,10 @@
+"""
+A sample application, to demonstrate abilities and coding approach.
+"""
+
+# TODO: Determine whether this file should be removed from the distribution.
+
+
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
 import datetime

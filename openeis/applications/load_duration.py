@@ -1,10 +1,13 @@
+"""
+Load duration: show the proportion of time that the building load is at or above a given level.
+"""
+
+
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 import logging
 
-"""
-    Application outputs sorted loads to be in a line graph.
-"""
+
 class Application(DriverApplicationBaseClass):
 
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):

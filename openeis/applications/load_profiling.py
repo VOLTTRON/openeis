@@ -1,11 +1,12 @@
+"""
+Load profile: show building loads over time.
+"""
+
+
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 import logging
 
-"""
-    Application outputs the loads according to their times, to be put in a line
-    graph later.
-"""
 
 class Application(DriverApplicationBaseClass):
 
