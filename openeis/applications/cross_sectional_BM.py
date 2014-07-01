@@ -33,12 +33,12 @@ class Application(DriverApplicationBaseClass):
         if building_sq_ft < 0:
             raise Exception("Invalid input for building_sq_ft")
         if building_year_constructed < 0:
-            raise Exception("Invalid input for building_sq_ft")
+            raise Exception("Invalid input for building_year_constructed")
         if building_name is None:
             building_name = "None supplied"
             self.default_building_name_used = True
         if len(building_zipcode) < 5:
-            building_zipcode = "None supplied"
+            raise Exception("Invalid input for building_zipcode")
 
         self.sq_ft = building_sq_ft
         self.building_year = building_year_constructed
