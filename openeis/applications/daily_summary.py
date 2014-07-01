@@ -44,15 +44,13 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
 
-
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
-                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-
-                }
+            "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True)            
+            }
 
 
     @classmethod
@@ -60,25 +58,29 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         # Sort out units.
         return {
-                    'load':InputDescriptor('WholeBuildingElectricity','Building Load')
-                }
+            'load':InputDescriptor('WholeBuildingElectricity','Building Load')
+            }
 
     @classmethod
     def output_format(cls, input_object):
+        # Called when app is staged
         """
         Output will be the metric followed by the value of respective metric.
         """
-        #Called when app is staged
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
         description_topic = '/'.join(output_topic_base+['dailySummary','description'])
         value_topic = '/'.join(output_topic_base+['dailySummary','value'])
-        output_needs =  {'Daily_Summary_Table':
-                            {'Metric':OutputDescriptor('String', description_topic),
-                             'value':OutputDescriptor('String', value_topic)}}
+        output_needs = {
+            'Daily_Summary_Table': {
+                'Metric':OutputDescriptor('String', description_topic),
+                'value':OutputDescriptor('String', value_topic)
+                }
+            }
         return output_needs
+
 
     def report(self):
         #Called by UI to create Viz
@@ -166,27 +168,35 @@ class Application(DriverApplicationBaseClass):
         load_variability = numpy.mean(hourly_variability)
 
 
-        self.out.insert_row("Daily_Summary_Table",
-                {"Metric": "Load Max Intensity",
-                "value": str(load_max/floorAreaSqft)})
-        self.out.insert_row("Daily_Summary_Table",
-                {"Metric": "Load Min Intensity",
-                "value": str(load_min/floorAreaSqft)})
-        self.out.insert_row("Daily_Summary_Table",
-                {"Metric": "Daily Load 95th Percentile",
-                "value": str(load_day_95_mean)})
-        self.out.insert_row("Daily_Summary_Table",
-                {"Metric": "Daily Load 5th Percentile",
-                "value": str(load_day_5_mean)})
-        self.out.insert_row("Daily_Summary_Table",
-                {"Metric": "Daily Load Ratio",
-                "value": str(load_day_ratio_mean)})
-        self.out.insert_row("Daily_Summary_Table",
-                {"Metric": "Daily Load Range",
-                "value": str(load_day_range_mean)})
-        self.out.insert_row("Daily_Summary_Table",
-                {"Metric": "Load Variability",
-                "value": str(load_variability)})
-        self.out.insert_row("Daily_Summary_Table",
-                {"Metric": "Peak Load Benchmark",
-                "value": str(peakLoadIntensity)})
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Load Max Intensity",
+            "value": str(load_max/floorAreaSqft)
+            })
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Load Min Intensity",
+            "value": str(load_min/floorAreaSqft)
+            })
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Daily Load 95th Percentile",
+            "value": str(load_day_95_mean)
+            })
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Daily Load 5th Percentile",
+            "value": str(load_day_5_mean)
+            })
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Daily Load Ratio",
+            "value": str(load_day_ratio_mean)
+            })
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Daily Load Range",
+            "value": str(load_day_range_mean)
+            })
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Load Variability",
+            "value": str(load_variability)
+            })
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Peak Load Benchmark",
+            "value": str(peakLoadIntensity)
+            })

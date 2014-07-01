@@ -52,29 +52,30 @@ class Application(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=5000),
-                    "building_year_constructed": ConfigDescriptor(int, "Construction Year", value_min=1800, value_max=2014),
-                    "building_name": ConfigDescriptor(str, "Building Name", optional=True),
-                    "building_function": ConfigDescriptor(str, "Building Function", optional=True),
-                    "building_zipcode": ConfigDescriptor(str, "Building Zipcode")
-                }
+            "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=5000),
+            "building_year_constructed": ConfigDescriptor(int, "Construction Year", value_min=1800, value_max=2014),
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True),
+            "building_function": ConfigDescriptor(str, "Building Function", optional=True),
+            "building_zipcode": ConfigDescriptor(str, "Building Zipcode")
+            }
 
 
     @classmethod
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
-                    'natgas':InputDescriptor('NaturalGas', 'Natural Gas usage')
-                }
+            'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
+            'natgas':InputDescriptor('NaturalGas', 'Natural Gas usage')
+            }
 
-    """
-    Output is the year with its respective load and natural gas amounts
-    aggregated over the year.
-    """
+
     @classmethod
     def output_format(cls, input_object):
-        #Called when app is staged
+        # Called when app is staged
+        """
+        Output is the year with its respective load and natural gas amounts
+        aggregated over the year.
+        """
         topics = input_object.get_topics()
 
         load_topic = topics['load'][0]
@@ -83,11 +84,14 @@ class Application(DriverApplicationBaseClass):
         metric_name_topic = '/'.join(output_topic_base+['crossection', 'metric_name'])
         value_topic = '/'.join(output_topic_base+['crossection', 'value'])
 
-        output_needs =  {'CrossSectionalBM':
-                            {'Metric Name':OutputDescriptor('String', metric_name_topic),
-                             'Value':OutputDescriptor('String', value_topic)} }
-
+        output_needs = {
+            'CrossSectionalBM': {
+                'Metric Name':OutputDescriptor('String', metric_name_topic),
+                'Value':OutputDescriptor('String', value_topic)
+                }
+            }
         return output_needs
+
 
     def report(self):
         #Called by UI to create Viz
@@ -152,12 +156,15 @@ class Application(DriverApplicationBaseClass):
             self.out.log(errmessage, logging.WARNING)
         else:
             self.out.log('Analysis successful', logging.INFO)
-            self.out.insert_row('CrossSectionalBM',
-                    {'Metric Name': 'Year',
-                    'Value': recent_record[0]})
-            self.out.insert_row('CrossSectionalBM',
-                    {'Metric Name': 'Target Finder Median Score',
-                    'Value': str(PMMetrics['medianScore'][0])})
-            self.out.insert_row('CrossSectionalBM',
-                    {'Metric Name': 'Target Finder Score',
-                    'Value': str(PMMetrics['designScore'][0])})
+            self.out.insert_row('CrossSectionalBM', {
+                'Metric Name': 'Year',
+                'Value': recent_record[0]
+                })
+            self.out.insert_row('CrossSectionalBM', {
+                'Metric Name': 'Target Finder Median Score',
+                'Value': str(PMMetrics['medianScore'][0])
+                })
+            self.out.insert_row('CrossSectionalBM', {
+                'Metric Name': 'Target Finder Score',
+                'Value': str(PMMetrics['designScore'][0])
+                })

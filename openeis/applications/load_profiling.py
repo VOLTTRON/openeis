@@ -30,29 +30,29 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
 
-
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
-                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-                }
+            "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+            }
 
 
     @classmethod
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
-                }
+            'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
+            }
 
-    """
-    Output is hour with respective load, to be put in a line graph later.
-    """
+
     @classmethod
     def output_format(cls, input_object):
-        #Called when app is staged
+        # Called when app is staged
+        """
+        Output is hour with respective load, to be put in a line graph later.
+        """
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
@@ -61,11 +61,14 @@ class Application(DriverApplicationBaseClass):
         load_topic = '/'.join(output_topic_base+['timeseries', 'load'])
 
         # Work with topics["OAT"][0] to get building topic
-        output_needs =  {'Line Graph':
-                            {'hour':OutputDescriptor('datetime', time_topic),\
-                             'load':OutputDescriptor('float', load_topic)}  
-                        }
+        output_needs = {
+            'Line Graph': {
+                'hour':OutputDescriptor('datetime', time_topic),\
+                'load':OutputDescriptor('float', load_topic)
+                }
+            }
         return output_needs
+
 
     def report(self):
         #Called by UI to create Viz
@@ -84,10 +87,10 @@ class Application(DriverApplicationBaseClass):
         "Outputs values for line graph."
         self.out.log("Starting analysis", logging.INFO)
 
-        load_by_hour = self.inp.get_query_sets('load', \
-                                               exclude={'value': None})
+        load_by_hour = self.inp.get_query_sets('load', exclude={'value': None})
 
         for x in load_by_hour[0]:
-            self.out.insert_row("Line Graph", \
-                                {'hour': x[0], \
-                                 'load': x[1]})
+            self.out.insert_row("Line Graph", {
+                'hour': x[0],
+                'load': x[1]
+                })

@@ -32,30 +32,30 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
 
-
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
-                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-                }
+            "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+            }
 
 
     @classmethod
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
-                }
+            'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
+            }
+
 
     @classmethod
     def output_format(cls, input_object):
+        # Called when app is staged
         """
         Output will have the date, hour, and respective load.
         To be graphed in a heat map later.
         """
-        #Called when app is staged
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
@@ -63,13 +63,15 @@ class Application(DriverApplicationBaseClass):
         date_topic = '/'.join(output_topic_base+['heatmap', 'date'])
         hour_topic = '/'.join(output_topic_base+['heatmap', 'time'])
         load_topic = '/'.join(output_topic_base+['heatmap', 'load'])
-        output_needs =  {'Heat Map':
-                            {'date': OutputDescriptor('datetime', date_topic),\
-                             'hour': OutputDescriptor('int', hour_topic), \
-                             'load': OutputDescriptor('float', load_topic)}
-                         }
-
+        output_needs = {
+            'Heat Map': {
+                'date': OutputDescriptor('datetime', date_topic),
+                'hour': OutputDescriptor('int', hour_topic),
+                'load': OutputDescriptor('float', load_topic)
+                }
+            }
         return output_needs
+
 
     def report(self):
         #Called by UI to create Viz
@@ -103,10 +105,8 @@ class Application(DriverApplicationBaseClass):
             # right above this loop.
             # date.append(x[0])
             # load_vals.append(x[1])
-            self.out.insert_row("Heat Map",\
-                                {'date': x[0].date(),
-                                 'hour': x[0].hour,
-                                 'load': x[1]})
-
-
-
+            self.out.insert_row("Heat Map", {
+                'date': x[0].date(),
+                'hour': x[0].hour,
+                'load': x[1]
+                })

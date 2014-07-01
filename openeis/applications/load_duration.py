@@ -30,13 +30,12 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
 
-
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-                }
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+            }
 
 
     @classmethod
@@ -44,16 +43,16 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         # Sort out units.
         return {
-                    'load':InputDescriptor('WholeBuildingElectricity','Building Load')
-                }
+            'load':InputDescriptor('WholeBuildingElectricity','Building Load')
+            }
 
 
     @classmethod
     def output_format(cls, input_object):
+        # Called when app is staged
         """
         Output is the sorted load to be graphed later.
         """
-        #Called when app is staged
         #TODO: find an easier way of formatting the topics
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
@@ -61,9 +60,13 @@ class Application(DriverApplicationBaseClass):
         output_topic_base = load_topic_parts[:-1]
         load_topic = '/'.join(output_topic_base+['loadduration','load'])
 
-        output_needs =  {'Load Duration':
-                            {'sorted load':OutputDescriptor('float', load_topic)}}
+        output_needs = {
+            'Load Duration': {
+                'sorted load':OutputDescriptor('float', load_topic)
+                }
+            }
         return output_needs
+
 
     def report(self):
         #Called by UI to create Viz
@@ -84,8 +87,7 @@ class Application(DriverApplicationBaseClass):
         """
         self.out.log("Starting load duration", logging.INFO)
 
-        load_query = self.inp.get_query_sets('load', order_by='value',
-                exclude={'value':None})
+        load_query = self.inp.get_query_sets('load', order_by='value', exclude={'value':None})
 
         for x in load_query[0]:
             self.out.insert_row("Load Duration", {"sorted load": x[1]})

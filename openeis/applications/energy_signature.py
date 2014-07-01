@@ -40,10 +40,9 @@ class Application(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
-                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-
-                }
+            "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+            }
 
 
     @classmethod
@@ -51,19 +50,19 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         # Sort out units.
         return {
-                    'oat':InputDescriptor('OutdoorAirTemperature','Outdoor Temp'),
-                    'load':InputDescriptor('WholeBuildingElectricity','Building Load')
-                }
+            'oat':InputDescriptor('OutdoorAirTemperature','Outdoor Temp'),
+            'load':InputDescriptor('WholeBuildingElectricity','Building Load')
+            }
 
     @classmethod
     def output_format(cls, input_object):
+        # Called when app is staged
         """
         Output:
             Energy Signature: outside air temperature and loads.
                 Data will be used to scatter plot.
             Weather Sensitivity: dependent on OAT and loads.
         """
-        #Called when app is staged
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
@@ -72,12 +71,17 @@ class Application(DriverApplicationBaseClass):
         oat_topic = '/'.join(output_topic_base+['energysignature','oat'])
         load_topic = '/'.join(output_topic_base+['energysignature','load'])
 
-        output_needs =  {'Weather Sensitivity':
-                            {'value':OutputDescriptor('String', value_topic)},
-                        'Scatterplot':
-                            {'oat':OutputDescriptor('float', oat_topic),
-                             'load':OutputDescriptor('float', load_topic)}}
+        output_needs = {
+            'Weather Sensitivity': {
+                'value':OutputDescriptor('String', value_topic)
+                },
+            'Scatterplot': {
+                'oat':OutputDescriptor('float', oat_topic),
+                'load':OutputDescriptor('float', load_topic)
+                }
+            }
         return output_needs
+
 
     def report(self):
         #Called by UI to create Viz
@@ -118,13 +122,15 @@ class Application(DriverApplicationBaseClass):
         for x in merged_load_oat:
             load_values.append(x['load'][0])
             oat_values.append(x['oat'][0])
-            self.out.insert_row("Scatterplot", {"oat": x['oat'][0],
-                                "load": x['load'][0]})
+            self.out.insert_row("Scatterplot", {
+                "oat": x['oat'][0],
+                "load": x['load'][0]
+                })
 
         # find the Spearman rank
         weather_sensitivity = findSpearmanRank(load_values, oat_values)
         #TODO weather sensitivity as attribute for report generation
 
-        self.out.insert_row("Weather Sensitivity",
-                           {"value": str(weather_sensitivity)})
-
+        self.out.insert_row("Weather Sensitivity", {
+            "value": str(weather_sensitivity)
+            })
