@@ -1,112 +1,132 @@
-'''
-Created on May 15, 2014
-'''
-from django.db import models
+'''Support creating dynamic tables for application input and output.'''
 
-def install(model):
-    from django.core.management import sql, color
-    from django.db import connection
+# See this link for more information on dynamic tables:
+# https://code.djangoproject.com/wiki/DynamicModels
 
-    # Standard syncdb expects models to be in reliable locations,
-    # so dynamic models need to bypass django.core.management.syncdb.
-    # On the plus side, this allows individual models to be installed
-    # without installing the entire project structure.
-    # On the other hand, this means that things like relationships and
-    # indexes will have to be handled manually.
-    # This installs only the basic table definition.
+import itertools
+import sys
 
-    # disable terminal colors in the sql statements
-    style = color.no_style()
+from django.core.management.color import no_style
+from django.db import connections, models, transaction
 
+
+__all__ = ['table_exists', 'create_table', 'get_output_model']
+
+
+def table_exists(model, db='default'):
+    '''Test if the table for the given model exists in the database.
+
+    Returns True if the table exists, False otherwise. A database other
+    than the default can be given with the db parameter.
+    '''
+    return model._meta.db_table in connections[db].introspection.table_names()
+
+
+def create_table(model, db='default'):
+    '''Create a table in the database for the given model.
+
+    This routine will raise ValueError if the table already exists.
+    Other database exceptions may also be raised.
+    '''
+    style = no_style()
+    connection = connections[db]
     cursor = connection.cursor()
-    known_models = set()
-    output, references = connection.creation.sql_create_model(model, style, known_models)
-    print(output)
-    
-    for expr in output:
-        cursor.execute(expr)
-    #statements, pending = sql.sql_model_create(model, style)
-#     for sql in statements:
-#          cursor.execute(sql)
 
-def create_model(name, fields=None, app_label='', module='', options=None, admin_opts=None):
-    """
-    Create specified model
-    """
-    class Meta:
-        # Using type('Meta', ...) gives a dictproxy error during model creation
-        pass
+    # Get a list of already installed *models* so that references work right.
+    tables = connection.introspection.table_names()
+    if model._meta.db_table in tables:
+        raise ValueError('table already exists for given model')
+    seen_models = connection.introspection.installed_models(tables)
+    created_models = set()
+    pending_references = {}
 
-    if app_label:
-        # app_label must be set using the Meta inner class
-        setattr(Meta, 'app_label', app_label)
+    # Create the tables for each model
+    with transaction.commit_on_success_unless_managed(using=db):
+        # Create the model's database table, if it doesn't already exist.
+        sql, references = connection.creation.sql_create_model(
+                model, style, seen_models)
+        seen_models.add(model)
+        created_models.add(model)
+        for refto, refs in references.items():
+            pending_references.setdefault(refto, []).extend(refs)
+            if refto in seen_models:
+                sql.extend(connection.creation.sql_for_pending_references(
+                        refto, style, pending_references))
+        sql.extend(connection.creation.sql_for_pending_references(
+                model, style, pending_references))
+        for statement in sql:
+            cursor.execute(statement)
+        tables.append(connection.introspection.table_name_converter(
+                model._meta.db_table))
 
-    # Update Meta with any options that were provided
-    if options is not None:
-        for key, value in options.iteritems():
-            setattr(Meta, key, value)
+    # Install SQL indices for all newly created models
+    index_sql = connection.creation.sql_indexes_for_model(model, style)
+    if index_sql:
+        with transaction.commit_on_success_unless_managed(using=db):
+            for sql in index_sql:
+                cursor.execute(sql)
 
-    # Set up a dictionary to simulate declarations within a class
-    attrs = {'__module__': module, 'Meta': Meta}
 
-    # Add in any fields that were provided
-    if fields:
-        attrs.update(fields)
+# Field type name to Django model type mapping.
+_fields = {
+    'boolean': lambda **kwargs: models.NullBooleanField(**kwargs),
+    'datetime': lambda **kwargs: models.DateTimeField(null=True, **kwargs),
+    'float': lambda **kwargs: models.FloatField(null=True, **kwargs),
+    'integer': lambda **kwargs: models.IntegerField(null=True, **kwargs),
+    'string': lambda **kwargs: models.TextField(null=True, **kwargs),
+    'timestamp': lambda **kwargs: models.DateTimeField(**kwargs),
+}
 
-    # Create the class, which automatically triggers ModelBase processing
-    model = type(name, (models.Model,), attrs)
 
-    # Create an Admin class if admin options were provided
-#     if admin_opts is not None:
-#         class Admin(admin.ModelAdmin):
-#             pass
-#         for key, value in admin_opts:
-#             setattr(Admin, key, value)
-#         admin.site.register(model, Admin)
+def _create_model(model_name, db_prefix, fields, attrs=None):
+    '''Dynamically generate a table model with the given fields.'''
+    if attrs is None:
+        attrs = {}
+    fields = fields.items() if hasattr(fields, 'items') else fields
+    field_groups = [(type_, name.lower()) for name, type_ in fields]
+    field_groups.sort()
+    signature = ''.join('{}{}'.format(type_[0], sum(1 for i in group))
+                        for type_, group in itertools.groupby(
+                                field_groups, lambda x: x[0]))
+    table_name = '_'.join([db_prefix, signature])
+    attrs.update({name: _fields[type_](db_column='field{}'.format(i))
+             for i, (type_, name) in enumerate(field_groups)})
+    attrs['Meta'] = type('Meta', (attrs.get('Meta', object),),
+                         {'db_table': table_name})
+    attrs.setdefault('__module__', __name__)
+    return type(model_name, (models.Model,), attrs)
 
-    install(model)
-    return model
 
-def create_table_models(basename):
-    return [create_model(basename,
-                         {
-                          'first_name': models.CharField(max_length=255),
-                          'last_name': models.CharField(max_length=255),
-                          })]
-    
-# class Table(models.Model):
-#     """
-#     A Table is akin to a csv file.
-#     """
-#     name = models.CharField(max_length=30)
-#     row_count = models.PositiveIntegerField(default=0)
-#  
-# class TableColumn(models.Model):
-#     table = models.ForeignKey(Table, related_name="columns")
-#     column = models.AutoField(primary_key=True)
-#     name = models.CharField(max_length=30)
-#     db_type = models.CharField(max_length=30)
-#     oeis_type = models.CharField(max_length=30)
-#     
-# class BaseTableData(models.Model):
-#     row = models.IntegerField()
-#     column = models.ForeignKey(TableColumn)
-#     table = models.ForeignKey(Table) 
-#     
-#     class Meta:
-#         abstract = True
-#  
-# class IntTableData(BaseTableData):
-#     value = models.IntegerField() 
-#      
-# class FloatTableData(BaseTableData):
-#     value = models.FloatField() 
-#      
-# class StringTableData(BaseTableData):
-#     value = models.TextField() 
-#      
-# class BooleanTableData(BaseTableData):
-#     value = models.BooleanField() 
-#      
-# class TimeTableData(BaseTableData):
-#     value=models.DateTimeField()     
+def get_output_model(project_id, fields):
+    '''Return a Django model with the given fields for application output.
+
+    The table is unique to a project and includes project_id in the
+    name, which takes the form 'dynappout_ID_SIG' where ID is replaced
+    by the base-10 representation of project_id and SIG represents the
+    count and type of the fields. The model references the AppOutput
+    model to support storing output from multiple applications or
+    application runs in the same table.
+
+    fields is expected to be a dictionary or iterable of 2-tuples (such
+    as is returned by dict.items()) containing (field_name, field_type)
+    pairs. Field names must be valid Python identifiers and field types
+    are strings indicating the data type and must be one of 'boolean',
+    'datetime', 'float', 'integer', 'string', or 'timestamp'. The only
+    difference between timestamp and datetime is that datetime values
+    may be null. In the future, timestamp fields may be indexed
+    automatically, so please only use them for time-series data.
+    '''
+    prefix = 'dynappout_' + str(project_id)
+    attrs = {'source': models.ForeignKey(AppOutput, related_name='+')}
+    return _create_model('AppOutputData', prefix, fields, attrs)
+
+
+#def main():
+#    from openeis.projects.models import SensorIngest
+#    model = create_model('DynamicTest', SensorIngest,
+#                         (('time', 'datetime'), ('value', 'float')))
+#    create_table(model, db='dynamic')
+
+
+#if __name__ == '__main__':
+#    main()
