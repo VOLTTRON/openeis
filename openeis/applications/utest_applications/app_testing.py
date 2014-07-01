@@ -209,9 +209,10 @@ def run_test(ini_file, expected_outputs, clean_up=False):
             application[0] = "energy_signature"
         for output in test_output:
             os.remove(output)
-            allFiles = [k for k in os.listdir() if (application[0] in k and '.log' in k)]
-            newestLog = max(allFiles, key=os.path.getctime)
-            os.remove(newestLog)
+        allFiles = [k for k in os.listdir() if (application[0] in k and '.log' in k)]
+        newestLog = max(allFiles, key=os.path.getctime)
+        os.remove(newestLog)
+
 
     tear_down_fixtures()
 

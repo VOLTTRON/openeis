@@ -2,7 +2,7 @@ from app_testing import run_test
 import sys
 
 # Test Daily Summary
-"""
+
 print("=== Starting Daily Summary Tests ===")
 
 # test same numbers
@@ -39,7 +39,7 @@ print("========== \nFloats test passed.\n========== \n")
 #TODO: tests for incorrect input
 # Throw exception from application
 # Try to catch the exception otherwise complains.
-"""
+
 
 # Energy Signature tests.
 
