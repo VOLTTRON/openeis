@@ -123,13 +123,13 @@ class Application(DriverApplicationBaseClass):
         bldgMetaData['function']    = self.building_function
         bldgMetaData['zipcode']     = self.building_zipcode
 
-        load_by_year = self.inp.get_query_sets('load', group_by='year', \
-                                               group_by_aggregation=Sum, \
-                                               exclude={'value':None},\
+        load_by_year = self.inp.get_query_sets('load', group_by='year',
+                                               group_by_aggregation=Sum,
+                                               exclude={'value':None},
                                                wrap_for_merge=True)
-        gas_by_year = self.inp.get_query_sets('natgas', group_by='year', \
-                                              group_by_aggregation=Sum, \
-                                              exclude={'value':None},\
+        gas_by_year = self.inp.get_query_sets('natgas', group_by='year',
+                                              group_by_aggregation=Sum,
+                                              exclude={'value':None},
                                               wrap_for_merge=True)
 
         merge_load_gas = self.inp.merge(load_by_year, gas_by_year)

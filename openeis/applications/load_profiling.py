@@ -63,7 +63,7 @@ class Application(DriverApplicationBaseClass):
         # Work with topics["OAT"][0] to get building topic
         output_needs = {
             'Line Graph': {
-                'hour':OutputDescriptor('datetime', time_topic),\
+                'hour':OutputDescriptor('datetime', time_topic),
                 'load':OutputDescriptor('float', load_topic)
                 }
             }
