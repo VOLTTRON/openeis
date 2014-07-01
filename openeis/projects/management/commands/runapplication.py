@@ -23,45 +23,47 @@ class Command(BaseCommand):
         # Put of importing modules that access the database to allow
         # Django to magically install the plumbing first.
         from openeis.projects.storage import sensorstore
-        
+
         verbosity = int(verbosity)
-        
+
         config = ConfigParser()
-        
+
         config.read(args[0])
-        
+
         application = config['global_settings']['application']
         klass = get_algorithm_class(application)
-        
+
         dataset_ids = None
         if config.has_option('global_settings', 'dataset_id'):
             dataset_id_string = config['global_settings']['dataset_id']
             dataset_ids = [int(x) for x in dataset_id_string.split(',')]
-        
+
         sensormap_id = int(config['global_settings']['sensormap_id'])
         topic_map = {}
-        
+
         inputs = config['inputs']
         for group, topics in inputs.items():
             topic_map[group] = topics.split()
-        
-        
+
+
         db_input = DatabaseInput(sensormap_id, topic_map, dataset_ids=dataset_ids)
-        
+
         output_format = klass.output_format(db_input)
         file_output = DatabaseOutputFile(application, output_format)
-        
+
         kwargs = {}
         if config.has_section('application_config'):
             for arg, str_val in config['application_config'].items():
                 kwargs[arg] = eval(str_val)
-        
-        print('Sensor map id:', sensormap_id)
-        if dataset_ids is not None:
-            print('Data set ids:', dataset_ids)
-        print('Topic map:', topic_map)
-        print('Output format:', output_format)
-        
+
+        if( verbosity > 1 ):
+            print('Running application:', application)
+            print('- Sensor map id:', sensormap_id)
+            if dataset_ids is not None:
+                print('- Data set ids:', dataset_ids)
+            print('- Topic map:', topic_map)
+            print('- Output format:', output_format)
+
         app = klass(db_input, file_output, **kwargs)
         app.execute()
-        
+
