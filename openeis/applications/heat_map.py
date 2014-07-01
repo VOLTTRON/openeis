@@ -12,7 +12,7 @@ import logging
 
 class Application(DriverApplicationBaseClass):
 
-    def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
+    def __init__(self, *args, building_name=None, **kwargs):
         #Called after app has been staged
         """
         When applications extend this base class, they need to make
@@ -22,13 +22,10 @@ class Application(DriverApplicationBaseClass):
 
         self.default_building_name_used = False
 
-        if building_sq_ft < 0:
-            raise Exception("Invalid input for building_sq_ft")
         if building_name is None:
             building_name = "None supplied"
             self.default_building_name_used = True
 
-        self.sq_ft = building_sq_ft
         self.building_name = building_name
 
 
@@ -36,7 +33,6 @@ class Application(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-            "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
 

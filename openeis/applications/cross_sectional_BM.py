@@ -15,7 +15,8 @@ from .utils.retrieveEnergyStarScore_tgtfndr import retrieveScore
 
 class Application(DriverApplicationBaseClass):
 
-    def __init__(self,*args, building_sq_ft=-1,
+    def __init__(self, *args,
+                    building_sq_ft=-1,
                     building_year_constructed=-1,
                     building_name=None,
                     building_function='Office',
@@ -30,8 +31,8 @@ class Application(DriverApplicationBaseClass):
 
         self.default_building_name_used = False
 
-        if building_sq_ft < 0:
-            raise Exception("Invalid input for building_sq_ft")
+        if building_sq_ft <= 0:
+            raise Exception("Building floor area must be positive")
         if building_year_constructed < 0:
             raise Exception("Invalid input for building_year_constructed")
         if building_name is None:

@@ -24,7 +24,7 @@ from dateutil.relativedelta import relativedelta
 
 class Application(DriverApplicationBaseClass):
 
-    def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
+    def __init__(self, *args, building_sq_ft=-1, building_name=None, **kwargs):
         #Called after app has been staged
         """
         When applications extend this base class, they need to make
@@ -34,8 +34,8 @@ class Application(DriverApplicationBaseClass):
 
         self.default_building_name_used = False
 
-        if building_sq_ft < 0:
-            raise Exception("Invalid input for building_sq_ft")
+        if building_sq_ft <= 0:
+            raise Exception("Building floor area must be positive")
         if building_name is None:
             building_name = "None supplied"
             self.default_building_name_used = True
@@ -124,7 +124,7 @@ class Application(DriverApplicationBaseClass):
 
         # find peak load benchmark
         peakLoad = load_max * 1000
-        peakLoadIntensity = peakLoad / self.sq_ft
+        peakLoadIntensity = peakLoad / floorAreaSqft
 
         # gather values in the 95th and 5th percentile every day
         while current_Day <= load_endDay:
