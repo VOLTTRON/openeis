@@ -9,7 +9,7 @@ import io
 import datetime as dto
 import numpy as np
 #
-sys.path.append('openeis\\applications\\utils')
+sys.path.append(os.path.dirname(__file__))
 #
 import copy_file as fw_copy
 import fill_template as fw_fill
