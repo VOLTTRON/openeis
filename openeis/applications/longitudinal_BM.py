@@ -20,11 +20,7 @@ class Application(DriverApplicationBaseClass):
 
         self.default_building_name_used = False
 
-<<<<<<< HEAD
-        #match parameters 
-=======
         #match parameters
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
         if building_sq_ft < 0:
             raise Exception("Invalid input for building_sq_ft")
         if building_name is None:
@@ -41,15 +37,8 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         #also matches parameters
         return {
-<<<<<<< HEAD
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage",\
-                            minimum=200),
-                    "building_name": ConfigDescriptor(str, "Building Name",\
-                            optional=True)
-=======
                     "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
                     "building_name": ConfigDescriptor(str, "Building Name", optional=True)
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
                 }
 
 
@@ -57,8 +46,7 @@ class Application(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy',\
-                            'Building Load'),
+                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                     'natgas':InputDescriptor('NaturalGas', 'Natural Gas usage')
                 }
 
@@ -93,13 +81,8 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-
-<<<<<<< HEAD
-        display elements is a list of display objects specifying viz and columns
+        display_elements is a list of display objects specifying viz and columns
         for that viz
-=======
-        display elements is a list of display objects specifying viz and columns for that viz
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
         """
         display_elements = []
 

@@ -1,5 +1,5 @@
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor,\
-        OutputDescriptor, ConfigDescriptor
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
+    OutputDescriptor, ConfigDescriptor
 import logging
 
 """
@@ -34,18 +34,16 @@ class Application(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage",\
-                            minimum=200),
-                    "building_name": ConfigDescriptor(str, "Building Name",\
-                            optional=True)
-               }
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+                }
+
 
     @classmethod
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy',\
-                        'Building Load'),
+                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                 }
 
     """
@@ -73,7 +71,8 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-        display elements is a list of display objects specifying viz and columns        for that viz
+        display_elements is a list of display objects specifying viz and columns
+        for that viz
         """
         display_elements = []
 

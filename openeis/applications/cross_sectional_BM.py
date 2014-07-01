@@ -1,5 +1,5 @@
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
-        OutputDescriptor, ConfigDescriptor
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
+    OutputDescriptor, ConfigDescriptor
 import logging
 from django.db.models import Sum
 from .utils.gen_xml_tgtfndr import gen_xml_targetFinder
@@ -51,17 +51,11 @@ class Application(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage",\
-                            value_min=5000),
-                    "building_year_constructed": ConfigDescriptor(int,\
-                            "Construction Year", value_min=1800,\
-                            value_max=2014),
-                    "building_name": ConfigDescriptor(str, "Building Name",\
-                            optional=True),
-                    "building_function": ConfigDescriptor(str,\
-                            "Building Function", optional=True),
-                    "building_zipcode": ConfigDescriptor(str, \
-                            "Building Zipcode")
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=5000),
+                    "building_year_constructed": ConfigDescriptor(int, "Construction Year", value_min=1800, value_max=2014),
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True),
+                    "building_function": ConfigDescriptor(str, "Building Function", optional=True),
+                    "building_zipcode": ConfigDescriptor(str, "Building Zipcode")
                 }
 
 
@@ -69,8 +63,7 @@ class Application(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy',\
-                            'Building Load'),
+                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                     'natgas':InputDescriptor('NaturalGas', 'Natural Gas usage')
                 }
 
@@ -86,13 +79,11 @@ class Application(DriverApplicationBaseClass):
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
-        metric_name_topic = '/'.join(output_topic_base+['crossection',\
-                                                        'metric_name'])
+        metric_name_topic = '/'.join(output_topic_base+['crossection', 'metric_name'])
         value_topic = '/'.join(output_topic_base+['crossection', 'value'])
 
         output_needs =  {'CrossSectionalBM':
-                            {'Metric Name':OutputDescriptor('String',\
-                                                            metric_name_topic),
+                            {'Metric Name':OutputDescriptor('String', metric_name_topic),
                              'Value':OutputDescriptor('String', value_topic)} }
 
         return output_needs
@@ -103,8 +94,8 @@ class Application(DriverApplicationBaseClass):
         Display this viz with these columns from this table
 
 
-        display elements is a list of display objects specifying viz and
-        columns for that viz
+        display_elements is a list of display objects specifying viz and columns
+        for that viz
         """
         display_elements = []
 
@@ -141,21 +132,17 @@ class Application(DriverApplicationBaseClass):
         # Convert the generator to a list that can be indexed.
         merge_data_list = []
         for item in merge_load_gas:
-            merge_data_list.append((item['time'], item['load'][0], \
-                    item['natgas'][0]))
+            merge_data_list.append((item['time'], item['load'][0], item['natgas'][0]))
 
         recent_record = merge_data_list[len(merge_data_list)-1]
 
         #TODO: Get units from sensor maps.
         #TODO: Convert values to units that are PM Manager values.
-        energyUseList = [['Electric','kWh (thousand Watt-hours)',\
-                        int(recent_record[1])],
-                         ['Natural Gas','kBtu (thousand Btu)',\
-                        int(recent_record[2])]]
+        energyUseList = [['Electric','kWh (thousand Watt-hours)',int(recent_record[1])],
+                         ['Natural Gas','kBtu (thousand Btu)',int(recent_record[2])]]
 
         # Generate XML-formatted data to pass data to the webservice.
-        targetFinder_xml = gen_xml_targetFinder(bldgMetaData,energyUseList,\
-                'z_targetFinder_xml')
+        targetFinder_xml = gen_xml_targetFinder(bldgMetaData,energyUseList,'z_targetFinder_xml')
         # Function that does a URL Request with ENERGY STAR web server.
         PMMetrics = retrieveScore(targetFinder_xml)
 
@@ -164,12 +151,12 @@ class Application(DriverApplicationBaseClass):
             self.out.log(errmessage, logging.WARNING)
         else:
             self.out.log('Analysis successful', logging.INFO)
-            self.out.insert_row('CrossSectionalBM', \
-                    {'Metric Name': 'Year',\
+            self.out.insert_row('CrossSectionalBM',
+                    {'Metric Name': 'Year',
                     'Value': recent_record[0]})
-            self.out.insert_row('CrossSectionalBM', \
-                    {'Metric Name': 'Target Finder Median Score',\
+            self.out.insert_row('CrossSectionalBM',
+                    {'Metric Name': 'Target Finder Median Score',
                     'Value': str(PMMetrics['medianScore'][0])})
-            self.out.insert_row('CrossSectionalBM', \
-                    {'Metric Name': 'Target Finder Score',\
+            self.out.insert_row('CrossSectionalBM',
+                    {'Metric Name': 'Target Finder Score',
                     'Value': str(PMMetrics['designScore'][0])})
