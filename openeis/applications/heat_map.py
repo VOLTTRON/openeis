@@ -31,15 +31,10 @@ class Application(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-<<<<<<< HEAD
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage", \
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage",\
                             minimum=200),
                     "building_name": ConfigDescriptor(str, "Building Name", \
                             optional=True)
-=======
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
-                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
                 }
 
 
@@ -47,7 +42,8 @@ class Application(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
+                    'load':InputDescriptor('WholeBuildingEnergy',\
+                            'Building Load'),
                 }
 
     @classmethod
@@ -77,13 +73,9 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-<<<<<<< HEAD
-        display elements is a list of display objects specifying viz and columns for that viz 
-=======
-
-        display elements is a list of display objects specifying viz and columns for that viz
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
-        """
+        display elements is a list of display objects specifying viz and
+        columns for that viz
+       """
         display_elements = []
 
         return display_elements
@@ -98,11 +90,9 @@ class Application(DriverApplicationBaseClass):
 
         load_by_hour = self.inp.get_query_sets('load', exclude={'value':None})
 
-<<<<<<< HEAD
-=======
         date = []
         load_vals = []
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
+
         for x in load_by_hour[0]:
             self.out.insert_row("Heat Map",\
                                 {'date': x[0].date(),

@@ -1,4 +1,5 @@
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor,\
+        OutputDescriptor, ConfigDescriptor
 import logging
 import numpy
 import math
@@ -45,7 +46,8 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         return {
                     "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
-                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+                    "building_name": ConfigDescriptor(str, "Building Name",\
+                            optional=True)
 
                 }
 
@@ -55,7 +57,8 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         # Sort out units.
         return {
-                    'load':InputDescriptor('WholeBuildingElectricity','Building Load')
+                    'load':InputDescriptor('WholeBuildingElectricity',\
+                            'Building Load')
                 }
 
     @classmethod
@@ -68,11 +71,14 @@ class Application(DriverApplicationBaseClass):
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
-        description_topic = '/'.join(output_topic_base+['dailySummary','description'])
+        description_topic = '/'.join(output_topic_base+['dailySummary',\
+                'description'])
         value_topic = '/'.join(output_topic_base+['dailySummary','value'])
         output_needs =  {'Daily_Summary_Table':
-                            {'Metric':OutputDescriptor('String', description_topic),
-                             'value':OutputDescriptor('String', value_topic)}}
+                            {'Metric':OutputDescriptor('String',\
+                                    description_topic),
+                             'value':OutputDescriptor('String',\
+                                     value_topic)}}
         return output_needs
 
     def report(self):
@@ -80,11 +86,8 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-<<<<<<< HEAD
-=======
-
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
-        display elements is a list of display objects specifying viz and columns for that viz
+        display elements is a list of display objects specifying viz and
+        columns for that viz
         """
         display_elements = []
 
@@ -107,8 +110,10 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting daily summary", logging.INFO)
 
         floorAreaSqft = self.sq_ft
-        load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)[0]
-        load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)[0]
+        load_max = self.inp.get_query_sets('load',group_by='all',\
+                group_by_aggregation=Max)[0]
+        load_min = self.inp.get_query_sets('load',group_by='all',\
+                group_by_aggregation=Min)[0]
         load_query = self.inp.get_query_sets('load', exclude={'value':None})[0]
 
         #TODO: Time Zone support
@@ -126,12 +131,7 @@ class Application(DriverApplicationBaseClass):
         while current_Day <= load_endDay:
             load_day_query = load_query.filter(time__year=current_Day.year,
                                             time__month=current_Day.month,
-<<<<<<< HEAD
-                                            time__day=current_Day.day) 
-
-=======
                                             time__day=current_Day.day)
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
             current_Day += relativedelta(days=1)
 
             load_day_values = [x[1] for x in load_day_query]
@@ -140,70 +140,57 @@ class Application(DriverApplicationBaseClass):
 
             load_day_list_95.append(numpy.percentile(load_day_values,95))
             load_day_list_5.append(numpy.percentile(load_day_values,5))
-<<<<<<< HEAD
-            #print("===\n", numpy.percentile(load_day_values,95),',', numpy.percentile(load_day_values,5), load_day_values,"\n===\n")
-
-=======
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
 
         # average them
         load_day_95_mean = numpy.mean(load_day_list_95)
         load_day_5_mean = numpy.mean(load_day_list_5)
-        load_day_ratio_mean = numpy.mean(numpy.divide(load_day_list_5, load_day_list_95))
-        load_day_range_mean = numpy.mean(numpy.subtract(load_day_list_95,load_day_list_5))
+        load_day_ratio_mean = numpy.mean(numpy.divide(load_day_list_5,\
+                load_day_list_95))
+        load_day_range_mean = numpy.mean(numpy.subtract(load_day_list_95,\
+                load_day_list_5))
 
         # find the load variability
         hourly_variability = []
-<<<<<<< HEAD
+
         #TODO: Generate error if there are not 24 hours worth of data for every
         # day and less than two days of data.
         #TODO: error reporting mechanism
         for h in range(24):
-            hourly_mean = self.inp.get_query_sets('load',group_by='all', 
-                                                            group_by_aggregation=Avg,
-                                                            filter_={'time__hour':h})[0]
-            hour_load_query= self.inp.get_query_sets('load',filter_={'time__hour':h},exclude={'value':None})[0]
+            hourly_mean = self.inp.get_query_sets('load',group_by='all',\
+                                                 group_by_aggregation=Avg,\
+                                                 filter_={'time__hour':h})[0]
+            hour_load_query= self.inp.get_query_sets('load',\
+                                                    filter_={'time__hour':h},\
+                                                    exclude={'value':None})[0]
             counts = hour_load_query.count()
-            rootmeansq = math.sqrt(sum((x[1]-hourly_mean)**2 for x in hour_load_query)/(counts-1))
-=======
-        for h in range(24):
-            hourly_mean = self.inp.get_query_sets('load',group_by='all',
-                                                            group_by_aggregation=Avg,
-                                                            filter_={'time__hour':h})[0]
-
-            hour_load_query= self.inp.get_query_sets('load',filter_={'time__hour':h},exclude={'value':None})[0]
-            counts = hour_load_query.count()
-            rootmeansq = math.sqrt(sum((x[1]-hourly_mean)**2 for x in hour_load_query)/(counts-1))
-
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
+            rootmeansq = math.sqrt(sum((x[1]-hourly_mean)**2 \
+                    for x in hour_load_query)/(counts-1))
             hourly_variability.append(rootmeansq/hourly_mean)
 
         load_variability = numpy.mean(hourly_variability)
 
 
-<<<<<<< HEAD
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Load Max Intensity", 
-                                                    "value": str(load_max/floorAreaSqft)})
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Load Min Intensity", 
-=======
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Load Max Intensity",
-                                                    "value": str(load_max/floorAreaSqft)})
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Load Min Intensity",
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
-                                                    "value": str(load_min/floorAreaSqft)})
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Daily Load 95th Percentile",
-                                                    "value": str(load_day_95_mean)})
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Daily Load 5th Percentile",
-                                                    "value": str(load_day_5_mean)})
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Daily Load Ratio",
-                                                    "value": str(load_day_ratio_mean)})
-<<<<<<< HEAD
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Daily Load Range", 
-=======
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Daily Load Range",
->>>>>>> d027b3b0198e999e7dd92a9f53e9d22ce55fa020
-                                                    "value": str(load_day_range_mean)})
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Load Variability",
-                                                    "value": str(load_variability)})
-        self.out.insert_row("Daily_Summary_Table", {"Metric": "Peak Load Benchmark",
-                                                     "value": str(peakLoadIntensity)})
+        self.out.insert_row("Daily_Summary_Table",\
+                {"Metric": "Load Max Intensity",\
+                "value": str(load_max/floorAreaSqft)})
+        self.out.insert_row("Daily_Summary_Table",\
+                {"Metric": "Load Min Intensity",
+                "value": str(load_min/floorAreaSqft)})
+        self.out.insert_row("Daily_Summary_Table",\
+                {"Metric": "Daily Load 95th Percentile",\
+                "value": str(load_day_95_mean)})
+        self.out.insert_row("Daily_Summary_Table",\
+                {"Metric": "Daily Load 5th Percentile",
+                "value": str(load_day_5_mean)})
+        self.out.insert_row("Daily_Summary_Table",\
+                {"Metric": "Daily Load Ratio",
+                "value": str(load_day_ratio_mean)})
+        self.out.insert_row("Daily_Summary_Table",\
+                {"Metric": "Daily Load Range",
+                "value": str(load_day_range_mean)})
+        self.out.insert_row("Daily_Summary_Table",\
+                {"Metric": "Load Variability",
+                "value": str(load_variability)})
+        self.out.insert_row("Daily_Summary_Table",\
+                {"Metric": "Peak Load Benchmark",
+                "value": str(peakLoadIntensity)})

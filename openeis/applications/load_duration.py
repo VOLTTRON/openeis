@@ -1,4 +1,5 @@
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor,\
+        OutputDescriptor, ConfigDescriptor
 import logging
 
 """
@@ -60,7 +61,8 @@ class Application(DriverApplicationBaseClass):
         load_topic = '/'.join(output_topic_base+['loadduration','load'])
 
         output_needs =  {'Load Duration':
-                            {'sorted load':OutputDescriptor('float', load_topic)}}
+                            {'sorted load':OutputDescriptor('float',\
+                                    load_topic)}}
         return output_needs
 
     def report(self):
