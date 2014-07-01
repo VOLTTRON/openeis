@@ -39,11 +39,10 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         #also matches parameters
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage",\
-                            minimum=200),
-                    "building_name": ConfigDescriptor(str, "Building Name",\
-                            optional=True)
-               }
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+                }
+
 
     @classmethod
     def required_input(cls):
@@ -84,8 +83,8 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-        display elements is a list of display objects specifying viz and columns
-       for that viz
+        display_elements is a list of display objects specifying viz and columns
+        for that viz
         """
         display_elements = []
 
