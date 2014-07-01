@@ -1,12 +1,14 @@
+"""
+Longitudinal benchmarking: aggregate electric load and gas usage on a yearly basis.
+
+Shows trends in building performance over time.
+"""
+
+
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
 import logging
 from django.db.models import Sum
 
-"""
-    Longitudinal benchmarking application will aggregate data over the year
-    and will output amounts according to the year.  This data is to be put
-    into a bar graph so user can easily see trends happening over the years.
-"""
 
 class Application(DriverApplicationBaseClass):
 
@@ -43,13 +45,11 @@ class Application(DriverApplicationBaseClass):
                             optional=True)
                }
 
-
     @classmethod
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy',\
-                            'Building Load'),
+                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                     'natgas':InputDescriptor('NaturalGas', 'Natural Gas usage')
                 }
 
@@ -84,9 +84,8 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-
         display elements is a list of display objects specifying viz and columns
-        for that viz
+       for that viz
         """
         display_elements = []
 

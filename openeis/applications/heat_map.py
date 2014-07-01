@@ -1,9 +1,15 @@
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
-        OutputDescriptor, ConfigDescriptor
+"""
+Heat map: show electricity use by time-of-day, across many days.
+
+Shows extent of daily, weekly, and seasonal load profiles.
+"""
+
+
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
+    OutputDescriptor, ConfigDescriptor
 import logging
-"""
-    HeatMap application outputs values to be graphed in a heat map.
-"""
+
+
 class Application(DriverApplicationBaseClass):
 
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
@@ -31,10 +37,8 @@ class Application(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_sq_ft": ConfigDescriptor(float, "Square footage",\
-                            minimum=200),
-                    "building_name": ConfigDescriptor(str, "Building Name", \
-                            optional=True)
+                    "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
                 }
 
 
@@ -42,8 +46,7 @@ class Application(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-                    'load':InputDescriptor('WholeBuildingEnergy',\
-                            'Building Load'),
+                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
                 }
 
     @classmethod
@@ -73,9 +76,9 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-        display elements is a list of display objects specifying viz and
-        columns for that viz
-       """
+        display_elements is a list of display objects specifying viz and columns
+        for that viz
+        """
         display_elements = []
 
         return display_elements
@@ -94,6 +97,12 @@ class Application(DriverApplicationBaseClass):
         load_vals = []
 
         for x in load_by_hour[0]:
+            # TODO: The following two lines were removed, but in a commit (7dd5f36) that
+            # was not, apparently, about removing them.  Verify that these should
+            # be removed.  If so, then also remove the list creation steps that happen
+            # right above this loop.
+            # date.append(x[0])
+            # load_vals.append(x[1])
             self.out.insert_row("Heat Map",\
                                 {'date': x[0].date(),
                                  'hour': x[0].hour,

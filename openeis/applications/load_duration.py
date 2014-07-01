@@ -1,10 +1,13 @@
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor,\
-        OutputDescriptor, ConfigDescriptor
+"""
+Load duration: show the proportion of time that the building load is at or above a given level.
+"""
+
+
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
+    OutputDescriptor, ConfigDescriptor
 import logging
 
-"""
-    Application outputs sorted loads to be in a line graph.
-"""
+
 class Application(DriverApplicationBaseClass):
 
     def __init__(self,*args,building_sq_ft=-1, building_name=None,**kwargs):
@@ -32,8 +35,7 @@ class Application(DriverApplicationBaseClass):
     def get_config_parameters(cls):
         #Called by UI
         return {
-                    "building_name": ConfigDescriptor(str, "Building Name",
-                        optional=True)
+                    "building_name": ConfigDescriptor(str, "Building Name", optional=True)
                 }
 
 
@@ -42,27 +44,25 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         # Sort out units.
         return {
-                    'load':InputDescriptor('WholeBuildingElectricity',
-                        'Building Load')
+                    'load':InputDescriptor('WholeBuildingElectricity','Building Load')
                 }
 
- 
+
     @classmethod
     def output_format(cls, input_object):
         """
         Output is the sorted load to be graphed later.
-        """   
+        """
         #Called when app is staged
         #TODO: find an easier way of formatting the topics
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
-        output_topic_base = load_topic_parts[:-1] 
+        output_topic_base = load_topic_parts[:-1]
         load_topic = '/'.join(output_topic_base+['loadduration','load'])
 
         output_needs =  {'Load Duration':
-                            {'sorted load':OutputDescriptor('float',\
-                                    load_topic)}}
+                            {'sorted load':OutputDescriptor('float', load_topic)}}
         return output_needs
 
     def report(self):
@@ -70,7 +70,7 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-        display elements is a list of display objects specifying viz and columns
+        display_elements is a list of display objects specifying viz and columns
         for that viz
         """
         display_elements = []
