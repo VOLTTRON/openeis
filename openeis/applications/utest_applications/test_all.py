@@ -1,4 +1,4 @@
-from AppTestingUtils import run_test
+from app_testing import run_test
 import sys
 
 # Test Daily Summary
