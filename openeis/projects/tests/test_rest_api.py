@@ -240,3 +240,22 @@ class TestRestApi(OpenEISTestBase):
         """
         client = APIClient()
         self.assertTrue(client.login(username='test_user', password='test'))
+
+    def test_application_list(self):
+        from openeis.applications import _applicationDict
+
+        client = APIClient()
+        response = client.get('/api/applications')
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+        client = self.get_authenticated_client()
+        response = client.get('/api/applications')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(len(response.data), len(_applicationDict))
+        for app in response.data:
+            self.assertTrue(app['name'] in _applicationDict)
+            dictApp = _applicationDict[app['name']]
+            self.assertEqual(len(app['parameters']),
+                             len(dictApp.get_config_parameters()))
+            self.assertEqual(len(app['inputs']),
+                             len(dictApp.required_input()))
