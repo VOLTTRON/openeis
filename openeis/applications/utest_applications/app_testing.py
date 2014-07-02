@@ -16,8 +16,19 @@ def set_up_fixtures(fixtures):
     # Flush current database
     call(['openeis', 'flush', '--verbosity=0', '--noinput'])
 
+    # Get path to fixtures
+    all_fixtures = []
+    for f in fixtures:
+        all_fixtures.append(f.split("/"))
+    fixture_paths = []
+    for p in all_fixtures:
+        path = ""
+        for part in p:
+            path = os.path.join(path, part)
+        fixture_paths.append(path)
+
     install = ['openeis', 'loaddata']
-    install.extend(fixtures)
+    install.extend(fixture_paths)
     # install fixtures
     call(install)
 
