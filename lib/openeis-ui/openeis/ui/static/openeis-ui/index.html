@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" ng-app="openeis-ui">
+<html lang="en" ng-app="openeis-ui" ng-controller="AppCtrl">
 
 <head>
     <base href="/">
@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="css/app.css">
 </head>
 
-<body>
+<body ng-class="{ 'body--modal-open': modalOpen() }">
     <ng-include src="'partials/topbar.html'" ng-controller="TopBarCtrl"></ng-include>
     <div ng-view></div>
     <script type="text/javascript" src="settings.js"></script>
