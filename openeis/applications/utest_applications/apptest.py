@@ -173,25 +173,29 @@ class AppTestBase(TestCase):
         except ValueError:
             return False
 
-    def nearly_same(self, xxs, yys, key):
-        """
-        Compare two numbers or arrays, checking all elements are nearly equal.
-        """
+    # Taken directly from phase one reference code.
+    def nearly_same(self, xxs, yys, key, absTol=1e-12, relTol=1e-6):
+        """Compare two numbers or arrays, checking all elements are nearly equal."""
+        #
         # Coerce scalar to array if necessary.
         if( not hasattr(xxs, '__iter__') ):
             xxs = [xxs]
         if( not hasattr(yys, '__iter__') ):
             yys = [yys]
-
-        assert len(xxs) == len(yys),\
-                "The two compared arrays must be of equal length."
-
+        lenXX = len(xxs)
+        nearlySame = (len(yys) == lenXX)
         idx = 0
-        while(idx < len(xxs)):
-            self.assertAlmostEqual(xxs[idx], yys[idx], msg=(str(xxs[idx]) +\
-                    " is not equal to " + str(yys[idx]) + ". This is under " +\
-                    key))
+        while( nearlySame and idx<lenXX ):
+            xx = xxs[idx]
+            absDiff = math.fabs(yys[idx]-xx)
+            if (absDiff>absTol and absDiff>relTol*math.fabs(xx)):
+                self.assertFalse((absDiff>absTol and absDiff>relTol*math.fabs(xx)),
+                    (key + ' is not nearly same: ' + str(xx) + ' ' + str(yys[idx])\
+                    + ' idx: ' + str(idx) + ' absDiff: ' + str(absDiff), ' relDiff: '\
+                    + str(absDiff/math.fabs(xx))))
+                nearlySame = False
             idx += 1
+        return( nearlySame)
 
     def run_it(self, ini_file, expected_outputs, clean_up=False):
         """
