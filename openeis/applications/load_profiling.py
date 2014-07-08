@@ -58,7 +58,7 @@ class Application(DriverApplicationBaseClass):
 
         # Work with topics["OAT"][0] to get building topic
         output_needs = {
-            'Line Graph': {
+            'Load_Profiling': {
                 'hour':OutputDescriptor('datetime', time_topic),
                 'load':OutputDescriptor('float', load_topic)
                 }
@@ -86,7 +86,7 @@ class Application(DriverApplicationBaseClass):
         load_by_hour = self.inp.get_query_sets('load', exclude={'value': None})
 
         for x in load_by_hour[0]:
-            self.out.insert_row("Line Graph", {
+            self.out.insert_row("Load_Profiling", {
                 'hour': x[0],
                 'load': x[1]
                 })

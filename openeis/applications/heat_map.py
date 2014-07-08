@@ -60,7 +60,7 @@ class Application(DriverApplicationBaseClass):
         hour_topic = '/'.join(output_topic_base+['heatmap', 'time'])
         load_topic = '/'.join(output_topic_base+['heatmap', 'load'])
         output_needs = {
-            'Heat Map': {
+            'Heat_Map': {
                 'date': OutputDescriptor('datetime', date_topic),
                 'hour': OutputDescriptor('int', hour_topic),
                 'load': OutputDescriptor('float', load_topic)
@@ -101,7 +101,7 @@ class Application(DriverApplicationBaseClass):
             # right above this loop.
             # date.append(x[0])
             # load_vals.append(x[1])
-            self.out.insert_row("Heat Map", {
+            self.out.insert_row("Heat_Map", {
                 'date': x[0].date(),
                 'hour': x[0].hour,
                 'load': x[1]

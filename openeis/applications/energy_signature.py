@@ -68,7 +68,7 @@ class Application(DriverApplicationBaseClass):
         load_topic = '/'.join(output_topic_base+['energysignature','load'])
 
         output_needs = {
-            'Weather Sensitivity': {
+            'Weather_Sensitivity': {
                 'value':OutputDescriptor('String', value_topic)
                 },
             'Scatterplot': {
@@ -127,6 +127,6 @@ class Application(DriverApplicationBaseClass):
         weather_sensitivity = findSpearmanRank(load_values, oat_values)
         #TODO weather sensitivity as attribute for report generation
 
-        self.out.insert_row("Weather Sensitivity", {
+        self.out.insert_row("Weather_Sensitivity", {
             "value": str(weather_sensitivity)
             })

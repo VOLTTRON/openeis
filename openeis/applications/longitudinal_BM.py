@@ -65,7 +65,7 @@ class Application(DriverApplicationBaseClass):
         #stuff needed to put inside output, will output by row, each new item
         #is a new file, title must match title in execute when writing to out
         output_needs = {
-            'LongitudinalBM': {
+            'Longitudinal_BM': {
                 'year':OutputDescriptor('int', year_topic),
                 'load':OutputDescriptor('float', load_topic),
                 'natgas':OutputDescriptor('float', gas_topic)
@@ -108,7 +108,7 @@ class Application(DriverApplicationBaseClass):
         merge_load_gas = self.inp.merge(load_by_year, gas_by_year)
 
         for x in merge_load_gas:
-            self.out.insert_row("LongitudinalBM", {
+            self.out.insert_row("Longitudinal_BM", {
                 'year': x['time'],
                 'load': x['load'][0],
                 'natgas': x['natgas'][0]

@@ -71,7 +71,8 @@ class Application(DriverApplicationBaseClass):
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
-        description_topic = '/'.join(output_topic_base+['dailySummary','description'])
+        description_topic = '/'.join(output_topic_base+['dailySummary',
+                                                        'description'])
         value_topic = '/'.join(output_topic_base+['dailySummary','value'])
         output_needs = {
             'Daily_Summary_Table': {
@@ -87,8 +88,8 @@ class Application(DriverApplicationBaseClass):
         """Describe how to present output to user
         Display this viz with these columns from this table
 
-        display_elements is a list of display objects specifying viz and columns
-        for that viz
+        display_elements is a list of display objects specifying viz and
+        columns for that viz
         """
         display_elements = []
 
@@ -111,8 +112,10 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting daily summary", logging.INFO)
 
         floorAreaSqft = self.sq_ft
-        load_max = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Max)[0]
-        load_min = self.inp.get_query_sets('load',group_by='all',group_by_aggregation=Min)[0]
+        load_max = self.inp.get_query_sets('load',group_by='all',
+                                           group_by_aggregation=Max)[0]
+        load_min = self.inp.get_query_sets('load',group_by='all',
+                                           group_by_aggregation=Min)[0]
         load_query = self.inp.get_query_sets('load', exclude={'value':None})[0]
 
         #TODO: Time Zone support
@@ -143,12 +146,14 @@ class Application(DriverApplicationBaseClass):
         # average them
         load_day_95_mean = numpy.mean(load_day_list_95)
         load_day_5_mean = numpy.mean(load_day_list_5)
-        load_day_ratio_mean = numpy.mean(numpy.divide(load_day_list_5, load_day_list_95))
-        load_day_range_mean = numpy.mean(numpy.subtract(load_day_list_95,load_day_list_5))
+        load_day_ratio_mean = numpy.mean(numpy.divide(load_day_list_5,
+                                                      load_day_list_95))
+        load_day_range_mean = numpy.mean(numpy.subtract(load_day_list_95,
+                                                        load_day_list_5))
 
         # find the load variability
-        # TODO: Generate error if there are not 24 hours worth of data for every
-        # day and less than two days of data.
+        # TODO: Generate error if there are not 24 hours worth of data for 
+        # every day and less than two days of data.
         hourly_variability = []
 
         for h in range(24):
@@ -159,6 +164,8 @@ class Application(DriverApplicationBaseClass):
                                                      filter_={'time__hour':h},
                                                      exclude={'value':None})[0]
             counts = hour_load_query.count()
+            if (counts < 2):
+                raise Exception("Must have more than 1 day of data!")
             rootmeansq = math.sqrt(
                 sum((x[1]-hourly_mean)**2 for x in hour_load_query)
                 / (counts-1)
