@@ -58,7 +58,7 @@ class Application(DriverApplicationBaseClass):
         load_topic = '/'.join(output_topic_base+['loadduration','load'])
 
         output_needs = {
-            'Load Duration': {
+            'Load_Duration': {
                 'sorted load':OutputDescriptor('float', load_topic)
                 }
             }
@@ -87,4 +87,4 @@ class Application(DriverApplicationBaseClass):
         load_query = self.inp.get_query_sets('load', order_by='value', exclude={'value':None})
 
         for x in load_query[0]:
-            self.out.insert_row("Load Duration", {"sorted load": x[1]})
+            self.out.insert_row("Load_Duration", {"sorted load": x[1]})
