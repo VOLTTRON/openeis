@@ -41,7 +41,7 @@ class Application(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-            'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
+            'load':InputDescriptor('WholeBuildingElectricity','Building Load'),
             }
 
 
