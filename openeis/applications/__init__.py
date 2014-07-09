@@ -16,19 +16,13 @@ class InputDescriptor:
     def __init__(self,
                  sensor_type,
                  display_name,
-                 count=1,
                  count_min=1,
                  count_max=1,
                  _id=None):
         # TODO: Throw exception on invalid values
         self.sensor_type = sensor_type
         self.display_name = display_name
-        self.count = count
-        if(count_min is not None and count < count_min):
-            count_min = count
         self.count_min = count_min
-        if(count_max is not None and count > count_max):
-            count_max = count
         self.count_max = count_max
 
 class OutputDescriptor:

@@ -642,7 +642,6 @@ class ApplicationViewSet(viewsets.ViewSet):
                 inputs.append({'name': input_,
                                'sensor_type': config.sensor_type,
                                'display_name': config.display_name,
-                               'count': config.count,
                                'count_min': config.count_min,
                                'count_max': config.count_max})
             appList.append({'name': appName,
