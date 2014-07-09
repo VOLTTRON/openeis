@@ -46,13 +46,14 @@ class ConfigDescriptor:
                  config_type,
                  desc,
                  optional=False,
-                 default=None,
+                 value_default=None,
                  value_min=None,
                  value_max=None):
         # TODO: Throw exception on invalid values
         self.config_type = config_type
         self.desc = desc
-        self.default = default
+        self.optional = optional
+        self.value_default = value_default
         self.value_min = value_min
         self.value_max = value_max
 

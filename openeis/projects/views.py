@@ -634,7 +634,8 @@ class ApplicationViewSet(viewsets.ViewSet):
                 parameters.append({'name': param,
                                    'config_type': config.config_type.__name__,
                                    'description': config.desc,
-                                   'default': config.default,
+                                   'optional': config.optional,
+                                   'value_default': config.value_default,
                                    'value_min': config.value_min,
                                    'value_max': config.value_max})
             for input_, config in app.required_input().items():
