@@ -31,6 +31,7 @@ def create_table(model, db='default'):
     This routine will raise ValueError if the table already exists.
     Other database exceptions may also be raised.
     '''
+    model = model._meta.concrete_model
     style = no_style()
     connection = connections[db]
     cursor = connection.cursor()
@@ -85,19 +86,22 @@ def _create_model(model_name, project_id, fields, attrs=None):
     '''Dynamically generate a table model with the given fields.'''
     if attrs is None:
         attrs = {}
-    fields = fields.items() if hasattr(fields, 'items') else fields
+    if hasattr(fields, 'items'):
+        fields = fields.items()
     field_groups = [(type_, name) for name, type_ in fields]
     field_groups.sort()
+    # Group fields by type and count each type
     signature = ''.join('{}{}'.format(sum(1 for i in group), type_[0])
                         for type_, group in itertools.groupby(
                                 field_groups, lambda x: x[0]))
     table_name = '_'.join([model_name.lower(), str(project_id), signature])
     attrs.update({name: _fields[type_](db_column='field{}'.format(i))
-             for i, (type_, name) in enumerate(field_groups)})
+                  for i, (type_, name) in enumerate(field_groups)})
     attrs['Meta'] = type('Meta', (attrs.get('Meta', object),),
                          {'db_table': table_name})
     attrs.setdefault('__module__', __name__)
     hash = hashlib.md5()
+    hash.update(table_name.encode('utf-8'))
     for key in sorted(attrs.keys()):
         hash.update(key.encode('utf-8'))
         hash.update(str(attrs[key]).encode('utf-8'))
