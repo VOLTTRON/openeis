@@ -633,7 +633,7 @@ class ApplicationViewSet(viewsets.ViewSet):
             for param, config in app.get_config_parameters().items():
                 parameters.append({'name': param,
                                    'config_type': config.config_type.__name__,
-                                   'description': config.desc,
+                                   'display_name': config.display_name,
                                    'optional': config.optional,
                                    'value_default': config.value_default,
                                    'value_min': config.value_min,
@@ -641,7 +641,7 @@ class ApplicationViewSet(viewsets.ViewSet):
             for input_, config in app.required_input().items():
                 inputs.append({'name': input_,
                                'sensor_type': config.sensor_type,
-                               'description': config.desc,
+                               'display_name': config.display_name,
                                'count': config.count,
                                'count_min': config.count_min,
                                'count_max': config.count_max})
