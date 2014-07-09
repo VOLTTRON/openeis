@@ -17,21 +17,27 @@ from openeis.projects.storage.db_input import DatabaseInput
 class AppTestBase(TestCase):
     # Taken directly from runapplication command.
     def run_application(self, config_file):
+        """
+        Runs the application with a given configuration file.
+        Parameters: configuration file (config_file)
+        """
         config = ConfigParser()
-
+        # Read the file
         config.read(config_file)
-
+        # Grab application name
         application = config['global_settings']['application']
+        # Get which application we need
         klass = get_algorithm_class(application)
-
+        # Check which data set we're using
         dataset_ids = None
         if config.has_option('global_settings', 'dataset_id'):
             dataset_id_string = config['global_settings']['dataset_id']
             dataset_ids = [int(x) for x in dataset_id_string.split(',')]
 
+        # Check which sensor map we are using.
         sensormap_id = int(config['global_settings']['sensormap_id'])
         topic_map = {}
-
+        # Grab the inputs to be used with the application.
         inputs = config['inputs']
         for group, topics in inputs.items():
             topic_map[group] = topics.split()
@@ -49,6 +55,7 @@ class AppTestBase(TestCase):
                 kwargs[arg] = eval(str_val)
 
         app = klass(db_input, file_output, **kwargs)
+        # Execute the application
         app.execute()
 
     def call_runapplication(self, tables, config_file):
@@ -57,7 +64,7 @@ class AppTestBase(TestCase):
         application.  It can tolerate more than one output file for an
         application run.
 
-        Parameters: application names as a list, configuration file
+        Parameters: application names as a list, configuration file (tables, config_file)
         Returns: The file made from the application.
         Throws: Assertion error if no new file was created.
         """
@@ -93,6 +100,8 @@ class AppTestBase(TestCase):
         """
         Returns outputs from test outputs and expected outputs.  To be compared
         in the test.
+        Parameters: test_output file name, expected_output file name
+        Output: the test and output files as a list
         """
         # Open the files
         test_file = open(test_output, 'r')
@@ -116,7 +125,10 @@ class AppTestBase(TestCase):
         """
         Checks for differences between the new csv file and the expected csv
         file. If the values are strings, it's checked for exactness.  Numerical
-        values are checked using the nearly_same function below.
+        values are checked using the nearly_same function defined below.
+        Parameters: test and expected files as lists (test_list, expected_list)
+        Throws: Assertion error if the numbers are not nearly same, or the file doesn't
+            match
         """
         test_dict = {}
         expected_dict = {}
@@ -165,7 +177,9 @@ class AppTestBase(TestCase):
 
     def is_num(self, s):
         """
-        Check to see if it's a number.
+        Check to see if s a number.
+        Parameters: a number (s).
+        Returns: True or False indicating if given s is a number.
         """
         try:
             float(s)
@@ -175,7 +189,13 @@ class AppTestBase(TestCase):
 
     # Taken directly from phase one reference code.
     def nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
-        """Compare two numbers or arrays, checking all elements are nearly equal."""
+        """
+        Compare two numbers or arrays, checking all elements are nearly equal.
+        Parameters: two lists of numbers to compare (xxs, yys), the key to the column
+            we're comparing, absolute tolerance (absTol), and relative tolerance (relTol)
+        Returns: True or false depending if the two lists are nearly the same or not
+        Throws: Assertion error if they're not nearly the same.
+        """
         #
         # Coerce scalar to array if necessary.
         if( not hasattr(xxs, '__iter__') ):
@@ -204,6 +224,9 @@ class AppTestBase(TestCase):
 
         Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`, in
         order to make explict how ``NAN`` values get handled.
+
+        Parameters: a list of numbers, xxs
+        Returns: the list's mean
         """
         #
         # Find sum and count of non-``NAN`` entries.
@@ -233,6 +256,8 @@ class AppTestBase(TestCase):
 
         Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`, in
         order to make explict how ``NAN`` values get handled.
+        Parameters: two lists (xxs, yys), whether we expect zero means or not 
+            (expectZeroMeans)
         """
 
         cts = len(xxs)
@@ -273,9 +298,11 @@ class AppTestBase(TestCase):
 
     def run_it(self, ini_file, expected_outputs, clean_up=False):
         """
-        Testing script.
-        Parameters: -First argument should be the ini file
-                    -Second argument should be the expected output
+        Runs the application and checks the output with the expected output.  Will clean up
+        output files if clean_up is set to true.
+        Parameters: configuration file (ini_file), a dictionary of expected outputs
+            (expected_outputs), if it should clean newly made files or not (clean_up)
+        Throws: Assertion error if the files do not match.
         """
         config = ConfigParser()
         # read the init file
