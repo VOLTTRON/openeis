@@ -173,25 +173,103 @@ class AppTestBase(TestCase):
         except ValueError:
             return False
 
-    def nearly_same(self, xxs, yys, key):
-        """
-        Compare two numbers or arrays, checking all elements are nearly equal.
-        """
+    # Taken directly from phase one reference code.
+    def nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
+        """Compare two numbers or arrays, checking all elements are nearly equal."""
+        #
         # Coerce scalar to array if necessary.
         if( not hasattr(xxs, '__iter__') ):
             xxs = [xxs]
         if( not hasattr(yys, '__iter__') ):
             yys = [yys]
-
-        assert len(xxs) == len(yys),\
-                "The two compared arrays must be of equal length."
-
+        lenXX = len(xxs)
+        nearlySame = (len(yys) == lenXX)
         idx = 0
-        while(idx < len(xxs)):
-            self.assertAlmostEqual(xxs[idx], yys[idx], msg=(str(xxs[idx]) +\
-                    " is not equal to " + str(yys[idx]) + ". This is under " +\
-                    key))
+        while( nearlySame and idx<lenXX ):
+            xx = xxs[idx]
+            absDiff = math.fabs(yys[idx]-xx)
+            if (absDiff>absTol and absDiff>relTol*math.fabs(xx)):
+                self.assertFalse((absDiff>absTol and absDiff>relTol*math.fabs(xx)),
+                    (key + ' is not nearly same: ' + str(xx) + ' ' + str(yys[idx])\
+                    + ' idx: ' + str(idx) + ' absDiff: ' + str(absDiff), ' relDiff: '\
+                    + str(absDiff/math.fabs(xx))))
+                nearlySame = False
             idx += 1
+        return( nearlySame)
+
+    # Taken from reference code
+    def _findMean(self, xxs):
+        """
+        Find the mean of non-``NAN`` entries in a vector *xxs*.
+
+        Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`, in
+        order to make explict how ``NAN`` values get handled.
+        """
+        #
+        # Find sum and count of non-``NAN`` entries.
+        cts = len(xxs)
+        xxSum = 0.0
+        xxCt  = 0
+        for idx in range(cts):
+            xx = xxs[idx]
+            if( not math.isnan(xx) ):
+                xxSum += xx
+                xxCt  += 1
+        #
+        # Find mean.
+        if( xxSum == 0 ):
+            # Here, all-``NAN`` gave ``xxCt == 0``.
+            xxMean = 0
+        else:
+            xxMean = xxSum / xxCt
+        #
+        return( xxMean )
+        #
+
+    # Taken directly from reference code.
+    def _findCorrelationCoeff(self, xxs, yys, expectZeroMeans):
+        """
+        Find the correlation coefficient between two vectors *xxs* and *yys*.
+
+        Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`, in
+        order to make explict how ``NAN`` values get handled.
+        """
+
+        cts = len(xxs)
+        assert( len(yys) == cts )
+
+        xxMean = self._findMean(xxs)
+        yyMean = self._findMean(yys)
+        if( expectZeroMeans ):
+            assert( math.fabs(xxMean) < 1e-20 )
+            xxMean = 0
+            assert( math.fabs(yyMean) < 1e-20 )
+            yyMean = 0
+
+        xyAccum = 0.0
+        xxAccum = 0.0
+        yyAccum = 0.0
+        for idx in range(cts):
+            xMinusMean = xxs[idx]
+            if( math.isnan(xMinusMean) ):
+                continue
+            xMinusMean -= xxMean
+
+            yMinusMean = yys[idx]
+            if( math.isnan(yMinusMean) ):
+                continue
+            yMinusMean -= yyMean
+
+            xyAccum += xMinusMean * yMinusMean
+            xxAccum += xMinusMean * xMinusMean
+            yyAccum += yMinusMean * yMinusMean
+
+        denom = xxAccum * yyAccum
+        if( denom == 0 ):
+            corrCoeff = 0
+        else:
+            corrCoeff = xyAccum / math.sqrt(denom)
+        return( corrCoeff )
 
     def run_it(self, ini_file, expected_outputs, clean_up=False):
         """

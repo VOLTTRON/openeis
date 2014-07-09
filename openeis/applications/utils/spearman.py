@@ -38,8 +38,8 @@ def findSpearmanRank(xValues, yValues):
         yValues = np.array(yValues, dtype=np.float)
     #
     # Rank the values.
-    xRanks = __rankForSpearman(xValues)
-    yRanks = __rankForSpearman(yValues)
+    xRanks = _rankForSpearman(xValues)
+    yRanks = _rankForSpearman(yValues)
     #
     # Subtract out mean rank, so each resulting vector has mean of zero.
     xRanks = xRanks - xRanks.mean()
@@ -55,7 +55,7 @@ def findSpearmanRank(xValues, yValues):
     # End :func:`findSpearmanRank`.
 
 
-def __rankForSpearman(values):
+def _rankForSpearman(values):
     """
     Find the ranks of a vector *values*, as defined for Spearman rank correlation coefficient.
 
