@@ -1,3 +1,5 @@
+'''Report meta data objects for applications to describe output for user presentation.'''
+
 class Report:
     
     def __init__(self, description):
@@ -10,13 +12,13 @@ class Report:
         self.elements.append(element)
     
     def __str__(self):
-        str = 'Report: '
-        str += self.description + '\n'
-        str += 'Report Elements: \n'
+        results = 'Report: '
+        results += self.description + '\n'
+        results += 'Report Elements: \n'
         for element in self.elements:
-             str += element.__str__()
-             str += '\n'
-        return str
+            results += str(element)
+            results += '\n'
+        return results
 
 class ReportElement:
     
@@ -53,7 +55,6 @@ class XYDataSet():
         self.y_column = y_column
         
     def __repr__(self):
-        members = dir(self)
         result = self.__class__.__name__ + '('
         result += self.table_name + ','
         result += self.x_column + ','
