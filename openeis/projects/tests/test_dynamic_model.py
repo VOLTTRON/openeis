@@ -7,20 +7,16 @@ from django.test.utils import setup_test_environment
 
 from openeis.projects import models
 from openeis.projects.storage import dynamictables as dyn
+from openeis.projects.storage import sensorstore
+
+
+now = lambda: datetime.now().replace(tzinfo=timezone.utc)
 
 
 class TestDynamicModelCreation(TestCase):
     def setUp(self):
         setup_test_environment()
 
-    def _setup_model_depends(self):
-        user = models.User(username='dynamo')
-        user.save()
-        self.project = models.Project(name='Dynamic Model Test', owner=user)
-        self.project.save()
-        self.output = models.AppOutput()
-        self.output.save()
-        
     def test_table_naming(self):
         '''Test that table and fields are properly named and ordered.
 
@@ -28,7 +24,7 @@ class TestDynamicModelCreation(TestCase):
         Changing the order of the fields or their names should have no
         effect on the table signature. However, changing the number of
         fields or their types will change the model.
-        
+
         This test also checks creating fields using lists, dictionaries,
         and iterators.
         '''
@@ -85,29 +81,52 @@ class TestDynamicModelCreation(TestCase):
         # models.
         fields.remove(('xtest5', 'integer'))
         expect[-2:] = [('xtest1', 'field8', 'TextField')]
-        model3 = check_names(fields, 212, 'appoutputdata_212_4d3f1i1s')
+        model3 = check_names(fields, table_name='appoutputdata_131_4d3f1i1s')
         self.assertFalse(model3 is model1)
         self.assertFalse(model3 is model2)
         test_create(model3)
 
+        # Changing only the project_id should result in a new model
+        model4 = check_names(fields, 241, 'appoutputdata_241_4d3f1i1s')
+        self.assertFalse(model4 is model3)
+        test_create(model4)
+
     def test_create_insert(self):
         '''Test table creation and insertion'''
-        self._setup_model_depends()
+        user = models.User.objects.create(username='dynamo')
+        project = models.Project.objects.create(
+                name='Dynamic Model Test', owner=user)
+        output = models.AppOutput.objects.create()
         fields = {'time': 'timestamp', 'value': 'float',
                   'flags': 'integer', 'note': 'string'}
-        model = dyn.get_output_model(self.project.id, fields)
+        model = dyn.get_output_model(project.pk, fields)
         self.assertFalse(dyn.table_exists(model))
         dyn.create_table(model)
         self.assertTrue(dyn.table_exists(model))
-        now = lambda: datetime.now().replace(tzinfo=timezone.utc)
-        item = model(source=self.output, time=now(),
+        item = model(source=output, time=now(),
                      value=12.34, note='Testing')
         item.save()
         self.assertEqual(model.objects.count(), 1)
-        item = model(source=self.output, time=now(),
+        item = model(source=output, time=now(),
                      value=2.345, note='Testing again')
         item.save()
         self.assertEqual(model.objects.count(), 2)
         item = model.objects.get(pk=item.id)
         self.assertEqual(item.value, 2.345)
         self.assertEqual(item.note, 'Testing again')
+
+    def test_create_output(self):
+        fields = {'time': 'timestamp', 'value': 'float',
+                  'flags': 'integer', 'note': 'string'}
+        output, model = sensorstore.create_output(5, fields)
+        self.assertTrue(dyn.table_exists(model))
+        items = [model.objects.create(time=now(), value=i,
+                 note='Testing {}'.format(i)) for i in range(5)]
+        items.sort(key=lambda x: x.pk)
+        objs = list(model.objects.all())
+        objs.sort(key=lambda x: x.pk)
+        self.assertEqual(objs, items)
+        model = sensorstore.get_output(output, 5, fields)
+        objs = list(model.objects.all())
+        objs.sort(key=lambda x: x.pk)
+        self.assertEqual(objs, items)

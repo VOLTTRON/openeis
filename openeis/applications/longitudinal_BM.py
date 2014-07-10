@@ -43,8 +43,8 @@ class Application(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-            'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
-            'natgas':InputDescriptor('NaturalGas', 'Natural Gas usage')
+            'load':InputDescriptor('WholeBuildingElectricity','Building Load'),
+            'natgas':InputDescriptor('WholeBuildingGas', 'Natural Gas usage')
             }
 
     @classmethod
