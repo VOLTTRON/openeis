@@ -116,17 +116,35 @@ class TestDynamicModelCreation(TestCase):
         self.assertEqual(item.note, 'Testing again')
 
     def test_create_output(self):
+        def tolist(objs):
+            result = [(x.pk, x.source.id, x.time, x.value, x.flags, x.note)
+                      for x in objs]
+            result.sort()
+            return result
         fields = {'time': 'timestamp', 'value': 'float',
                   'flags': 'integer', 'note': 'string'}
         output, model = sensorstore.create_output(5, fields)
         self.assertTrue(dyn.table_exists(model))
-        items = [model.objects.create(time=now(), value=i,
-                 note='Testing {}'.format(i)) for i in range(5)]
-        items.sort(key=lambda x: x.pk)
-        objs = list(model.objects.all())
-        objs.sort(key=lambda x: x.pk)
+        items = tolist(model.objects.create(time=now(), value=float(i),
+                 note='Testing {}'.format(i)) for i in range(5))
+        objs = tolist(model.objects.all())
         self.assertEqual(objs, items)
         model = sensorstore.get_output(output, 5, fields)
-        objs = list(model.objects.all())
-        objs.sort(key=lambda x: x.pk)
+        objs = tolist(model.objects.all())
         self.assertEqual(objs, items)
+
+    def test_bulk_create(self):
+        fields = {'time': 'timestamp', 'value': 'float',
+                  'flags': 'integer', 'note': 'string'}
+        output, model = sensorstore.create_output(5, fields)
+        self.assertTrue(dyn.table_exists(model))
+        items = [model(time=now(), value=float(i), note='Testing {}'.format(i))
+                 for i in range(5)]
+        model.objects.bulk_create(items)
+        self.assertEqual(model.objects.count(), 5)
+        output, model = sensorstore.create_output(6, fields)
+        self.assertTrue(dyn.table_exists(model))
+        items = [model(time=now(), value=float(i), note='Testing {}'.format(i))
+                 for i in range(5)]
+        model.objects.bulk_create(items)
+        self.assertEqual(model.objects.count(), 5)
