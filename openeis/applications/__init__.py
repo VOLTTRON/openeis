@@ -67,6 +67,18 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         self.inp = inp
         self.out = out
 
+
+    def _pre_execute(self):
+        pass
+    
+    def _post_execute(self):
+        self.out.close()
+    
+    def run_application(self):
+        self._pre_execute()
+        self.execute()
+        self._post_execute()
+    
     @classmethod
     def single_file_input(cls):
         #change this to true if all input must come from the same file.

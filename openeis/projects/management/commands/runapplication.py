@@ -65,5 +65,5 @@ class Command(BaseCommand):
             print('- Output format:', output_format)
 
         app = klass(db_input, file_output, **kwargs)
-        app.execute()
+        app.run_application()
 
