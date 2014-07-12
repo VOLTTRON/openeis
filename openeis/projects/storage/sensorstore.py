@@ -5,6 +5,7 @@ import threading
 from django.db.models import Manager as BaseManager
 
 from .. import models
+from . import dynamictables
 from .dynamictables import *
 
 
@@ -45,22 +46,21 @@ def get_output(output, project_id, fields):
     '''
     if isinstance(output, int):
         output = models.AppOutput.get(pk=output)
-    base_model = get_output_model(project_id, fields)
     def __init__(self, *args, **kwargs):
-        base_model.__init__(self, *args, **kwargs)
-        self.source = output
-    __init__.__doc__ = base_model.__init__.__doc__
+        kwargs['source'] = output
+        super(self.__class__, self).__init__(*args, **kwargs)
     def save(self, *args, **kwargs):
         self.source = output
-        base_model.save(self, *args, **kwargs)
-    save.__doc__ = base_model.save.__doc__
+        super(self.__class__, self).save(*args, **kwargs)
     class Manager(BaseManager):
         def get_queryset(self):
             return super().get_queryset().filter(source=output)
-    return type('{}_{}'.format(base_model.__name__, output.pk), (base_model,),
-                {'Meta': type('Meta', (), {'proxy': True}),
-                 '__module__': __name__, '__name__': 'AppOutputData',
-                 '__init__': __init__, 'save': save, 'objects': Manager()})
+    name = 'AppOutputData' + str(output.pk)
+    attrs = {'source': models.models.ForeignKey(
+                 models.AppOutput, related_name='+'),
+             '__name__': name, 'objects': Manager(),
+             '__init__': __init__, 'save': save}
+    return dynamictables._create_model(name, project_id, fields, attrs)
 
 
 def put_output():

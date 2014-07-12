@@ -627,23 +627,20 @@ class ApplicationViewSet(viewsets.ViewSet):
         '''Return list of applications with inputs and parameters.'''
         appList = []
         for appName in apps:
-            app = apps[appName]
-            parameters = []
-            inputs = []
-            for param, config in app.get_config_parameters().items():
-                parameters.append({'name': param,
-                                   'config_type': config.config_type.__name__,
-                                   'description': config.desc,
-                                   'default': config.default,
-                                   'value_min': config.value_min,
-                                   'value_max': config.value_max})
-            for input_, config in app.required_input().items():
-                inputs.append({'name': input_,
-                               'sensor_type': config.sensor_type,
-                               'description': config.desc,
-                               'count': config.count,
-                               'count_min': config.count_min,
-                               'count_max': config.count_max})
+            parameters = {}
+            inputs = {}
+            for param, config in apps[appName].get_config_parameters().items():
+                parameters[param] = {'config_type': config.config_type.__name__,
+                                     'display_name': config.display_name,
+                                     'optional': config.optional,
+                                     'value_default': config.value_default,
+                                     'value_min': config.value_min,
+                                     'value_max': config.value_max}
+            for input_, config in apps[appName].required_input().items():
+                inputs[input_] = {'sensor_type': config.sensor_type,
+                                  'display_name': config.display_name,
+                                  'count_min': config.count_min,
+                                  'count_max': config.count_max}
             appList.append({'name': appName,
                             'parameters': parameters,
                             'inputs': inputs})

@@ -15,20 +15,14 @@ class InputDescriptor:
 
     def __init__(self,
                  sensor_type,
-                 desc,
-                 count=1,
+                 display_name,
                  count_min=1,
                  count_max=1,
                  _id=None):
         # TODO: Throw exception on invalid values
         self.sensor_type = sensor_type
-        self.desc = desc
-        self.count = count
-        if(count_min is not None and count < count_min):
-            count_min = count
+        self.display_name = display_name
         self.count_min = count_min
-        if(count_max is not None and count > count_max):
-            count_max = count
         self.count_max = count_max
 
 class OutputDescriptor:
@@ -44,15 +38,16 @@ class OutputDescriptor:
 class ConfigDescriptor:
     def __init__(self,
                  config_type,
-                 desc,
+                 display_name,
                  optional=False,
-                 default=None,
+                 value_default=None,
                  value_min=None,
                  value_max=None):
         # TODO: Throw exception on invalid values
         self.config_type = config_type
-        self.desc = desc
-        self.default = default
+        self.display_name = display_name
+        self.optional = optional
+        self.value_default = value_default
         self.value_min = value_min
         self.value_max = value_max
 
