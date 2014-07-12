@@ -69,7 +69,7 @@ class Application(DriverApplicationBaseClass):
 
         output_needs = {
             'Weather_Sensitivity': {
-                'value':OutputDescriptor('String', value_topic)
+                'value':OutputDescriptor('string', value_topic)
                 },
             'Scatterplot': {
                 'oat':OutputDescriptor('float', oat_topic),
