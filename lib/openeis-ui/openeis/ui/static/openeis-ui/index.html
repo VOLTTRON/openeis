@@ -10,10 +10,23 @@
 </head>
 
 <body ng-class="{ 'body--modal-open': modalOpen() }">
-    <ng-include src="'partials/topbar.html'" ng-controller="TopBarCtrl"></ng-include>
+    <div class="top-bar" ng-if="account">
+        <nav class="container">
+            <h1><a href="projects">OpenEIS</a></h1><!-- comment to remove whitespace between inline-block elements
+         --><ul>
+                <li><a href="projects">Projects</a></li><!-- comment to remove whitespace between inline-block elements
+             --><li>
+                    <a href="account">Account: <strong>{{account.username}}</strong></a>
+                    <ul class="dropdown">
+                        <li><a ng-click="logOut()">Log out</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </div>
     <div ng-view></div>
     <script type="text/javascript" src="settings.js"></script>
-    <script type="text/javascript" src="js/app.min.js"></script>
+<script type="text/javascript" src="js/app.min.js"></script>
 </body>
 
 </html>
