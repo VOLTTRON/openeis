@@ -6,6 +6,8 @@ from abc import ABCMeta,abstractmethod
 #from schema.schema import sensordata
 import logging
 import pkgutil
+from collections import defaultdict
+from datetime import datetime
 
 _applicationList = [name for _, name, _ in pkgutil.iter_modules(__path__)]
 
@@ -75,11 +77,6 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         self._post_execute()
     
     @classmethod
-    def single_file_input(cls):
-        #change this to true if all input must come from the same file.
-        return False
-
-    @classmethod
     @abstractmethod
     def required_input(cls):
         """
@@ -114,10 +111,19 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
            {TableName1: {name1:OutputDescriptor1, name2:OutputDescriptor2,...},....}
 
            eg: {'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')},
-                'Sensor': {'SomeValue':OutputDescriptor('int', 'some_output/value'),
+                'Sensor': {'SomeValue':OutputDescriptor('integer', 'some_output/value'),
                            'SomeOtherValue':OutputDescriptor('boolean', 'some_output/value),
                            'SomeString':OutputDescriptor('string', 'some_output/string)}}
+                           
+        Should always call the parent class output_format and update the dictionary returned from
+        the parent.
+        
+        result = super().output_format(input_object)
+        my_output = {...}
+        result.update(my_output)
+        return result 
         """
+        return {}
 
     @classmethod
     @abstractmethod
@@ -147,24 +153,95 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         """
         "The algorithm to run."
 
+    @staticmethod
     @abstractmethod
-    def report(self):
+    def report():
         """describe output"""
 
 
 class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
-    @classmethod
-    def single_file_input(cls):
-        return True
+    
+    def drop_partial_lines(self):
+        """Specifies the merge strategy for driven application data.
+        This is used as the drop_partial_lines argument for the 
+        DatabaseInput.merge call used to preprocess incoming data."""        
+        return False
+
 
     def execute(self):
         '''Iterate over input calling run each time'''
-        pass
+        query_list = []
+        topic_map = self.inp.get_topics()
+        
+        for input_name in topic_map: 
+            query_list.append(self.inp.get_query_sets(input_name, wrap_for_merge=True))
+            
+        merged_input_gen = self.inp.merge(*query_list, drop_partial_lines=self.drop_partial_lines())
+        
+        time_stamp = datetime.min
+        
+        for merged_input in merged_input_gen:
+            time_stamp = merged_input.pop('time')
+            flat_input = self.flatten_input(merged_input)
+            results = self.run(time_stamp, flat_input)
+            
+            if not self.process_results(time_stamp, results):
+                break
 
-    @classmethod
-    @abstractmethod
-    def inputs(cls):
+        results = self.shutdown()
+        self.process_results(time_stamp, results)
+            
+    
+    def process_results(self, time_stamp, results):
+        for point, value in results.commands.items():
+            row = {"timestamp":time_stamp,
+                   "point": point,
+                   "value": value}
+            self.out.insert_row('commands', row)
+            
+        for level, msg in results.log_messages:
+            self.out.log(msg, level, time_stamp)
+            
+        for table, rows in results.table_output.items():
+            for row in rows:
+                self.out.insert_row(table, row)
+            
+        if results.terminate:
+            self.out.log('Terminated normally', logging.DEBUG, time_stamp)
+            return False
+        
         return True
+    
+    
+    @staticmethod
+    def flatten_input(merged_input):
+        result={}
+        key_template = '{table}_{n}'
+        for table, value_list in merged_input.items():
+            for n, value in enumerate(value_list, start=1):
+                key = key_template.format(table=table, n=n)
+                result[key] = value
+                
+        return result
+    
+    def output_tables(self, input_object):
+        '''
+        Override this method to add output tables.
+        
+        Call super().output_format and update the dictionary returned from
+        the parent.
+        
+        result = super().output_format(input_object)
+        my_output = {...}
+        result.update(my_output)
+        return result 
+        '''
+        results = super().output_tables(input_object)  
+        command_table = {'commands': {'timestamp':OutputDescriptor('timestamp', 'commands/timestamp'),
+                                      'point':OutputDescriptor('string', 'commands/point'),
+                                      'value':OutputDescriptor('float', 'commands/value')}}
+        results.update(command_table)
+        return results
 
     @abstractmethod
     def run(self, time, inputs):
@@ -184,6 +261,7 @@ class Results:
         self.commands = {}
         self.log_messages = []
         self.terminate = terminate
+        self.table_output = defaultdict(list)
 
     def command(self, point, value):
         self.commands[point]=value
@@ -193,6 +271,9 @@ class Results:
 
     def terminate(self, terminate):
         self.terminate = bool(terminate)
+    
+    def insert_table_row(self, table, row):
+        self.table_output[table].append(row)
 
 for applicationName in _applicationList:
     try:
