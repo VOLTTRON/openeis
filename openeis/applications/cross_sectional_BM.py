@@ -87,8 +87,8 @@ class Application(DriverApplicationBaseClass):
 
         output_needs = {
             'CrossSectionalBM': {
-                'Metric Name':OutputDescriptor('String', metric_name_topic),
-                'Value':OutputDescriptor('String', value_topic)
+                'Metric Name':OutputDescriptor('string', metric_name_topic),
+                'Value':OutputDescriptor('string', value_topic)
                 }
             }
         return output_needs
