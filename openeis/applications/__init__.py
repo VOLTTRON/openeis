@@ -224,7 +224,8 @@ class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
                 
         return result
     
-    def output_tables(self, input_object):
+    @classmethod
+    def output_format(cls, input_object):
         '''
         Override this method to add output tables.
         
@@ -236,7 +237,7 @@ class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
         result.update(my_output)
         return result 
         '''
-        results = super().output_tables(input_object)  
+        results = super().output_format(input_object)  
         command_table = {'commands': {'timestamp':OutputDescriptor('timestamp', 'commands/timestamp'),
                                       'point':OutputDescriptor('string', 'commands/point'),
                                       'value':OutputDescriptor('float', 'commands/value')}}
