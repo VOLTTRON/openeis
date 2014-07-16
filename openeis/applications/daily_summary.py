@@ -49,7 +49,7 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         return {
             "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
-            "building_name": ConfigDescriptor(str, "Building Name", optional=True)            
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
 
 
@@ -76,8 +76,8 @@ class Application(DriverApplicationBaseClass):
         value_topic = '/'.join(output_topic_base+['dailySummary','value'])
         output_needs = {
             'Daily_Summary_Table': {
-                'Metric':OutputDescriptor('String', description_topic),
-                'value':OutputDescriptor('String', value_topic)
+                'Metric':OutputDescriptor('string', description_topic),
+                'value':OutputDescriptor('string', value_topic)
                 }
             }
         return output_needs
@@ -152,7 +152,7 @@ class Application(DriverApplicationBaseClass):
                                                         load_day_list_5))
 
         # find the load variability
-        # TODO: Generate error if there are not 24 hours worth of data for 
+        # TODO: Generate error if there are not 24 hours worth of data for
         # every day and less than two days of data.
         hourly_variability = []
 
