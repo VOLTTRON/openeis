@@ -551,7 +551,14 @@ class DataSetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         '''Only allow users to see ingests they own.'''
         user = self.request.user
-        return models.SensorIngest.objects.filter(map__project__owner=user)
+        queryset = models.SensorIngest.objects.filter(map__project__owner=user)
+        try:
+            project = int(self.request.QUERY_PARAMS['project'])
+        except KeyError:
+            return queryset
+        except ValueError:
+            return []
+        return queryset.filter(map__project=project)
 
 
 def preview_ingestion(sensormap, input_files, count=15):
