@@ -154,6 +154,8 @@ class AppTestBase(TestCase):
         # Check for differences.
         i = 1
         for key in test_dict:
+            self.assertTrue((len(test_dict[key]) > 1), 
+                    "The application did not run correctly.")
             if (self.is_num(test_dict[key][1])):
                 self.assertEqual(test_dict[key][0], expected_dict[key][0],\
                         "Headers don't match.")
