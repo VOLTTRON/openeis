@@ -52,6 +52,13 @@ class ConfigDescriptor:
         self.value_default = value_default
         self.value_min = value_min
         self.value_max = value_max
+        
+class ApplicationDescriptor:
+    def __init__(self,
+                 app_name,
+                 description=''):
+        self.app_name = app_name
+        self.description = description
 
 class DriverApplicationBaseClass(metaclass=ABCMeta):
 
@@ -72,9 +79,11 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         self.out.close()
     
     def run_application(self):
-        self._pre_execute()
-        self.execute()
-        self._post_execute()
+        try:
+            self._pre_execute()
+            self.execute()
+        finally:
+            self._post_execute()
     
     @classmethod
     @abstractmethod
@@ -206,7 +215,7 @@ class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
             for row in rows:
                 self.out.insert_row(table, row)
             
-        if results.terminate:
+        if results._terminate:
             self.out.log('Terminated normally', logging.DEBUG, time_stamp)
             return False
         
@@ -261,7 +270,7 @@ class Results:
     def __init__(self, terminate=False):
         self.commands = {}
         self.log_messages = []
-        self.terminate = terminate
+        self._terminate = terminate
         self.table_output = defaultdict(list)
 
     def command(self, point, value):
@@ -271,7 +280,7 @@ class Results:
         self.log_messages.append((level, message))
 
     def terminate(self, terminate):
-        self.terminate = bool(terminate)
+        self._terminate = bool(terminate)
     
     def insert_table_row(self, table, row):
         self.table_output[table].append(row)
