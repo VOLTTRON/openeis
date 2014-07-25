@@ -191,17 +191,21 @@ class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
         
         for merged_input in merged_input_gen:
             time_stamp = merged_input.pop('time')
-            flat_input = self.flatten_input(merged_input)
+            flat_input = self._flatten_input(merged_input)
             results = self.run(time_stamp, flat_input)
             
-            if not self.process_results(time_stamp, results):
+            if not self._process_results(time_stamp, results):
                 break
 
         results = self.shutdown()
-        self.process_results(time_stamp, results)
+        self._process_results(time_stamp, results)
             
     
-    def process_results(self, time_stamp, results):
+    def _process_results(self, time_stamp, results):
+        '''
+        Iterate over results and put values in command, log and any other table specified by results.
+        Return False if application has terminated normally.
+        '''
         for point, value in results.commands.items():
             row = {"timestamp":time_stamp,
                    "point": point,
@@ -223,7 +227,10 @@ class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
     
     
     @staticmethod
-    def flatten_input(merged_input):
+    def _flatten_input(merged_input):
+        '''
+        flattens the input dictionary returned from self.inp.merge
+        '''
         result={}
         key_template = '{table}_{n}'
         for table, value_list in merged_input.items():

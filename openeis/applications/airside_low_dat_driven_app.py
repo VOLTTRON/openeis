@@ -50,9 +50,6 @@ operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 '''
 import datetime
-from applications import BaseAlgorithm, Results, logging
-from os import path
-
 from openeis.applications import DriverApplicationBaseClass, ConfigDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 import logging
@@ -64,7 +61,9 @@ class Application(DriverApplicationBaseClass):
     """
     def __init__(self,reheat_valve_threshold=None,data_window=None,
                 percent_reheat_threshold=None,number_of_zones=None,
-                setpoint_allowable_deviation=None,rht_on_threshold=None,*args,**kwargs):
+                setpoint_allowable_deviation=None,rht_on_threshold=None,
+                auto_correctflag=None,maximum_dat_stpt=None,dat_increase=None,
+                *args,**kwargs):
         super( ).__init__(*args,**kwargs)
         self.dat_stpt_values = []
         self.dat_values = []
@@ -84,13 +83,16 @@ class Application(DriverApplicationBaseClass):
         self.percent_reheat_threshold = float(percent_reheat_threshold)
         self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
         self.rht_on_threshold = float(rht_on_threshold)
+        self.auto_correct_flag = bool(auto_correctflag)
+        self.maximum_dat_stpt = float(maximum_dat_stpt)
+        self.dat_increase = float(dat_increase)
         self.reheat=[[] for i in range(self.number_of_zones)]
 
         '''Diagnostic Point Names (Must match Openeis data-type names)'''
-        self.fan_status_name = "SupplyFanStatus"
-        self.zone_reheat_name = "ZoneReheatValvePosition"
-        self.da_temp_name = "DischargeAirTemperature"
-        self.da_temp_stpt_name = "DischargeAirTemperatureSetPoint"
+        self.fan_status_name = "fan_status"
+        self.zone_reheat_name = "zone_rht_vlv"
+        self.da_temp_name = "da_temp"
+        self.da_temp_stpt_name = "da_temp_stpt"
 
     @classmethod
     def get_config_parameters(cls):
@@ -101,7 +103,10 @@ class Application(DriverApplicationBaseClass):
             'reheat_valve_threshold': ConfigDescriptor(float, 'Teminal Box Reheat Valve Position'),
             'percent_reheat_threshold': ConfigDescriptor(float, 'Excess Terminal Reheat Threshold'),
             'setpoint_allowable_deviation': ConfigDescriptor(float, 'Supply-air Temperate Deadband'),
-            'rht_on_threshold': ConfigDescriptor(float, 'Zone Is Reheating Threshold')
+            'rht_on_threshold': ConfigDescriptor(float, 'Zone Is Reheating Threshold'),
+            'auto_correctflag': ConfigDescriptor(bool, 'auto-correction enabled flag'),
+            'maximum_dat_stpt': ConfigDescriptor(float, 'High DAT limit for auto-correction'),
+            'dat_increase': ConfigDescriptor(float, 'Increment applied to DAT SP when auto-correction is enabled'),
            }
 
     @classmethod
@@ -114,7 +119,7 @@ class Application(DriverApplicationBaseClass):
             'zone_rht_vlv': InputDescriptor('ZoneReheatValvePosition','For accurate results this diagnostic requires \
                                                     terminal box data for all for a particular AHU', count_min=2)
             }
-           
+
     def report(self):
     #Called by UI to create Viz
         """
@@ -126,26 +131,25 @@ class Application(DriverApplicationBaseClass):
         """
         pass
 
-    @classmethod
-    def output_format(cls, input_object):
-        # Called when app is staged
-        """
-        Output will have the date, hour, and respective load.
-        To be graphed in a heat map later.
-        """
-        topics = input_object.get_topics()
-        diagnostic_topic = topics['load'][0]  #Not sure about the topics['load']
-        diagnostic_topic_parts = diagnostic_topic.split('/')
-        output_topic_base = diagnostic_topic_parts[:-1]
-        datetime_topic = '/'.join(output_topic_base+['airside_low_dat_diagnostic', 'date'])
-        message_topic = '/'.join(output_topic_base+['airside_low_dat_diagnostic', 'message'])
-        output_needs = {
-            'Diagnostic_Message': {
-                'date-time': OutputDescriptor('datetime', date_topic),
-                'diagnostic-message': OutputDescriptor('string', message_topic)
-                }
-            }
-        return output_needs
+#     @classmethod
+#     def output_format(cls, input_object):
+#         # Called when app is staged
+#         """
+#         Output will have the date-time and  error-message.
+#         """
+#         topics = input_object.get_topics()
+#         diagnostic_topic = topics['load'][0]  #Not sure about the topics['load']
+#         diagnostic_topic_parts = diagnostic_topic.split('/')
+#         output_topic_base = diagnostic_topic_parts[:-1]
+#         datetime_topic = '/'.join(output_topic_base+['airside_low_dat_diagnostic', 'date'])
+#         message_topic = '/'.join(output_topic_base+['airside_low_dat_diagnostic', 'message'])
+#         output_needs = {
+#             'Diagnostic_Message': {
+#                 'date-time': OutputDescriptor('datetime', date_topic),
+#                 'diagnostic-message': OutputDescriptor('string', message_topic)
+#                 }
+#             }
+#         return output_needs
 
     def drop_partial_lines (self): 
         return True
@@ -206,7 +210,8 @@ class Application(DriverApplicationBaseClass):
     def low_dat_sp(self, result):
         """
         If the detected problems(s) are consistent then generate a fault message(s).
-        If auto-correction is enabled and a problem is detected apply correction action.
+        If auto-correction is enabled and a problem is detected apply correction action
+        (simulated)
         """
         time_d = self.timestamp[-1]-self.timestamp[0]
         time_d = int(time_d.total_seconds()/60) + 1
@@ -233,11 +238,27 @@ class Application(DriverApplicationBaseClass):
         self.pre_msg_time = []
         self.reheat=[[] for i in range(self.number_of_zones)]
         self.total_reheat = 0
-
+        
         if (reheat_coil_average > self.reheat_valve_threshold and
+            avg_zones_reheat > self.percent_reheat_threshold and 
+            self.dat_stpt_values and self.auto_correctflag):
+            dat_stpt = avg_dat_stpt + self.dat_increase
+            '''Create diagnostic message for fault condition with auto-correction'''
+            if dat_stpt <= self.maximum_dat:
+                result.command(self.dat_stpt_name, dat_stpt)
+                diagnostic_message = 'The DAT has been detected to be too low.  The DAT has been increased to: '
+                diagnostic_message += str(dat_stpt)
+            else:
+                '''Create diagnostic message for fault condition where the maximum DAT has been reached'''
+                result.command(self.dat_stpt_cname,self.maximum_dat)
+                diagnostic_message = 'The DAT was detected to be too low, Auto-correction has increased the DAT to the maximum configured DAT: '
+                diagnostic_message += str(self.maximum_dat)
+        elif (reheat_coil_average > self.reheat_valve_threshold and 
             avg_zones_reheat > self.percent_reheat_threshold):
-            diagnostic_message = 'The discharge-air temperature has been detected to be too low.'
+            '''Create diagnostic message for fault condition without auto-correction'''
+            diagnostic_message = 'The DAT has been detected to be too low but auto-correction is not enabled'
         else:
-            diagnostic_message = 'No re-tuning opportunity was detected during the low discharge-air temperature diagnostic.'
+            '''Create diagnostic message that no re-tuning opportunity was detected: No Fault condition'''
+            diagnostic_message = 'No re-tuning opportunity has been detected for low DAT diagnostic.'
         result.log(diagnostic_message, logging.INFO)
         return result     
