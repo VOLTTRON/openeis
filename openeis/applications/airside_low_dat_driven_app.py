@@ -3,13 +3,13 @@ Copyright (c) 2014, Battelle Memorial Institute
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
+modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
+   list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
+   and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -23,26 +23,26 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The views and conclusions contained in the software and documentation are those
-of the authors and should not be interpreted as representing official policies, 
+of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 '''
 '''
-This material was prepared as an account of work sponsored by an 
-agency of the United States Government.  Neither the United States 
+This material was prepared as an account of work sponsored by an
+agency of the United States Government.  Neither the United States
 Government nor the United States Department of Energy, nor Battelle,
-nor any of their employees, nor any jurisdiction or organization 
-that has cooperated in the development of these materials, makes 
-any warranty, express or implied, or assumes any legal liability 
-or responsibility for the accuracy, completeness, or usefulness or 
+nor any of their employees, nor any jurisdiction or organization
+that has cooperated in the development of these materials, makes
+any warranty, express or implied, or assumes any legal liability
+or responsibility for the accuracy, completeness, or usefulness or
 any information, apparatus, product, software, or process disclosed,
 or represents that its use would not infringe privately owned rights.
 
-Reference herein to any specific commercial product, process, or 
-service by trade name, trademark, manufacturer, or otherwise does 
-not necessarily constitute or imply its endorsement, recommendation, 
-r favoring by the United States Government or any agency thereof, 
-or Battelle Memorial Institute. The views and opinions of authors 
-expressed herein do not necessarily state or reflect those of the 
+Reference herein to any specific commercial product, process, or
+service by trade name, trademark, manufacturer, or otherwise does
+not necessarily constitute or imply its endorsement, recommendation,
+r favoring by the United States Government or any agency thereof,
+or Battelle Memorial Institute. The views and opinions of authors
+expressed herein do not necessarily state or reflect those of the
 United States Government or any agency thereof.
 
 PACIFIC NORTHWEST NATIONAL LABORATORY
@@ -51,7 +51,7 @@ under Contract DE-AC05-76RL01830
 '''
 import datetime
 from openeis.applications import DriverApplicationBaseClass, ConfigDescriptor,  \
-    OutputDescriptor, ConfigDescriptor
+    OutputDescriptor, ConfigDescriptor, InputDescriptor
 import logging
 
 class Application(DriverApplicationBaseClass):
@@ -125,7 +125,7 @@ class Application(DriverApplicationBaseClass):
         """
         Describe how to present output to user
         Display this viz with these columns from this table
-    
+
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
@@ -151,22 +151,22 @@ class Application(DriverApplicationBaseClass):
 #             }
 #         return output_needs
 
-    def drop_partial_lines (self): 
+    def drop_partial_lines (self):
         return True
 
     def run(self,current_time, points):
-        self.pre_msg_time.append(current_time)    
+        self.pre_msg_time.append(current_time)
         """
         Check algorithm pre-quisites and assemble data set for analysis.
         """
         device_dict = {}
         diagnostic_result = Results()
-        
+
         for key, value in points.iteritems():
             device_dict[key.lower()] = value
-            
+
         message_check =  datetime.timedelta(minutes=(self.data_window))
-       
+
         if (self.pre_msg_time[-1]-self.pre_msg_time[0]) >= message_check:
             msg_lst = [self.pre_msg, self.pre_msg1]
             for item in msg_lst:
@@ -195,7 +195,7 @@ class Application(DriverApplicationBaseClass):
             for x in range(1, self.number_of_zones + 1):
                 if self.zone_reheat_name in key and str(x) in key:
                     self.reheat[x-1].append(value)
-                    
+
         if not self.dat_values or not self.reheat:
             self.pre_requiste_messages.append(self.pre_msg1)
             return diagnostic_result
@@ -238,9 +238,9 @@ class Application(DriverApplicationBaseClass):
         self.pre_msg_time = []
         self.reheat=[[] for i in range(self.number_of_zones)]
         self.total_reheat = 0
-        
+
         if (reheat_coil_average > self.reheat_valve_threshold and
-            avg_zones_reheat > self.percent_reheat_threshold and 
+            avg_zones_reheat > self.percent_reheat_threshold and
             self.dat_stpt_values and self.auto_correctflag):
             dat_stpt = avg_dat_stpt + self.dat_increase
             '''Create diagnostic message for fault condition with auto-correction'''
@@ -253,7 +253,7 @@ class Application(DriverApplicationBaseClass):
                 result.command(self.dat_stpt_cname,self.maximum_dat)
                 diagnostic_message = 'The DAT was detected to be too low, Auto-correction has increased the DAT to the maximum configured DAT: '
                 diagnostic_message += str(self.maximum_dat)
-        elif (reheat_coil_average > self.reheat_valve_threshold and 
+        elif (reheat_coil_average > self.reheat_valve_threshold and
             avg_zones_reheat > self.percent_reheat_threshold):
             '''Create diagnostic message for fault condition without auto-correction'''
             diagnostic_message = 'The DAT has been detected to be too low but auto-correction is not enabled'
@@ -261,4 +261,4 @@ class Application(DriverApplicationBaseClass):
             '''Create diagnostic message that no re-tuning opportunity was detected: No Fault condition'''
             diagnostic_message = 'No re-tuning opportunity has been detected for low DAT diagnostic.'
         result.log(diagnostic_message, logging.INFO)
-        return result     
+        return result
