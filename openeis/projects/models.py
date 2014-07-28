@@ -398,4 +398,3 @@ class Analysis(models.Model):
     started = models.DateTimeField(null=True, default=None)
     ended = models.DateTimeField(null=True, default=None)
     progress_percent = models.FloatField(default=0)
-    # TODO: attribute for retrieving results

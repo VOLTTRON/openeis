@@ -715,3 +715,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         except ValueError:
             return []
         return queryset.filter(dataset__map__project=project)
+
+    @link()
+    def data(self, request, *args, **kw):
+        analysis = self.get_object()
+        return Response('TODO: return results of analysis {}'.format(analysis.id))
