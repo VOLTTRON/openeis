@@ -221,3 +221,9 @@ class DataSetPreviewSerializer(serializers.Serializer):
     map = JSONField(required=True)
     files = SensorIngestFileSerializer(many=True, required=True)
     rows = serializers.IntegerField(required=False)
+
+
+class AnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Analysis
+        read_only_fields = ('added', 'started', 'ended', 'progress_percent')

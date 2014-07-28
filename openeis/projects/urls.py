@@ -39,6 +39,7 @@ router.register(r'projects', views.ProjectViewSet)
 router.register(r'files', views.FileViewSet)
 router.register(r'users', views.UserViewSet)
 router.register(r'sensormaps', views.SensorMapDefViewSet)
+router.register(r'analyses', views.AnalysisViewSet)
 api_urls = list(router.urls)
 api_urls.append(url(r'^datasets/preview$',
                     views.DataSetPreviewViewSet.as_view({'post': 'preview'}),

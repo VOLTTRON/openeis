@@ -385,3 +385,15 @@ class StringSensorData(BaseSensorData):
 
 class AppOutput(models.Model):
     pass
+
+
+class Analysis(models.Model):
+    '''A run of a single application against a single dataset.'''
+
+    dataset = models.ForeignKey(SensorIngest, related_name='analysis')
+    application = models.CharField(max_length=255)
+    added = models.DateTimeField(auto_now_add=True)
+    started = models.DateTimeField(null=True, default=None)
+    ended = models.DateTimeField(null=True, default=None)
+    progress_percent = models.FloatField(default=0)
+    # TODO: attribute for retrieving results

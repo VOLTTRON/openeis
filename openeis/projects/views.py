@@ -656,3 +656,57 @@ class ApplicationViewSet(viewsets.ViewSet):
     def list(self, request, *args, **kw):
         '''Return list of applications with inputs and parameters.'''
         return Response(_get_app_list())
+
+
+def _perform_analysis(analysis):
+    analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
+    analysis.save()
+    try:
+        # TODO: run application and update analysis progress
+        analysis.progress_percent = 100
+        analysis.save()
+        pass
+    except:
+        # TODO: log errors
+        pass
+    finally:
+        analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
+        analysis.save()
+
+
+class AnalysisViewSet(viewsets.ModelViewSet):
+    model = models.Analysis
+    serializer_class = serializers.AnalysisSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def pre_save(self, obj):
+        '''Check dataset ownership and application existence.'''
+        user = self.request.user
+        if not models.Project.objects.filter(
+                owner=user, pk=obj.dataset.map.project.pk).exists():
+            raise rest_exceptions.PermissionDenied(
+                    "Invalid project pk '{}' - "
+                    'permission denied.'.format(obj.dataset.map.project.pk))
+        if not [app for app in _get_app_list() if app['name'] == obj.application]:
+            raise rest_exceptions.ParseError(
+                "Application '{}' not found.".format(obj.application))
+        # TODO: validate dataset and application compatibility
+
+    def post_save(self, obj, created):
+        '''Start application run after Analysis object has been saved.'''
+        if created:
+            thread = threading.Thread(target=_perform_analysis, args=(obj,))
+            thread.start()
+
+    def get_queryset(self):
+        '''Only show user analyses associated with projects they own,
+        optionally filtered by project ID.'''
+        user = self.request.user
+        queryset = models.Analysis.objects.filter(dataset__map__project__owner=user)
+        try:
+            project = int(self.request.QUERY_PARAMS['project'])
+        except KeyError:
+            return queryset
+        except ValueError:
+            return []
+        return queryset.filter(dataset__map__project=project)
