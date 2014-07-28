@@ -660,7 +660,6 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_serializer_class(self):
-        print(self)
         if self.request.method in ['PUT', 'PATCH']:
             return serializers.AnalysisUpdateSerializer
         return serializers.AnalysisSerializer
