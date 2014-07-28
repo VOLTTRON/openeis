@@ -233,3 +233,19 @@ class AnalysisUpdateSerializer(AnalysisSerializer):
     class Meta:
         model = AnalysisSerializer.Meta.model
         read_only_fields = ('dataset', 'application', 'configuration') + AnalysisSerializer.Meta.read_only_fields
+
+
+class ApplicationSerializer(serializers.Serializer):
+    parameters = serializers.SerializerMethodField('_get_parameters')
+    inputs = serializers.SerializerMethodField('_get_inputs')
+
+    def _convert_parameter(self, parameter):
+        parameter.config_type = parameter.config_type.__name__
+        return parameter.__dict__
+
+    def _get_parameters(self, obj):
+        return {k: self._convert_parameter(v) for k, v in
+                obj.get_config_parameters().items()}
+
+    def _get_inputs(self, obj):
+        return {k: v.__dict__ for k, v in obj.required_input().items()}

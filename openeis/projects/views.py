@@ -627,35 +627,16 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-def _get_app_list():
-    app_list = []
-    for app_name in apps:
-        parameters = {}
-        inputs = {}
-        for param, config in apps[app_name].get_config_parameters().items():
-            parameters[param] = {'config_type': config.config_type.__name__,
-                                 'display_name': config.display_name,
-                                 'optional': config.optional,
-                                 'value_default': config.value_default,
-                                 'value_min': config.value_min,
-                                 'value_max': config.value_max}
-        for input_, config in apps[app_name].required_input().items():
-            inputs[input_] = {'sensor_type': config.sensor_type,
-                              'display_name': config.display_name,
-                              'count_min': config.count_min,
-                              'count_max': config.count_max}
-        app_list.append({'name': app_name,
-                        'parameters': parameters,
-                        'inputs': inputs})
-    return app_list
-
-
 class ApplicationViewSet(viewsets.ViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def list(self, request, *args, **kw):
         '''Return list of applications with inputs and parameters.'''
-        return Response(_get_app_list())
+        app_list = []
+        for app_name, app in apps.items():
+            app_list.append(serializers.ApplicationSerializer(app).data)
+            app_list[-1]['name'] = app_name
+        return Response(app_list)
 
 
 def _perform_analysis(analysis):
@@ -692,7 +673,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             raise rest_exceptions.PermissionDenied(
                     "Invalid project pk '{}' - "
                     'permission denied.'.format(obj.dataset.map.project.pk))
-        if not [app for app in _get_app_list() if app['name'] == obj.application]:
+        if obj.application not in apps:
             raise rest_exceptions.ParseError(
                 "Application '{}' not found.".format(obj.application))
         # TODO: validate dataset and application compatibility
