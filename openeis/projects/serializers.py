@@ -226,7 +226,8 @@ class DataSetPreviewSerializer(serializers.Serializer):
 class AnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Analysis
-        read_only_fields = ('added', 'started', 'ended', 'progress_percent')
+        read_only_fields = ('added', 'started', 'ended', 'progress_percent',
+                            'report')
 
 
 class AnalysisUpdateSerializer(AnalysisSerializer):
@@ -249,3 +250,15 @@ class ApplicationSerializer(serializers.Serializer):
 
     def _get_inputs(self, obj):
         return {k: v.__dict__ for k, v in obj.required_input().items()}
+
+
+class ReportSerializer(serializers.Serializer):
+    description = serializers.CharField()
+    elements = serializers.SerializerMethodField('_get_elements')
+
+    def _get_elements(self, obj):
+        elements = []
+        for element in obj.elements:
+            elements.append(element.__dict__)
+            elements[-1]['type'] = type(element).__name__
+        return elements
