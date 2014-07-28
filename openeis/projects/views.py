@@ -627,28 +627,32 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+def _get_app_list():
+    app_list = []
+    for app_name in apps:
+        parameters = {}
+        inputs = {}
+        for param, config in apps[app_name].get_config_parameters().items():
+            parameters[param] = {'config_type': config.config_type.__name__,
+                                 'display_name': config.display_name,
+                                 'optional': config.optional,
+                                 'value_default': config.value_default,
+                                 'value_min': config.value_min,
+                                 'value_max': config.value_max}
+        for input_, config in apps[app_name].required_input().items():
+            inputs[input_] = {'sensor_type': config.sensor_type,
+                              'display_name': config.display_name,
+                              'count_min': config.count_min,
+                              'count_max': config.count_max}
+        app_list.append({'name': app_name,
+                        'parameters': parameters,
+                        'inputs': inputs})
+    return app_list
+
+
 class ApplicationViewSet(viewsets.ViewSet):
     permission_classes = (permissions.IsAuthenticated,)
 
     def list(self, request, *args, **kw):
         '''Return list of applications with inputs and parameters.'''
-        appList = []
-        for appName in apps:
-            parameters = {}
-            inputs = {}
-            for param, config in apps[appName].get_config_parameters().items():
-                parameters[param] = {'config_type': config.config_type.__name__,
-                                     'display_name': config.display_name,
-                                     'optional': config.optional,
-                                     'value_default': config.value_default,
-                                     'value_min': config.value_min,
-                                     'value_max': config.value_max}
-            for input_, config in apps[appName].required_input().items():
-                inputs[input_] = {'sensor_type': config.sensor_type,
-                                  'display_name': config.display_name,
-                                  'count_min': config.count_min,
-                                  'count_max': config.count_max}
-            appList.append({'name': appName,
-                            'parameters': parameters,
-                            'inputs': inputs})
-        return Response(appList)
+        return Response(_get_app_list())
