@@ -227,3 +227,9 @@ class AnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Analysis
         read_only_fields = ('added', 'started', 'ended', 'progress_percent')
+
+
+class AnalysisUpdateSerializer(AnalysisSerializer):
+    class Meta:
+        model = AnalysisSerializer.Meta.model
+        read_only_fields = ('dataset', 'application', 'configuration') + AnalysisSerializer.Meta.read_only_fields

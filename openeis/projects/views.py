@@ -676,8 +676,13 @@ def _perform_analysis(analysis):
 
 class AnalysisViewSet(viewsets.ModelViewSet):
     model = models.Analysis
-    serializer_class = serializers.AnalysisSerializer
     permission_classes = (permissions.IsAuthenticated,)
+
+    def get_serializer_class(self):
+        print(self)
+        if self.request.method in ['PUT', 'PATCH']:
+            return serializers.AnalysisUpdateSerializer
+        return serializers.AnalysisSerializer
 
     def pre_save(self, obj):
         '''Check dataset ownership and application existence.'''
