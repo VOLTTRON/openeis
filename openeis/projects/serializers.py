@@ -221,3 +221,44 @@ class DataSetPreviewSerializer(serializers.Serializer):
     map = JSONField(required=True)
     files = SensorIngestFileSerializer(many=True, required=True)
     rows = serializers.IntegerField(required=False)
+
+
+class AnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Analysis
+        read_only_fields = ('added', 'started', 'ended', 'progress_percent',
+                            'report')
+
+
+class AnalysisUpdateSerializer(AnalysisSerializer):
+    class Meta:
+        model = AnalysisSerializer.Meta.model
+        read_only_fields = ('dataset', 'application', 'configuration') + AnalysisSerializer.Meta.read_only_fields
+
+
+class ApplicationSerializer(serializers.Serializer):
+    parameters = serializers.SerializerMethodField('_get_parameters')
+    inputs = serializers.SerializerMethodField('_get_inputs')
+
+    def _convert_parameter(self, parameter):
+        parameter.config_type = parameter.config_type.__name__
+        return parameter.__dict__
+
+    def _get_parameters(self, obj):
+        return {k: self._convert_parameter(v) for k, v in
+                obj.get_config_parameters().items()}
+
+    def _get_inputs(self, obj):
+        return {k: v.__dict__ for k, v in obj.required_input().items()}
+
+
+class ReportSerializer(serializers.Serializer):
+    description = serializers.CharField()
+    elements = serializers.SerializerMethodField('_get_elements')
+
+    def _get_elements(self, obj):
+        elements = []
+        for element in obj.elements:
+            elements.append(element.__dict__)
+            elements[-1]['type'] = type(element).__name__
+        return elements

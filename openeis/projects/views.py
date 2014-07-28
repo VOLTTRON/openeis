@@ -632,23 +632,71 @@ class ApplicationViewSet(viewsets.ViewSet):
 
     def list(self, request, *args, **kw):
         '''Return list of applications with inputs and parameters.'''
-        appList = []
-        for appName in apps:
-            parameters = {}
-            inputs = {}
-            for param, config in apps[appName].get_config_parameters().items():
-                parameters[param] = {'config_type': config.config_type.__name__,
-                                     'display_name': config.display_name,
-                                     'optional': config.optional,
-                                     'value_default': config.value_default,
-                                     'value_min': config.value_min,
-                                     'value_max': config.value_max}
-            for input_, config in apps[appName].required_input().items():
-                inputs[input_] = {'sensor_type': config.sensor_type,
-                                  'display_name': config.display_name,
-                                  'count_min': config.count_min,
-                                  'count_max': config.count_max}
-            appList.append({'name': appName,
-                            'parameters': parameters,
-                            'inputs': inputs})
-        return Response(appList)
+        app_list = []
+        for app_name, app in apps.items():
+            app_list.append(serializers.ApplicationSerializer(app).data)
+            app_list[-1]['name'] = app_name
+        return Response(app_list)
+
+
+def _perform_analysis(analysis):
+    analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
+    analysis.save()
+    try:
+        # TODO: run application and update analysis progress
+        analysis.progress_percent = 100
+        analysis.save()
+        pass
+    except:
+        # TODO: log errors
+        pass
+    finally:
+        analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
+        analysis.save()
+
+
+class AnalysisViewSet(viewsets.ModelViewSet):
+    model = models.Analysis
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return serializers.AnalysisUpdateSerializer
+        return serializers.AnalysisSerializer
+
+    def pre_save(self, obj):
+        '''Check dataset ownership and application existence.'''
+        user = self.request.user
+        if not models.Project.objects.filter(
+                owner=user, pk=obj.dataset.map.project.pk).exists():
+            raise rest_exceptions.PermissionDenied(
+                    "Invalid project pk '{}' - "
+                    'permission denied.'.format(obj.dataset.map.project.pk))
+        if obj.application not in apps:
+            raise rest_exceptions.ParseError(
+                "Application '{}' not found.".format(obj.application))
+        # TODO: validate dataset and application compatibility
+
+    def post_save(self, obj, created):
+        '''Start application run after Analysis object has been saved.'''
+        if created:
+            thread = threading.Thread(target=_perform_analysis, args=(obj,))
+            thread.start()
+
+    def get_queryset(self):
+        '''Only show user analyses associated with projects they own,
+        optionally filtered by project ID.'''
+        user = self.request.user
+        queryset = models.Analysis.objects.filter(dataset__map__project__owner=user)
+        try:
+            project = int(self.request.QUERY_PARAMS['project'])
+        except KeyError:
+            return queryset
+        except ValueError:
+            return []
+        return queryset.filter(dataset__map__project=project)
+
+    @link()
+    def data(self, request, *args, **kw):
+        analysis = self.get_object()
+        return Response('TODO: return results of analysis {}'.format(analysis.id))
