@@ -464,7 +464,7 @@ def iter_ingest(ingest):
         raise
 
 
-def _update_progress(ingest_id, file_id, pos, size, processed, total):
+def _update_ingest_progress(ingest_id, file_id, pos, size, processed, total):
     _processes[ingest_id] = {
         'id': ingest_id,
         'status': 'processing',
@@ -491,10 +491,10 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
                 batch.extend(objects)
                 file_id, pos, *_ = args
                 if file_id != last_file_id:
-                    _update_progress(ingest.id, *args)
+                    _update_ingest_progress(ingest.id, *args)
                     last_file_id, next_pos = file_id, report_interval
                 elif pos >= next_pos:
-                    _update_progress(ingest.id, *args)
+                    _update_ingest_progress(ingest.id, *args)
                     next_pos = pos + report_interval
                 if len(batch) >= batch_size:
                     break
@@ -546,7 +546,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
         data ingestion process.
         '''
         if created:
-            _update_progress(obj.id, None, 0, 0, 0, 0)
+            _update_ingest_progress(obj.id, None, 0, 0, 0, 0)
             thread = threading.Thread(target=perform_ingestion, args=(obj,))
             thread.start()
 
