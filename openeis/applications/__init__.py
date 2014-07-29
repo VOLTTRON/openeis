@@ -162,9 +162,9 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         """
         "The algorithm to run."
 
-    @staticmethod
+    @classmethod
     @abstractmethod
-    def report():
+    def report(cls, output_obj):
         """describe output"""
 
 

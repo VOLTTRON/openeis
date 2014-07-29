@@ -89,8 +89,9 @@ class Application(DrivenApplicationBaseClass):
 #
         return output_needs
 
-    def report(self):
-        #Called by UI to create Viz
+    @classmethod
+    def report(cls, output_object):
+        # Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
 
