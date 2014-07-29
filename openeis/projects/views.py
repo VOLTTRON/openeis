@@ -31,8 +31,10 @@ from . import serializers
 from .conf import settings as proj_settings
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
+from .storage.db_input import DatabaseInput
+from .storage.db_output import DatabaseOutput
+from openeis.applications import get_algorithm_class
 
-from openeis.applications import _applicationDict as apps
 
 _logger = logging.getLogger(__name__)
 
@@ -640,14 +642,31 @@ class ApplicationViewSet(viewsets.ViewSet):
 
 
 def _perform_analysis(analysis):
-    analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
-    analysis.save()
+    
     try:
-        # TODO: run application and update analysis progress
+        analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
+        analysis.save()
+        
+        sensormap_id = analysis.dataset.map.id
+    
+        # Current implementation requires this to be a list.
+        dataset_ids = [analysis.dataset.id]
+        topic_map = analysis.configuration["inputs"]
+        db_input = DatabaseInput(sensormap_id, topic_map, dataset_ids)
+        
+        klass = get_algorithm_class(analysis.application)
+        output_format = klass.output_format(db_input)
+        db_output = DatabaseOutput(analysis.id, output_format)
+
+        kwargs = analysis.configuration['parameters']
+        
+        app = klass(db_input, db_output, **kwargs)
+        app.run_application()
+        
         analysis.progress_percent = 100
         analysis.save()
-        pass
-    except:
+    except Exception as e:
+        print("exception ", e)
         # TODO: log errors
         pass
     finally:
@@ -672,9 +691,12 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             raise rest_exceptions.PermissionDenied(
                     "Invalid project pk '{}' - "
                     'permission denied.'.format(obj.dataset.map.project.pk))
-        if obj.application not in apps:
+                
+        if not get_algorithm_class(obj.application):
             raise rest_exceptions.ParseError(
                 "Application '{}' not found.".format(obj.application))
+            
+        
         # TODO: validate dataset and application compatibility
 
     def post_save(self, obj, created):
