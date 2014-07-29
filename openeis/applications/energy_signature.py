@@ -159,4 +159,3 @@ class Application(DriverApplicationBaseClass):
             "value": str(weather_sensitivity)
             })
 
-        print(self.report()[0])
