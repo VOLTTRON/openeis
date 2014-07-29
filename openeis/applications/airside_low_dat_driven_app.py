@@ -50,8 +50,11 @@ operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 '''
 import datetime
-from openeis.applications import DriverApplicationBaseClass, ConfigDescriptor,  \
-    OutputDescriptor, ConfigDescriptor
+from openeis.applications import (DriverApplicationBaseClass, 
+                                  ConfigDescriptor,
+                                  OutputDescriptor, 
+                                  ConfigDescriptor,
+                                  InputDescriptor)
 import logging
 
 class Application(DriverApplicationBaseClass):
