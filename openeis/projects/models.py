@@ -394,6 +394,7 @@ class Analysis(models.Model):
     dataset = models.ForeignKey(SensorIngest, related_name='analysis')
     application = models.CharField(max_length=255)
     configuration = JSONField()
+    # Initially queued
     added = models.DateTimeField(auto_now_add=True)
     started = models.DateTimeField(null=True, default=None)
     ended = models.DateTimeField(null=True, default=None)
