@@ -7,8 +7,9 @@ Includes a weather sensitivity metric.
 """
 
 
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
     OutputDescriptor, ConfigDescriptor
+from openeis.applications import reports
 import logging
 from django.db.models import Avg
 from .utils.spearman import findSpearmanRank
@@ -17,12 +18,12 @@ from .utils.spearman import findSpearmanRank
 class Application(DriverApplicationBaseClass):
 
     def __init__(self, *args, building_name=None, **kwargs):
-        #Called after app has been staged
+        # Called after app has been staged
         """
         When applications extend this base class, they need to make
         use of any kwargs that were setup in config_param
         """
-        super().__init__(*args,**kwargs)
+        super().__init__(*args, **kwargs)
 
         self.default_building_name_used = False
 
@@ -35,7 +36,7 @@ class Application(DriverApplicationBaseClass):
 
     @classmethod
     def get_config_parameters(cls):
-        #Called by UI
+        # Called by UI
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
@@ -43,11 +44,11 @@ class Application(DriverApplicationBaseClass):
 
     @classmethod
     def required_input(cls):
-        #Called by UI
+        # Called by UI
         # Sort out units.
         return {
-            'oat':InputDescriptor('OutdoorAirTemperature','Outdoor Temp'),
-            'load':InputDescriptor('WholeBuildingElectricity','Building Load')
+            'oat':InputDescriptor('OutdoorAirTemperature', 'Outdoor Temp'),
+            'load':InputDescriptor('WholeBuildingElectricity', 'Building Load')
             }
 
     @classmethod
@@ -63,9 +64,9 @@ class Application(DriverApplicationBaseClass):
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
-        value_topic = '/'.join(output_topic_base+['energysignature','weather sensitivity'])
-        oat_topic = '/'.join(output_topic_base+['energysignature','oat'])
-        load_topic = '/'.join(output_topic_base+['energysignature','load'])
+        value_topic = '/'.join(output_topic_base + ['energysignature', 'weather sensitivity'])
+        oat_topic = '/'.join(output_topic_base + ['energysignature', 'oat'])
+        load_topic = '/'.join(output_topic_base + ['energysignature', 'load'])
 
         output_needs = {
             'Weather_Sensitivity': {
@@ -80,19 +81,45 @@ class Application(DriverApplicationBaseClass):
 
 
     def report(self):
-        #Called by UI to create Viz
+        # Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
 
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        display_elements = []
 
-        return display_elements
+        report = reports.Report('Energy Signature Report')
+
+        column_info = (('value', 'Sensitivity'),)
+
+#         text_blurb = reports.TextBlurb('')
+        summary_table = reports.Table('Weather_Sensitivity',
+                                      column_info,
+                                      title='Weather Sensitivity',
+                                      desc='A description of the sensitivity')
+
+        report.add_element(summary_table)
+
+
+        xy_dataset_list = []
+        xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'oat', 'load'))
+
+        scatter_plot = reports.ScatterPlot(xy_dataset_list,
+                                           title='Time Series Load Profile',
+                                           x_label='Outside Air Temperature', y_label='Power')
+
+        report.add_element(scatter_plot)
+        # list of report objects
+
+
+
+        report_list = [report]
+
+        return report_list
 
     def execute(self):
-        #Called after User hits GO
+        # Called after User hits GO
         """
         Calculates weather sensitivity using Spearman rank.
         Also, outputs data points for energy signature scatter plot.
@@ -109,7 +136,7 @@ class Application(DriverApplicationBaseClass):
                                              exclude={'value':None},
                                              wrap_for_merge=True)
 
-        merged_load_oat = self.inp.merge(load_query,oat_query)
+        merged_load_oat = self.inp.merge(load_query, oat_query)
 
         load_values = []
         oat_values = []
@@ -125,8 +152,10 @@ class Application(DriverApplicationBaseClass):
 
         # find the Spearman rank
         weather_sensitivity = findSpearmanRank(load_values, oat_values)
-        #TODO weather sensitivity as attribute for report generation
+        # TODO weather sensitivity as attribute for report generation
 
         self.out.insert_row("Weather_Sensitivity", {
             "value": str(weather_sensitivity)
             })
+
+        print(self.report()[0])

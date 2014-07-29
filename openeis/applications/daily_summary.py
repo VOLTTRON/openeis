@@ -13,8 +13,9 @@ Calculates the following metrics:
 """
 
 
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
     OutputDescriptor, ConfigDescriptor
+from openeis.applications import reports
 import logging
 import numpy
 import math
@@ -25,12 +26,12 @@ from dateutil.relativedelta import relativedelta
 class Application(DriverApplicationBaseClass):
 
     def __init__(self, *args, building_sq_ft=-1, building_name=None, **kwargs):
-        #Called after app has been staged
+        # Called after app has been staged
         """
         When applications extend this base class, they need to make
         use of any kwargs that were setup in config_param
         """
-        super().__init__(*args,**kwargs)
+        super().__init__(*args, **kwargs)
 
         self.default_building_name_used = False
 
@@ -46,7 +47,7 @@ class Application(DriverApplicationBaseClass):
 
     @classmethod
     def get_config_parameters(cls):
-        #Called by UI
+        # Called by UI
         return {
             "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
@@ -55,10 +56,10 @@ class Application(DriverApplicationBaseClass):
 
     @classmethod
     def required_input(cls):
-        #Called by UI
+        # Called by UI
         # Sort out units.
         return {
-            'load':InputDescriptor('WholeBuildingElectricity','Building Load')
+            'load':InputDescriptor('WholeBuildingElectricity', 'Building Load')
             }
 
     @classmethod
@@ -71,9 +72,9 @@ class Application(DriverApplicationBaseClass):
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
-        description_topic = '/'.join(output_topic_base+['dailySummary',
+        description_topic = '/'.join(output_topic_base + ['dailySummary',
                                                         'description'])
-        value_topic = '/'.join(output_topic_base+['dailySummary','value'])
+        value_topic = '/'.join(output_topic_base + ['dailySummary', 'value'])
         output_needs = {
             'Daily_Summary_Table': {
                 'Metric':OutputDescriptor('string', description_topic),
@@ -84,19 +85,40 @@ class Application(DriverApplicationBaseClass):
 
 
     def report(self):
-        #Called by UI to create Viz
+        # Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
 
         display_elements is a list of display objects specifying viz and
         columns for that viz
         """
-        display_elements = []
 
-        return display_elements
+        # text blurb
+        # table
+
+        rep_desc = 'Daily Summary Report'
+
+        report = reports.Report(rep_desc)
+
+        column_info = (('Metric', 'Summary Metrics'), ('value', 'Summary Values'))
+
+#         text_blurb = reports.TextBlurb('')
+        summary_table = reports.Table('Daily_Summary_Table',
+                                      column_info,
+                                      title='Load Summary Metrics',
+                                      desc='A table showing the calculated metrics')
+
+
+        report.add_element(summary_table)
+
+        # list of report objects
+
+        report_list = [report]
+
+        return report_list
 
     def execute(self):
-        #Called after User hits GO
+        # Called after User hits GO
         """
         Calculates the following metrics and outputs.
             -Load Max Intensity
@@ -112,13 +134,13 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting daily summary", logging.INFO)
 
         floorAreaSqft = self.sq_ft
-        load_max = self.inp.get_query_sets('load',group_by='all',
+        load_max = self.inp.get_query_sets('load', group_by='all',
                                            group_by_aggregation=Max)[0]
-        load_min = self.inp.get_query_sets('load',group_by='all',
+        load_min = self.inp.get_query_sets('load', group_by='all',
                                            group_by_aggregation=Min)[0]
         load_query = self.inp.get_query_sets('load', exclude={'value':None})[0]
 
-        #TODO: Time Zone support
+        # TODO: Time Zone support
         load_startDay = load_query.earliest()[0].date()
         load_endDay = load_query.latest()[0].date()
         current_Day = load_startDay
@@ -137,11 +159,11 @@ class Application(DriverApplicationBaseClass):
             current_Day += relativedelta(days=1)
 
             load_day_values = [x[1] for x in load_day_query]
-            if ( len(load_day_values) < 5):
+            if (len(load_day_values) < 5):
                 continue
 
-            load_day_list_95.append(numpy.percentile(load_day_values,95))
-            load_day_list_5.append(numpy.percentile(load_day_values,5))
+            load_day_list_95.append(numpy.percentile(load_day_values, 95))
+            load_day_list_5.append(numpy.percentile(load_day_values, 5))
 
         # average them
         load_day_95_mean = numpy.mean(load_day_list_95)
@@ -157,31 +179,31 @@ class Application(DriverApplicationBaseClass):
         hourly_variability = []
 
         for h in range(24):
-            hourly_mean = self.inp.get_query_sets('load',group_by='all',
+            hourly_mean = self.inp.get_query_sets('load', group_by='all',
                                                   group_by_aggregation=Avg,
                                                   filter_={'time__hour':h})[0]
-            hour_load_query= self.inp.get_query_sets('load',
+            hour_load_query = self.inp.get_query_sets('load',
                                                      filter_={'time__hour':h},
                                                      exclude={'value':None})[0]
             counts = hour_load_query.count()
             if (counts < 2):
                 raise Exception("Must have more than 1 day of data!")
             rootmeansq = math.sqrt(
-                sum((x[1]-hourly_mean)**2 for x in hour_load_query)
-                / (counts-1)
+                sum((x[1] - hourly_mean) ** 2 for x in hour_load_query)
+                / (counts - 1)
                 )
-            hourly_variability.append(rootmeansq/hourly_mean)
+            hourly_variability.append(rootmeansq / hourly_mean)
 
         load_variability = numpy.mean(hourly_variability)
 
 
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Load Max Intensity",
-            "value": str(load_max/floorAreaSqft)
+            "value": str(load_max / floorAreaSqft)
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Load Min Intensity",
-            "value": str(load_min/floorAreaSqft)
+            "value": str(load_min / floorAreaSqft)
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Daily Load 95th Percentile",
@@ -207,3 +229,4 @@ class Application(DriverApplicationBaseClass):
             "Metric": "Peak Load Benchmark",
             "value": str(peakLoadIntensity)
             })
+
