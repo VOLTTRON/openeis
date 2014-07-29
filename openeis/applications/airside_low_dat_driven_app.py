@@ -50,14 +50,15 @@ operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 '''
 import datetime
-from openeis.applications import (DriverApplicationBaseClass, 
+from openeis.applications import (DrivenApplicationBaseClass,
                                   ConfigDescriptor,
                                   OutputDescriptor, 
                                   ConfigDescriptor,
-                                  InputDescriptor)
+                                  InputDescriptor,
+                                  Results)
 import logging
 
-class Application(DriverApplicationBaseClass):
+class Application(DrivenApplicationBaseClass):
     """
     Air-side HVAC Auto-Retuning diagnostic to check if the supply-air
     temperature is too low.
@@ -69,11 +70,11 @@ class Application(DriverApplicationBaseClass):
     da_temp_name = "da_temp"
     da_temp_stpt_name = "da_temp_stpt"
         
-    def __init__(self,reheat_valve_threshold=None,data_window=None,
+    def __init__(self,*args,reheat_valve_threshold=None,data_window=None,
                 percent_reheat_threshold=None,number_of_zones=None,
                 setpoint_allowable_deviation=None,rht_on_threshold=None,
                 maximum_dat_stpt=None,dat_increase=None,
-                *args,**kwargs):
+                **kwargs):
         super( ).__init__(*args,**kwargs)
         self.dat_stpt_values = []
         self.dat_values = []
@@ -96,8 +97,11 @@ class Application(DriverApplicationBaseClass):
         self.rht_on_threshold = float(rht_on_threshold)
         self.maximum_dat_stpt = float(maximum_dat_stpt)
         self.dat_increase = float(dat_increase)
-
         
+        self.da_temp_stpt_name = Application.da_temp_stpt_name
+        self.da_temp_name = Application.da_temp_name
+        self.zone_reheat_name = Application.zone_reheat_name
+        self.fan_status_name = Application.fan_status_name
 
     @classmethod
     def get_config_parameters(cls):
@@ -155,7 +159,7 @@ class Application(DriverApplicationBaseClass):
         message_topic = '/'.join(output_topic_base+['airside_low_dat_diagnostic', 'message'])
         output_needs = {
             'Diagnostic_Message': {
-                'date-time': OutputDescriptor('datetime', date_topic),
+                'date-time': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic-message': OutputDescriptor('string', message_topic)
                 }
             }
@@ -172,10 +176,16 @@ class Application(DriverApplicationBaseClass):
         '''
         Check algorithm pre-quisites and assemble data set for analysis.
         '''
+
         device_dict = {}
         diagnostic_result = Results()
+
+        if None in points.values():
+            diagnostic_result.log(''.join(['Missing data for timestamp: ',str(current_time),
+                                   '  This row will be dropped from analysis.']))
+            return diagnostic_result
         
-        for key, value in points.iteritems():
+        for key, value in points.items():
             device_dict[key.lower()] = value
             
         message_check =  datetime.timedelta(minutes=(self.data_window))
@@ -188,7 +198,7 @@ class Application(DriverApplicationBaseClass):
             self.pre_requiste_messages = []
             self.pre_msg_time = []
 
-        for key, value in device_dict.iteritems():
+        for key, value in device_dict.items():
             if self.fan_status_name in key:
                 if int(value) == 0:
                     self.pre_requiste_messages.append(sef.pre_msg)
@@ -196,20 +206,21 @@ class Application(DriverApplicationBaseClass):
 
         self.timestamp.append(current_time)
 
-        for key, value in device_dict.iteritems():
+        for key, value in device_dict.items():
             if key.startswith(self.zone_reheat_name):
                 if value > self.rht_on_threshold:
                     self.total_reheat = self.total_reheat + 1
-
-            elif key.startswith(self.da_temp_name):
-                self.dat_values.append(value)
+                self.reheat.append(value)
 
             elif key.startswith(self.da_temp_stpt_name):
                 self.dat_stpt_values.append(value)
 
+            elif key.startswith(self.da_temp_name):
+                self.dat_values.append(value)
+
             elif key.startswith(self.zone_reheat_name):
                 self.reheat.append(value)
-                  
+     
         if not self.dat_values or not self.reheat:
             self.pre_requiste_messages.append(self.pre_msg1)
             return diagnostic_result
@@ -217,7 +228,7 @@ class Application(DriverApplicationBaseClass):
         time_check =  datetime.timedelta(minutes=self.data_window)
 
         if ((self.timestamp[-1]-self.timestamp[0]) >= time_check and
-            len(self.dat_values) > 10):
+            len(self.timestamp) > 10):
             diagnostic_result = self.low_dat_sp(diagnostic_result)
         return diagnostic_result
 
@@ -227,6 +238,7 @@ class Application(DriverApplicationBaseClass):
         If auto-correction is enabled (Auto-Retuning only) and a problem is detected 
         apply corrective action.
         '''
+
         time_d = self.timestamp[-1]-self.timestamp[0]
         time_d = int(time_d.total_seconds()/60) + 1
 
