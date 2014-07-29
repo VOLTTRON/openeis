@@ -645,6 +645,7 @@ def _perform_analysis(analysis):
     
     try:
         analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
+        analysis.status = "STARTED"
         analysis.save()
         
         sensormap_id = analysis.dataset.map.id
@@ -666,10 +667,13 @@ def _perform_analysis(analysis):
         analysis.progress_percent = 100
         analysis.save()
     except Exception as e:
+        analysis.status = "ERROR"
         print("exception ", e)
         # TODO: log errors
         pass
     finally:
+        if analysis.status != "ERROR":
+            analysis.status = "COMPLETE"
         analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
         analysis.save()
 
