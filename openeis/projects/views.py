@@ -647,7 +647,7 @@ def _perform_analysis(analysis):
 
     try:
         analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
-        analysis.status = "STARTED"
+        analysis.status = "running"
         analysis.save()
 
         sensormap_id = analysis.dataset.map.id
@@ -672,15 +672,15 @@ def _perform_analysis(analysis):
             print(report)
 
     except Exception as e:
-        analysis.status = "ERROR"
+        analysis.status = "error"
         # TODO: log errors
         print(e)
 
     finally:
-        if analysis.status != "ERROR":
+        if analysis.status != "error":
             analysis.reports = [serializers.ReportSerializer(report).data for
                                 report in klass.reports(db_output)]
-            analysis.status = "COMPLETE"
+            analysis.status = "complete"
             analysis.progress_percent = 100
         analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
         analysis.save()
