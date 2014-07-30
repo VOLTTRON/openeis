@@ -90,7 +90,7 @@ class Application(DrivenApplicationBaseClass):
         return output_needs
 
     @classmethod
-    def report(cls, output_object):
+    def reports(cls, output_object):
         # Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table

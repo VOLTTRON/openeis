@@ -94,7 +94,7 @@ class Application(DriverApplicationBaseClass):
         return output_needs
 
 
-    def report(self):
+    def reports(self):
         #Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
