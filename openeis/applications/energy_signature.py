@@ -81,7 +81,7 @@ class Application(DriverApplicationBaseClass):
 
 
     @classmethod
-    def report(cls, output_object):
+    def reports(cls, output_object):
         # Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table

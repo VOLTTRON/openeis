@@ -164,7 +164,7 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def report(cls, output_obj):
+    def reports(cls, output_obj):
         """describe output"""
 
 
