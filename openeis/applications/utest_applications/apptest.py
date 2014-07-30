@@ -16,7 +16,7 @@ from openeis.projects.storage.db_input import DatabaseInput
 
 class AppTestBase(TestCase):
     # Taken directly from runapplication command.
-    def _run_application(self, config_file):
+    def run_application(self, config_file):
         """
         Runs the application with a given configuration file.
         Parameters: configuration file (config_file)
