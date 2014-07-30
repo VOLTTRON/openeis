@@ -260,6 +260,6 @@ class TestRestApi(OpenEISTestBase):
             self.assertEqual(len(app['inputs']),
                              len(dictApp.required_input()))
             
-    def test_application_run():
+    def test_application_run(self):
         # TODO Add test for running an application
         pass
