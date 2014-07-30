@@ -672,6 +672,8 @@ def _perform_analysis(analysis):
 
     finally:
         if analysis.status != "ERROR":
+            analysis.reports = [serializers.ReportSerializer(report).data for
+                                report in klass.reports(db_output)]
             analysis.status = "COMPLETE"
             analysis.progress_percent = 100
         analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
@@ -684,6 +686,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         if self.request.method in ['PUT', 'PATCH']:
+            # Use different serializer to allow updates (e.g. renaming) but not
+            # allow updates to dataset, application, and configuration fields
             return serializers.AnalysisUpdateSerializer
         return serializers.AnalysisSerializer
 
