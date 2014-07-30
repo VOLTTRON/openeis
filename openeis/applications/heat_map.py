@@ -62,7 +62,7 @@ class Application(DriverApplicationBaseClass):
         output_needs = {
             'Heat_Map': {
                 'date': OutputDescriptor('datetime', date_topic),
-                'hour': OutputDescriptor('int', hour_topic),
+                'hour': OutputDescriptor('integer', hour_topic),
                 'load': OutputDescriptor('float', load_topic)
                 }
             }
