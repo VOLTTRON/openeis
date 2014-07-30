@@ -61,15 +61,15 @@ class Application(DriverApplicationBaseClass):
         load_topic = '/'.join(output_topic_base+['heatmap', 'load'])
         output_needs = {
             'Heat_Map': {
-                'date': OutputDescriptor('datetime', date_topic),
-                'hour': OutputDescriptor('int', hour_topic),
+                'date': OutputDescriptor('string', date_topic),
+                'hour': OutputDescriptor('integer', hour_topic),
                 'load': OutputDescriptor('float', load_topic)
                 }
             }
         return output_needs
 
 
-    def report(self):
+    def reports(self):
         #Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
@@ -89,18 +89,9 @@ class Application(DriverApplicationBaseClass):
         """
         self.out.log("Starting analysis", logging.INFO)
 
-        load_by_hour = self.inp.get_query_sets('load', exclude={'value':None})
-
-        date = []
-        load_vals = []
-
-        for x in load_by_hour[0]:
-            # TODO: The following two lines were removed, but in a commit (7dd5f36) that
-            # was not, apparently, about removing them.  Verify that these should
-            # be removed.  If so, then also remove the list creation steps that happen
-            # right above this loop.
-            # date.append(x[0])
-            # load_vals.append(x[1])
+        loads = self.inp.get_query_sets('load', exclude={'value':None})
+        print("hoho: ", type(loads[0][0][0].date()))
+        for x in loads[0]:
             self.out.insert_row("Heat_Map", {
                 'date': x[0].date(),
                 'hour': x[0].hour,

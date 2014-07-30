@@ -133,7 +133,7 @@ class Application(DrivenApplicationBaseClass):
                                                     ' terminal box data for all zones for a particular AHU', count_min=2)
             }
 
-    def report(self):
+    def reports(self):
         '''
         Called by UI to create Viz.
         Describe how to present output to user

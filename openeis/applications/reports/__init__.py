@@ -22,10 +22,10 @@ class Report:
 
 class ReportElement:
 
-    def __init__(self, title=None, desc=None, **kwargs):
+    def __init__(self, title=None, description=None, **kwargs):
         super().__init__(**kwargs)
         self.title = title
-        self.desc = desc
+        self.description = description
 
     def __str__(self):
         members = dir(self)

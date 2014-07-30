@@ -66,7 +66,7 @@ class Application(DriverApplicationBaseClass):
         #is a new file, title must match title in execute when writing to out
         output_needs = {
             'Longitudinal_BM': {
-                'year':OutputDescriptor('int', year_topic),
+                'year':OutputDescriptor('integer', year_topic),
                 'load':OutputDescriptor('float', load_topic),
                 'natgas':OutputDescriptor('float', gas_topic)
                 }
@@ -74,7 +74,7 @@ class Application(DriverApplicationBaseClass):
         return output_needs
 
 
-    def report(self):
+    def reports(self):
         #Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table

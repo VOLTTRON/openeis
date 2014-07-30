@@ -67,7 +67,7 @@ class Command(BaseCommand):
         app = klass(db_input, file_output, **kwargs)
         app.run_application()
 
-        reports = klass.report(output_format)
+        reports = klass.reports(output_format)
 
         for report in reports:
             print(report)
