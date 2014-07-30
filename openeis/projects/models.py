@@ -15,7 +15,7 @@ import jsonschema.exceptions
 from .protectedmedia import ProtectedFileSystemStorage
 from .storage import sensormap
 from .storage.csvfile import CSVFile
- 
+
 
 class JSONString(str):
     pass
@@ -46,7 +46,7 @@ class JSONField(models.TextField, metaclass=models.SubfieldBase):
 
     def value_to_string(self, obj):
         return super()._get_val_from_obj(obj)
- 
+
 
 
 class Organization(models.Model):
@@ -393,15 +393,15 @@ class Analysis(models.Model):
     name = models.CharField(max_length=100)
     dataset = models.ForeignKey(SensorIngest, related_name='analysis')
     application = models.CharField(max_length=255)
-    '''    
+    '''
     Expected configuration to be a json string like
     {
-        'inputs': {
-            'key': ['ISB1/OutdoorAirTemperature','TOPIC2']
-        }, 
-        'parameters': {
-            'config1': 'value1',
-            'config2': value2
+        "inputs": {
+            "key": ["ISB1/OutdoorAirTemperature","TOPIC2"]
+        },
+        "parameters": {
+            "config1": "value1",
+            "config2": intvalue
         }
     }
     '''
