@@ -393,7 +393,22 @@ class Analysis(models.Model):
     name = models.CharField(max_length=100)
     dataset = models.ForeignKey(SensorIngest, related_name='analysis')
     application = models.CharField(max_length=255)
+    '''    
+    Expected configuration to be a json string like
+    {
+        'inputs': {
+            'key': ['ISB1/OutdoorAirTemperature','TOPIC2']
+        }, 
+        'parameters': {
+            'config1': 'value1',
+            'config2': value2
+        }
+    }
+    '''
     configuration = JSONField()
+    # Ran successfully or not
+    status = models.CharField(max_length=50)
+    # Initially queued
     added = models.DateTimeField(auto_now_add=True)
     started = models.DateTimeField(null=True, default=None)
     ended = models.DateTimeField(null=True, default=None)

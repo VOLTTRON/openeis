@@ -31,8 +31,10 @@ from . import serializers
 from .conf import settings as proj_settings
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
+from .storage.db_input import DatabaseInput
+from .storage.db_output import DatabaseOutput
+from openeis.applications import get_algorithm_class
 
-from openeis.applications import _applicationDict as apps
 
 _logger = logging.getLogger(__name__)
 
@@ -462,7 +464,7 @@ def iter_ingest(ingest):
         raise
 
 
-def _update_progress(ingest_id, file_id, pos, size, processed, total):
+def _update_ingest_progress(ingest_id, file_id, pos, size, processed, total):
     _processes[ingest_id] = {
         'id': ingest_id,
         'status': 'processing',
@@ -489,10 +491,10 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
                 batch.extend(objects)
                 file_id, pos, *_ = args
                 if file_id != last_file_id:
-                    _update_progress(ingest.id, *args)
+                    _update_ingest_progress(ingest.id, *args)
                     last_file_id, next_pos = file_id, report_interval
                 elif pos >= next_pos:
-                    _update_progress(ingest.id, *args)
+                    _update_ingest_progress(ingest.id, *args)
                     next_pos = pos + report_interval
                 if len(batch) >= batch_size:
                     break
@@ -544,7 +546,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
         data ingestion process.
         '''
         if created:
-            _update_progress(obj.id, None, 0, 0, 0, 0)
+            _update_ingest_progress(obj.id, None, 0, 0, 0, 0)
             thread = threading.Thread(target=perform_ingestion, args=(obj,))
             thread.start()
 
@@ -640,17 +642,38 @@ class ApplicationViewSet(viewsets.ViewSet):
 
 
 def _perform_analysis(analysis):
-    analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
-    analysis.save()
+    '''Create thread for individual runs of an applicaton.
+    '''
+    
     try:
-        # TODO: run application and update analysis progress
-        analysis.progress_percent = 100
+        analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
+        analysis.status = "STARTED"
         analysis.save()
-        pass
-    except:
+        
+        sensormap_id = analysis.dataset.map.id
+    
+        # Current implementation requires this to be a list.
+        dataset_ids = [analysis.dataset.id]
+        topic_map = analysis.configuration["inputs"]
+        db_input = DatabaseInput(sensormap_id, topic_map, dataset_ids)
+        
+        klass = get_algorithm_class(analysis.application)
+        output_format = klass.output_format(db_input)
+        db_output = DatabaseOutput(analysis.id, output_format)
+
+        kwargs = analysis.configuration['parameters']
+        
+        app = klass(db_input, db_output, **kwargs)
+        app.run_application()
+        
+    except Exception as e:
+        analysis.status = "ERROR"
         # TODO: log errors
-        pass
+        
     finally:
+        if analysis.status != "ERROR":
+            analysis.status = "COMPLETE"
+            analysis.progress_percent = 100
         analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
         analysis.save()
 
@@ -672,9 +695,12 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             raise rest_exceptions.PermissionDenied(
                     "Invalid project pk '{}' - "
                     'permission denied.'.format(obj.dataset.map.project.pk))
-        if obj.application not in apps:
+                
+        if not get_algorithm_class(obj.application):
             raise rest_exceptions.ParseError(
                 "Application '{}' not found.".format(obj.application))
+            
+        
         # TODO: validate dataset and application compatibility
 
     def post_save(self, obj, created):
