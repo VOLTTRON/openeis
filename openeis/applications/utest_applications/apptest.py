@@ -56,7 +56,7 @@ class AppTestBase(TestCase):
 
         app = klass(db_input, file_output, **kwargs)
         # Execute the application
-        app.execute()
+        app.run_application()
 
     def call_runapplication(self, tables, config_file):
         """
