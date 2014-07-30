@@ -16,7 +16,7 @@ from openeis.projects.storage.db_input import DatabaseInput
 
 class AppTestBase(TestCase):
     # Taken directly from runapplication command.
-    def run_application(self, config_file):
+    def _run_application(self, config_file):
         """
         Runs the application with a given configuration file.
         Parameters: configuration file (config_file)
@@ -58,7 +58,7 @@ class AppTestBase(TestCase):
         # Execute the application
         app.run_application()
 
-    def call_runapplication(self, tables, config_file):
+    def _call_runapplication(self, tables, config_file):
         """
         Runs the application, checks if a file was outputted from the
         application.  It can tolerate more than one output file for an
@@ -77,7 +77,7 @@ class AppTestBase(TestCase):
             app_dict_before[table] = [k for k in all_files_before \
                                             if (table in k and '.csv' in k)]
         # Call runapplication on the configuration file.
-        self.run_application(config_file)
+        self._run_application(config_file)
         # List all files
         all_files_after = os.listdir()
         # Dictionary to hold app files after running application
@@ -96,7 +96,7 @@ class AppTestBase(TestCase):
             newest[table] = max(app_dict_after[table], key=os.path.getctime)
         return newest
 
-    def list_outputs(self, test_output, expected_output):
+    def _list_outputs(self, test_output, expected_output):
         """
         Returns outputs from test outputs and expected outputs.  To be compared
         in the test.
@@ -121,11 +121,11 @@ class AppTestBase(TestCase):
 
         return test_list, expected_list
 
-    def diff_checker(self, test_list, expected_list):
+    def _diff_checker(self, test_list, expected_list):
         """
         Checks for differences between the new csv file and the expected csv
         file. If the values are strings, it's checked for exactness.  Numerical
-        values are checked using the nearly_same function defined below.
+        values are checked using the _nearly_same function defined below.
         Parameters: test and expected files as lists (test_list, expected_list)
         Throws: Assertion error if the numbers are not nearly same, or the file doesn't
             match
@@ -156,7 +156,7 @@ class AppTestBase(TestCase):
         for key in test_dict:
             self.assertTrue((len(test_dict[key]) > 1), 
                     "The application did not run correctly.")
-            if (self.is_num(test_dict[key][1])):
+            if (self._is_num(test_dict[key][1])):
                 self.assertEqual(test_dict[key][0], expected_dict[key][0],\
                         "Headers don't match.")
                 # Arrays to hold numerical values of this column.
@@ -168,7 +168,7 @@ class AppTestBase(TestCase):
                     expe_val_arr.append(float(expected_dict[key][i]))
                     i += 1
                 # Check for approximate sameness.
-                self.nearly_same(test_val_arr, expe_val_arr, key)
+                self._nearly_same(test_val_arr, expe_val_arr, key)
             else:
                 self.assertEqual(test_dict[key], expected_dict[key], \
                     "Something in the " + key + " header doesn't match. They \
@@ -177,7 +177,7 @@ class AppTestBase(TestCase):
             i = 1
 
 
-    def is_num(self, s):
+    def _is_num(self, s):
         """
         Check to see if s a number.
         Parameters: a number (s).
@@ -190,7 +190,7 @@ class AppTestBase(TestCase):
             return False
 
     # Taken directly from phase one reference code.
-    def nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
+    def _nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
         """
         Compare two numbers or arrays, checking all elements are nearly equal.
         Parameters: two lists of numbers to compare (xxs, yys), the key to the column
@@ -312,14 +312,14 @@ class AppTestBase(TestCase):
         # grab application name
         application = config['global_settings']['application']
         # run application
-        test_output = self.call_runapplication(expected_outputs.keys(), \
+        test_output = self._call_runapplication(expected_outputs.keys(), \
                                                ini_file)
         for table in expected_outputs:
             # get outputs
             test_list, expected_list = \
-                self.list_outputs(test_output[table], expected_outputs[table])
+                self._list_outputs(test_output[table], expected_outputs[table])
             # check for similarity
-            self.diff_checker(test_list, expected_list)
+            self._diff_checker(test_list, expected_list)
 
         if clean_up:
             for output in test_output:
@@ -328,5 +328,6 @@ class AppTestBase(TestCase):
                     (application in k and '.log' in k)]
             newestLog = max(allFiles, key=os.path.getctime)
             os.remove(newestLog)
+
 
 
