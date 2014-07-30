@@ -106,7 +106,7 @@ class Application(DriverApplicationBaseClass):
         summary_table = reports.Table('Daily_Summary_Table',
                                       column_info,
                                       title='Load Summary Metrics',
-                                      desc='A table showing the calculated metrics')
+                                      description='A table showing the calculated metrics')
 
 
         report.add_element(summary_table)

@@ -98,7 +98,7 @@ class Application(DriverApplicationBaseClass):
         summary_table = reports.Table('Weather_Sensitivity',
                                       column_info,
                                       title='Weather Sensitivity',
-                                      desc='A description of the sensitivity')
+                                      description='A description of the sensitivity')
 
         report.add_element(summary_table)
 
