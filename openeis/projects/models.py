@@ -407,7 +407,7 @@ class Analysis(models.Model):
     '''
     configuration = JSONField()
     # Ran successfully or not
-    status = models.CharField(max_length=50)
+    status = models.CharField(max_length=50, default='queued')
     # Initially queued
     added = models.DateTimeField(auto_now_add=True)
     started = models.DateTimeField(null=True, default=None)
