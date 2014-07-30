@@ -51,7 +51,6 @@ under Contract DE-AC05-76RL01830
 '''
 import datetime
 from openeis.applications import (DrivenApplicationBaseClass,
-                                  ConfigDescriptor,
                                   OutputDescriptor, 
                                   ConfigDescriptor,
                                   InputDescriptor,
@@ -85,7 +84,7 @@ class Application(DrivenApplicationBaseClass):
         self.reheat = []
 
         '''Pre-requisite messages'''
-        self.pre_msg  = 'Supply fan is off, current data will not be used for diagnostics.'
+        self.pre_msg0  = 'Supply fan is off, current data will not be used for diagnostics.'
         self.pre_msg1  = 'Verify that point names in diagnostic match OpenEIS data-type names.'
 
         '''Algorithm thresholds (Configurable)'''
@@ -191,7 +190,7 @@ class Application(DrivenApplicationBaseClass):
         message_check =  datetime.timedelta(minutes=(self.data_window))
        
         if (self.pre_msg_time[-1]-self.pre_msg_time[0]) >= message_check:
-            msg_lst = [self.pre_msg, self.pre_msg1]
+            msg_lst = [self.pre_msg0, self.pre_msg1]
             for item in msg_lst:
                 if self.pre_requiste_messages.count(item) > (0.25)*len(self.pre_msg_time):
                     diagnostic_result.log(item, logging.INFO)
@@ -201,10 +200,8 @@ class Application(DrivenApplicationBaseClass):
         for key, value in device_dict.items():
             if self.fan_status_name in key:
                 if int(value) == 0:
-                    self.pre_requiste_messages.append(sef.pre_msg)
+                    self.pre_requiste_messages.append(sef.pre_msg0)
                     return diagnostic_result
-
-        self.timestamp.append(current_time)
 
         for key, value in device_dict.items():
             if key.startswith(self.zone_reheat_name):
@@ -225,6 +222,7 @@ class Application(DrivenApplicationBaseClass):
             self.pre_requiste_messages.append(self.pre_msg1)
             return diagnostic_result
 
+        self.timestamp.append(current_time)
         time_check =  datetime.timedelta(minutes=self.data_window)
 
         if ((self.timestamp[-1]-self.timestamp[0]) >= time_check and
@@ -252,14 +250,6 @@ class Application(DrivenApplicationBaseClass):
             if set_point_tracking > self.setpoint_allowable_deviation:
                 result.log('Supply-air temperature is deviating significantly from the supply-air temperature set point.', logging.INFO)
 
-        self.timestamp = []
-        self.dat_stpt_values = []
-        self.dat_values = []
-        self.pre_requiste_messages = []
-        self.pre_msg_time = []
-        self.reheat = []
-        self.total_reheat = 0
-        
         if (reheat_coil_average > self.reheat_valve_threshold and
             avg_zones_reheat > self.percent_reheat_threshold and 
             self.dat_stpt_values):
@@ -281,5 +271,14 @@ class Application(DrivenApplicationBaseClass):
         else:
             '''Create diagnostic message that no re-tuning opportunity was detected: No Fault condition'''
             diagnostic_message = 'No re-tuning opportunity has been detected for low DAT diagnostic.'
+
         result.log(diagnostic_message, logging.INFO)
+        self.timestamp = []
+        self.dat_stpt_values = []
+        self.dat_values = []
+        self.pre_requiste_messages = []
+        self.pre_msg_time = []
+        self.reheat = []
+        self.total_reheat = 0
+
         return result     
