@@ -642,6 +642,8 @@ class ApplicationViewSet(viewsets.ViewSet):
 
 
 def _perform_analysis(analysis):
+    '''Create thread for individual runs of an applicaton.
+    '''
     
     try:
         analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
@@ -664,16 +666,14 @@ def _perform_analysis(analysis):
         app = klass(db_input, db_output, **kwargs)
         app.run_application()
         
-        analysis.progress_percent = 100
-        analysis.save()
     except Exception as e:
         analysis.status = "ERROR"
-        print("exception ", e)
         # TODO: log errors
-        pass
+        
     finally:
         if analysis.status != "ERROR":
             analysis.status = "COMPLETE"
+            analysis.progress_percent = 100
         analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
         analysis.save()
 

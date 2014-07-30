@@ -242,7 +242,7 @@ class TestRestApi(OpenEISTestBase):
         self.assertTrue(client.login(username='test_user', password='test'))
 
     def test_application_list(self):
-        from openeis.applications import _applicationDict
+        from openeis.applications import (_applicationDict)
 
         client = APIClient()
         response = client.get('/api/applications')
@@ -259,3 +259,7 @@ class TestRestApi(OpenEISTestBase):
                              len(dictApp.get_config_parameters()))
             self.assertEqual(len(app['inputs']),
                              len(dictApp.required_input()))
+            
+    def test_application_run():
+        # TODO Add test for running an application
+        pass
