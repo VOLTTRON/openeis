@@ -19,7 +19,8 @@
         "sensors": {
             "allOf": [
                 {"$ref": "#/definitions/sensorset"},
-                {"$ref": "#/definitions/sensor_reqs"}
+                {"$ref": "#/definitions/sensor_columns"},
+                {"$ref": "#/definitions/sensor_levels"}
             ]
         },
         "extra": {"type": "object"}
@@ -166,7 +167,6 @@
                 {
                     "title": "System level attributes",
                     "properties": {
-                        "level": {"enum": ["system"]},
                         "attributes": {
                             "not": {}
                         }
@@ -191,7 +191,6 @@
             "type": "object",
             "required": ["type", "file", "column"],
             "properties": {
-                "system": {"type": "string"},
                 "type": {"type": "string"},
                 "unit": {"type": "string"},
                 "file": {"type": "string"},
@@ -204,38 +203,53 @@
                 "extra": {"type": "object"}
             },
             "additionalProperties": false,
-            "anyOf": [
-                {
-                    "properties": {
-                        "system": {
-                            "enum": ["RTU", "Chiller", "Pump", "Chiller/Pump"]
-                        }
-                    }
-                },
-                {
-                    "properties": {
-                        "system": {"not": {}}
-                    }
-                }
-            ],
             "oneOf": [
                 {
                     "properties": {
                         "type": {
                             "enum": [
-                                "ZoneSetpoint",
-                                "ZoneTemperature",
-                                "ReturnAirTemperature",
-                                "OutdoorAirTemperature",
-                                "DischargeAirTemperature",
-                                "MixedAirTemperature"
+                                "EconomizerMode",
+                                "FirstStageCooling",
+                                "FirstStageHeating",
+                                "OccupancyMode",
+                                "SecondStageCooling",
+                                "SecondStageHeating"
                             ]
                         },
-                        "unit": {"$ref": "#/definitions/units/temperature"}
-                    },
-                    "required": ["unit"]
+                        "unit": {"not": {}}
+                    }
                 },
-                 {
+                {
+                    "required": ["unit"],
+                    "properties": {
+                        "type": {
+                            "enum": [
+                                "DischargeAirRelativeHumidity",
+                                "MixedAirRelativeHumidity",
+                                "OutdoorAirRelativeHumidity",
+                                "OutdoorDamperSignal",
+                                "ReturnAirRelativeHumidity",
+                                "SupplyFanSpeed"
+                            ]
+                        },
+                        "unit": {"$ref": "#/definitions/units/dimensionless"}
+                    }
+                },
+                {
+                    "required": ["unit"],
+                    "properties": {
+                        "type": {
+                            "enum": [
+                                "CondenserFanPower",
+                                "SupplyFanPower",
+                                "TotalPower"
+                            ]
+                        },
+                        "unit": {"$ref": "#/definitions/units/energy"}
+                    }
+                },
+                {
+                    "required": ["unit"],
                     "properties": {
                         "type": {
                             "enum": [
@@ -244,52 +258,22 @@
                             ]
                         },
                         "unit": {"$ref": "#/definitions/units/power"}
-                    },
-                    "required": ["unit"]
-                },
-                {
-                    "properties": {
-                        "type": {
-                            "enum": [
-                                "WholeBuildingElectricity",
-                                "CondenserFanPower",
-                                "TotalPower",
-                                "SupplyFanPower",
-                                "WholeBuildingGas"
-                            ]
-                        },
-                        "unit": {"$ref": "#/definitions/units/energy"}
-                    },
-                    "required": ["unit"]
-                },
-                {
-                    "properties": {
-                        "type": {
-                            "enum": [
-                                "OutdoorDamperSignal",
-                                "OutdoorAirRelativeHumidity",
-                                "MixedAirRelativeHumidity",
-                                "SupplyFanSpeed",
-                                "ReturnAirRelativeHumidity",
-                                "DischargeAirRelativeHumidity"
-                            ]
-                        },
-                        "unit": {"not": {}}
                     }
                 },
                 {
+                    "required": ["unit"],
                     "properties": {
                         "type": {
                             "enum": [
-                                "SecondStageCooling",
-                                "FirstStageHeating",
-                                "EconomizerMode",
-                                "FirstStageCooling",
-                                "OccupancyMode",
-                                "SecondStageHeating"
+                                "DischargeAirTemperature",
+                                "MixedAirTemperature",
+                                "OutdoorAirTemperature",
+                                "ReturnAirTemperature",
+                                "ZoneSetpoint",
+                                "ZoneTemperature"
                             ]
                         },
-                        "unit": {"not": {}}
+                        "unit": {"$ref": "#/definitions/units/temperature"}
                     }
                 }
             ]
@@ -297,8 +281,39 @@
 
         "units": {
             "title": "Unit enumerations",
-            "temperature": {
-                "enum": ["celsius", "fahrenheit", "kelvin"]
+            "dimensionless": {
+                "enum": [
+                    "ampere_square_meter",
+                    "data_center_infrastructure_efficiency",
+                    "db_microVolt",
+                    "db_milliVolt",
+                    "decibel",
+                    "degree_days_celsius",
+                    "degree_days_fahrenheit",
+                    "degrees_angular",
+                    "degrees_phase",
+                    "formazin_nephelometric_unit",
+                    "grams_of_water_per_kilogram_dry_air",
+                    "grams_per_kilogram",
+                    "nephelometric_turbidity_units",
+                    "pH",
+                    "parts_per_billion",
+                    "parts_per_million",
+                    "parts_per_unit",
+                    "percent",
+                    "percent_obscuration_per_foot",
+                    "percent_obscuration_per_meter",
+                    "percent_relative_humidity",
+                    "pixel",
+                    "power_factor",
+                    "power_usage_effectiveness",
+                    "psi_per_degree_fahrenheit",
+                    "radian",
+                    "square_meters_per_newton",
+                    "steradian",
+                    "volts_per_degree_kelvin",
+                    "watts_per_square_meter_degree_kelvin"
+                ]
             },
             "energy": {
                 "enum": [
@@ -322,9 +337,29 @@
                 ]
             },
             "power": {
-                "enum": ["kilowatt","kilobtus_per_hour"]
+                "enum": [
+                    "btus_per_hour",
+                    "foot_pounds_per_second",
+                    "gigawatt",
+                    "horsepower",
+                    "joules_per_hour",
+                    "kilobtus_per_hour",
+                    "kilojoules_per_hour",
+                    "kilowatt",
+                    "megajoules_per_hour",
+                    "megawatt",
+                    "milliwatt",
+                    "tons_refrigeration",
+                    "watt"
+                ]
+            },
+            "temperature": {
+                "enum": [
+                    "celsius",
+                    "fahrenheit",
+                    "kelvin"
+                ]
             }
-            
         },
 
         "attributes": {
@@ -344,9 +379,13 @@
             "title": "Additional file constraints",
             "description": "For use by scripts to inject relationship constraints based on the data being validated."
         },
-        "sensor_reqs": {
-            "title": "Additional sensor constraints",
-            "description": "For use by scripts to inject relationship constraints based on the data being validated."
+        "sensor_columns": {
+            "title": "Additional sensor column constraints",
+            "description": "For use by scripts to inject column relationship constraints based on the data being validated."
+        },
+        "sensor_levels": {
+            "title": "Additional sensor level constraints",
+            "description": "For use by scripts to inject level relationship constraints based on the data being validated."
         }
     }
 }
