@@ -77,7 +77,7 @@ class AppTestBase(TestCase):
             app_dict_before[table] = [k for k in all_files_before \
                                             if (table in k and '.csv' in k)]
         # Call runapplication on the configuration file.
-        self._run_application(config_file)
+        self.run_application(config_file)
         # List all files
         all_files_after = os.listdir()
         # Dictionary to hold app files after running application
