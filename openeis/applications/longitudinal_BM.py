@@ -66,7 +66,7 @@ class Application(DriverApplicationBaseClass):
         #is a new file, title must match title in execute when writing to out
         output_needs = {
             'Longitudinal_BM': {
-                'year':OutputDescriptor('int', year_topic),
+                'year':OutputDescriptor('integer', year_topic),
                 'load':OutputDescriptor('float', load_topic),
                 'natgas':OutputDescriptor('float', gas_topic)
                 }
