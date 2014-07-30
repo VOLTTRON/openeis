@@ -666,7 +666,7 @@ def _perform_analysis(analysis):
         app = klass(db_input, db_output, **kwargs)
         app.run_application()
 
-        reports = klass.report(output_format)
+        reports = klass.reports(output_format)
 
         for report in reports:
             print(report)
