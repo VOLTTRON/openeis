@@ -89,7 +89,8 @@ Or was there a connection?*
 
 ## Set up database in OpenEIS
 
-*TODO: Need information on how to do this.*
+*TODO: Need hyperlink to user documentation of basic operations.
+Question-- is it necessary to "flush" first, in order to start with a clean slate?*
 
 
 ## Creating a fixture
@@ -103,7 +104,20 @@ For complete documentation on this command, refer to [Django's documentation][Dj
 
 Place this file in the directory made earlier.
 
-*TODO: Mention formatting a fixture file, which makes it easier to view, and easier to keep under version control.*
+An optional step, when creating a fixture file, is to format it "nicely" for viewing.
+Here, "nice" mainly means that each major JSON object appears on its own line of the file.
+This is entirely cosmetic, but it has two advantages when working with the file through a source code repository.
+First, it makes the file easier to look at with simple non-JSON-aware editors.
+Second, it makes changes to the file easier to identify using line-oriented `diff` tools.
+
+To format the fixture file:
+
+    > python  format-fixture-file.py  <original-file-name>  >  <new-file-name>
+
+Please avoid the mistake of trying to direct the output to a file with the same name as the original.
+This is likely to cause problems.
+
+Note `format-fixture-file.py` is in the `utest_applications` subdirectory.
 
 
 ## Revising a fixture
