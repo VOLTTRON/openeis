@@ -5,12 +5,11 @@
 
 This section describes basic command-line interactions with OpenEIS, under a Unix-like shell:
 
-+ [Activating the virtual environment](#activatevirtualenv)
-+ [Running the server](#runserver)
-+ [Killing the server](#killserver)
++ Activating the virtual environment
++ Running the server
++ Killing the server
 
 
-<a name="activatevirtualenv"/>
 ## Activating the virtual environment
 
 OpenEIS generally should be run through a virtual environment.
@@ -31,10 +30,9 @@ Another way to verify that the virtual environment is running is to check that t
 where `openeis_root` is the root directory that contains the OpenEIS project files.
 
 
-<a name="runserver"/>
 ## Running the server
 
-After activating the [virtual environment](#activatevirtualenv), run the OpenEIS server by:
+After activating the virtual environment, run the OpenEIS server by:
 
     > openeis  runserver
 
@@ -42,7 +40,6 @@ It should now be possible to open a web browser to the main entry point, [http:/
 The server also supports a number of useful [API](server_api_tricks.md) pages.
 
 
-<a name="killserver"/>
 ## Killing the server
 
 In general, entering `Control-C` in the same terminal used to start the server, will stop the server (use `Apple/Command-C` on a Mac).
