@@ -28,8 +28,7 @@ Create the virtual environment:
 
     > python3  bootstrap.py
 
-*TODO: Presumably bootstrap.py does more than just create the virtual environment.
-Is there a more general way to describe it above?*
+This will also install Python's package manager, pip, as well as Django.  Django is the web framework used in OpenEIS.  It provides a development server to work on and an easy database to work with.  For more information, please refer to to [their website](https://www.djangoproject.com/).
 
 Then [activate the virtual environment](command_line_basics_unix.md):
 
@@ -56,5 +55,6 @@ To create a database and set up a superuser:
 
 You will be prompted for a superuser name and password.
 
-*TODO: Consider moving the `syncdb` part to another section, and merely referencing that section here.
-Synching apparently needs to be done quite often as part of a recovery procedure, and it would be nice to describe it in a single place.*
+This only needs to be done once, unless there is a change to the schema in the database.
+
+
