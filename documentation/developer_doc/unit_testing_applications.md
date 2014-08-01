@@ -42,7 +42,7 @@ Create a file that contains the sample data against which the application will b
 For example:
 
 datetime    | status | missing | const | floats
-------------|-------:|--------:|------:|-------
+:-----------|-------:|--------:|------:|:------
 6/1/14 0:00 | 1      | 0       | 7     | 0.0
 6/1/14 1:00 | 2      | 1       | 7     | 1
 6/1/14 2:00 | 3      |         | 7     | 2.
@@ -73,6 +73,7 @@ The `.ref` suffix separates regular output from expected, or _reference_, output
 For example:
 
 Metric                     | value
+:--------------------------|:----------
 Load Max Intensity         | 0.00233333
 Load Min Intensity         | 0.00233333
 Daily Load 95th Percentile | 7
