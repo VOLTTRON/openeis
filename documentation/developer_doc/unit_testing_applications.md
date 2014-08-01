@@ -170,33 +170,35 @@ Should have already described what `test_applications.py` is and does.*
 
 *TODO: Fill in link to configuration file page, once it's created.*
 
-    # Only import if you're creating a new file.
+```python
+# Only import if you're creating a new file.
 
-    from openeis.applications.utest_applications.apptest import AppTestBase
-    import os
+from openeis.applications.utest_applications.apptest import AppTestBase
+import os
 
-    class TestYourApplication(AppTestBase):
-        fixtures = [os.path.join('applications',
-                                 'utest_applications',
-                                 'utest_your_application',
-                                 'your_application_fixture.json')]
+class TestYourApplication(AppTestBase):
+    fixtures = [os.path.join('applications',
+                             'utest_applications',
+                             'utest_your_application',
+                             'your_application_fixture.json')]
 
-        def test_your_application_test_name(self):
-            expected_files = {}
-            config_file = os.path.join('applications',
-                                           'utest_applications',
-                                           'utest_your_application',
-                                           'your_application_same_number.ini')
-            expected_files['output1'] = os.path.join('applications',
-                                           'utest_applications',
-                                           'utest_your_application',
-                                           'your_application_output1.ref.csv')
-            expected_files['output2'] = os.path.join('applications',
-                                           'utest_applications',
-                                           'utest_your_application',
-                                           'your_application_output2.ref.csv')
+    def test_your_application_test_name(self):
+        expected_files = {}
+        config_file = os.path.join('applications',
+                                       'utest_applications',
+                                       'utest_your_application',
+                                       'your_application_same_number.ini')
+        expected_files['output1'] = os.path.join('applications',
+                                       'utest_applications',
+                                       'utest_your_application',
+                                       'your_application_output1.ref.csv')
+        expected_files['output2'] = os.path.join('applications',
+                                       'utest_applications',
+                                       'utest_your_application',
+                                       'your_application_output2.ref.csv')
 
-            self.run_it(config_file, expected_files, clean_up=True)
+        self.run_it(config_file, expected_files, clean_up=True)
+```
 
 For each application you're testing, you should create a new class called `TestYourApplication` and it should extend `AppTestBase`.
 In this class will be the fixtures needed to run the tests as well as all of the tests for that application.
@@ -222,12 +224,14 @@ Most of this subsection seems to relate to how you set up the test, not how you 
 
 If you want to test to make sure your application throws an exception under whatever conditions, do the following:
 
-    def test_your_application_invalid(self):
-        config_file = os.path.join('applications',
-                                   'utest_applications',
-                                   'utest_your_application',
-                                   'your_application_invalid.ini')
-        self.assertRaises(Exception, self.run_application, config_file)
+```python
+def test_your_application_invalid(self):
+    config_file = os.path.join('applications',
+                               'utest_applications',
+                               'utest_your_application',
+                               'your_application_invalid.ini')
+    self.assertRaises(Exception, self.run_application, config_file)
+```
 
 *TODO: In GitHub-flavored markdown, and in Markdown as supported by BitBucket, can put code blocks in triple backticks, and supply the name of the language.
 This will provide syntax highlighting.*
