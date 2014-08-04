@@ -10,7 +10,8 @@
             "Other"
         ],
         "child_list": [
-            "building"
+            "building",
+            "zone"
         ]
     },
     "building": {
@@ -26,6 +27,15 @@
         "system_list": [
             "RTU",
             "Chiller"
+        ],
+        "child_list": [
+            "zone"
+        ]
+    },
+    "zone": {
+        "sensor_list": "*",
+        "child_list": [
+            "zone"
         ]
     },
     "systems": {
