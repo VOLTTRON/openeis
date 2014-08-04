@@ -6,14 +6,7 @@ This section describes creating and running unit tests for applications hosted u
 
 Each test of an application comprises an input data file, configuration file, a sensor map, a dataset, and expected output.
 
-*TODO: Add hyperlinks to appropriate subsections.
-Maybe put into a bullet list as well.
-Note: internal hyperlinks apparently are not supported by Mercurial, but should be by GitHub (judging from their respective documentation).*
-
 The tests use Python's `nose` unit testing framework included in [Django's testing framework](https://docs.djangoproject.com/en/1.6/topics/testing/).
-
-*TODO: Need to provide an overview of the workflow, and what each piece is doing in the workflow.
-Goal is to address the complaints, below, about lack of context.*
 
 
 ## Test directory
@@ -53,7 +46,7 @@ datetime    | status | missing | const | floats
 6/1/14 9:00 | 1      | 9       | 7     | 9.
 
 Note that test data may include values that are expected to cause problems, or that need special handling.
-For example, if the application requires the data to have a nonzero variance, then some column of the input file can have a constant entry.
+For example, if the application requires the data to have a non-zero variance, then some column of the input file can have a constant entry.
 Similarly, algorithms usually have to be robust against missing values, so some column in the input file may have missing entries.
 
 The columns can be in any order, and the table can have enough data to support multiple individual tests.
@@ -68,18 +61,18 @@ After creating the input data, create a file containing the expected output from
 The file name should follow the pattern `application_name_test_type.ref.csv`.
 The `.ref` suffix separates regular output from expected, or _reference_, output.
 
-For example:
+For example, the expected output for running Daily Summary on the data given above is:
 
 Metric                     | value
 :--------------------------|:----------
-Load Max Intensity         | 0.\00233333
-Load Min Intensity         | 0.\00233333
+Load Max Intensity         | 0.00233333
+Load Min Intensity         | 0.00233333
 Daily Load 95th Percentile | 7
 Daily Load 5th Percentile  | 7
 Daily Load Ratio           | 1
 Daily Load Range           | 0
 Load Variability           | 0
-Peak Load Benchmark        | 2.\3333333
+Peak Load Benchmark        | 2.3333333
 
 # Set up database in OpenEIS
 
@@ -128,12 +121,6 @@ It does this for every test, thus creating an isolated environment for each test
 As a result, the tests should not depend on each other.
 Furthermore the tests are executed in no particular order when the tests are run.
 
-*TODO: This needs more context, regarding the distinction between "individual tests".
-Does the order of the tests mentioned above mean the order of fixtures?
-Or the order of the tests supported by a single fixture?
-Probably should move the paragraph above to appear earlier in this documentation, and expand it to give a preview of how individual tests will be created.*
-
-
 ## Utilities
 
 If there are any utilities or external functions that you need for your tests, put them in `apptest.py`, located in `applications/utest_applications/`.
@@ -144,8 +131,6 @@ Your test will extend the class AppTestBase.
 You may wish to read the documentation for existing functions to see if they are of any use to you.
 
 If for some reason, your application uses a utility or external function that cannot be placed in AppTestBase, simply import as you would any other module.
-
-*TODO: Can apptest.py just be the Python init file for that directory?*
 
 ## Testing application output equality
 
