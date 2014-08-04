@@ -72,14 +72,14 @@ For example:
 
 Metric                     | value
 :--------------------------|:----------
-Load Max Intensity         | 0.00233333
-Load Min Intensity         | 0.00233333
+Load Max Intensity         | 0.\00233333
+Load Min Intensity         | 0.\00233333
 Daily Load 95th Percentile | 7
 Daily Load 5th Percentile  | 7
 Daily Load Ratio           | 1
 Daily Load Range           | 0
 Load Variability           | 0
-Peak Load Benchmark        | 2.3333333
+Peak Load Benchmark        | 2.\3333333
 
 # Set up database in OpenEIS
 
