@@ -10,9 +10,7 @@ Each test of an application comprises an input data file, configuration file, a 
 Maybe put into a bullet list as well.
 Note: internal hyperlinks apparently are not supported by Mercurial, but should be by GitHub (judging from their respective documentation).*
 
-The tests use Python's `nose` unit testing framework.
-
-*TODO: Add hyperlink to nose documentation.*
+The tests use Python's `nose` unit testing framework included in [Django's testing framework](https://docs.djangoproject.com/en/1.6/topics/testing/).
 
 *TODO: Need to provide an overview of the workflow, and what each piece is doing in the workflow.
 Goal is to address the complaints, below, about lack of context.*
@@ -83,22 +81,14 @@ Daily Load Range           | 0
 Load Variability           | 0
 Peak Load Benchmark        | 2.3333333
 
-*TODO: These numbers might have to change, since I (DML) changed the count of data in the column they apparently came from.
-Or was there a connection?*
-
-
-## Set up database in OpenEIS
-
-*TODO: Need hyperlink to user documentation of basic operations.
-Question-- is it necessary to "flush" first, in order to start with a clean slate?*
-
+# Set up database in OpenEIS
 
 ## Creating a fixture
 
 Now we want to save the state of this database as is.
 Django provides a function `dumpdata` that will store the data as a "fixture".
 A fixture is a `JSON`-formatted file containing the contents of the database.
-For complete documentation on this command, refer to [Django's documentation][DjangoDocsFixture].
+For complete documentation on this command, refer to [Django's documentation](https://docs.djangoproject.com/en/1.6/ref/django-admin/#dumpdata-appname-appname-appname-model).
 
     > openeis  dumpdata  >  your_application_fixture.json
 
@@ -123,7 +113,7 @@ Note `format-fixture-file.py` is in the `utest_applications` subdirectory.
 ## Revising a fixture
 
 Suppose you want to change something in the database used for a unit test.
-You can install a fixture, edit it, and then call `dumpdata` again.
+You can [install](https://docs.djangoproject.com/en/1.6/ref/django-admin/#loaddata-fixture-fixture) a fixture, edit it, and then call `dumpdata` again.
 
 To install a fixture:
 
@@ -132,10 +122,11 @@ To install a fixture:
 
 ## Writing the tests
 
-We use Django's testing framework, which flushes the database, installs your fixture as shown above, and tears it down after the test is done.
+We use Django's testing framework.
+For each test, Django flushes the database, installs your fixture as shown above, and tears it down after the test is done.
 It does this for every test, thus creating an isolated environment for each test.
 As a result, the tests should not depend on each other.
-Furthermore the tests are executed in no particular order when it is run.
+Furthermore the tests are executed in no particular order when the tests are run.
 
 *TODO: This needs more context, regarding the distinction between "individual tests".
 Does the order of the tests mentioned above mean the order of fixtures?
@@ -145,33 +136,27 @@ Probably should move the paragraph above to appear earlier in this documentation
 
 ## Utilities
 
-If there are any utilities or external functions that you need, put them in `apptest.py`.
-This is a class that holds all of the functions and utilities for the tests.
+If there are any utilities or external functions that you need for your tests, put them in `apptest.py`, located in `applications/utest_applications/`.
+This class extends Django's test case, and is thus the test base for our tests.
+It holds all of the functions and utilities needed to run the tests.
+For example, if your test requires finding the mean of a set up numbers, a function that naively calculates the mean is in AppTestBase.
 Your test will extend the class AppTestBase.
 You may wish to read the documentation for existing functions to see if they are of any use to you.
 
-*TODO: Again, need more context here.
-List directory where apptest.py resides.
-Describe what it does before start talking about utilities (or else describe utilities in context of a subsection talking about what apptest does).*
-
-*TODO: If a particular application has specialized needs for a utility or external function, can't that be placed in a class that derives from apptest.pty?*
+If for some reason, your application uses a utility or external function that cannot be placed in AppTestBase, simply import as you would any other module.
 
 *TODO: Can apptest.py just be the Python init file for that directory?*
-
 
 ## Testing application output equality
 
 Each test should have a [configuration file](http://example.net/).
-When writing tests, you may add to the existing `test_applications.py` or create your own file.
+When writing tests, you may add to the existing `test_applications.py`, which is our own file that contains all the tests, or create your own file.
 Either way, when writing tests it should look like the following (use `test_applications.py` as a reference).
 
-*TODO: Still need some context.
-Should have already described what `test_applications.py` is and does.*
-
-*TODO: Fill in link to configuration file page, once it's created.*
+*TODO: Fill in link to configuration file page, once it is created.*
 
 ```python
-# Only import if you're creating a new file.
+# Only import if you are creating a new file.
 
 from openeis.applications.utest_applications.apptest import AppTestBase
 import os
@@ -198,26 +183,75 @@ class TestYourApplication(AppTestBase):
                                        'your_application_output2.ref.csv')
 
         self.run_it(config_file, expected_files, clean_up=True)
+
+    def test_your_application_invalid(self):
+        config_file = os.path.join('applications',
+                               'utest_applications',
+                               'utest_your_application',
+                               'your_application_invalid.ini')
+        self.assertRaises(Exception, self.run_application, config_file)
+
+class TestHeatMap(AppTestBase):
+    fixtures = [os.path.join('applications',
+                            'utest_applications',
+                            'utest_heat_map',
+                            'heat_map_fixture.json')]
+
+    def test_heat_map_basic(self):
+        hm_basic_exp = {}
+        hm_basic_ini = os.path.join('applications',
+                                    'utest_applications',
+                                    'utest_heat_map',
+                                    'heat_map_basic.ini')
+        hm_basic_exp['Heat_Map'] = os.path.join('applications',
+                                    'utest_applications',
+                                    'utest_heat_map',
+                                    'heat_map_basic.ref.csv')
+        self.run_it(hm_basic_ini, hm_basic_exp, clean_up=True)
 ```
 
-For each application you're testing, you should create a new class called `TestYourApplication` and it should extend `AppTestBase`.
+For each application you are testing, you should create a new class called `TestYourApplication` and it should extend `AppTestBase`.
 In this class will be the fixtures needed to run the tests as well as all of the tests for that application.
+There can more than one test per class and multiple application classes per file.
 Put all of the fixtures needed in a list and set equal to "fixtures" at the beginning of the class.
-Make sure to join the path using `os.path.join`.
+
+    fixtures = [os.path.join('applications',
+                             'utest_applications',
+                             'utest_your_application',
+                             'your_application_fixture.json')]
+
+
+This is how Django knows which fixtures to install at the beginning of each test.
+Join the paths using `os.path.join` because different operating systems join paths differently.
+With this, Python is able to figure out what operating system it is running on and thus how to join the paths correctly.  For documentation, go [here](https://docs.python.org/3.3/library/os.path.html).
 Set the `config_file` to the path the of the configuration file made for this test.
+The configuration file holds all of the parameters for running the application.  `run_it` will run the application with the configuration file.
+
+    config_file = os.path.join('applications',
+                                       'utest_applications',
+                                       'utest_your_application',
+                                       'your_application_same_number.ini')
+
 To tolerate more than one output file from an application, `expected_files` is a Python dictionary.
 Set the key to be the output name and the value to be the file path.
+`run_it` will find these files and compare the output of running the application to the expected output.
+
+    expected_files['output1'] = os.path.join('applications',
+                                   'utest_applications',
+                                   'utest_your_application',
+                                   'your_application_output1.ref.csv')
+    expected_files['output2'] = os.path.join('applications',
+                                   'utest_applications',
+                                   'utest_your_application',
+                                   'your_application_output2.ref.csv')
+
+
 Afterwards, call `self.run_it` on the `(config_file, expected_file)`.
-The `clean_up` option is if you wish to keep the outputs created from calling the application.
-This is automatically set to false, but you may wish to delete the files by setting it equal to True.
 
-*TODO: Show sample code blocks.
-Vague descriptions like "Make sure to join the path using os.path.join" and "Set the config file" and "the clean up option" don't help, because there's no context of why you are joining any paths, or how you are setting the config file, or how or when you invoke the clean up option.*
+    self.run_it(config_file, expected_files, clean_up=True)
 
-*TODO: Consider putting the finer points listed in the para above, into a bullet list.*
-
-*TODO: Need to tweak the organization here (either break up into multiple subsections, or rename this subsection).
-Most of this subsection seems to relate to how you set up the test, not how you test for output equality.*
+A result of calling `run_it` is the output from running the application, which is put into the root directory.
+If you do not wish to see the output, set the `clean_up` to "True".
 
 
 ## Testing for exceptions
@@ -233,39 +267,48 @@ def test_your_application_invalid(self):
     self.assertRaises(Exception, self.run_application, config_file)
 ```
 
-*TODO: In GitHub-flavored markdown, and in Markdown as supported by BitBucket, can put code blocks in triple backticks, and supply the name of the language.
-This will provide syntax highlighting.*
-
 Make sure the configuration file that is being passed in will make your application throw an exception.
-Use the self.assertRaises function to assert that it raises an exception.  The first argument is what kind of Exception you need it to throw, the second argument is self.run\_application (in utilities), and the third is the configuration file you wish to pass into the application.  This will call the application and assert that it throws a certain exception.
-
-*TODO: "The configuration file that is being passed in" needs context.
-Also, does the configuration file cause an exception, or do the data specified by the config file cause the exception?
-The unit tests should be catching problems in the application, not in the configuration of the application run (which is a platform concern).*
-
+If you are testing for invalid data, make sure that your configuration file uses the invalid dataset.
+Use the self.assertRaises function to assert that it raises an exception.
+The first argument is what kind of Exception you need it to throw, the second argument is self.run\_application (in utilities), 
+and the third is the configuration file you wish to pass into the application.
+This will call the application and assert that it throws a certain exception.
 
 ## Testing application utilties
 
 If you wish to test utilities that you have created for your application, use the following import.
 Make sure that your utilites are in the utils folder of applications.
 Test them as you would normal unit tests.
+It is best to put the utilities unit together in the `utils` folder.
+Remember to import and extend the AppTestBase and import whatever utilities you are testing.
 
-    from openeis.applications.utils import your_utils
+An example of this the test for Spearman Ranks:
+```python
+from openeis.applications.utest_applications.apptest import AppTestBase
+import spearman
+import numpy as np
 
-*TODO: Need context.
-Where do you add this line?
-None of this makes any sense unless you are looking at the files already provided.*
+class TestSpearmanRank(AppTestBase):
 
+    # Test ranking
+    def test_rank_basic(self):
+        row = [1, 2, 3, 4, 5]
+        exp_ranks = np.array([1, 2, 3, 4, 5])
+        ranks = spearman._rankForSpearman(np.array(row))
+        self.nearly_same(ranks, exp_ranks, absTol=1e-18, relTol=1e-12)
+```
+
+In this code snippet, we are comparing the ranking algorithm.
+`row` refers to the row we will be running our ranking algorithm (_rankForSpearman) on,
+and `exp_ranks` refers to what we expect to be the result.
+We then compare the two arrays with `nearly_same`, and if they are not nearly the same then the test will fail.
+You can look at the documentation for `nearly_same` in AppTestBase.py.
 
 ## Running the tests
 
 In order to run the test, simply call:
 
     > openeis test applications/utest_applications/your_test_file.py
-
-*TODO: Somewhere need to give a reference to how you create multiple tests for a single application.
-Probably as part of the highest-level overview block, summarizing the overall process.*
-
 
 ## Reading your output
 
