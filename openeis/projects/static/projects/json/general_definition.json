@@ -6,12 +6,9 @@
         "sensor_list": [
             "OutdoorAirTemperature"
         ],
-        "system_list": [
-            "Other"
-        ],
         "child_list": [
             "building",
-            "zone"
+            "other"
         ]
     },
     "building": {
@@ -24,60 +21,53 @@
             "WholeBuildingElectricity",
             "WholeBuildingGas"
         ],
-        "system_list": [
+        "child_list": [
             "RTU",
-            "Chiller"
+            "Chiller",
+            "other"
+        ]
+    },
+    "RTU": {
+        "sensor_list": [
+            "OutdoorAirTemperature",
+            "OutdoorAirRelativeHumidity",
+            "MixedAirTemperature",
+            "MixedAirRelativeHumidity",
+            "ReturnAirTemperature",
+            "ReturnAirRelativeHumidity",
+            "DischargeAirTemperature",
+            "DischargeAirRelativeHumidity",
+            "FirstStageCooling",
+            "SecondStageCooling",
+            "FirstStageHeating",
+            "SecondStageHeating",
+            "TotalPower",
+            "SupplyFanPower",
+            "CondenserFanPower",
+            "OutdoorDamperSignal",
+            "EconomizerMode",
+            "OccupancyMode",
+            "ZoneSetpoint",
+            "ZoneTemperature",
+            "SupplyFanSpeed"
+        ]
+    },
+    "Chiller": {
+        "sensor_list": [
         ],
         "child_list": [
-            "zone"
+            "Pump"
         ]
     },
-    "zone": {
+    "Pump": {
+        "sensor_list": [
+        ]
+    },
+    "other": {
         "sensor_list": "*",
         "child_list": [
-            "zone"
+            "other"
         ]
-    },
-    "systems": {
-        "RTU": {
-            "sensor_list": [
-                "OutdoorAirTemperature",
-                "OutdoorAirRelativeHumidity",
-                "MixedAirTemperature",
-                "MixedAirRelativeHumidity",
-                "ReturnAirTemperature",
-                "ReturnAirRelativeHumidity",
-                "DischargeAirTemperature",
-                "DischargeAirRelativeHumidity",
-                "FirstStageCooling",
-                "SecondStageCooling",
-                "FirstStageHeating",
-                "SecondStageHeating",
-                "TotalPower",
-                "SupplyFanPower",
-                "CondenserFanPower",
-                "OutdoorDamperSignal",
-                "EconomizerMode",
-                "OccupancyMode",
-                "ZoneSetpoint",
-                "ZoneTemperature",
-                "SupplyFanSpeed"
-            ]
-        },
-        "Chiller": {
-            "sensor_list": [
-            ],
-            "system_list": [
-                "Pump"
-            ]
-        },
-        "Pump": {
-            "sensor_list": [
-            ]
-        },
-        "Other": {
-            "sensor_list": "*"
-        }
     },
     "attributes": {
         "address": {
