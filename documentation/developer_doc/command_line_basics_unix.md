@@ -42,7 +42,7 @@ The server also supports a number of useful [API](server_api_tricks.md) pages.
 
 ## Killing the server
 
-In general, entering `Control-C` in the same terminal used to start the server, will stop the server (use `Apple/Command-C` on a Mac).
+In general, entering `Control-C` in the same terminal used to start the server, will stop the server.
 
 However, it is possible to get into a state where the server is no longer running, but still claims the port.
 In this case, trying to run the server gives an error message like "That port is already in use."
