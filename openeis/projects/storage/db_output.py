@@ -31,9 +31,9 @@ class DatabaseOutput:
         self.batch_store = defaultdict(list)
         
         for table_name, table_description in output_map.items():
-            fields = ((col_name, descriptor.output_type) 
+            fields = {col_name: descriptor.output_type
                       for col_name, descriptor 
-                      in table_description.items())
+                      in table_description.items()}
             model_klass = sensorstore.create_output(analysis, table_name, fields)
             
             self.table_map[table_name] = model_klass
