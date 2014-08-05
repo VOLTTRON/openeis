@@ -23,7 +23,7 @@ The dataset_id and sensormap_id refers to the datasets and sensor maps you have 
 For more information on how to create these, refer to the [basic use](example.net) or to the [api page](server_api_tricks.md).
 The id numbering starts at 1 and goes on from there so first data set's and sensor map's id is 1.
 If you are unsure of which dataset and which sensor map to use,
-refer to the [sensor map api page](http://localhost:8000/api/sensormaps) and the [analysis api page](http://localhost:8000/api/analyses) for datasets to see.
+refer to the [sensor map api page](http://localhost:8000/api/sensormaps).
 Under `application_config` are any configuration details you need to add for your application such as the square footage or building name.
 The `inputs` are the parameters needed from the data files for your application to run such as outdoor air temperature or whole building electricity.
 
