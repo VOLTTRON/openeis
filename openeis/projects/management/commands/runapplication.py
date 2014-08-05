@@ -50,6 +50,7 @@ class Command(BaseCommand):
             
             now = datetime.utcnow().replace(tzinfo=utc)
             analysis = models.Analysis(added=now, started=now, status="running",
+                                       application=application,
                                        dataset_id=sensormap_id)
             analysis.save()
             
@@ -63,7 +64,7 @@ class Command(BaseCommand):
             db_input = DatabaseInput(sensormap_id, topic_map, dataset_ids=dataset_ids)
     
             output_format = klass.output_format(db_input)
-            file_output = DatabaseOutputFile(application, output_format)
+            file_output = DatabaseOutputFile(application, analysis.id, output_format)
     
             kwargs = {}
             if config.has_section('application_config'):

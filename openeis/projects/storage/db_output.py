@@ -72,7 +72,7 @@ import csv
 from datetime import datetime 
 
 class DatabaseOutputFile(DatabaseOutput):
-    def __init__(self, algo_name, output_map):
+    def __init__(self, algo_name, output_id, output_map):
         '''
         output_id  - name identifying the algortihm
         Expected output_map:
@@ -83,7 +83,7 @@ class DatabaseOutputFile(DatabaseOutput):
                           'SomeString':OutputDescriptor('string', 'some_output/string)}
            } 
         '''
-        super().__init__(algo_name, output_map)
+        super().__init__(output_id, output_map)
         
         self.output_names = {}
         for table_name, table_description in output_map.items():
