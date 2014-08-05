@@ -134,11 +134,9 @@ If for some reason, your application uses a utility or external function that ca
 
 ## Testing application output equality
 
-Each test should have a [configuration file](http://example.net/).
+Each test should have a [configuration file](configuration_file.md).
 When writing tests, you may add to the existing `test_applications.py`, which is our own file that contains all the tests, or create your own file.
 Either way, when writing tests it should look like the following (use `test_applications.py` as a reference).
-
-*TODO: Fill in link to configuration file page, once it is created.*
 
 ```python
 # Only import if you are creating a new file.
