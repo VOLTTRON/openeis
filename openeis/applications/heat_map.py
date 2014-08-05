@@ -90,7 +90,6 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting analysis", logging.INFO)
 
         loads = self.inp.get_query_sets('load', exclude={'value':None})
-        print("hoho: ", type(loads[0][0][0].date()))
         for x in loads[0]:
             self.out.insert_row("Heat_Map", {
                 'date': x[0].date(),
