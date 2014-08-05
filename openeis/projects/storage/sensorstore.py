@@ -6,7 +6,6 @@ from django.db.models import Manager as BaseManager
 
 from .. import models
 from . import dynamictables
-from .dynamictables import *
 
 
 _create_lock = threading.Lock()
@@ -21,8 +20,8 @@ def create_output(project_id, fields):
     output = models.AppOutput.objects.create()
     model = get_output(output, project_id, fields)
     with _create_lock:
-        if not table_exists(model):
-            create_table(model)
+        if not dynamictables.table_exists(model):
+            dynamictables.create_table(model)
     return output, model
 
 
