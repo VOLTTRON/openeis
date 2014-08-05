@@ -741,7 +741,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             outputs = {}
 
             for output in models.AppOutput.objects.filter(analysis=analysis):
-                data_model = sensorstore.get_data_model(output, output.fields)
+                data_model = sensorstore.get_data_model(output,
+                                                        output.analysis.dataset.map.project.id,
+                                                        output.fields)
 
                 outputs[output.name] = {
                     'rows': data_model.objects.count()
@@ -750,7 +752,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             return Response(outputs)
 
         output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
-        data_model = sensorstore.get_data_model(output, output.fields)
+        data_model = sensorstore.get_data_model(output,
+                                                output.analysis.dataset.map.project.id,
+                                                output.fields)
 
         try:
             start = int(request.QUERY_PARAMS['start'])

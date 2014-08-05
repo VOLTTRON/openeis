@@ -6,7 +6,8 @@ Created on Apr 28, 2014
 
 import logging
 
-from openeis.projects.storage import sensorstore
+from .. import models
+from . import sensorstore
 from collections import defaultdict
 
 BATCH_SIZE = 1000
@@ -34,13 +35,24 @@ class DatabaseOutput:
             fields = {col_name: descriptor.output_type
                       for col_name, descriptor
                       in table_description.items()}
-            model_klass = sensorstore.create_output(analysis, table_name, fields)
+            app_output = models.AppOutput.objects.create(analysis=analysis,
+                                                         name=table_name,
+                                                         fields=fields)
+            model_klass = sensorstore.get_data_model(app_output,
+                                                     analysis.dataset.map.project.id,
+                                                     fields)
 
             self.table_map[table_name] = model_klass
 
         #create the logging table
         logging_fields = {'msg':'string', 'level':'integer', 'datetime':'datetime'}
-        log_klass = sensorstore.create_output(analysis, LOG_TABLE_NAME, logging_fields)
+        log_output = models.AppOutput.objects.create(analysis=analysis,
+                                                     name=LOG_TABLE_NAME,
+                                                     fields=fields)
+        log_klass = sensorstore.get_data_model(log_output,
+                                               analysis.dataset.map.project.id,
+                                               logging_fields)
+
         self.table_map[LOG_TABLE_NAME] = log_klass
 
 
