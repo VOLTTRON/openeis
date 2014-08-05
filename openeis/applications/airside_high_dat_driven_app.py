@@ -57,66 +57,71 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Results)
 import logging
 
+
 class Application(DrivenApplicationBaseClass):
-    """
+    '''
     Air-side HVAC Auto-Retuning diagnostic to check if the supply-air
-    temperature is too low.
-    """
+    temperature is too high.
+    '''
     
     '''Diagnostic Point Names (Must match Openeis data-type names)'''
     fan_status_name = "fan_status"
     zone_reheat_name = "zone_rht_vlv"
     da_temp_name = "da_temp"
     da_temp_stpt_name = "da_temp_stpt"
-        
-    def __init__(self,*args,reheat_valve_threshold=None,data_window=None,
-                percent_reheat_threshold=None,number_of_zones=None,
-                setpoint_allowable_deviation=None,rht_on_threshold=None,
-                maximum_dat_stpt=None,dat_increase=None,
-                **kwargs):
-        super( ).__init__(*args,**kwargs)
+    zone_damper_name = "zone_damper"
+    
+    def __init__(self,*args,data_window=None,number_of_zones=None,
+                high_damper_threshold=None,percent_damper_threshold=None,percent_reheat_threshold=None,
+                minimum_dat_stpt=None,dat_reduction=None,rht_on_threshold=None,
+                setpoint_allowable_deviation=None,**kwargs):
+        super().__init__(*args, **kwargs)
+        self.timestamp = []
         self.dat_stpt_values = []
         self.dat_values = []
-        self.timestamp = []
         self.total_reheat = 0
+        self.total_damper = 0
         self.pre_requiste_messages = []
         self.pre_msg_time = []
-        self.reheat = []
 
         '''Pre-requisite messages'''
-        self.pre_msg0  = 'Supply fan is off, current data will not be used for diagnostics.'
+        self.pre_msg0 = 'Supply fan is off, current data will not be used for diagnostics.'
         self.pre_msg1  = 'Verify that point names in diagnostic match OpenEIS data-type names.'
 
-        '''Algorithm thresholds (Configurable)'''
-        self.data_window = float(data_window)
-        self.number_of_zones = int(number_of_zones)
-        self.reheat_valve_threshold = float(reheat_valve_threshold)
-        self.percent_reheat_threshold = float(percent_reheat_threshold)
-        self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
-        self.rht_on_threshold = float(rht_on_threshold)
-        self.maximum_dat_stpt = float(maximum_dat_stpt)
-        self.dat_increase = float(dat_increase)
-        
+        '''Point names (Configurable)'''
         self.da_temp_stpt_name = Application.da_temp_stpt_name
         self.da_temp_name = Application.da_temp_name
         self.zone_reheat_name = Application.zone_reheat_name
         self.fan_status_name = Application.fan_status_name
+        self.zone_damper_name = Application.zone_damper_name
 
+        '''Algorithm Thresholds(Configurable)'''
+        self.data_window = float(data_window)
+        self.number_of_zones = float(number_of_zones)
+        self.rht_on_threshold = float(rht_on_threshold)
+        self.high_damper_threshold = float(high_damper_threshold)
+        self.percent_damper_threshold = float(percent_damper_threshold)
+        self.percent_reheat_threshold = float(percent_reheat_threshold)
+        self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
+        self.minimum_dat_stpt = float(minimum_dat_stpt)
+        self.dat_reduction = float(dat_reduction)
+    
     @classmethod
     def get_config_parameters(cls):
         '''
-        Generatre requireed configuration
+        Generate required configuration
         parameters with description for user
         '''
         return {
             'data_window': ConfigDescriptor(float, 'Data Window'),
             'number_of_zones': ConfigDescriptor(int, 'Number of Zones'),
-            'reheat_valve_threshold': ConfigDescriptor(float, 'Teminal Box Reheat Valve Position'),
-            'percent_reheat_threshold': ConfigDescriptor(float, 'Excess Terminal Reheat Threshold'),
+            'high_damper_threshold': ConfigDescriptor(float, 'Value at which damper are considered nearly fully open'),
+            'percent_reheat_threshold': ConfigDescriptor(float, 'Excess terminal re-heat Threshold'),
+            'percent_damper_threshold': ConfigDescriptor(float, 'Excess terminal box damper threshold'),
             'setpoint_allowable_deviation': ConfigDescriptor(float, 'Supply-air Temperate Deadband'),
             'rht_on_threshold': ConfigDescriptor(float, 'Zone Is Reheating Threshold'),
-            'maximum_dat_stpt': ConfigDescriptor(float, 'High DAT limit for auto-correction'),
-            'dat_increase': ConfigDescriptor(float, 'Increment applied to DAT SP when auto-correction is enabled'),
+            'minimum_dat_stpt': ConfigDescriptor(float, 'High DAT limit for auto-correction'),
+            'dat_reduction': ConfigDescriptor(float, 'Increment applied to DAT SP when auto-correction is enabled'),
            }
 
     @classmethod
@@ -130,7 +135,9 @@ class Application(DrivenApplicationBaseClass):
             cls.da_temp_stpt_name: InputDescriptor('DischargeAirTemperatureSetPoint','AHU Discharge-air temperature set-point', count_min=0, count_max=1),
             cls.da_temp_name: InputDescriptor('DischargeAirTemperature','AHU Discharge-air Temperature', count_min=1),
             cls.zone_reheat_name: InputDescriptor('ZoneReheatValvePosition','For accurate results this diagnostic requires'
-                                                    ' terminal box data for all zones for a particular AHU', count_min=2)
+                                                    ' terminal box data for all zones served by an AHU/RTU', count_min=2),
+            cls.zone_damper_name: InputDescriptor('ZoneDamperPosition', 'For accurate results this diagnostic requires'
+                                                  ' terminal box data for all zones served by an AHU/RTU', count_min=2)
             }
 
     def reports(self):
@@ -172,13 +179,11 @@ class Application(DrivenApplicationBaseClass):
         drop rows with missing data.
         '''
         return True
-
+    
     def run(self,current_time, points):
-        self.pre_msg_time.append(current_time)    
         '''
         Check algorithm pre-quisites and assemble data set for analysis.
         '''
-
         device_dict = {}
         diagnostic_result = Results()
 
@@ -186,16 +191,17 @@ class Application(DrivenApplicationBaseClass):
             diagnostic_result.log(''.join(['Missing data for timestamp: ',str(current_time),
                                    '  This row will be dropped from analysis.']))
             return diagnostic_result
-        
+
         for key, value in points.items():
             device_dict[key.lower()] = value
-            
+
+        self.pre_msg_time.append(current_time)
         message_check =  datetime.timedelta(minutes=(self.data_window))
        
         if (self.pre_msg_time[-1]-self.pre_msg_time[0]) >= message_check:
             msg_lst = [self.pre_msg0, self.pre_msg1]
             for item in msg_lst:
-                if self.pre_requiste_messages.count(item) > (0.25)*len(self.pre_msg_time):
+                if self.pre_requiste_messages.count(item) > (1/4)*len(self.pre_msg_time):
                     diagnostic_result.log(item, logging.INFO)
             self.pre_requiste_messages = []
             self.pre_msg_time = []
@@ -206,47 +212,61 @@ class Application(DrivenApplicationBaseClass):
                     self.pre_requiste_messages.append(sef.pre_msg0)
                     return diagnostic_result
 
+        dat_data, zone_dmpr_data, rht_data = [], [] ,[]
+        
         for key, value in device_dict.items():
-            if key.startswith(self.zone_reheat_name):
-                if value > self.rht_on_threshold:
-                    self.total_reheat = self.total_reheat + 1
-                self.reheat.append(value)
-
-            elif key.startswith(self.da_temp_stpt_name):
+            if key.startswith(self.da_temp_stpt_name):
                 self.dat_stpt_values.append(value)
 
             elif key.startswith(self.da_temp_name):
-                self.dat_values.append(value)
+                dat_data.append(value)
 
             elif key.startswith(self.zone_reheat_name):
-                self.reheat.append(value)
-     
-        if not self.dat_values or not self.reheat:
+                rht_data.append(value)
+
+            elif key.startswith(self.zone_damper_name):
+                zone_dmpr_data.append(value)
+  
+        if not dat_data or not rht_data:
             self.pre_requiste_messages.append(self.pre_msg1)
             return diagnostic_result
 
-        self.timestamp.append(current_time)
+        datemp = sum(dat_data)/len(dat_data)
+
+        for value in rht_data:
+            if value > self.rht_on_threshold:
+                self.total_reheat += 1
+        for value in zone_dmpr_data:        
+            if value > self.high_damper_threshold:
+                self.total_damper += 1
+
+        self.dat_values.append(datemp)
+
+        self.timestamp.append(current_time)       
         time_check =  datetime.timedelta(minutes=self.data_window)
 
         if ((self.timestamp[-1]-self.timestamp[0]) >= time_check and
-            len(self.timestamp) > 10):
-            diagnostic_result = self.low_dat_sp(diagnostic_result)
+            len(self.timestamp) > 20):
+            diagnostic_result = self.high_dat_sp(diagnostic_result)
         return diagnostic_result
-
-    def low_dat_sp(self, result):
-        '''
+ 
+    def high_dat_sp(self, result):
+        """
         If the detected problems(s) are consistent then generate a fault message(s).
-        If auto-correction is enabled (Auto-Retuning only) and a problem is detected 
-        apply corrective action.
-        '''
-
+        If auto-correction is enabled and a problem is detected apply correction action.
+        """
         time_d = self.timestamp[-1]-self.timestamp[0]
-        time_d = int(time_d.total_seconds()/60) + 1
+        time_d = int(time_d.total_seconds()/60) 
 
-        avg_zones_reheat = self.total_reheat/(time_d*self.number_of_zones)*100
-        reheat_coil_average = (sum(self.reheat))/(len(self.reheat))
-        diagnostic_message = ''
-        
+        avg_zone_reheat = self.total_reheat/(time_d*self.number_of_zones)
+        avg_zone_reheat = avg_zone_reheat * 100
+
+        avg_zone_damper = self.total_damper/(time_d*self.number_of_zones)
+        avg_zone_damper = avg_zone_damper * 100
+       
+        avg_dat = (sum(self.dat_values))/(len(self.dat_values))
+        avg_dat_stpt = None
+
         if self.dat_stpt_values:
             avg_dat_stpt = (sum(self.dat_stpt_values))/(len(self.dat_stpt_values))
             set_point_tracking = [abs(x-y) for x,y in zip(self.dat_stpt_values, self.dat_values)]
@@ -254,35 +274,34 @@ class Application(DrivenApplicationBaseClass):
             if set_point_tracking > self.setpoint_allowable_deviation:
                 result.log('Supply-air temperature is deviating significantly from the supply-air temperature set point.', logging.INFO)
 
-        if (reheat_coil_average > self.reheat_valve_threshold and
-            avg_zones_reheat > self.percent_reheat_threshold and 
-            self.dat_stpt_values):
-            dat_stpt = avg_dat_stpt + self.dat_increase
+        if  (avg_zone_damper > self.percent_damper_threshold and
+            avg_zone_reheat < self.percent_reheat_threshold and self.dat_stpt_values):
+            dat_stpt = avg_dat - self.dat_reduction
             '''Create diagnostic message for fault condition with auto-correction'''
-            if dat_stpt <= self.maximum_dat_stpt:
-                result.command(self.da_temp_stpt_name, dat_stpt)
-                diagnostic_message = 'The DAT has been detected to be too low.  The DAT has been increased to: '
+            if dat_stpt >= self.minimum_dat_stpt:
+                result.command(self.dat_stpt_name, dat_stpt)
+                diagnostic_message = "The DAT has been detected to be too high. The DAT has been reduced to: "
                 diagnostic_message += str(dat_stpt)
             else:
-                '''Create diagnostic message for fault condition where the maximum DAT has been reached'''
-                result.command(self.dat_stpt_name,self.maximum_dat)
-                diagnostic_message = 'The DAT was detected to be too low, Auto-correction has increased the DAT to the maximum configured DAT: '
-                diagnostic_message += str(self.maximum_dat_stpt)
-        elif (reheat_coil_average > self.reheat_valve_threshold and 
-            avg_zones_reheat > self.percent_reheat_threshold):
+                '''Create diagnostic message for fault condition where the minimum DAT has been reached'''
+                result.command(self.dat_stpt_name,self.minimum_dat_stpt)
+                diagnostic_message = 'The supply-air temperature set point is at minimum value specified in configuration file.'
+        elif  (avg_zone_damper > self.percent_damper_threshold and
+            avg_zone_reheat < self.percent_reheat_threshold):
             '''Create diagnostic message for fault condition without auto-correction'''
-            diagnostic_message = 'The DAT has been detected to be too low but auto-correction is not enabled'
+            diagnostic_message ='The DAT has been detected to be too high but auto-correction is not enabled'
         else:
             '''Create diagnostic message that no re-tuning opportunity was detected: No Fault condition'''
-            diagnostic_message = 'No re-tuning opportunity has been detected for low DAT diagnostic.'
+            diagnostic_message = 'No re-tuning opportunity was detected during the high DAT diagnostic.'
 
-        result.log(diagnostic_message, logging.INFO)
-        self.timestamp = []
+        result.log(diagnostic_message,logging.INFO)
+
         self.dat_stpt_values = []
         self.dat_values = []
+        self.timestamp = []
         self.pre_requiste_messages = []
         self.pre_msg_time = []
-        self.reheat = []
         self.total_reheat = 0
+        self.total_damper = 0
 
-        return result     
+        return result
