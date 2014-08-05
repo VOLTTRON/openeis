@@ -17,7 +17,8 @@ def create_output(analysis, name, fields):
     Dynamically generate a new AppOutput instance and a model with the
     given fields.
     '''
-    output = models.AppOutput.objects.create(analysis=analysis, name=name)
+    output = models.AppOutput.objects.create(analysis=analysis, name=name,
+                                             fields=fields)
     model = get_data_model(output, fields)
     with _create_lock:
         if not dynamictables.table_exists(model):

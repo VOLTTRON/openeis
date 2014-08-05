@@ -413,5 +413,6 @@ class Analysis(models.Model):
 
 
 class AppOutput(models.Model):
-        analysis = models.ForeignKey(Analysis, related_name='app_output')
-        name = models.CharField(max_length=255)
+    analysis = models.ForeignKey(Analysis, related_name='app_output')
+    name = models.CharField(max_length=255)
+    fields = JSONField()
