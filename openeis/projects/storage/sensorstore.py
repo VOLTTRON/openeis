@@ -54,7 +54,7 @@ def get_output(output, project_id, fields):
     class Manager(BaseManager):
         def get_queryset(self):
             return super().get_queryset().filter(source=output)
-    name = 'AppOutputData' + str(output.pk)
+    name = 'AppOutputData'
     attrs = {'source': models.models.ForeignKey(
                  models.AppOutput, related_name='+'),
              '__name__': name, 'objects': Manager(),
