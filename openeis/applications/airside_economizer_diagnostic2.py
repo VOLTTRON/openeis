@@ -151,12 +151,12 @@ class Application(DrivenApplicationBaseClass):
         user.
         '''
         return {
-            #cls.fan_status_name: InputDescriptor('SupplyFanStatus', 'AHU Supply Fan Status', count_min=1),
+            cls.fan_status_name: InputDescriptor('SupplyFanStatus', 'AHU Supply Fan Status', count_min=1),
             cls.oa_temp_name: InputDescriptor('OutdoorAirTemperature','AHU or building outdoor-air temperature', count_min=1),
             cls.ma_temp_name: InputDescriptor('MixedAirTemperature','AHU mixed-air temperature', count_min=1),
             cls.ra_temp_name: InputDescriptor('ReturnAirTemperature','AHU return-air temperature',count_min=1),
-            #cls.damper_signal_name: InputDescriptor('OutdoorDamperSignal','AHU outdoor-air damper signal', count_min=1),
-            #cls.cool_call_name: InputDescriptor('Cooling Call', 'AHU cooling coil command or RTU coolcall or compressor command', count_min=1)
+            cls.damper_signal_name: InputDescriptor('OutdoorDamperSignal','AHU outdoor-air damper signal', count_min=1),
+            cls.cool_call_name: InputDescriptor('Cooling Call', 'AHU cooling coil command or RTU coolcall or compressor command', count_min=1)
             }
 
     def reports(self):
@@ -176,8 +176,10 @@ class Application(DrivenApplicationBaseClass):
         Called when application is staged.
         Output will have the date-time and  error-message.
         """
+        result = super().output_format(input_object)
+        
         topics = input_object.get_topics()
-        diagnostic_topic = topics[cls.oa_temp_name][0]
+        diagnostic_topic = topics[cls.fan_status_name][0]
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
         datetime_topic = '/'.join(output_topic_base+['airside_low_dat_diagnostic', 'date'])
@@ -188,7 +190,8 @@ class Application(DrivenApplicationBaseClass):
                 'diagnostic-message': OutputDescriptor('string', message_topic)
                 }
             }
-        return output_needs
+        result.update(output_needs)
+        return result
 
     def drop_partial_lines (self): 
         '''

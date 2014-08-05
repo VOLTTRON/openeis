@@ -189,8 +189,10 @@ class Application(DrivenApplicationBaseClass):
         Called when application is staged.
         Output will have the date-time and  error-message.
         """
+        result = super().output_format(input_object)
+        
         topics = input_object.get_topics()
-        diagnostic_topic = topics[cls.oa_temp_name][0]
+        diagnostic_topic = topics[cls.fan_status_name][0]
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
         datetime_topic = '/'.join(output_topic_base+['airside_low_dat_diagnostic', 'date'])
@@ -201,7 +203,8 @@ class Application(DrivenApplicationBaseClass):
                 'diagnostic-message': OutputDescriptor('string', message_topic)
                 }
             }
-        return output_needs
+        result.update(output_needs)
+        return result
 
     def drop_partial_lines (self): 
         '''
