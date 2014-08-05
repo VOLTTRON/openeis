@@ -29,6 +29,7 @@ from . import models
 from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
+from .storage import sensorstore
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
@@ -735,4 +736,54 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @link()
     def data(self, request, *args, **kw):
         analysis = self.get_object()
-        return Response('TODO: return results of analysis {}'.format(analysis.id))
+
+        # Current implementation requires this to be a list.
+        dataset_ids = [analysis.dataset.id]
+        topic_map = analysis.configuration['inputs']
+        db_input = DatabaseInput(analysis.dataset.map.id, topic_map, dataset_ids)
+
+        klass = get_algorithm_class(analysis.application)
+        output_format = klass.output_format(db_input)
+
+        try:
+            output_name = request.QUERY_PARAMS['output']
+        except KeyError:
+            outputs = {}
+
+            for output_name, output_description in output_format.items():
+                fields = ((col_name, descriptor.output_type)
+                          for col_name, descriptor
+                          in output_description.items())
+                output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
+                data_model = sensorstore.get_data_model(output, fields)
+
+                outputs[output_name] = {
+                    'rows': data_model.objects.count()
+                }
+
+            return Response(outputs)
+
+        output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
+        fields = [(col_name, descriptor.output_type) for col_name, descriptor
+                  in output_format[output_name].items()]
+        data_model = sensorstore.get_data_model(output, fields)
+
+        try:
+            start = int(request.QUERY_PARAMS['start'])
+        except (KeyError, ValueError):
+            start = 0
+
+        try:
+            count = int(request.QUERY_PARAMS['count'])
+        except (KeyError, ValueError):
+            count = 10
+
+        start = max(start, 0)
+        count = min(count, 25)
+        rows = data_model.objects.all()[start:start + count]
+
+        data_response = []
+        for row in rows:
+            data_response.append({k: getattr(row, k) for k, field in fields})
+
+        return Response(data_response)
