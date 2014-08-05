@@ -383,10 +383,6 @@ class StringSensorData(BaseSensorData):
     objects = SensorDataManager()
 
 
-class AppOutput(models.Model):
-    pass
-
-
 class Analysis(models.Model):
     '''A run of a single application against a single dataset.'''
 
@@ -414,3 +410,8 @@ class Analysis(models.Model):
     ended = models.DateTimeField(null=True, default=None)
     progress_percent = models.FloatField(default=0)
     reports = JSONField()
+
+
+class AppOutput(models.Model):
+        analysis = models.ForeignKey(Analysis, related_name='app_output')
+        name = models.CharField(max_length=255)

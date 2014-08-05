@@ -14,9 +14,9 @@ LOG_TABLE_NAME = 'log'
 
 class DatabaseOutput:
     
-    def __init__(self,output_id, output_map):
+    def __init__(self, analysis, output_map):
         '''
-        output_id  - name identifying the algortihm
+        analysis - Analysis model instance to associate output to
         Expected output_map:
            {
                'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, 
@@ -27,7 +27,6 @@ class DatabaseOutput:
         '''
         
         self.table_map = {}
-        self.app_table_map = {}
         
         self.batch_store = defaultdict(list)
         
@@ -35,16 +34,14 @@ class DatabaseOutput:
             fields = ((col_name, descriptor.output_type) 
                       for col_name, descriptor 
                       in table_description.items())
-            app_output, model_klass = sensorstore.create_output(output_id, fields)
+            model_klass = sensorstore.create_output(analysis, table_name, fields)
             
             self.table_map[table_name] = model_klass
-            self.app_table_map[table_name] = app_output
             
         #create the logging table
         logging_fields = {'msg':'string', 'level':'integer', 'datetime':'datetime'}
-        log_output, log_klass = sensorstore.create_output(output_id, logging_fields)
+        log_klass = sensorstore.create_output(analysis, LOG_TABLE_NAME, logging_fields)
         self.table_map[LOG_TABLE_NAME] = log_klass
-        self.app_table_map[LOG_TABLE_NAME] = log_output
             
             
     def insert_row(self,table_name,row_data):
@@ -72,9 +69,9 @@ import csv
 from datetime import datetime 
 
 class DatabaseOutputFile(DatabaseOutput):
-    def __init__(self, algo_name, output_map):
+    def __init__(self, analysis, output_map):
         '''
-        output_id  - name identifying the algortihm
+        analysis - Analysis model instance to associate output to
         Expected output_map:
            {
                'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')}, 
@@ -83,13 +80,13 @@ class DatabaseOutputFile(DatabaseOutput):
                           'SomeString':OutputDescriptor('string', 'some_output/string)}
            } 
         '''
-        super().__init__(algo_name, output_map)
+        super().__init__(analysis, output_map)
         
         self.output_names = {}
         for table_name, table_description in output_map.items():
             self.output_names[table_name] = table_description.keys()
         
-        file_prefix = algo_name+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
+        file_prefix = analysis.application+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
         
         log_file = file_prefix + '.log'
         self._logger = logging.getLogger()

@@ -659,7 +659,7 @@ def _perform_analysis(analysis):
 
         klass = get_algorithm_class(analysis.application)
         output_format = klass.output_format(db_input)
-        db_output = DatabaseOutput(analysis.id, output_format)
+        db_output = DatabaseOutput(analysis, output_format)
 
         kwargs = analysis.configuration['parameters']
 

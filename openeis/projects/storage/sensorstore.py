@@ -11,21 +11,21 @@ from . import dynamictables
 _create_lock = threading.Lock()
 
 
-def create_output(project_id, fields):
+def create_output(analysis, name, fields):
     '''Create and return a model appropriate for application output.
 
     Dynamically generate a new AppOutput instance and a model with the
-    given fields. The arguments are the same as for get_output().
+    given fields.
     '''
-    output = models.AppOutput.objects.create()
-    model = get_output(output, project_id, fields)
+    output = models.AppOutput.objects.create(analysis=analysis, name=name)
+    model = get_data_model(output, fields)
     with _create_lock:
         if not dynamictables.table_exists(model):
             dynamictables.create_table(model)
-    return output, model
+    return model
 
 
-def get_output(output, project_id, fields):
+def get_data_model(output, fields):
     '''Return a model appropriate for application output.
 
     Dynamically generates a Django model for the given fields and binds
@@ -55,6 +55,7 @@ def get_output(output, project_id, fields):
         def get_queryset(self):
             return super().get_queryset().filter(source=output)
     name = 'AppOutputData'
+    project_id = output.analysis.dataset.map.project.id
     attrs = {'source': models.models.ForeignKey(
                  models.AppOutput, related_name='+'),
              '__name__': name, 'objects': Manager(),
