@@ -674,7 +674,7 @@ def _perform_analysis(analysis):
     except Exception as e:
         analysis.status = "error"
         # TODO: log errors
-        print(e)
+        print(traceback.format_exc())
 
     finally:
         if analysis.status != "error":
