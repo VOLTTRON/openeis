@@ -758,13 +758,12 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             start = 0
 
         try:
-            count = int(request.QUERY_PARAMS['count'])
+            end = start + int(request.QUERY_PARAMS['count'])
         except (KeyError, ValueError):
-            count = 10
+            end = None
 
         start = max(start, 0)
-        count = min(count, 25)
-        rows = data_model.objects.all()[start:start + count]
+        rows = data_model.objects.all()[start:end]
 
         # TODO: return JSON or CSV file as StreamingHTTPResponse instead
         data_response = []
