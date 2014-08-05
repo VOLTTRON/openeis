@@ -46,7 +46,7 @@ def get_data_model(output, project_id, fields):
              # append PK to name since Django caches models by name
              '__name__': name + str(output.pk), 'objects': Manager(),
              '__init__': __init__, 'save': save}
-    model = dynamictables._create_model(name, project_id, fields, attrs)
+    model = dynamictables.create_model(name, project_id, fields, attrs)
     with _create_lock:
         if not dynamictables.table_exists(model):
             dynamictables.create_table(model)
