@@ -651,12 +651,10 @@ def _perform_analysis(analysis):
         analysis.status = "running"
         analysis.save()
 
+        dataset_id = analysis.dataset.id
         sensormap_id = analysis.dataset.map.id
-
-        # Current implementation requires this to be a list.
-        dataset_ids = [analysis.dataset.id]
         topic_map = analysis.configuration["inputs"]
-        db_input = DatabaseInput(sensormap_id, topic_map, dataset_ids)
+        db_input = DatabaseInput(sensormap_id, topic_map, dataset_id)
 
         klass = get_algorithm_class(analysis.application)
         output_format = klass.output_format(db_input)
