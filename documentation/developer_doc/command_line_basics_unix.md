@@ -70,3 +70,12 @@ The `fuser` utility can list the process holding the port (however, this doesn't
 After identifying the process holding the port, kill it:
 
     > kill -9  <pid-of-interest>
+
+## Running your application
+To run your application, you must be in the virtual environment and you need to have creatd a configuration file to pass in.
+For more information on how to create a configuration file, refer to the [configuration file guide](configuration_file.md).
+
+To run your application with the configuration file call:
+    > openeis runapplication your_configuration_file.ini
+
+It should now output a `.csv` that it has written the results in as well as a `.log` file.
