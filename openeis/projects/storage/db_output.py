@@ -48,7 +48,7 @@ class DatabaseOutput:
         logging_fields = {'msg':'string', 'level':'integer', 'datetime':'datetime'}
         log_output = models.AppOutput.objects.create(analysis=analysis,
                                                      name=LOG_TABLE_NAME,
-                                                     fields=fields)
+                                                     fields=logging_fields)
         log_klass = sensorstore.get_data_model(log_output,
                                                analysis.dataset.map.project.id,
                                                logging_fields)
