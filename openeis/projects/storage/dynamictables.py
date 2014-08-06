@@ -79,17 +79,13 @@ _fields = {
 }
 
 
-def create_model(model_name, scope, fields, attrs=None):
+def create_model(model_name, table_basename, scope, fields, attrs=None):
     '''Dynamically generate a table model with the given fields.
 
     The table is unique to the given scope and includes scope in the
     name, which takes the form 'NAME_SCOPE_SIG' where name is replaced
-    by model_name.lower(), SCOPE is replaced by str(scope), and SIG is
-    replaced by the count and type of the fields.
-
-    Additional model attributes may be passed as a dictionary via attrs
-    and will be used, along with the fields, to compute a hash to make
-    the model name unique.
+    by table_basename.lower(), SCOPE is replaced by str(scope), and SIG
+    is replaced by the count and type of the fields.
 
     fields is expected to be a dictionary or iterable of 2-tuples (such
     as is returned by dict.items()) containing (field_name, field_type)
@@ -99,6 +95,14 @@ def create_model(model_name, scope, fields, attrs=None):
     difference between timestamp and datetime is that datetime values
     may be null. In the future, timestamp fields may be indexed
     automatically, so please only use them for time-series data.
+
+    Additional model attributes may be passed as a dictionary via attrs.
+
+    Django caches model classes during creation by app_label and
+    model_name.  It is the responsibility of the caller to ensure that
+    model_name does not clash with the names of any pre-existing models.
+    Otherwise the pre-existing model will be returned rather than the
+    one being created and errors will likely ensue.
     '''
     if attrs is None:
         attrs = {}
@@ -110,15 +114,11 @@ def create_model(model_name, scope, fields, attrs=None):
     signature = ''.join('{}{}'.format(sum(1 for i in group), type_[0])
                         for type_, group in itertools.groupby(
                                 field_groups, lambda x: x[0]))
-    table_name = '_'.join([model_name.lower(), str(scope), signature])
+    table_name = '_'.join([table_basename.lower(), str(scope), signature])
     attrs.update({name: _fields[type_](db_column='field{}'.format(i))
                   for i, (type_, name) in enumerate(field_groups)})
     attrs['Meta'] = type('Meta', (attrs.get('Meta', object),),
                          {'db_table': table_name})
     attrs.setdefault('__module__', __name__)
-    hash = hashlib.md5()
-    hash.update(table_name.encode('utf-8'))
-    for key in sorted(attrs.keys()):
-        hash.update(key.encode('utf-8'))
-        hash.update(str(attrs[key]).encode('utf-8'))
-    return type(model_name + '_' + hash.hexdigest(), (models.Model,), attrs)
+    attrs.setdefault('__name__', model_name)
+    return type(model_name, (models.Model,), attrs)

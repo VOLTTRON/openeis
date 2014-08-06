@@ -23,10 +23,10 @@ def get_data_model(output, project_id, fields):
     would be generated from an equivalent dictionary's items() method.
     Each field is defined by a name, which must be a valid Python
     identifier, and a type, which must be one of those mapped in
-    openeis.projects.storage.dynamictables._fields. The same fields
-    must be passed in as was supplied for create_output(). The resulting
+    openeis.projects.storage.dynamictables._fields. The same fields must
+    be passed in as was supplied for create_output(). The resulting
     model will automatically fill in the source field with the given
-    output and the manager will automatically filter the queryset by th
+    output and the manager will automatically filter the queryset by the
     given output.
     '''
     if isinstance(output, int):
@@ -40,22 +40,16 @@ def get_data_model(output, project_id, fields):
     class Manager(BaseManager):
         def get_queryset(self):
             return super().get_queryset().filter(source=output)
-    name = 'AppOutputData'
     attrs = {'source': models.models.ForeignKey(
                  models.AppOutput, related_name='+'),
-             # append PK to name since Django caches models by name
-             '__name__': name + str(output.pk), 'objects': Manager(),
-             '__init__': __init__, 'save': save}
-    model = dynamictables.create_model(name, project_id, fields, attrs)
+             'objects': Manager(), '__init__': __init__, 'save': save}
+    # Append PK to name since Django caches models by name
+    model = dynamictables.create_model('AppOutputData' + str(output.pk),
+            'appoutputdata', project_id, fields, attrs)
     with _create_lock:
         if not dynamictables.table_exists(model):
             dynamictables.create_table(model)
     return model
-
-
-
-def put_output():
-    pass
 
 
 def put_sensors(sensormap_id, topicstreams):
@@ -110,7 +104,3 @@ def get_sensors(sensormap_id, topics):
             get_queryset = None
         result.append((meta, get_queryset))
     return result
-
-
-def __generate_table_name(sensormap):
-    pass
