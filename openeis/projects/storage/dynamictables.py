@@ -5,15 +5,12 @@
 
 import hashlib
 import itertools
-import sys
 
 from django.core.management.color import no_style
 from django.db import connections, models, transaction
 
-from ..models import AppOutput
 
-
-__all__ = ['table_exists', 'create_table', 'get_output_model']
+__all__ = ['table_exists', 'create_table', 'create_model']
 
 
 def table_exists(model, db='default'):
@@ -82,8 +79,31 @@ _fields = {
 }
 
 
-def _create_model(model_name, project_id, fields, attrs=None):
-    '''Dynamically generate a table model with the given fields.'''
+def create_model(model_name, table_basename, scope, fields, attrs=None):
+    '''Dynamically generate a table model with the given fields.
+
+    The table is unique to the given scope and includes scope in the
+    name, which takes the form 'NAME_SCOPE_SIG' where name is replaced
+    by table_basename.lower(), SCOPE is replaced by str(scope), and SIG
+    is replaced by the count and type of the fields.
+
+    fields is expected to be a dictionary or iterable of 2-tuples (such
+    as is returned by dict.items()) containing (field_name, field_type)
+    pairs. Field names must be valid Python identifiers and field types
+    are strings indicating the data type and must be one of 'boolean',
+    'datetime', 'float', 'integer', 'string', or 'timestamp'. The only
+    difference between timestamp and datetime is that datetime values
+    may be null. In the future, timestamp fields may be indexed
+    automatically, so please only use them for time-series data.
+
+    Additional model attributes may be passed as a dictionary via attrs.
+
+    Django caches model classes during creation by app_label and
+    model_name.  It is the responsibility of the caller to ensure that
+    model_name does not clash with the names of any pre-existing models.
+    Otherwise the pre-existing model will be returned rather than the
+    one being created and errors will likely ensue.
+    '''
     if attrs is None:
         attrs = {}
     if hasattr(fields, 'items'):
@@ -94,49 +114,11 @@ def _create_model(model_name, project_id, fields, attrs=None):
     signature = ''.join('{}{}'.format(sum(1 for i in group), type_[0])
                         for type_, group in itertools.groupby(
                                 field_groups, lambda x: x[0]))
-    table_name = '_'.join([model_name.lower(), str(project_id), signature])
+    table_name = '_'.join([table_basename.lower(), str(scope), signature])
     attrs.update({name: _fields[type_](db_column='field{}'.format(i))
                   for i, (type_, name) in enumerate(field_groups)})
     attrs['Meta'] = type('Meta', (attrs.get('Meta', object),),
                          {'db_table': table_name})
     attrs.setdefault('__module__', __name__)
-    hash = hashlib.md5()
-    hash.update(table_name.encode('utf-8'))
-    for key in sorted(attrs.keys()):
-        hash.update(key.encode('utf-8'))
-        hash.update(str(attrs[key]).encode('utf-8'))
-    return type(model_name + '_' + hash.hexdigest(), (models.Model,), attrs)
-
-
-def get_output_model(project_id, fields):
-    '''Return a Django model with the given fields for application output.
-
-    The table is unique to a project and includes project_id in the
-    name, which takes the form 'dynappout_ID_SIG' where ID is replaced
-    by the base-10 representation of project_id and SIG represents the
-    count and type of the fields. The model references the AppOutput
-    model to support storing output from multiple applications or
-    application runs in the same table.
-
-    fields is expected to be a dictionary or iterable of 2-tuples (such
-    as is returned by dict.items()) containing (field_name, field_type)
-    pairs. Field names must be valid Python identifiers and field types
-    are strings indicating the data type and must be one of 'boolean',
-    'datetime', 'float', 'integer', 'string', or 'timestamp'. The only
-    difference between timestamp and datetime is that datetime values
-    may be null. In the future, timestamp fields may be indexed
-    automatically, so please only use them for time-series data.
-    '''
-    attrs = {'source': models.ForeignKey(AppOutput, related_name='+')}
-    return _create_model('AppOutputData', project_id, fields, attrs)
-
-
-#def main():
-#    from openeis.projects.models import SensorIngest
-#    model = create_model('DynamicTest', SensorIngest,
-#                         (('time', 'datetime'), ('value', 'float')))
-#    create_table(model, db='dynamic')
-
-
-#if __name__ == '__main__':
-#    main()
+    attrs.setdefault('__name__', model_name)
+    return type(model_name, (models.Model,), attrs)

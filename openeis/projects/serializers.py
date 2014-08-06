@@ -261,4 +261,7 @@ class ReportSerializer(serializers.Serializer):
         for element in obj.elements:
             elements.append(element.__dict__)
             elements[-1]['type'] = type(element).__name__
+            if 'xy_dataset_list' in elements[-1]:
+                elements[-1]['xy_dataset_list'] = [dataset.__dict__ for dataset
+                                                   in element.xy_dataset_list]
         return elements

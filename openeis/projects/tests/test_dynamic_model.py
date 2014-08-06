@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 import random
 
 from django.conf import settings
+from django.db.models import loading
 from django.test import TestCase
 from django.test.utils import setup_test_environment
 
@@ -11,6 +12,23 @@ from openeis.projects.storage import sensorstore
 
 
 now = lambda: datetime.now().replace(tzinfo=timezone.utc)
+
+
+def setup_module():
+    # Replace models.AppOutput with empty model to avoid dealing with
+    # required fields and foreign keys. Replace it after tests run.
+    global _AppOutput
+    model = _AppOutput = models.AppOutput
+    meta = type('Meta', (), {'db_table': 'appoutput_test'})
+    del loading.cache.app_models[model._meta.app_label][model._meta.model_name]
+    models.AppOutput = type('AppOutput', (models.models.Model,),
+                            {'__module__': model.__module__, 'Meta': meta})
+    dyn.create_table(models.AppOutput)
+
+
+def teardown_module():
+    global _AppOutput
+    models.AppOutput = _AppOutput
 
 
 class TestDynamicModelCreation(TestCase):
@@ -45,9 +63,12 @@ class TestDynamicModelCreation(TestCase):
                   ('test5', 'field8', 'IntegerField'),
                   ('test1', 'field9', 'TextField')]
 
-        def check_names(fields, project_id=131,
+        def check_names(table_id, fields, project_id=131,
                         table_name='appoutputdata_131_4d3f2i1s'):
-            model = dyn.get_output_model(project_id, fields)
+            attrs = {'source': models.models.ForeignKey(
+                        models.AppOutput, related_name='+')}
+            model = dyn.create_model('AppOutputData' + str(table_id),
+                                     'appoutputdata', project_id, fields, attrs)
             self.assertEqual(model._meta.db_table, table_name)
             self.assertEqual([(f.name, f.db_column, f.__class__.__name__)
                               for f in model._meta.fields], expect)
@@ -60,12 +81,13 @@ class TestDynamicModelCreation(TestCase):
 
         # Test model generation with the same fields in different orders
         # and by different values.
-        model1 = check_names(fields)
+        model1 = check_names(100, fields)
         fields.reverse()
-        self.assertTrue(check_names(iter(fields)) is model1)
+        self.assertTrue(check_names(100, iter(fields)) is model1)
         random.shuffle(fields)
-        self.assertTrue(check_names(dict(fields)) is model1)
+        self.assertTrue(check_names(100, dict(fields)) is model1)
         test_create(model1)
+        self.assertFalse(check_names(101, fields) is model1)
 
         # Test model with different field names, but same signature.
         for i, (name, field_type) in enumerate(fields):
@@ -73,7 +95,7 @@ class TestDynamicModelCreation(TestCase):
         for i, (name, db_column, field_class) in enumerate(expect):
             expect[i] = (('x' + name if name.startswith('test') else name),
                          db_column, field_class)
-        model2 = check_names(fields)
+        model2 = check_names(102, fields)
         self.assertFalse(model2 is model1)
         self.assertTrue(dyn.table_exists(model2))
 
@@ -81,13 +103,13 @@ class TestDynamicModelCreation(TestCase):
         # models.
         fields.remove(('xtest5', 'integer'))
         expect[-2:] = [('xtest1', 'field8', 'TextField')]
-        model3 = check_names(fields, table_name='appoutputdata_131_4d3f1i1s')
+        model3 = check_names(103, fields, table_name='appoutputdata_131_4d3f1i1s')
         self.assertFalse(model3 is model1)
         self.assertFalse(model3 is model2)
         test_create(model3)
 
         # Changing only the project_id should result in a new model
-        model4 = check_names(fields, 241, 'appoutputdata_241_4d3f1i1s')
+        model4 = check_names(104, fields, 241, 'appoutputdata_241_4d3f1i1s')
         self.assertFalse(model4 is model3)
         test_create(model4)
 
@@ -96,26 +118,22 @@ class TestDynamicModelCreation(TestCase):
         user = models.User.objects.create(username='dynamo')
         project = models.Project.objects.create(
                 name='Dynamic Model Test', owner=user)
-        output = models.AppOutput.objects.create()
+        output = models.AppOutput.objects.create(pk=200)
         fields = {'time': 'timestamp', 'value': 'float',
                   'flags': 'integer', 'note': 'string'}
-        model = dyn.get_output_model(project.pk, fields)
-        self.assertFalse(dyn.table_exists(model))
-        dyn.create_table(model)
+        model = sensorstore.get_data_model(output, project.pk, fields)
         self.assertTrue(dyn.table_exists(model))
-        item = model(source=output, time=now(),
-                     value=12.34, note='Testing')
-        item.save()
+        model.objects.create(source=output, time=now(),
+                             value=12.34, note='Testing')
         self.assertEqual(model.objects.count(), 1)
-        item = model(source=output, time=now(),
-                     value=2.345, note='Testing again')
-        item.save()
+        item = model.objects.create(source=output, time=now(),
+                                    value=2.345, note='Testing again')
         self.assertEqual(model.objects.count(), 2)
         item = model.objects.get(pk=item.id)
         self.assertEqual(item.value, 2.345)
         self.assertEqual(item.note, 'Testing again')
 
-    def test_create_output(self):
+    def test_get_data_model(self):
         def tolist(objs):
             result = [(x.pk, x.source.id, x.time, x.value, x.flags, x.note)
                       for x in objs]
@@ -123,26 +141,29 @@ class TestDynamicModelCreation(TestCase):
             return result
         fields = {'time': 'timestamp', 'value': 'float',
                   'flags': 'integer', 'note': 'string'}
-        output, model = sensorstore.create_output(5, fields)
+        output = models.AppOutput.objects.create(pk=300)
+        model = sensorstore.get_data_model(output, 5, fields)
         self.assertTrue(dyn.table_exists(model))
         items = tolist(model.objects.create(time=now(), value=float(i),
                  note='Testing {}'.format(i)) for i in range(5))
         objs = tolist(model.objects.all())
         self.assertEqual(objs, items)
-        model = sensorstore.get_output(output, 5, fields)
+        model = sensorstore.get_data_model(output, 5, fields)
         objs = tolist(model.objects.all())
         self.assertEqual(objs, items)
 
     def test_bulk_create(self):
         fields = {'time': 'timestamp', 'value': 'float',
                   'flags': 'integer', 'note': 'string'}
-        output, model = sensorstore.create_output(5, fields)
+        output = models.AppOutput.objects.create(pk=400)
+        model = sensorstore.get_data_model(output, 5, fields)
         self.assertTrue(dyn.table_exists(model))
         items = [model(time=now(), value=float(i), note='Testing {}'.format(i))
                  for i in range(5)]
         model.objects.bulk_create(items)
         self.assertEqual(model.objects.count(), 5)
-        output, model = sensorstore.create_output(6, fields)
+        output = models.AppOutput.objects.create(pk=401)
+        model = sensorstore.get_data_model(output, 5, fields)
         self.assertTrue(dyn.table_exists(model))
         items = [model(time=now(), value=float(i), note='Testing {}'.format(i))
                  for i in range(5)]
