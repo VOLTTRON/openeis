@@ -3,12 +3,20 @@ import datetime
 
 def economizer(DAT, OAT, HVACstat):
     """
-    Input: DAT, OAT, HVACstat
-        - Assume that each is a 2d array with datetime and data
-        - DAT, OAT, HVACstat should have the same number of points
-        - Datetimes must match up
-        - HVAC: 0 - off 1 - fan 3 - compressor
-    Returns: a dictionary of suggestions or none type
+    Economizer takes in diffuser air temperature (DAT), outdoor air temperature
+    (OAT), and HVAC status (HVACstat) and checks if it is economizing for more
+    than 70% when it can be economizing.  If it the data indicates otherwise,
+    it will return a dictionary of diagnostics.
+
+    Parameters: DAT, OAT, HVACstat
+        - DAT: diffuser air temperature
+        - OAT: outdoor air temperature
+        - HVACstat: HVAC status
+            - HVAC: 0 - off 1 - fan 3 - compressor
+        * Assume that each is a 2-D array with datetime and data
+        * DAT, OAT, HVACstat should have the same number of points
+        * Datetimes must match up
+    Returns: a dictionary of diagnostics or None
     """
     # counts points when the economizer is on
     econ_on = 0
@@ -23,7 +31,7 @@ def economizer(DAT, OAT, HVACstat):
             if (HVACstat[i][1] == 1):
                 econ_on += 1
             # count when RTU is on
-            if (HVACstat[i][1] == 0):
+            if (HVACstat[i][1] != 0):
                 RTU_on += 1
         i += 1
 
@@ -36,12 +44,13 @@ def economizer(DAT, OAT, HVACstat):
 
 def excessive_daylight(light_data, operational_hours):
     """
-    Input: light data, and building's operational hours
-        - lightdata is a 2d array with datetime and data
-        - lights are on (1) or off (0)
-        - assumes light_data is only for operational hours
-        - operational_hours in hours
-    Returns: a dictionary with of the diagnosis or none type
+    Excessive Daylight checks to see a single sensor should be flagged.
+    Parameters:
+        - light_data: a 2d array with datetime and data
+            - lights are on (1) or off (0)
+            - assumes light_data is only for operational hours
+        - operational_hours: building's operational in hours a day
+    Returns: True or False (true meaning that this sensor should be flagged)
     """
     # Grabs the first time it starts logging so we know when the next day is
     first_time = light_data[0][0]
@@ -94,7 +103,7 @@ def excessive_daylight(light_data, operational_hours):
 
     # if more than half of the days are flagged, there's a problem.
     if (day_flag / day_count > 0.5):
-        return {"Problem" : "Excessive lighting during occupied/daytime hours.",
-                "Diagnostic" : "Even though these spaces are not continuously occupied, for more than half of the monitoring period, the lights were switched off less than three times a day.",
-                "Recommendation" : "Install occupancy sensors in locations with intermittent occupancy, or engage occupants to turn the lights off when they leave the area."}
+        return True
+    else:
+        return False
 
