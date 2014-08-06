@@ -9,6 +9,7 @@ import csv
 import os
 import math
 import sys
+import datetime
 
 from openeis.applications import get_algorithm_class
 from openeis.projects.storage.db_output import DatabaseOutputFile
@@ -19,7 +20,8 @@ class AppTestBase(TestCase):
     def run_application(self, config_file):
         """
         Runs the application with a given configuration file.
-        Parameters: configuration file (config_file)
+        Parameters:
+            - config_file: configuration files passed into runapplication
         """
         config = ConfigParser()
         # Read the file
@@ -64,8 +66,11 @@ class AppTestBase(TestCase):
         application.  It can tolerate more than one output file for an
         application run.
 
-        Parameters: application names as a list, configuration file (tables, config_file)
-        Returns: The file made from the application.
+        Parameters:
+            - tables: application names as a list
+            - config_file: configuration file to pass into runapplication
+        Returns:
+            - newest: The file made from the running the application.
         Throws: Assertion error if no new file was created.
         """
         # Get all files
@@ -100,8 +105,13 @@ class AppTestBase(TestCase):
         """
         Returns outputs from test outputs and expected outputs.  To be compared
         in the test.
-        Parameters: test_output file name, expected_output file name
-        Output: the test and output files as a list
+
+        Parameters:
+            - test_output: application's output name
+            - expected_output: file name of the expected output
+        Output:
+            - test_list: the contents of the test output in a list
+            - output_list: the contents of the expected output in a list
         """
         # Open the files
         test_file = open(test_output, 'r')
@@ -126,9 +136,13 @@ class AppTestBase(TestCase):
         Checks for differences between the new csv file and the expected csv
         file. If the values are strings, it's checked for exactness.  Numerical
         values are checked using the _nearly_same function defined below.
-        Parameters: test and expected files as lists (test_list, expected_list)
-        Throws: Assertion error if the numbers are not nearly same, or the file doesn't
-            match
+
+        Parameters:
+            - test_list: test file contents in a list
+            - expected_list: expected file contents as a list
+        Throws:
+            -Assertion error if the numbers are not nearly same, or the file
+                does not match
         """
         test_dict = {}
         expected_dict = {}
@@ -180,8 +194,11 @@ class AppTestBase(TestCase):
     def _is_num(self, s):
         """
         Check to see if s a number.
-        Parameters: a number (s).
-        Returns: True or False indicating if given s is a number.
+
+        Parameters:
+            - s: a number.
+        Returns:
+            - True or False indicating if given s is a number.
         """
         try:
             float(s)
@@ -193,10 +210,15 @@ class AppTestBase(TestCase):
     def _nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
         """
         Compare two numbers or arrays, checking all elements are nearly equal.
-        Parameters: two lists of numbers to compare (xxs, yys), the key to the column
-            we're comparing, absolute tolerance (absTol), and relative tolerance (relTol)
-        Returns: True or false depending if the two lists are nearly the same or not
-        Throws: Assertion error if they're not nearly the same.
+
+        Parameters:
+            - xxs, yys: two lists of numbers to compare
+            - key: the key to the column we are comparing in output files
+            - absTol: absolute tolerance
+            - relTol: relative tolerance 
+        Returns: True or false depending if the two lists are nearly the same
+            or not
+        Throws: Assertion error if xxs and yys not nearly the same.
         """
         #
         # Coerce scalar to array if necessary.
@@ -211,10 +233,11 @@ class AppTestBase(TestCase):
             xx = xxs[idx]
             absDiff = math.fabs(yys[idx]-xx)
             if (absDiff>absTol and absDiff>relTol*math.fabs(xx)):
-                self.assertFalse((absDiff>absTol and absDiff>relTol*math.fabs(xx)),
-                    (key + ' is not nearly same: ' + str(xx) + ' ' + str(yys[idx])\
-                    + ' idx: ' + str(idx) + ' absDiff: ' + str(absDiff), ' relDiff: '\
-                    + str(absDiff/math.fabs(xx))))
+                self.assertFalse((absDiff>absTol and \
+                        absDiff>relTol*math.fabs(xx)),
+                    (key + ' is not nearly same: ' + str(xx) + ' ' \
+                    + str(yys[idx]) + ' idx: ' + str(idx) + ' absDiff: ' \
+                    + str(absDiff), ' relDiff: '+ str(absDiff/math.fabs(xx))))
                 nearlySame = False
             idx += 1
         return( nearlySame)
@@ -224,11 +247,13 @@ class AppTestBase(TestCase):
         """
         Find the mean of non-``NAN`` entries in a vector *xxs*.
 
-        Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`, in
-        order to make explict how ``NAN`` values get handled.
+        Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`,
+        in order to make explict how ``NAN`` values get handled.
 
-        Parameters: a list of numbers, xxs
-        Returns: the list's mean
+        Parameters:
+            - xxs: a list of numbers
+        Returns:
+            - xxMeans: the list's mean
         """
         #
         # Find sum and count of non-``NAN`` entries.
@@ -256,10 +281,14 @@ class AppTestBase(TestCase):
         """
         Find the correlation coefficient between two vectors *xxs* and *yys*.
 
-        Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`, in
-        order to make explict how ``NAN`` values get handled.
-        Parameters: two lists (xxs, yys), whether we expect zero means or not 
-            (expectZeroMeans)
+        Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`,
+        in order to make explict how ``NAN`` values get handled.
+
+        Parameters:
+            - xxs, yys: two lists of numbers
+            - expectZeroMeans: whether we expect zero means or not
+        Returns:
+            - corrCoeff: Spearman correlation coefficient of the two lists
         """
 
         cts = len(xxs)
@@ -300,10 +329,13 @@ class AppTestBase(TestCase):
 
     def run_it(self, ini_file, expected_outputs, clean_up=False):
         """
-        Runs the application and checks the output with the expected output.  Will clean up
-        output files if clean_up is set to true.
-        Parameters: configuration file (ini_file), a dictionary of expected outputs
-            (expected_outputs), if it should clean newly made files or not (clean_up)
+        Runs the application and checks the output with the expected output.
+            Will clean up output files if clean_up is set to true.
+
+        Parameters:
+            - ini_file: configuration file to be passed into runapplication
+            - expected_outputs: a dictionary of expected outputs
+            - clean_up: if it should clean newly made files or not
         Throws: Assertion error if the files do not match.
         """
         config = ConfigParser()
@@ -330,4 +362,46 @@ class AppTestBase(TestCase):
             os.remove(newestLog)
 
 
+    def set_up_datetimes(self, first, last, increment):
+        """
+        Creates an array of datetimes with the FIRST and LAST dateimes inputted
+        with INCREMENTS in seconds.  These datetimes are also in arrays for
+        easy iterating and appending data.
+
+        Parameters:
+            - first: first datetime to start incrementing from
+            - last: final datetime to end on
+            - increment: increments in seconds (int) between each datetime
+        Returns:
+            -base: An array of [datetimes]
+                Ex: [[[datetime.datetime(2014, 1, 1, 0, 0)],
+                    [datetime.datetime(2014, 1, 1, 6, 0)]] 
+        """
+        delta = datetime.timedelta(0, increment)
+
+        base = []
+        while (first != last):
+            base.append([first])
+            first += delta
+        base.append(last)
+
+        return base
+
+    def append_data_to_datetime(self, dates, data):
+        """
+        Takes data and puts it into dates.  Assumes that they are the same
+        length.
+
+        Parameters:
+            - dates: an array of datetimes in lists.
+                Ex: [[[datetime.datetime(2014, 1, 1, 0, 0)],
+                    [datetime.datetime(2014, 1, 1, 6, 0)]]
+            - data: an array of data
+        """
+        assert(len(dates) == len(data))
+
+        i = 0
+        while (i < len(dates)):
+            dates[i].append(data[i])
+            i += 1
 
