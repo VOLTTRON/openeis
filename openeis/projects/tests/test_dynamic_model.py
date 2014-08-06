@@ -14,12 +14,21 @@ from openeis.projects.storage import sensorstore
 now = lambda: datetime.now().replace(tzinfo=timezone.utc)
 
 
-# Replace models.AppOutput with empty model to avoid dealing with
-# required fields and foreign keys.
-_model = models.AppOutput
-del loading.cache.app_models[_model._meta.app_label][_model._meta.model_name]
-models.AppOutput = type('AppOutput', (models.models.Model,),
-                        {'__module__': _model.__module__})
+def setup_module():
+    # Replace models.AppOutput with empty model to avoid dealing with
+    # required fields and foreign keys. Replace it after tests run.
+    global _AppOutput
+    model = _AppOutput = models.AppOutput
+    meta = type('Meta', (), {'db_table': 'appoutput_test'})
+    del loading.cache.app_models[model._meta.app_label][model._meta.model_name]
+    models.AppOutput = type('AppOutput', (models.models.Model,),
+                            {'__module__': model.__module__, 'Meta': meta})
+    dyn.create_table(models.AppOutput)
+
+
+def teardown_module():
+    global _AppOutput
+    models.AppOutput = _AppOutput
 
 
 class TestDynamicModelCreation(TestCase):
