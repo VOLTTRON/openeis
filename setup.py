@@ -1,14 +1,7 @@
 from setuptools import setup
+import sys
 
-setup(
-    name = 'openeis',
-    version = '0.1',
-    description = 'Open Energy Information System (OpenEIS) server.',
-    author = 'Bora Akyol',
-    author_email = 'bora@pnnl.gov',
-    url = 'http://www.pnnl.gov',
-    packages = ['openeis.server', 'openeis.projects'],
-    install_requires = [
+install_requires = [
         'python-dateutil',
         'django>=1.6,<1.7',
         'django-filter',
@@ -19,7 +12,21 @@ setup(
         'jsonschema',
         'openeis-ui>0.1.dev70',
         'pytz',
-    ],
+]
+
+if sys.platform != 'win32':
+    install_requires.append('numpy')
+
+setup(
+    name = 'openeis',
+    version = '0.1',
+    description = 'Open Energy Information System (OpenEIS) server.',
+    author = 'Bora Akyol',
+    author_email = 'bora@pnnl.gov',
+    url = 'http://www.pnnl.gov',
+    packages = ['openeis.server', 'openeis.projects'],
+
+    install_requires = install_requires,
     entry_points = '''
         [console_scripts]
         openeis = openeis.server.manage:main
