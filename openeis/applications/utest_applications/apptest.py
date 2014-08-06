@@ -383,7 +383,7 @@ class AppTestBase(TestCase):
         while (first != last):
             base.append([first])
             first += delta
-        base.append(last)
+        base.append([last])
 
         return base
 
@@ -399,7 +399,6 @@ class AppTestBase(TestCase):
             - data: an array of data
         """
         assert(len(dates) == len(data))
-
         i = 0
         while (i < len(dates)):
             dates[i].append(data[i])
