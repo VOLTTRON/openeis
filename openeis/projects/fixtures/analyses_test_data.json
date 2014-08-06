@@ -3,8 +3,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "logentry",
-        "name": "log entry",
-        "app_label": "admin"
+        "app_label": "admin",
+        "name": "log entry"
     },
     "pk": 1
 },
@@ -12,8 +12,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "permission",
-        "name": "permission",
-        "app_label": "auth"
+        "app_label": "auth",
+        "name": "permission"
     },
     "pk": 2
 },
@@ -21,8 +21,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "group",
-        "name": "group",
-        "app_label": "auth"
+        "app_label": "auth",
+        "name": "group"
     },
     "pk": 3
 },
@@ -30,8 +30,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "user",
-        "name": "user",
-        "app_label": "auth"
+        "app_label": "auth",
+        "name": "user"
     },
     "pk": 4
 },
@@ -39,8 +39,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "contenttype",
-        "name": "content type",
-        "app_label": "contenttypes"
+        "app_label": "contenttypes",
+        "name": "content type"
     },
     "pk": 5
 },
@@ -48,8 +48,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "session",
-        "name": "session",
-        "app_label": "sessions"
+        "app_label": "sessions",
+        "name": "session"
     },
     "pk": 6
 },
@@ -57,8 +57,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "organization",
-        "name": "organization",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "organization"
     },
     "pk": 7
 },
@@ -66,8 +66,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "membership",
-        "name": "membership",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "membership"
     },
     "pk": 8
 },
@@ -75,8 +75,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "project",
-        "name": "project",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "project"
     },
     "pk": 9
 },
@@ -84,8 +84,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "datafile",
-        "name": "data file",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "data file"
     },
     "pk": 10
 },
@@ -93,8 +93,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "accountverification",
-        "name": "account verification",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "account verification"
     },
     "pk": 11
 },
@@ -102,8 +102,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "sensormapdefinition",
-        "name": "sensor map definition",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "sensor map definition"
     },
     "pk": 12
 },
@@ -111,8 +111,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "sensoringest",
-        "name": "sensor ingest",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "sensor ingest"
     },
     "pk": 13
 },
@@ -120,8 +120,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "sensoringestfile",
-        "name": "sensor ingest file",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "sensor ingest file"
     },
     "pk": 14
 },
@@ -129,8 +129,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "sensoringestlog",
-        "name": "sensor ingest log",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "sensor ingest log"
     },
     "pk": 15
 },
@@ -138,8 +138,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "sensor",
-        "name": "sensor",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "sensor"
     },
     "pk": 16
 },
@@ -147,8 +147,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "booleansensordata",
-        "name": "boolean sensor data",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "boolean sensor data"
     },
     "pk": 17
 },
@@ -156,8 +156,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "floatsensordata",
-        "name": "float sensor data",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "float sensor data"
     },
     "pk": 18
 },
@@ -165,8 +165,8 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "integersensordata",
-        "name": "integer sensor data",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "integer sensor data"
     },
     "pk": 19
 },
@@ -174,49 +174,89 @@
     "model": "contenttypes.contenttype",
     "fields": {
         "model": "stringsensordata",
-        "name": "string sensor data",
-        "app_label": "projects"
+        "app_label": "projects",
+        "name": "string sensor data"
     },
     "pk": 20
 },
 {
     "model": "contenttypes.contenttype",
     "fields": {
-        "model": "appoutput",
-        "name": "app output",
-        "app_label": "projects"
+        "model": "analysis",
+        "app_label": "projects",
+        "name": "analysis"
     },
     "pk": 21
 },
 {
     "model": "contenttypes.contenttype",
     "fields": {
-        "model": "analysis",
-        "name": "analysis",
-        "app_label": "projects"
+        "model": "appoutput",
+        "app_label": "projects",
+        "name": "app output"
     },
     "pk": 22
 },
 {
     "model": "sessions.session",
     "fields": {
-        "session_data": "MDljOTUwNTg0NGNlM2Q3ZWU1ZTlmZGRkNTBlN2Q4ODc0NjIwNTk3Yzp7Il9hdXRoX3VzZXJfYmFja2VuZCI6ImRqYW5nby5jb250cmliLmF1dGguYmFja2VuZHMuTW9kZWxCYWNrZW5kIiwiX2F1dGhfdXNlcl9pZCI6MX0=",
-        "expire_date": "2014-08-20T18:45:34.826Z"
+        "session_data": "NTYxMjQ1NDUxMjk2Y2U1ZTc2OGJlNTFjOTQ0ZDQzMWNjM2NlNWM3Nzp7Il9hdXRoX3VzZXJfaWQiOjEsIl9hdXRoX3VzZXJfYmFja2VuZCI6ImRqYW5nby5jb250cmliLmF1dGguYmFja2VuZHMuTW9kZWxCYWNrZW5kIn0=",
+        "expire_date": "2014-08-20T22:42:05.712Z"
     },
-    "pk": "9ku7f44h49w8x2jyuadoh6xhpnn391og"
+    "pk": "2u698ik9hdustbysvnf0swzb568pwde0"
+},
+{
+    "model": "sessions.session",
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==",
+        "expire_date": "2014-08-20T22:41:56.520Z"
+    },
+    "pk": "8wmpa4kgycyhjfm76pqev4hi7k5cixn4"
+},
+{
+    "model": "sessions.session",
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==",
+        "expire_date": "2014-08-20T22:41:56.719Z"
+    },
+    "pk": "d0kemdv33uc2bigvj0deqbv1ug704gdd"
+},
+{
+    "model": "sessions.session",
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==",
+        "expire_date": "2014-08-20T22:41:57.211Z"
+    },
+    "pk": "dmp2wochrxcsx8sgjshjzwdcnw21i9as"
+},
+{
+    "model": "sessions.session",
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==",
+        "expire_date": "2014-08-20T22:41:56.279Z"
+    },
+    "pk": "hkin9g3a7wgh50nhyr4mtxdhh24pidtb"
+},
+{
+    "model": "sessions.session",
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==",
+        "expire_date": "2014-08-20T22:41:56.961Z"
+    },
+    "pk": "t80q6mzwq7iu7azgi4zdyea1v0oroukx"
 },
 {
     "model": "projects.datafile",
     "fields": {
-        "project": 1,
         "comments": "",
-        "uploaded": "2014-08-06T18:45:50.624Z",
-        "file": "projects/1/Bldg90_load_1month_11.csv",
+        "project": 1,
         "timestamp": {
             "columns": [
                 0
             ]
-        }
+        },
+        "file": "projects/1/Bldg90_load_1month_13.csv",
+        "uploaded": "2014-08-06T22:42:18.829Z"
     },
     "pk": 1
 },
@@ -224,10 +264,41 @@
     "model": "projects.sensormapdefinition",
     "fields": {
         "project": 1,
-        "name": "TestMap",
         "map": {
+            "sensors": {
+                "lbnl": {
+                    "level": "site"
+                },
+                "lbnl/bldg90": {
+                    "level": "building"
+                },
+                "lbnl/bldg90/OutdoorAirTemperature": {
+                    "file": "0",
+                    "column": "Hillside OAT [F]",
+                    "unit": "fahrenheit",
+                    "type": "OutdoorAirTemperature"
+                },
+                "lbnl/bldg90/WholeBuildingGas": {
+                    "file": "0",
+                    "column": "Boiler Gas [kBtu/hr]",
+                    "unit": "kilobtus_per_hour",
+                    "type": "WholeBuildingGas"
+                },
+                "lbnl/bldg90/WholeBuildingElectricity": {
+                    "file": "0",
+                    "column": "Main Meter [kW]",
+                    "unit": "kilowatt",
+                    "type": "WholeBuildingElectricity"
+                }
+            },
+            "version": 1,
             "files": {
                 "0": {
+                    "timestamp": {
+                        "columns": [
+                            0
+                        ]
+                    },
                     "signature": {
                         "headers": [
                             "Date",
@@ -235,51 +306,20 @@
                             "Main Meter [kW]",
                             "Boiler Gas [kBtu/hr]"
                         ]
-                    },
-                    "timestamp": {
-                        "columns": [
-                            0
-                        ]
                     }
                 }
-            },
-            "sensors": {
-                "lbnl/bldg90/WholeBuildingGas": {
-                    "unit": "kilobtus_per_hour",
-                    "type": "WholeBuildingGas",
-                    "file": "0",
-                    "column": "Boiler Gas [kBtu/hr]"
-                },
-                "lbnl/bldg90": {
-                    "level": "building"
-                },
-                "lbnl/bldg90/WholeBuildingElectricity": {
-                    "unit": "kilowatt",
-                    "type": "WholeBuildingElectricity",
-                    "file": "0",
-                    "column": "Main Meter [kW]"
-                },
-                "lbnl": {
-                    "level": "site"
-                },
-                "lbnl/bldg90/OutdoorAirTemperature": {
-                    "unit": "fahrenheit",
-                    "type": "OutdoorAirTemperature",
-                    "file": "0",
-                    "column": "Hillside OAT [F]"
-                }
-            },
-            "version": 1
-        }
+            }
+        },
+        "name": "TestMap"
     },
     "pk": 1
 },
 {
     "model": "projects.sensoringest",
     "fields": {
-        "start": "2014-08-06T18:46:53.679Z",
-        "end": "2014-08-06T18:46:55.294Z",
-        "map": 1
+        "map": 1,
+        "start": "2014-08-06T22:43:14.689Z",
+        "end": "2014-08-06T22:43:16.429Z"
     },
     "pk": 1
 },
@@ -287,35 +327,35 @@
     "model": "projects.sensoringestfile",
     "fields": {
         "file": 1,
-        "name": "0",
-        "ingest": 1
+        "ingest": 1,
+        "name": "0"
     },
     "pk": 1
 },
 {
     "model": "projects.sensor",
     "fields": {
+        "map": 1,
         "data_type": "f",
-        "name": "lbnl/bldg90/OutdoorAirTemperature",
-        "map": 1
+        "name": "lbnl/bldg90/OutdoorAirTemperature"
     },
     "pk": 1
 },
 {
     "model": "projects.sensor",
     "fields": {
+        "map": 1,
         "data_type": "f",
-        "name": "lbnl/bldg90/WholeBuildingElectricity",
-        "map": 1
+        "name": "lbnl/bldg90/WholeBuildingElectricity"
     },
     "pk": 2
 },
 {
     "model": "projects.sensor",
     "fields": {
+        "map": 1,
         "data_type": "f",
-        "name": "lbnl/bldg90/WholeBuildingGas",
-        "map": 1
+        "name": "lbnl/bldg90/WholeBuildingGas"
     },
     "pk": 3
 },
@@ -21200,728 +21240,614 @@
     "pk": 2088
 },
 {
-    "model": "projects.appoutput",
-    "fields": {},
-    "pk": 1
-},
-{
-    "model": "projects.appoutput",
-    "fields": {},
-    "pk": 2
-},
-{
-    "model": "projects.appoutput",
-    "fields": {},
-    "pk": 3
-},
-{
-    "model": "projects.appoutput",
-    "fields": {},
-    "pk": 4
-},
-{
-    "model": "projects.analysis",
-    "fields": {
-        "started": "2014-08-06T19:06:34.851Z",
-        "ended": "2014-08-06T19:06:39.701Z",
-        "name": "Unit_Test",
-        "application": "daily_summary",
-        "dataset": 1,
-        "added": "2014-08-06T19:06:34.778Z",
-        "reports": [
-            {
-                "description": "Daily Summary Report",
-                "elements": [
-                    {
-                        "description": "A table showing the calculated metrics",
-                        "type": "Table",
-                        "title": "Load Summary Metrics",
-                        "column_info": [
-                            [
-                                "Metric",
-                                "Summary Metrics"
-                            ],
-                            [
-                                "value",
-                                "Summary Values"
-                            ]
-                        ],
-                        "table_name": "Daily_Summary_Table"
-                    }
-                ]
-            }
-        ],
-        "configuration": {
-            "inputs": {
-                "load": [
-                    "lbnl/bldg90/WholeBuildingElectricity"
-                ]
-            },
-            "parameters": {
-                "building_sq_ft": 3000
-            }
-        },
-        "progress_percent": 100.0,
-        "status": "complete"
-    },
-    "pk": 1
-},
-{
-    "model": "projects.analysis",
-    "fields": {
-        "started": "2014-08-06T19:09:47.508Z",
-        "ended": "2014-08-06T19:09:52.775Z",
-        "name": "Unit_Test",
-        "application": "daily_summary",
-        "dataset": 1,
-        "added": "2014-08-06T19:09:47.443Z",
-        "reports": [
-            {
-                "description": "Daily Summary Report",
-                "elements": [
-                    {
-                        "description": "A table showing the calculated metrics",
-                        "type": "Table",
-                        "title": "Load Summary Metrics",
-                        "column_info": [
-                            [
-                                "Metric",
-                                "Summary Metrics"
-                            ],
-                            [
-                                "value",
-                                "Summary Values"
-                            ]
-                        ],
-                        "table_name": "Daily_Summary_Table"
-                    }
-                ]
-            }
-        ],
-        "configuration": {
-            "inputs": {
-                "load": [
-                    "lbnl/bldg90/WholeBuildingElectricity"
-                ]
-            },
-            "parameters": {
-                "building_sq_ft": 3000
-            }
-        },
-        "progress_percent": 100.0,
-        "status": "complete"
-    },
-    "pk": 2
-},
-{
     "model": "auth.permission",
     "fields": {
+        "codename": "add_logentry",
         "content_type": 1,
-        "name": "Can add log entry",
-        "codename": "add_logentry"
+        "name": "Can add log entry"
     },
     "pk": 1
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_logentry",
         "content_type": 1,
-        "name": "Can change log entry",
-        "codename": "change_logentry"
+        "name": "Can change log entry"
     },
     "pk": 2
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_logentry",
         "content_type": 1,
-        "name": "Can delete log entry",
-        "codename": "delete_logentry"
+        "name": "Can delete log entry"
     },
     "pk": 3
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_permission",
         "content_type": 2,
-        "name": "Can add permission",
-        "codename": "add_permission"
+        "name": "Can add permission"
     },
     "pk": 4
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_permission",
         "content_type": 2,
-        "name": "Can change permission",
-        "codename": "change_permission"
+        "name": "Can change permission"
     },
     "pk": 5
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_permission",
         "content_type": 2,
-        "name": "Can delete permission",
-        "codename": "delete_permission"
+        "name": "Can delete permission"
     },
     "pk": 6
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_group",
         "content_type": 3,
-        "name": "Can add group",
-        "codename": "add_group"
+        "name": "Can add group"
     },
     "pk": 7
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_group",
         "content_type": 3,
-        "name": "Can change group",
-        "codename": "change_group"
+        "name": "Can change group"
     },
     "pk": 8
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_group",
         "content_type": 3,
-        "name": "Can delete group",
-        "codename": "delete_group"
+        "name": "Can delete group"
     },
     "pk": 9
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_user",
         "content_type": 4,
-        "name": "Can add user",
-        "codename": "add_user"
+        "name": "Can add user"
     },
     "pk": 10
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_user",
         "content_type": 4,
-        "name": "Can change user",
-        "codename": "change_user"
+        "name": "Can change user"
     },
     "pk": 11
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_user",
         "content_type": 4,
-        "name": "Can delete user",
-        "codename": "delete_user"
+        "name": "Can delete user"
     },
     "pk": 12
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_contenttype",
         "content_type": 5,
-        "name": "Can add content type",
-        "codename": "add_contenttype"
+        "name": "Can add content type"
     },
     "pk": 13
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_contenttype",
         "content_type": 5,
-        "name": "Can change content type",
-        "codename": "change_contenttype"
+        "name": "Can change content type"
     },
     "pk": 14
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_contenttype",
         "content_type": 5,
-        "name": "Can delete content type",
-        "codename": "delete_contenttype"
+        "name": "Can delete content type"
     },
     "pk": 15
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_session",
         "content_type": 6,
-        "name": "Can add session",
-        "codename": "add_session"
+        "name": "Can add session"
     },
     "pk": 16
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_session",
         "content_type": 6,
-        "name": "Can change session",
-        "codename": "change_session"
+        "name": "Can change session"
     },
     "pk": 17
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_session",
         "content_type": 6,
-        "name": "Can delete session",
-        "codename": "delete_session"
+        "name": "Can delete session"
     },
     "pk": 18
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_organization",
         "content_type": 7,
-        "name": "Can add organization",
-        "codename": "add_organization"
+        "name": "Can add organization"
     },
     "pk": 19
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_organization",
         "content_type": 7,
-        "name": "Can change organization",
-        "codename": "change_organization"
+        "name": "Can change organization"
     },
     "pk": 20
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_organization",
         "content_type": 7,
-        "name": "Can delete organization",
-        "codename": "delete_organization"
+        "name": "Can delete organization"
     },
     "pk": 21
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_membership",
         "content_type": 8,
-        "name": "Can add membership",
-        "codename": "add_membership"
+        "name": "Can add membership"
     },
     "pk": 22
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_membership",
         "content_type": 8,
-        "name": "Can change membership",
-        "codename": "change_membership"
+        "name": "Can change membership"
     },
     "pk": 23
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_membership",
         "content_type": 8,
-        "name": "Can delete membership",
-        "codename": "delete_membership"
+        "name": "Can delete membership"
     },
     "pk": 24
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_project",
         "content_type": 9,
-        "name": "Can add project",
-        "codename": "add_project"
+        "name": "Can add project"
     },
     "pk": 25
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_project",
         "content_type": 9,
-        "name": "Can change project",
-        "codename": "change_project"
+        "name": "Can change project"
     },
     "pk": 26
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_project",
         "content_type": 9,
-        "name": "Can delete project",
-        "codename": "delete_project"
+        "name": "Can delete project"
     },
     "pk": 27
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_datafile",
         "content_type": 10,
-        "name": "Can add data file",
-        "codename": "add_datafile"
+        "name": "Can add data file"
     },
     "pk": 28
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_datafile",
         "content_type": 10,
-        "name": "Can change data file",
-        "codename": "change_datafile"
+        "name": "Can change data file"
     },
     "pk": 29
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_datafile",
         "content_type": 10,
-        "name": "Can delete data file",
-        "codename": "delete_datafile"
+        "name": "Can delete data file"
     },
     "pk": 30
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_accountverification",
         "content_type": 11,
-        "name": "Can add account verification",
-        "codename": "add_accountverification"
+        "name": "Can add account verification"
     },
     "pk": 31
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_accountverification",
         "content_type": 11,
-        "name": "Can change account verification",
-        "codename": "change_accountverification"
+        "name": "Can change account verification"
     },
     "pk": 32
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_accountverification",
         "content_type": 11,
-        "name": "Can delete account verification",
-        "codename": "delete_accountverification"
+        "name": "Can delete account verification"
     },
     "pk": 33
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_sensormapdefinition",
         "content_type": 12,
-        "name": "Can add sensor map definition",
-        "codename": "add_sensormapdefinition"
+        "name": "Can add sensor map definition"
     },
     "pk": 34
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_sensormapdefinition",
         "content_type": 12,
-        "name": "Can change sensor map definition",
-        "codename": "change_sensormapdefinition"
+        "name": "Can change sensor map definition"
     },
     "pk": 35
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_sensormapdefinition",
         "content_type": 12,
-        "name": "Can delete sensor map definition",
-        "codename": "delete_sensormapdefinition"
+        "name": "Can delete sensor map definition"
     },
     "pk": 36
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_sensoringest",
         "content_type": 13,
-        "name": "Can add sensor ingest",
-        "codename": "add_sensoringest"
+        "name": "Can add sensor ingest"
     },
     "pk": 37
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_sensoringest",
         "content_type": 13,
-        "name": "Can change sensor ingest",
-        "codename": "change_sensoringest"
+        "name": "Can change sensor ingest"
     },
     "pk": 38
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_sensoringest",
         "content_type": 13,
-        "name": "Can delete sensor ingest",
-        "codename": "delete_sensoringest"
+        "name": "Can delete sensor ingest"
     },
     "pk": 39
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_sensoringestfile",
         "content_type": 14,
-        "name": "Can add sensor ingest file",
-        "codename": "add_sensoringestfile"
+        "name": "Can add sensor ingest file"
     },
     "pk": 40
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_sensoringestfile",
         "content_type": 14,
-        "name": "Can change sensor ingest file",
-        "codename": "change_sensoringestfile"
+        "name": "Can change sensor ingest file"
     },
     "pk": 41
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_sensoringestfile",
         "content_type": 14,
-        "name": "Can delete sensor ingest file",
-        "codename": "delete_sensoringestfile"
+        "name": "Can delete sensor ingest file"
     },
     "pk": 42
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_sensoringestlog",
         "content_type": 15,
-        "name": "Can add sensor ingest log",
-        "codename": "add_sensoringestlog"
+        "name": "Can add sensor ingest log"
     },
     "pk": 43
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_sensoringestlog",
         "content_type": 15,
-        "name": "Can change sensor ingest log",
-        "codename": "change_sensoringestlog"
+        "name": "Can change sensor ingest log"
     },
     "pk": 44
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_sensoringestlog",
         "content_type": 15,
-        "name": "Can delete sensor ingest log",
-        "codename": "delete_sensoringestlog"
+        "name": "Can delete sensor ingest log"
     },
     "pk": 45
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_sensor",
         "content_type": 16,
-        "name": "Can add sensor",
-        "codename": "add_sensor"
+        "name": "Can add sensor"
     },
     "pk": 46
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_sensor",
         "content_type": 16,
-        "name": "Can change sensor",
-        "codename": "change_sensor"
+        "name": "Can change sensor"
     },
     "pk": 47
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_sensor",
         "content_type": 16,
-        "name": "Can delete sensor",
-        "codename": "delete_sensor"
+        "name": "Can delete sensor"
     },
     "pk": 48
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_booleansensordata",
         "content_type": 17,
-        "name": "Can add boolean sensor data",
-        "codename": "add_booleansensordata"
+        "name": "Can add boolean sensor data"
     },
     "pk": 49
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_booleansensordata",
         "content_type": 17,
-        "name": "Can change boolean sensor data",
-        "codename": "change_booleansensordata"
+        "name": "Can change boolean sensor data"
     },
     "pk": 50
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_booleansensordata",
         "content_type": 17,
-        "name": "Can delete boolean sensor data",
-        "codename": "delete_booleansensordata"
+        "name": "Can delete boolean sensor data"
     },
     "pk": 51
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_floatsensordata",
         "content_type": 18,
-        "name": "Can add float sensor data",
-        "codename": "add_floatsensordata"
+        "name": "Can add float sensor data"
     },
     "pk": 52
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_floatsensordata",
         "content_type": 18,
-        "name": "Can change float sensor data",
-        "codename": "change_floatsensordata"
+        "name": "Can change float sensor data"
     },
     "pk": 53
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_floatsensordata",
         "content_type": 18,
-        "name": "Can delete float sensor data",
-        "codename": "delete_floatsensordata"
+        "name": "Can delete float sensor data"
     },
     "pk": 54
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_integersensordata",
         "content_type": 19,
-        "name": "Can add integer sensor data",
-        "codename": "add_integersensordata"
+        "name": "Can add integer sensor data"
     },
     "pk": 55
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_integersensordata",
         "content_type": 19,
-        "name": "Can change integer sensor data",
-        "codename": "change_integersensordata"
+        "name": "Can change integer sensor data"
     },
     "pk": 56
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_integersensordata",
         "content_type": 19,
-        "name": "Can delete integer sensor data",
-        "codename": "delete_integersensordata"
+        "name": "Can delete integer sensor data"
     },
     "pk": 57
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_stringsensordata",
         "content_type": 20,
-        "name": "Can add string sensor data",
-        "codename": "add_stringsensordata"
+        "name": "Can add string sensor data"
     },
     "pk": 58
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_stringsensordata",
         "content_type": 20,
-        "name": "Can change string sensor data",
-        "codename": "change_stringsensordata"
+        "name": "Can change string sensor data"
     },
     "pk": 59
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_stringsensordata",
         "content_type": 20,
-        "name": "Can delete string sensor data",
-        "codename": "delete_stringsensordata"
+        "name": "Can delete string sensor data"
     },
     "pk": 60
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_analysis",
         "content_type": 21,
-        "name": "Can add app output",
-        "codename": "add_appoutput"
+        "name": "Can add analysis"
     },
     "pk": 61
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_analysis",
         "content_type": 21,
-        "name": "Can change app output",
-        "codename": "change_appoutput"
+        "name": "Can change analysis"
     },
     "pk": 62
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_analysis",
         "content_type": 21,
-        "name": "Can delete app output",
-        "codename": "delete_appoutput"
+        "name": "Can delete analysis"
     },
     "pk": 63
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "add_appoutput",
         "content_type": 22,
-        "name": "Can add analysis",
-        "codename": "add_analysis"
+        "name": "Can add app output"
     },
     "pk": 64
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "change_appoutput",
         "content_type": 22,
-        "name": "Can change analysis",
-        "codename": "change_analysis"
+        "name": "Can change app output"
     },
     "pk": 65
 },
 {
     "model": "auth.permission",
     "fields": {
+        "codename": "delete_appoutput",
         "content_type": 22,
-        "name": "Can delete analysis",
-        "codename": "delete_analysis"
+        "name": "Can delete app output"
     },
     "pk": 66
 },
 {
     "model": "auth.user",
     "fields": {
-        "is_active": true,
-        "is_superuser": true,
-        "last_login": "2014-08-06T18:45:34.734Z",
-        "email": "test@test.gov",
-        "groups": [],
-        "password": "pbkdf2_sha256$12000$KOBXnjzqghgr$ePkOWYLlQoEchDFIOkyV+e6WI4ZGLisB5MtUWCtAkYI=",
-        "last_name": "",
-        "username": "test_user",
-        "date_joined": "2014-08-06T18:45:14.837Z",
         "first_name": "",
+        "is_staff": true,
+        "username": "test_user",
+        "password": "pbkdf2_sha256$12000$iEnXvaFxMYZC$msSp8HW6IBGTWf3lHZSXOJYULvYyBs2Od69BTDcwhQw=",
         "user_permissions": [],
-        "is_staff": true
+        "is_superuser": true,
+        "last_login": "2014-08-06T22:42:05.597Z",
+        "last_name": "",
+        "groups": [],
+        "date_joined": "2014-08-06T22:41:25.075Z",
+        "is_active": true,
+        "email": "test@test.gov"
     },
     "pk": 1
 },
