@@ -1,30 +1,69 @@
-# Creating configuration files
-Configuration files are passed in as parameters when you run your application.
-It contains the metadata for the building and sensor maps used in the application.
-To run your application call refer to the [command line basics](command_line_basics_unix.md).
-Your configuration file ends with ".ini" to indicate that it is a configuration file.
-Your files should look like the following:
+# OpenEIS Configuration Files
+
+
+## Introduction
+
+A configuration file describes parameters needed to run an application from the [command line](command_line_basics_unix.md).
+The configuration file provides the application with the same information that would be collected by the graphical user interface.
+
+*TODO: Verify statement above about the GUI is correct.*
+
+*TODO: Add appropriate link to running application through GUI, once available in user documentation.*
+
+
+## Configuration file structure
+
+A configuration file has the following structure:
 
     [global_settings]
-    application=your_application
-    dataset_id=1 [respective dataset_id]
-    sensormap_id=1 [respective sensormap_id]
+    application=daily_summary
+    fixtures=utest_daily_summary/daily_summary_fixture.json
+    dataset_id=4
+    sensormap_id=4
 
     [application_config]
-    building_sq_ft=3000 [if needed]
-    building_name="testbuilding" [if needed]
+    building_sq_ft=3000
+    building_name="bldg90"
 
     [inputs]
-    load=testsite/testbuilding/WholeBuildingElectricity
-    natgas=testsite/testbuilding/AnyOtherSensorYouMayNeed
+    load=lbnl/bldg90/WholeBuildingElectricity
 
-Under `global_settings`, you should write what application you plan on running as well as the dataset and sensor map respective IDs.
-The dataset_id and sensormap_id refers to the datasets and sensor maps you have created in your database.
-For more information on how to create these, refer to the [basic use](example.net) or to the [api page](server_api_tricks.md).
-The id numbering starts at 1 and goes on from there so first data set's and sensor map's id is 1.
-If you are unsure of which dataset and which sensor map to use,
-refer to the [sensor map api page](http://localhost:8000/api/sensormaps).
-Under `application_config` are any configuration details you need to add for your application such as the square footage or building name.
-The `inputs` are the parameters needed from the data files for your application to run such as outdoor air temperature or whole building electricity.
+(This example happens to come from file `openeis/applications/utest_applications/utest_daily_summary/daily_summary_floats.ini`.)
 
 
+## [global settings]
+
+The `[global settings]` section includes:
+
++ `application`
+  The name of the application to run.
++ `fixtures`
+  Optional fixture file.
++ `dataset_id`
+  The dataset to use from the database.
++ `sensormap_id`
+  The sensor map to use from the database.
+
+The fixture file, provided for [testing purposes](unit_testing_applications.md), causes the database to be flushed and replaced with the contents of the fixture.
+In the absence of a fixture file, the current database is used.
+*TODO: Verify that this is true.
+Possibly fixture file entry is old.
+In this case, need to remove from all INI files.*
+
+The `dataset_id` and `sensormap_id` are numbered starting from 1.
+To inspect the current database for valid numbers, use the [server API](server_api_tricks.md).
+
+
+## [application_config]
+
+The `application_config` section lists all configuration parameters needed for an application.
+The keys correspond to the keys in the dictionary returned by an application's `get_config_parameters()` method.
+
+
+## [inputs]
+
+The `inputs` section identifies the data to use when running the application.
+The keys correspond to the keys in the dictionary returned by an application's `required_input()` method.
+
+
+*TODO: Add a section documenting means of forming a valid configuration file based on information that can be extracted from the GUI.*

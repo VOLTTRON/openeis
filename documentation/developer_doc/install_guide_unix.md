@@ -68,3 +68,7 @@ To re-create the database, first delete the entire `data` directory, then run th
     > source  env/bin/activate
     > python  bootstrap.py
     > openeis  syncdb
+
+*TODO: Not clear the bootstrap is needed above.
+I (DML) needed it on the last change, but VTN and CYC did not.
+More generally, need to document when bootstrap is needed.*
