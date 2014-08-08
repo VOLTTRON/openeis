@@ -71,11 +71,13 @@ After identifying the process holding the port, kill it:
 
     > kill -9  <pid-of-interest>
 
-## Running your application
-To run your application, you must be in the virtual environment and you need to have creatd a configuration file to pass in.
-For more information on how to create a configuration file, refer to the [configuration file guide](configuration_file.md).
 
-To run your application with the configuration file call:
-    > openeis runapplication your_configuration_file.ini
+## Running an application
 
-It should now output a `.csv` that it has written the results in as well as a `.log` file.
+Running an application from the command line requires first creating a [configuration file](configuration_file.md) that specifies the application inputs.
+
+To run the application, activate the virtual environment if necessary, then:
+
+    > openeis runapplication  your_configuration_file.ini
+
+The application should write a `.csv` file containing its results, as well as a `.log` file.
