@@ -4,7 +4,7 @@ Heat map: show electricity use by time-of-day, across many days.
 Shows extent of daily, weekly, and seasonal load profiles.
 """
 
-
+from openeis.applications import reports
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 import logging
@@ -77,9 +77,15 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        display_elements = []
+        
+        report = reports.Report('Heat Map for Load')
+        
+        heat_map = reports.HeatMap(table_name='Heat_Map', x_column='hour', y_column='date', z_column='load')
+        report.add_element(heat_map)
 
-        return display_elements
+        report_list = [report]
+
+        return report_list
 
     def execute(self):
         #Called after User hits GO
@@ -95,4 +101,7 @@ class Application(DriverApplicationBaseClass):
                 'date': x[0].date(),
                 'hour': x[0].hour,
                 'load': x[1]
-                })
+                }
+            )
+            print(x[0].date(), x[0].hour, x[1])
+            
