@@ -1,7 +1,6 @@
 from openeis.applications.utest_applications.apptest import AppTestBase
 
 from datetime import datetime
-import copy
 
 from separate_hours import separate_hours
 
