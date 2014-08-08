@@ -8,6 +8,7 @@ This section describes basic command-line interactions with OpenEIS, under a Uni
 + Activating the virtual environment
 + Running the server
 + Killing the server
++ Running an application
 
 
 ## Activating the virtual environment

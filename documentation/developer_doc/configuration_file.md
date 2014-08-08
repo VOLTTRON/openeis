@@ -31,7 +31,7 @@ A configuration file has the following structure:
 (This example happens to come from file `openeis/applications/utest_applications/utest_daily_summary/daily_summary_floats.ini`.)
 
 
-## `[global settings]`
+## [global settings]
 
 The `[global settings]` section includes:
 
@@ -54,13 +54,13 @@ The `dataset_id` and `sensormap_id` are numbered starting from 1.
 To inspect the current database for valid numbers, use the [server API](server_api_tricks.md).
 
 
-## `[application_config]`
+## [application_config]
 
 The `application_config` section lists all configuration parameters needed for an application.
 The keys correspond to the keys in the dictionary returned by an application's `get_config_parameters()` method.
 
 
-## `[inputs]`
+## [inputs]
 
 The `inputs` section identifies the data to use when running the application.
 The keys correspond to the keys in the dictionary returned by an application's `required_input()` method.
