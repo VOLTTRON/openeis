@@ -17,7 +17,6 @@ A configuration file has the following structure:
 
     [global_settings]
     application=daily_summary
-    fixtures=utest_daily_summary/daily_summary_fixture.json
     dataset_id=4
     sensormap_id=4
 
@@ -37,18 +36,10 @@ The `[global settings]` section includes:
 
 + `application`
   The name of the application to run.
-+ `fixtures`
-  Optional fixture file.
 + `dataset_id`
   The dataset to use from the database.
 + `sensormap_id`
   The sensor map to use from the database.
-
-The fixture file, provided for [testing purposes](unit_testing_applications.md), causes the database to be flushed and replaced with the contents of the fixture.
-In the absence of a fixture file, the current database is used.
-*TODO: Verify that this is true.
-Possibly fixture file entry is old.
-In this case, need to remove from all INI files.*
 
 The `dataset_id` and `sensormap_id` are numbered starting from 1.
 To inspect the current database for valid numbers, use the [server API](server_api_tricks.md).
