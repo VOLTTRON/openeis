@@ -4,54 +4,72 @@
 ## Introduction
 
 This section describes creating and running unit tests for applications hosted under OpenEIS.
+This involves:
 
-Each test of an application comprises an input data file, configuration file, a sensor map, a dataset, and expected output.
++ Setting up the data the application needs to run, including raw data and configuration parameters.
++ Running the application, either individually or as part of a suite of automated tests.
++ Checking the output against expected results.
 
-The tests use Python's `nose` unit testing framework included in [Django's testing framework](https://docs.djangoproject.com/en/1.6/topics/testing/).
+Accordingly, each test of an application comprises an input data file, a fixture file (which stores the input data as a database), a configuration file, and the expected output.
+
+Testing an application typically requires multiple individual tests, covering a range of inputs.
+For example, a statistical application may have tests covering "normal" data, data with missing values, data with no variance, and so on.
+The expected output from each test can then include checking that the application fails in a controlled way, given bad data.
+
+In this document, the term _unit test_ generally refers to a single run of the application.
+The term _application-level test_ refers to the collection of unit tests for the application.
 
 
 ## Overview
 
-The unit tests have three main concerns:
+The following steps create a unit test:
 
-+ Setting up the data the application needs to run.
-  This includes everything the application normally would acquire from the User Interface: the configuration parameters as well as the raw data.
-+ Invoking a run of the application.
-+ Retrieving the output, and checking against the expected results.
-  Note that "expected results" can include verifying that feed an application bad data causes it to fail in a controlled way, as well as checking that it computes the correct results for good data.
++ Set up the inputs.
+    + Create an input data file.
+    + Import the input file to a database.
+    + Save the database as a fixture.
++ Create the corresponding expected output file.
++ Place the files in an application-level test directory.
 
-Each application can have multiple individual tests.
-*TODO: Need to settle on, and define, terms to refer to the tests.
-For example, does "unit test" refer to the whole suite of tests that can run against a single application?
-Or to an individual test?
-In any case, need terms to distinguish between these, and need to make sure to use those terms consistently throughout this document.
-For the rest of the comments below, I'll refer to _individual_ and _application-level_ unit tests, but there may be better terms than this.*
+*TODO: Talk about the one-to-many relationships between input files, databases (and hence fixtures), and individual unit tests.
+For example, a single fixture can support multiple unit tests.
+It should also be possible to have multiple fixtures for a single application, if that's convenient (for example, if timestamps differ, or if this would facilitate checking by an independent application).
+Similarly, one database could include selected columns out of multiple input files if that's convenient.*
+
+After creating a unit test:
+
++ The test may be run individually, e.g., as part of the application development.
++ The test may be run as part of an application-level automated test suite.
+
+The unit tests use [Django's testing framework](https://docs.djangoproject.com/en/1.6/topics/testing/).
+When run as part of a larger suite of tests, Django creates an isolated environment for each unit test.
+As a result, unit tests should not depend on each other.
+Furthermore, the individual unit tests execute in no particular order.
 
 
-*TODO: Need to finish this overview of the workflow, getting into a little detail about how each piece described below contributes to the workflow.*
+## Application-level test directory
 
-
-## Test directory
-
-Create a new subdirectory in
+The application-level test directory stores the unit test files for a particular application.
+Make this a subdirectory of
 
     openeis_root/openeis/applications/utest_applications
 
 where `openeis_root` is the root directory that contains the OpenEIS project files.
 Note that the examples given here use a Unix-style forward slash (`/`) as the file path separator.
-On Windows machines, use a DOS-style backward slash (`\`).
+On Windows machines, substitute a DOS-style backward slash (`\`).
 
-The new subdirectory will contain all the required files for testing the application.
+This subdirectory will contain all the required files for testing the application.
 These include data files, configuration files, and expected output files.
 
-For an application called `my_app_name`, the suggested test subdirectory is
+For an application called `app_name`, the suggested test subdirectory is
 
-    openeis_root/openeis/applications/utest_applications/my_app_name
+    openeis_root/openeis/applications/utest_applications/app_name
 
 
-## Input data file
+## Input data
 
-Create a file that contains the sample data against which the application will be run.
+Create a file that contains sample data for the application.
+A single input file can include data for multiple unit tests.
 For example:
 
 datetime    | status | missing | const | floats
@@ -67,21 +85,30 @@ datetime    | status | missing | const | floats
 6/1/14 8:00 | 3      |         | 7     | 8.0
 6/1/14 9:00 | 1      | 9       | 7     | 9.
 
-Note that test data may include values that are expected to cause problems, or that need special handling.
+Note that test data may include values that are expected to cause problems, or that need special handling by the application.
 For example, if the application requires the data to have a non-zero variance, then some column of the input file can have a constant entry.
 Similarly, algorithms usually have to be robust against missing values, so some column in the input file may have missing entries.
 
-The columns can be in any order, and the table can have enough data to support multiple individual tests.
-However, the file must include a column of datetime information.
+The columns can be in any order, and the file can contain unused columns.
+However, it must include a column of datetime information.
 
 Save the data as a comma-separated-value (CSV) file.
 
 
-## Expected output file
+## Expected output
 
-After creating the input data, create a file containing the expected output from the application.
-The file name should follow the pattern `application_name_test_type.ref.csv`.
+After creating the input data, create one or more files containing the expected output from the application.
+Each unit test needs its own file of expected output.
+That is, if a single input file contains data for multiple unit tests, each of those tests needs its own expected output file.
+
+*TODO: Need to say something about a single unit test needing multiple expected output files.
+For example, what if an application generates multiple tables of output?*
+
+The file name should follow the pattern `app_name_test_type.ref.csv`.
 The `.ref` suffix separates regular output from expected, or _reference_, output.
+
+*TODO: Maybe "test_type" above should be "test_name"?.
+And what if have multiple outputs from a single unit test?*
 
 For example, the expected output for running Daily Summary on the `floats` column of data given above is:
 *TODO: For what value of `building_sq_ft`?*
@@ -97,41 +124,42 @@ Daily Load Range           | 0
 Load Variability           | 0
 Peak Load Benchmark        | 2.3333333
 
-*TODO: Need to make clear that the file, and the file name, relates to the individual unit tests.*
-
 
 ## Set up database in OpenEIS
 
 This step creates a database that contains the input data file.
 
-This database will be serialized to a fixture file, so it should be kept as small as possible (i.e, to include only the data needed for the unit test.
-Therefore the first step is to remove all information from the existing database.
-Activate the virtual environment, if necessary, then
+This database will be serialized to a fixture file, so it should be kept as small as possible (i.e, to include only the data needed for the unit tests it will support).
+Therefore the existing database should be replaced, rather than simply added to.
+
+Since this step will destroy the existing database, it may be desirable to store its contents for recovery after setting up the test.
+To do this, activate the virtual environment, if necessary, then:
+
+    > openeis  dumpdata  >  saved_database.json
+
+Now clear the existing database:
 
     > openeis  flush
 
 *TODO: Is there an easier way, that doesn't require you to set up a new superuser and so on?*
 
-*TODO: Maybe suggest preserving the current database as a fixture, and then restoring it later with `loaddata`?*
-
+Next, run OpenEIS and set up the database as it should exist for testing the application.
 *TODO: When available, add hyperlink to user-oriented documentation of setting up the data.*
 
 
+## Save the database as a fixture
 
+To store the test database, save it as a "fixture":
 
-## Creating a fixture
+    > openeis  dumpdata  >  app_name_fixture.json
 
-Now we want to save the state of this database as is.
-Django provides a function `dumpdata` that will store the data as a "fixture".
 A fixture is a `JSON`-formatted file containing the contents of the database.
-For complete documentation on this command, refer to [Django's documentation](https://docs.djangoproject.com/en/1.6/ref/django-admin/#dumpdata-appname-appname-appname-model).
+For complete documentation on `dumpdata`, refer to [Django's documentation](https://docs.djangoproject.com/en/1.6/ref/django-admin/#dumpdata-appname-appname-appname-model).
 
-    > openeis  dumpdata  >  path/to/your_application_fixture.json
-
-Place this file in the directory made earlier.
+Place the fixture file in the application-level test directory.
 
 An optional step, when creating a fixture file, is to format it "nicely" for viewing.
-Here, "nice" mainly means that each major JSON object appears on its own line of the file.
+Here, "nice" mainly means that each top-level JSON object (i.e., each element of the array that is the outer structure of the JSON file) appears on its own line of the file.
 This is entirely cosmetic, but it has two advantages when working with the file through a source code repository.
 First, it makes the file easier to look at with simple non-JSON-aware editors.
 Second, it makes changes to the file easier to identify using line-oriented `diff` tools.
@@ -149,23 +177,26 @@ Note `format-fixture-file.py` is in the `utest_applications` subdirectory.
 ## Restoring a database from a fixture
 
 It may be useful to reload a fixture, in order to reset the database to an earlier state.
-For example, this may be helpful in order to revise the database created for a unit test, say, in order to add to a test.
-It may also be helpful to restore a working database that was destroyed by a `flush` operation in order to create a database for a unit test.
+For example, after finishing with a test database, it may be desired to restore a working database that was destroyed by a `flush` operation in order to create a database for a unit test.
+It may also be helpful to revise the database created for a unit test, say, in order to add to a test.
 
 To install a fixture:
 
-    > openeis  loaddata  path/to/your_application_fixture.json
+    > openeis  loaddata  saved_database.json
 
 *TODO: Is it necessary to flush first, or will this automatically remove anything that's already in there?*
 
 
-## Writing the tests
+## Writing a unit test
 
-We use Django's testing framework.
-For each test, Django flushes the database, installs your fixture as shown above, and tears it down after the test is done.
-It does this for every test, thus creating an isolated environment for each test.
-As a result, the tests should not depend on each other.
-Furthermore the tests are executed in no particular order when the tests are run.
+*TODO: Need to describe `AppTestBase` and extending it.
+I think this is largely covered in "Testing application output equality", which I think is mis-named.
+But the stuff there belongs before the "Utilities" section that appears immediately below.*
+
+*TODO: Need to think about our own code structure.
+Right now, everything is shoehorned into `test_applications.py`.
+Why is that?
+Wouldn't it be cleaner to have a separate file for each application?*
 
 
 ## Utilities
@@ -173,21 +204,32 @@ Furthermore the tests are executed in no particular order when the tests are run
 If there are any utilities or external functions that you need for your tests, put them in `apptest.py`, located in `applications/utest_applications/`.
 This class extends Django's test case, and is thus the test base for our tests.
 It holds all of the functions and utilities needed to run the tests.
-For example, if your test requires finding the mean of a set up numbers, a function that naively calculates the mean is in AppTestBase.
+For example, if your test requires finding the mean of a set of numbers, a function that naively calculates the mean is in AppTestBase.
 Your test will extend the class AppTestBase.
 You may wish to read the documentation for existing functions to see if they are of any use to you.
 
-If for some reason, your application uses a utility or external function that cannot be placed in AppTestBase, simply import as you would any other module.
+*TODO: Why should a test require finding the mean of a set of numbers?
+If the application calculates a mean, shouldn't this be in the expected output file?*
+
+If for some reason your application uses a utility or external function that cannot be placed in AppTestBase, simply import as you would any other module.
+*TODO: This begs the question, why pollute AppTestBase with lots of functions that may be of limited use?
+Why not just provide the utilities as helper functions, and let individual tests import them as needed?*
 
 
 ## Testing application output equality
 
 Each test should have a [configuration file](configuration_file.md).
 When writing tests, you may add to the existing `test_applications.py`, which is our own file that contains all the tests, or create your own file.
+
+*TODO: If you create your own file, how do you get it to run as part of an automated test suite?
+Does Django/OpenEIS "know" to run any .py file it finds in a certain directory?
+Do we even know for sure that the tests run automatically at some point on PNL's servers?
+Right now, the only time I (DML) know for sure the tests run is if I kick them off explicitly using `openeis test ...`*
+
 Either way, when writing tests it should look like the following (use `test_applications.py` as a reference).
 
 ```python
-# Only import if you are creating a new file.
+# Only import if you are creating a new file
 
 from openeis.applications.utest_applications.apptest import AppTestBase
 import os
@@ -336,16 +378,16 @@ We then compare the two arrays with `nearly_same`, and if they are not nearly th
 You can look at the documentation for `nearly_same` in AppTestBase.py.
 
 
-## Running the tests
+## Running a test
 
-In order to run the test, simply call:
+In order to run the test, call:
 
     > openeis test applications/utest_applications/your_test_file.py
 
 
-## Reading the output
+## Interpreting test output
 
-If your tests ran successfully, it should read the following:
+Output from a successful test resembles the following:
 
     nosetests applications/utest_applications/test_applications.py --verbosity=1
     Creating test database for alias 'default'...
@@ -357,11 +399,12 @@ If your tests ran successfully, it should read the following:
     Destroying test database for alias 'default'...
 
 
-Each dot represents a single test.
-It will either be a dot, F, or E.
-Dot means that your test has passed.
-F stands for "Failed."
-E stands for "Error."
+Each dot represents a single unit test.
+In addition to dots, and `F` or `E` may appear:
+
++ A dot represents a unit test that passed.
++ `F` stands for "Failed".
++ `E` stands for "Error".
 
 An example of an error is as follows:
 
@@ -404,4 +447,4 @@ If a test failed, it will look like:
     FAILED (failures=1)
     Destroying test database for alias 'default'...
 
-Similar to the error, `nose` will give you a traceback to the failure, which test failed, and how many tests failed.
+Similar to the error, `nose` will give a traceback to the failure, which test failed, and how many tests failed.
