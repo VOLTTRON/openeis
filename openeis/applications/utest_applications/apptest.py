@@ -3,6 +3,7 @@ Module for testing applications.
 """
 
 from django.test import TestCase
+from django.utils.timezone import utc
 from subprocess import call
 from configparser import ConfigParser
 import csv
@@ -14,6 +15,8 @@ import datetime
 from openeis.applications import get_algorithm_class
 from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
+from openeis.projects import models
+
 
 class AppTestBase(TestCase):
     # Taken directly from runapplication command.
@@ -31,34 +34,38 @@ class AppTestBase(TestCase):
         # Get which application we need
         klass = get_algorithm_class(application)
         # Check which data set we're using
-        dataset_ids = None
-        if config.has_option('global_settings', 'dataset_id'):
-            dataset_id_string = config['global_settings']['dataset_id']
-            dataset_ids = [int(x) for x in dataset_id_string.split(',')]
-
-        # Check which sensor map we are using.
-        sensormap_id = int(config['global_settings']['sensormap_id'])
-        topic_map = {}
-        # Grab the inputs to be used with the application.
-        inputs = config['inputs']
-        for group, topics in inputs.items():
-            topic_map[group] = topics.split()
-
-
-        db_input = DatabaseInput(sensormap_id, topic_map,
-                dataset_ids=dataset_ids)
-
-        output_format = klass.output_format(db_input)
-        file_output = DatabaseOutputFile(application, output_format)
+        dataset_id = int(config['global_settings']['dataset_id'])
+        dataset = models.SensorIngest.objects.get(pk=dataset_id)
 
         kwargs = {}
         if config.has_section('application_config'):
             for arg, str_val in config['application_config'].items():
                 kwargs[arg] = eval(str_val)
 
+        topic_map = {}
+        # Grab the inputs to be used with the application.
+        inputs = config['inputs']
+        for group, topics in inputs.items():
+            topic_map[group] = topics.split()
+
+        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        analysis = models.Analysis(added=now, started=now, status="running",
+                    dataset=dataset, application=application,
+                    configuration={
+                     'parameters': kwargs,
+                     'inputs': topic_map},
+                     name='cli: {}, dataset {}'.format(application, dataset_id))
+        analysis.save()
+
+        db_input = DatabaseInput(dataset.map.id, topic_map, dataset_id)
+
+        output_format = klass.output_format(db_input)
+        file_output = DatabaseOutputFile(analysis, output_format)
+
         app = klass(db_input, file_output, **kwargs)
         # Execute the application
         app.run_application()
+
 
     def _call_runapplication(self, tables, config_file):
         """
