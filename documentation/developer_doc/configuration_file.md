@@ -5,8 +5,7 @@
 
 A configuration file describes parameters needed to run an application from the [command line](command_line_basics_unix.md).
 The configuration file provides the application with the same information that would be collected by the graphical user interface.
-
-*TODO: Verify statement above about the GUI is correct.*
+You can also run the application on the configuration file through the [API](server_api_pages.md).
 
 *TODO: Add appropriate link to running application through GUI, once available in user documentation.*
 
@@ -42,7 +41,7 @@ The `[global settings]` section includes:
   The sensor map to use from the database.
 
 The `dataset_id` and `sensormap_id` are numbered starting from 1.
-To inspect the current database for valid numbers, use the [server API](server_api_tricks.md).
+To inspect the current database for valid numbers, use the [server API](server_api_pages.md).
 
 
 ## [application_config]
@@ -56,5 +55,7 @@ The keys correspond to the keys in the dictionary returned by an application's `
 The `inputs` section identifies the data to use when running the application.
 The keys correspond to the keys in the dictionary returned by an application's `required_input()` method.
 
+For example in the file above, the input has something representing at path to the required sensor input.
+The path is always `site/building/SensorName`.
 
 *TODO: Add a section documenting means of forming a valid configuration file based on information that can be extracted from the GUI.*

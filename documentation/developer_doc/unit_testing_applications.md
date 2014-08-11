@@ -31,10 +31,20 @@ The following steps create a unit test:
 + Create the corresponding expected output file.
 + Place the files in an application-level test directory.
 
-*TODO: Talk about the one-to-many relationships between input files, databases (and hence fixtures), and individual unit tests.
-For example, a single fixture can support multiple unit tests.
-It should also be possible to have multiple fixtures for a single application, if that's convenient (for example, if timestamps differ, or if this would facilitate checking by an independent application).
-Similarly, one database could include selected columns out of multiple input files if that's convenient.*
+An input file is uploaded to the database and thus may have many different sensor maps derived from it.
+As a result, you may use an input file to test many different types of input.
+Each column is allowed to have different data that you may test on.
+Also, it is possible for sensormaps and datasets to derive from multiple input files.
+So if you only had "temperature" in one file and "loads" in another, you may make single sensor map out of the two files.
+The input files, sensor maps, datasets are all stored on the database.
+
+
+These files can be put into what Django calls "fixtures", which are JSON files that hold the everything that has been put into the database.
+Django uses fixtures to install whatever you had on the database to test on.
+Therefore, you can also have multple tests for a fixture.
+You may also install more than one fixture to run a single test, however you should be cautious.
+For more on that, please refer to the _Restoring a database from a fixture_ section.
+
 
 After creating a unit test:
 
@@ -100,18 +110,12 @@ Save the data as a comma-separated-value (CSV) file.
 After creating the input data, create one or more files containing the expected output from the application.
 Each unit test needs its own file of expected output.
 That is, if a single input file contains data for multiple unit tests, each of those tests needs its own expected output file.
+If an application will output more than one file, there needs to be respective expected output files.
 
-*TODO: Need to say something about a single unit test needing multiple expected output files.
-For example, what if an application generates multiple tables of output?*
-
-The file name should follow the pattern `app_name_test_type.ref.csv`.
+The file name should follow the pattern `app_name_test_name.ref.csv`.
 The `.ref` suffix separates regular output from expected, or _reference_, output.
 
-*TODO: Maybe "test_type" above should be "test_name"?.
-And what if have multiple outputs from a single unit test?*
-
-For example, the expected output for running Daily Summary on the `floats` column of data given above is:
-*TODO: For what value of `building_sq_ft`?*
+For example, the expected output for running Daily Summary on the `floats` column of data given above is (square footage was set to 3000 square feet):
 
 Metric                     | value
 :--------------------------|:----------
@@ -141,7 +145,7 @@ Now clear the existing database:
 
     > openeis  flush
 
-*TODO: Is there an easier way, that doesn't require you to set up a new superuser and so on?*
+If you wish to create another database, you must create a new super user each time.
 
 Next, run OpenEIS and set up the database as it should exist for testing the application.
 *TODO: When available, add hyperlink to user-oriented documentation of setting up the data.*
@@ -184,49 +188,30 @@ To install a fixture:
 
     > openeis  loaddata  saved_database.json
 
-*TODO: Is it necessary to flush first, or will this automatically remove anything that's already in there?*
+If you only wish to see data in this fixture, you must flush first.
+Otherwise you may get an error from the same project ids or sensor map ids mapping to different objects.
+
+If you wish to run a test on multiple fixtures, you must be cautious for this reason.
+The ids on different projects will map to different things and thus cause problems.
 
 
-## Writing a unit test
+# Writing a unit test
 
-*TODO: Need to describe `AppTestBase` and extending it.
-I think this is largely covered in "Testing application output equality", which I think is mis-named.
-But the stuff there belongs before the "Utilities" section that appears immediately below.*
+For each test file, you should create a new class called `TestSomething` and it should extend `AppTestBase`.
 
-*TODO: Need to think about our own code structure.
-Right now, everything is shoehorned into `test_applications.py`.
-Why is that?
-Wouldn't it be cleaner to have a separate file for each application?*
+`from openeis.applications.utest_applications.apptest import AppTestBase`
 
-
-## Utilities
-
-If there are any utilities or external functions that you need for your tests, put them in `apptest.py`, located in `applications/utest_applications/`.
-This class extends Django's test case, and is thus the test base for our tests.
+This is AppTestBase extends Django's [TestCase](https://docs.djangoproject.com/en/1.6/topics/testing/tools/#django.test.TestCase), and thus enables developers to test with their test framework.
 It holds all of the functions and utilities needed to run the tests.
-For example, if your test requires finding the mean of a set of numbers, a function that naively calculates the mean is in AppTestBase.
-Your test will extend the class AppTestBase.
 You may wish to read the documentation for existing functions to see if they are of any use to you.
 
-*TODO: Why should a test require finding the mean of a set of numbers?
-If the application calculates a mean, shouldn't this be in the expected output file?*
 
-If for some reason your application uses a utility or external function that cannot be placed in AppTestBase, simply import as you would any other module.
-*TODO: This begs the question, why pollute AppTestBase with lots of functions that may be of limited use?
-Why not just provide the utilities as helper functions, and let individual tests import them as needed?*
-
-
-## Testing application output equality
+## Testing applications
 
 Each test should have a [configuration file](configuration_file.md).
 When writing tests, you may add to the existing `test_applications.py`, which is our own file that contains all the tests, or create your own file.
 
-*TODO: If you create your own file, how do you get it to run as part of an automated test suite?
-Does Django/OpenEIS "know" to run any .py file it finds in a certain directory?
-Do we even know for sure that the tests run automatically at some point on PNL's servers?
-Right now, the only time I (DML) know for sure the tests run is if I kick them off explicitly using `openeis test ...`*
-
-Either way, when writing tests it should look like the following (use `test_applications.py` as a reference).
+Either way, when writing tests it should look like the following:
 
 ```python
 # Only import if you are creating a new file
@@ -283,8 +268,7 @@ class TestHeatMap(AppTestBase):
         self.run_it(hm_basic_ini, hm_basic_exp, clean_up=True)
 ```
 
-For each application you are testing, you should create a new class called `TestYourApplication` and it should extend `AppTestBase`.
-In this class will be the fixtures needed to run the tests as well as all of the tests for that application.
+In your test class will be the fixtures needed to run the tests as well as all of the tests for that application.
 There can more than one test per class and multiple application classes per file.
 Put all of the fixtures needed in a list and set equal to "fixtures" at the beginning of the class.
 
@@ -346,6 +330,9 @@ Use the self.assertRaises function to assert that it raises an exception.
 The first argument is what kind of Exception you need it to throw, the second argument is self.run\_application (in utilities), and the third is the configuration file you wish to pass into the application.
 This will call the application and assert that it throws a certain exception.
 
+## Utilities
+
+If there are any utilities or external functions that you need for your tests, put them in `testing_utils.py`, located in `applications/utils/`.
 
 ## Testing application utilities
 
@@ -384,6 +371,11 @@ In order to run the test, call:
 
     > openeis test applications/utest_applications/your_test_file.py
 
+*TODO: If you create your own file, how do you get it to run as part of an automated test suite?
+Does Django/OpenEIS "know" to run any .py file it finds in a certain directory?
+Do we even know for sure that the tests run automatically at some point on PNL's servers?
+Right now, the only time I (DML) know for sure the tests run is if I kick them off explicitly using `openeis test ...`*
+
 
 ## Interpreting test output
 
@@ -415,8 +407,7 @@ An example of an error is as follows:
     ERROR: test_rank_basic (test_applications.TestSpearmanRank)
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File "/Users/vivdawg/workThings/openeis/openeis/applications/utest_applications/
-    test_applications.py", line 352, in test_rank_basic
+      File "/openeis/openeis/applications/utest_applications/test_applications.py", line 352, in test_rank_basic
         raise Exception
     Exception
     ----------------------------------------------------------------------
@@ -437,8 +428,7 @@ If a test failed, it will look like:
     FAIL: example_test (test_applications.TestSpearmanRank)
     ----------------------------------------------------------------------
     Traceback (most recent call last):
-      File "/Users/vivdawg/workThings/openeis/openeis/applications/utest_applications/
-    test_applications.py", line 348, in example_test
+      File "/openeis/openeis/applications/utest_applications/test_applications.py", line 348, in example_test
         self.assertTrue(False)
     AssertionError: False is not true
     ----------------------------------------------------------------------

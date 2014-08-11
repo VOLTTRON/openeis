@@ -38,7 +38,7 @@ After activating the virtual environment, run the OpenEIS server by:
     > openeis  runserver
 
 It should now be possible to open a web browser to the main entry point, [http://localhost:8000](http://localhost:8000).
-The server also supports a number of useful [API](server_api_tricks.md) pages.
+The server also supports a number of useful [API](server_api_pages.md) pages.
 
 
 ## Killing the server
