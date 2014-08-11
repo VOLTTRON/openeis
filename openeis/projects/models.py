@@ -274,7 +274,7 @@ class SensorDataQuerySet(QuerySet):
         def __missing__(self, key):
             if key not in {'minute', 'hour', 'day', 'month', 'year'}:
                 raise KeyError(key)
-            return 'date_trunc({0}, {{field}})'.format(key)
+            return "date_trunc('{0}', {{field}})".format(key)
 
     trunc_funcs = {
         "mysql": {
