@@ -1,4 +1,5 @@
 from openeis.applications.utest_applications.apptest import AppTestBase
+from testing_utils import findMean, findCorrelationCoeff
 import spearman
 import numpy as np
 
@@ -67,7 +68,7 @@ class TestSpearmanRank(AppTestBase):
         ranksMean2 = ranks2 - 3
         spear1_2 = spearman.findSpearmanRank(row1, row2)
         spear2_1 = spearman.findSpearmanRank(row2, row1)
-        spearExpect = self._findCorrelationCoeff(ranksMean1, ranksMean2, True)
+        spearExpect = findCorrelationCoeff(ranksMean1, ranksMean2, True)
         self.assertTrue(spearExpect == -1)
         self.nearly_same(spear1_2, spearExpect, absTol=1e-18, relTol=1e-12)
         self.nearly_same(spear2_1, spearExpect, absTol=1e-18, relTol=1e-12)
@@ -81,7 +82,7 @@ class TestSpearmanRank(AppTestBase):
         ranksMean2 = ranks2 - np.mean(ranks2)
         spear1_2 = spearman.findSpearmanRank(row1, row2)
         spear2_1 = spearman.findSpearmanRank(row2, row1)
-        spearExpect = self._findCorrelationCoeff(ranksMean1, ranksMean2, True)
+        spearExpect = findCorrelationCoeff(ranksMean1, ranksMean2, True)
         self.nearly_same(spear1_2, spearExpect, absTol=1e-18, relTol=1e-12)
         self.nearly_same(spear2_1, spearExpect, absTol=1e-18, relTol=1e-12)
 
@@ -94,7 +95,7 @@ class TestSpearmanRank(AppTestBase):
         ranksMean2 = ranks2 - np.mean(ranks2)
         spear1_2 = spearman.findSpearmanRank(row1, row2)
         spear2_1 = spearman.findSpearmanRank(row2, row1)
-        spearExpect = self._findCorrelationCoeff(ranksMean1, ranksMean2, True)
+        spearExpect = findCorrelationCoeff(ranksMean1, ranksMean2, True)
         self.nearly_same(spear1_2, spearExpect, absTol=1e-18, relTol=1e-12)
         self.nearly_same(spear2_1, spearExpect, absTol=1e-18, relTol=1e-12)
 
