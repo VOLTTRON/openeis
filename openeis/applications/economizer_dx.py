@@ -261,7 +261,8 @@ class Application(DrivenApplicationBaseClass):
  
         if (Application.pre_msg_time[-1]-Application.pre_msg_time[0]) >= message_check:
             msg_lst = [self.pre_msg0, self.pre_msg1, self.pre_msg2, self.pre_msg3, self.pre_msg4, 
-                       self.pre_msg5,self.pre_msg6, self.pre_msg7, self.pre_msg8, self.pre_msg9]
+                       self.pre_msg5,self.pre_msg6, self.pre_msg7, self.pre_msg8, self.pre_msg9, self.pre_msg10,
+                       self.pre_msg11, self.pre_msg12, self.pre_msg13]
             for item in msg_lst:
                 if Application.pre_requiste_messages.count(item) > (0.25)*len(Application.pre_msg_time):
                     diagnostic_result.log(item, logging.INFO)
@@ -571,6 +572,7 @@ class econ_correctly_on(object):
         avg_oaf = sum(oaf)/len(oaf)*100.0
         avg_damper_signal = sum(self.damper_signal_values)/len(self.damper_signal_values)
         color_code = 'GREEN'
+        energy_impact = 0
 
         if  avg_damper_signal < self.open_damper_threshold:
             diagnostic_message = (self.alg_result_messages[0])
@@ -589,8 +591,6 @@ class econ_correctly_on(object):
         if energy_calc and color_code == 'RED':
             energy_impact = (sum(energy_calc))/(len(energy_calc)*
                             ((self.timestamp[-1]- self.timestamp[0]).total_seconds())/60.0 + 1.0)
-        else:
-            energy_impact = 0
 
         dx_table = {
                     'datetime': str(current_time), 
@@ -678,8 +678,9 @@ class econ_correctly_off(object):
         alg_message_count = Counter(self.economizer_diagnostic2_result)
         alg_message_count = alg_message_count.most_common(1)
         color_code = 'GREEN'
+        energy_impact = 0
 
-        if alg_message_count[0][1] > len(self.timestamp)*(0.25):
+        if alg_message_count[0][1] > len(self.timestamp)*(0.35):
             diagnostic_message = self.alg_result_messages[int(alg_message_count[0][0]-1)]
             if alg_message_count[0][0] == 1.0 or alg_message_count[0][0] == 3.0:
                 color_code = 'GREEN'
@@ -694,8 +695,6 @@ class econ_correctly_off(object):
         if energy_calc and color_code == 'RED':
             energy_impact = (sum(energy_calc))/(len(energy_calc)*
                                 ((self.timestamp[-1]- self.timestamp[0]).total_seconds())/60.0 + 1.0)
-        else:
-            energy_impact = 0
 
         dx_table = {'datetime': str(current_time), 
                     'diagnostic_name': econ3, 'diagnostic_message': diagnostic_message, 
@@ -740,7 +739,6 @@ class excess_oa_intake(object):
         '''
         Check algorithm pre-quisites and assemble data set for analysis.
         '''
-
         if abs(oatemp - ratemp) < self.oaf_temperature_threshold:
             diagnostic_result.log('{name}: Conditions are not favorable for OAF calculation, data' 
                                   'corresponding to {timestamp} will not be used'.format(str(current_time),name=econ4))
@@ -778,14 +776,14 @@ class excess_oa_intake(object):
                        if ((oa*self.desired_oaf + (ra*(1.0-self.desired_oaf))) - ma) > 0]
 
         color_code = 'GREEN'
-
+        energy_impact = 0
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
         self.damper_signal_values = []
         Application.pre_msg_time = []
         Application.pre_requiste_messages = []
-
+        
         if avg_oaf < 0 or avg_oaf > 125.0:
             diagnostic_message = '{name}: Inconclusive result, the OAF calculation led to an unexpected value'.format(name=econ4)
             color_code = 'GREY'
@@ -808,8 +806,6 @@ class excess_oa_intake(object):
             if energy_calc:
                 energy_impact = (sum(energy_calc))/(len(energy_calc)*
                                 ((self.timestamp[-1]- self.timestamp[0]).total_seconds())/60.0 + 1.0)
-            else:
-                energy_impact = 0
                 
             dx_table = {
                     'datetime': str(current_time), 
@@ -820,7 +816,6 @@ class excess_oa_intake(object):
                     }
             result.insert_table_row('Economizer_dx', dx_table)
             return result
-            
 
         if avg_oaf - self.desired_oaf > self.excess_oaf_threshold:
             diagnostic_message = ('{name}: Excess outdoor-air is being provided, this could increase '
@@ -830,8 +825,6 @@ class excess_oa_intake(object):
             if energy_calc:
                 eenergy_impact = (sum(energy_calc))/(len(energy_calc)*
                                 ((self.timestamp[-1]- self.timestamp[0]).total_seconds())/60.0 + 1.0)
-            else:
-                energy_impact = 0
                 
             dx_table = {
                     'datetime': str(current_time), 
