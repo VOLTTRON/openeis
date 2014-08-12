@@ -91,7 +91,7 @@ class Application(DrivenApplicationBaseClass):
                   desired_oaf=None,
                     
                   ventilation_oaf_threshold=None,
-                  insufficient_damper_threshold=None,temp_damper_threshold=None,tonnage=None,eer=None,
+                  insufficient_damper_threshold=None,temp_damper_threshold=None,tonnage=None,eer=None, data_sample_rate=None,
                   **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -144,11 +144,11 @@ class Application(DrivenApplicationBaseClass):
         self.econ1 = temperature_sensor_dx(data_window, temp_difference_threshold,oat_mat_check,temp_damper_threshold)
 
         self.econ2 = econ_correctly_on(oaf_economizing_threshold, open_damper_threshold,
-                                self.economizer_type, oaf_temperature_threshold,data_window, cfm, eer)
+                                self.economizer_type, oaf_temperature_threshold,data_window, cfm, eer, data_sample_rate)
         self.econ3 = econ_correctly_off(device_type,self.economizer_type,data_window,
-                                        minimum_damper_signal,cooling_enabled_threshold,desired_oaf, cfm, eer)
+                                        minimum_damper_signal,cooling_enabled_threshold,desired_oaf, cfm, eer, data_sample_rate)
         self.econ4 = excess_oa_intake(self.economizer_type, device_type,data_window, excess_oaf_threshold,
-                                      minimum_damper_signal, desired_oaf, oaf_temperature_threshold, cfm, eer)
+                                      minimum_damper_signal, desired_oaf, oaf_temperature_threshold, cfm, eer, data_sample_rate)
         self.econ5 = insufficient_oa_intake(device_type, self.economizer_type, data_window, ventilation_oaf_threshold,minimum_damper_signal,
                                             insufficient_damper_threshold, desired_oaf)
         
@@ -514,14 +514,14 @@ class econ_correctly_on(object):
     Air-side HVAC diagnostic to check if an AHU/RTU is not economizing when it should.
     '''
     def __init__(self,oaf_economizing_threshold, open_damper_threshold,economizer_type, 
-                oaf_temperature_threshold,data_window, cfm, eer):
+                oaf_temperature_threshold,data_window, cfm, eer, data_sample_rate):
         
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
         self.damper_signal_values = []
         self.timestamp = []
-
+        self.data_sample_rate = data_sample_rate
         self.economizer_type = economizer_type
         self.oaf_temperature_threshold = float(oaf_temperature_threshold)
         self.open_damper_threshold = float(open_damper_threshold)
@@ -589,8 +589,7 @@ class econ_correctly_on(object):
                        ma, oa in zip(self.ma_temp_values, self.oa_temp_values) if (ma - oa) > 0]
         
         if energy_calc and color_code == 'RED':
-            energy_impact = (sum(energy_calc))/(len(energy_calc)*
-                            ((self.timestamp[-1]- self.timestamp[0]).total_seconds())/60.0 + 1.0)
+            energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*(len(energy_calc)-1.0)*self.data_sample_rate)
 
         dx_table = {
                     'datetime': str(current_time), 
@@ -616,7 +615,7 @@ class econ_correctly_off(object):
     Air-side HVAC diagnostic to check if an AHU/RTU is economizing when it should not.
     '''
     def __init__(self,device_type,economizer_type,data_window,
-                minimum_damper_signal,cooling_enabled_threshold, desired_oaf, cfm, eer):
+                minimum_damper_signal,cooling_enabled_threshold, desired_oaf, cfm, eer, data_sample_rate):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -632,6 +631,7 @@ class econ_correctly_off(object):
                                    '{name}: The outdoor-air damper should be at the minimum position but is significantly above that value'.format(name=econ3),
                                    '{name}: No problems detected'.format(name=econ3),
                                    '{name}: The diagnostic led to inconclusive results'.format(name=econ3)]
+        self.data_sample_rate = data_sample_rate
         self.device_type = device_type
         self.data_window = float(data_window)
         self.economizer_type = economizer_type
@@ -693,8 +693,7 @@ class econ_correctly_off(object):
             diagnostic_message = 'This diagnostic was inconclusive.'
         
         if energy_calc and color_code == 'RED':
-            energy_impact = (sum(energy_calc))/(len(energy_calc)*
-                                ((self.timestamp[-1]- self.timestamp[0]).total_seconds())/60.0 + 1.0)
+            energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*(len(energy_calc)-1.0)*self.data_sample_rate)
 
         dx_table = {'datetime': str(current_time), 
                     'diagnostic_name': econ3, 'diagnostic_message': diagnostic_message, 
@@ -716,7 +715,7 @@ class excess_oa_intake(object):
     Air-side HVAC diagnostic to check if an AHU/RTU bringing in excess outdoor air.
     '''
     def __init__(self,economizer_type,device_type,data_window,excess_oaf_threshold,
-                minimum_damper_signal,desired_oaf, oaf_temperature_threshold, cfm, eer):
+                minimum_damper_signal,desired_oaf, oaf_temperature_threshold, cfm, eer, data_sample_rate):
 
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -728,6 +727,7 @@ class excess_oa_intake(object):
         self.timestamp = []
         
         '''Algorithm thresholds (Configurable)'''
+        self.data_sample_rate = data_sample_rate
         self.economizer_type = economizer_type
         self.data_window = float(data_window)
         self.excess_oaf_threshold = float(excess_oaf_threshold)
@@ -804,8 +804,7 @@ class excess_oa_intake(object):
             color_code = 'RED'
             
             if energy_calc:
-                energy_impact = (sum(energy_calc))/(len(energy_calc)*
-                                ((self.timestamp[-1]- self.timestamp[0]).total_seconds())/60.0 + 1.0)
+                energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*(len(energy_calc)-1.0)*self.data_sample_rate)
                 
             dx_table = {
                     'datetime': str(current_time), 
@@ -823,8 +822,7 @@ class excess_oa_intake(object):
             color_code = 'RED'
             
             if energy_calc:
-                eenergy_impact = (sum(energy_calc))/(len(energy_calc)*
-                                ((self.timestamp[-1]- self.timestamp[0]).total_seconds())/60.0 + 1.0)
+                energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*(len(energy_calc)-1.0)*self.data_sample_rate)
                 
             dx_table = {
                     'datetime': str(current_time), 
