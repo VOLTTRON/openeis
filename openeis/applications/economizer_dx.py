@@ -586,10 +586,12 @@ class econ_correctly_on(object):
                 color_code = 'RED'
 
         energy_calc = [(1.08*self.cfm*(ma - oa)/(1000.0*self.eer)) for
-                       ma, oa in zip(self.ma_temp_values, self.oa_temp_values) if (ma - oa) > 0]
+                       ma, oa in zip(self.ma_temp_values, self.oa_temp_values) 
+                       if ((ma - oa) > 0 and color_code == 'RED')]
         
-        if energy_calc and color_code == 'RED':
-            energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*(len(energy_calc)-1.0)*self.data_sample_rate)
+        if energy_calc:
+            dx_time = (len(energy_calc) - 1)*self.data_sample_rate if len(energy_calc) > 1 else 1.0
+            energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*dx_time)
 
         dx_table = {
                     'datetime': str(current_time), 
@@ -671,10 +673,7 @@ class econ_correctly_off(object):
         '''
         If the detected problems(s) are consistent then generate a fault message(s).
         '''
-        energy_calc = [(1.08*self.cfm*((oa*self.desired_oaf + (ra*(1.0-self.desired_oaf))) - ma)/(1000.0*self.eer)) for
-                       ma, oa, ra in zip(self.ma_temp_values, self.oa_temp_values, self.ra_temp_values) 
-                       if ((oa*self.desired_oaf + (ra*(1.0-self.desired_oaf))) - ma) > 0]
-        
+        desired_oaf = self.desired_oaf/100.0
         alg_message_count = Counter(self.economizer_diagnostic2_result)
         alg_message_count = alg_message_count.most_common(1)
         color_code = 'GREEN'
@@ -691,9 +690,14 @@ class econ_correctly_off(object):
         else:
             color_code = 'GREY'
             diagnostic_message = 'This diagnostic was inconclusive.'
-        
-        if energy_calc and color_code == 'RED':
-            energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*(len(energy_calc)-1.0)*self.data_sample_rate)
+
+        energy_calc = [(1.08*self.cfm*(ma - (oa*desired_oaf + (ra*(1.0-desired_oaf))))/(1000.0*self.eer)) for
+                       ma, oa, ra in zip(self.ma_temp_values, self.oa_temp_values, self.ra_temp_values) 
+                       if (ma - (oa*desired_oaf + (ra*(1.0-desired_oaf))) > 0 and color_code == 'RED')]
+
+        if energy_calc:
+            dx_time = (len(energy_calc) - 1)*self.data_sample_rate if len(energy_calc) > 1 else 1.0
+            energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*dx_time)
 
         dx_table = {'datetime': str(current_time), 
                     'diagnostic_name': econ3, 'diagnostic_message': diagnostic_message, 
@@ -770,11 +774,12 @@ class excess_oa_intake(object):
 
         avg_oaf = sum(oaf)/len(oaf)*100
         avg_damper = sum(self.damper_signal_values)/len(self.damper_signal_values)
-
-        energy_calc = [(1.08*self.cfm*((oa*self.desired_oaf + (ra*(1.0-self.desired_oaf))) - ma)/(1000.0*self.eer)) for
+        desired_oaf = self.desired_oaf/100.0
+        
+        energy_calc = [(1.08*self.cfm*(ma - (oa*desired_oaf + (ra*(1.0-desired_oaf))))/(1000.0*self.eer)) for
                        ma, oa, ra in zip(self.ma_temp_values, self.oa_temp_values, self.ra_temp_values) 
-                       if ((oa*self.desired_oaf + (ra*(1.0-self.desired_oaf))) - ma) > 0]
-
+                       if (ma - (oa*desired_oaf + (ra*(1.0-desired_oaf)))) > 0]
+        
         color_code = 'GREEN'
         energy_impact = 0
         self.oa_temp_values = []
@@ -804,7 +809,8 @@ class excess_oa_intake(object):
             color_code = 'RED'
             
             if energy_calc:
-                energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*(len(energy_calc)-1.0)*self.data_sample_rate)
+                dx_time = (len(energy_calc) - 1)*self.data_sample_rate if len(energy_calc) > 1 else 1.0
+                energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*dx_time)
                 
             dx_table = {
                     'datetime': str(current_time), 
@@ -822,7 +828,8 @@ class excess_oa_intake(object):
             color_code = 'RED'
             
             if energy_calc:
-                energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*(len(energy_calc)-1.0)*self.data_sample_rate)
+                dx_time = (len(energy_calc) - 1)*self.data_sample_rate if len(energy_calc) > 1 else 1.0
+                energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*dx_time)
                 
             dx_table = {
                     'datetime': str(current_time), 
