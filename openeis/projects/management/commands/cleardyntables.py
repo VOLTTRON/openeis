@@ -25,10 +25,11 @@ class Command(NoArgsCommand):
             for table in cursor.db.introspection.get_table_list(cursor):
                 if not table.startswith('appoutputdata_'):
                     continue
-                cursor.execute('SELECT COUNT(*) FROM ' + table)
-                count, = cursor.curser.fetchone()
-                if not all_tables and count:
-                    continue
+                if not all_tables:
+                    cursor.execute('SELECT COUNT(*) FROM ' + table)
+                    count, = cursor.curser.fetchone()
+                    if count:
+                        continue
                 if verbosity >= 2:
                     self.stdout.write('Dropping table: {}'.format(table))
                 if not dry_run:
