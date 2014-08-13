@@ -12,6 +12,8 @@ Requires:
 
 + Python 3
 
+*TODO: Describe getting files, or add pointer to documentation on getting and updating the files.*
+
 
 ## Create a virtual environment
 
@@ -28,9 +30,11 @@ Create the virtual environment:
 
     > python3  bootstrap.py
 
-This will also install Python's package manager, pip, as well as Django.  Django is the web framework used in OpenEIS.  It provides a development server to work on and an easy database to work with.  For more information, please refer to to [their website](https://www.djangoproject.com/).
+This will also install Python's package manager, `pip`, as well as [Django](https://www.djangoproject.com/).
+Django is the web framework used in OpenEIS.
+It provides a development server to work on, and an easy database to work with.
 
-Then [activate the virtual environment](command_line_basics_unix.md):
+Next [activate the virtual environment](command_line_basics_unix.md):
 
     > source  env/bin/activate
 
@@ -40,11 +44,6 @@ Then [activate the virtual environment](command_line_basics_unix.md):
 From the command prompt established by the virtual environment, finish the installation:
 
     > python  bootstrap.py
-    > pip install  openeis_ui.whl
-    > python  bootstrap.py
-
-*TODO: It's not clear the step above is needed anymore.
-If it is, need to say where to find the `whl` file.*
 
 
 ## Create a database
@@ -58,3 +57,18 @@ You will be prompted for a superuser name and password.
 This only needs to be done once, unless there is a change to the schema in the database.
 
 
+## Re-creating the database
+
+On occasion, it may be necessary to delete and then re-create the database.
+This may happen when, for example, a new table is added to the database.
+
+To re-create the database, first delete the entire `data` directory, then run through the installation procedure again:
+
+    > rm -r  data/
+    > source  env/bin/activate
+    > python  bootstrap.py
+    > openeis  syncdb
+
+*TODO: Not clear the bootstrap is needed above.
+I (DML) needed it on the last change, but VTN and CYC did not.
+More generally, need to document when bootstrap is needed.*

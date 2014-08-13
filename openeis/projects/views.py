@@ -29,6 +29,7 @@ from . import models
 from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
+from .storage import sensorstore
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
@@ -650,16 +651,14 @@ def _perform_analysis(analysis):
         analysis.status = "running"
         analysis.save()
 
+        dataset_id = analysis.dataset.id
         sensormap_id = analysis.dataset.map.id
-
-        # Current implementation requires this to be a list.
-        dataset_ids = [analysis.dataset.id]
         topic_map = analysis.configuration["inputs"]
-        db_input = DatabaseInput(sensormap_id, topic_map, dataset_ids)
+        db_input = DatabaseInput(sensormap_id, topic_map, dataset_id)
 
         klass = get_algorithm_class(analysis.application)
         output_format = klass.output_format(db_input)
-        db_output = DatabaseOutput(analysis.id, output_format)
+        db_output = DatabaseOutput(analysis, output_format)
 
         kwargs = analysis.configuration['parameters']
 
@@ -674,7 +673,7 @@ def _perform_analysis(analysis):
     except Exception as e:
         analysis.status = "error"
         # TODO: log errors
-        print(e)
+        print(traceback.format_exc())
 
     finally:
         if analysis.status != "error":
@@ -735,4 +734,44 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @link()
     def data(self, request, *args, **kw):
         analysis = self.get_object()
-        return Response('TODO: return results of analysis {}'.format(analysis.id))
+
+        try:
+            output_name = request.QUERY_PARAMS['output']
+        except KeyError:
+            outputs = {}
+
+            for output in models.AppOutput.objects.filter(analysis=analysis):
+                data_model = sensorstore.get_data_model(output,
+                                                        output.analysis.dataset.map.project.id,
+                                                        output.fields)
+
+                outputs[output.name] = {
+                    'rows': data_model.objects.count()
+                }
+
+            return Response(outputs)
+
+        output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
+        data_model = sensorstore.get_data_model(output,
+                                                output.analysis.dataset.map.project.id,
+                                                output.fields)
+
+        try:
+            start = int(request.QUERY_PARAMS['start'])
+        except (KeyError, ValueError):
+            start = 0
+
+        try:
+            end = start + int(request.QUERY_PARAMS['count'])
+        except (KeyError, ValueError):
+            end = None
+
+        start = max(start, 0)
+        rows = data_model.objects.all()[start:end]
+
+        # TODO: return JSON or CSV file as StreamingHTTPResponse instead
+        data_response = []
+        for row in rows:
+            data_response.append({field: getattr(row, field) for field in output.fields})
+
+        return Response(data_response)

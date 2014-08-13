@@ -6,27 +6,12 @@ from django.db.models import Manager as BaseManager
 
 from .. import models
 from . import dynamictables
-from .dynamictables import *
 
 
 _create_lock = threading.Lock()
 
 
-def create_output(project_id, fields):
-    '''Create and return a model appropriate for application output.
-
-    Dynamically generate a new AppOutput instance and a model with the
-    given fields. The arguments are the same as for get_output().
-    '''
-    output = models.AppOutput.objects.create()
-    model = get_output(output, project_id, fields)
-    with _create_lock:
-        if not table_exists(model):
-            create_table(model)
-    return output, model
-
-
-def get_output(output, project_id, fields):
+def get_data_model(output, project_id, fields):
     '''Return a model appropriate for application output.
 
     Dynamically generates a Django model for the given fields and binds
@@ -38,10 +23,10 @@ def get_output(output, project_id, fields):
     would be generated from an equivalent dictionary's items() method.
     Each field is defined by a name, which must be a valid Python
     identifier, and a type, which must be one of those mapped in
-    openeis.projects.storage.dynamictables._fields. The same fields
-    must be passed in as was supplied for create_output(). The resulting
+    openeis.projects.storage.dynamictables._fields. The same fields must
+    be passed in as was supplied for create_output(). The resulting
     model will automatically fill in the source field with the given
-    output and the manager will automatically filter the queryset by th
+    output and the manager will automatically filter the queryset by the
     given output.
     '''
     if isinstance(output, int):
@@ -55,16 +40,16 @@ def get_output(output, project_id, fields):
     class Manager(BaseManager):
         def get_queryset(self):
             return super().get_queryset().filter(source=output)
-    name = 'AppOutputData' + str(output.pk)
     attrs = {'source': models.models.ForeignKey(
                  models.AppOutput, related_name='+'),
-             '__name__': name, 'objects': Manager(),
-             '__init__': __init__, 'save': save}
-    return dynamictables._create_model(name, project_id, fields, attrs)
-
-
-def put_output():
-    pass
+             'objects': Manager(), '__init__': __init__, 'save': save}
+    # Append PK to name since Django caches models by name
+    model = dynamictables.create_model('AppOutputData' + str(output.pk),
+            'appoutputdata', project_id, fields, attrs)
+    with _create_lock:
+        if not dynamictables.table_exists(model):
+            dynamictables.create_table(model)
+    return model
 
 
 def put_sensors(sensormap_id, topicstreams):
@@ -119,7 +104,3 @@ def get_sensors(sensormap_id, topics):
             get_queryset = None
         result.append((meta, get_queryset))
     return result
-
-
-def __generate_table_name(sensormap):
-    pass

@@ -41,10 +41,8 @@ class Command(BaseCommand):
             application = config['global_settings']['application']
             klass = get_algorithm_class(application)
     
-            dataset_ids = None
-            if config.has_option('global_settings', 'dataset_id'):
-                dataset_id_string = config['global_settings']['dataset_id']
-                dataset_ids = [int(x) for x in dataset_id_string.split(',')]
+            dataset_id = int(config['global_settings']['dataset_id'])
+            dataset = models.SensorIngest.objects.get(pk=dataset_id)
     
             sensormap_id = int(config['global_settings']['sensormap_id'])
             
@@ -53,6 +51,10 @@ class Command(BaseCommand):
                                        application=application,
                                        dataset_id=sensormap_id)
             analysis.save()
+            kwargs = {}
+            if config.has_section('application_config'):
+                for arg, str_val in config['application_config'].items():
+                    kwargs[arg] = eval(str_val)
             
             topic_map = {}
     
@@ -60,22 +62,23 @@ class Command(BaseCommand):
             for group, topics in inputs.items():
                 topic_map[group] = topics.split()
     
+            now = datetime.utcnow().replace(tzinfo=utc)
+            analysis = models.Analysis(added=now, started=now, status="running",
+                                       dataset=dataset, application=application,
+                                       configuration={'parameters': kwargs, 'inputs': topic_map},
+                                       name='cli: {}, dataset {}'.format(application, dataset_id))
+            analysis.save()
     
-            db_input = DatabaseInput(sensormap_id, topic_map, dataset_ids=dataset_ids)
+            db_input = DatabaseInput(dataset.map.id, topic_map, dataset_id)
     
             output_format = klass.output_format(db_input)
-            file_output = DatabaseOutputFile(application, analysis.id, output_format)
     
-            kwargs = {}
-            if config.has_section('application_config'):
-                for arg, str_val in config['application_config'].items():
-                    kwargs[arg] = eval(str_val)
+            file_output = DatabaseOutputFile(analysis, output_format)
     
             if( verbosity > 1 ):
                 print('Running application:', application)
-                print('- Sensor map id:', sensormap_id)
-                if dataset_ids is not None:
-                    print('- Data set ids:', dataset_ids)
+                if dataset_id is not None:
+                    print('- Data set id:', dataset_id)
                 print('- Topic map:', topic_map)
                 print('- Output format:', output_format)
     

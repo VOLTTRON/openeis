@@ -8,6 +8,7 @@ This section describes basic command-line interactions with OpenEIS, under a Uni
 + Activating the virtual environment
 + Running the server
 + Killing the server
++ Running an application
 
 
 ## Activating the virtual environment
@@ -70,3 +71,14 @@ The `fuser` utility can list the process holding the port (however, this doesn't
 After identifying the process holding the port, kill it:
 
     > kill -9  <pid-of-interest>
+
+
+## Running an application
+
+Running an application from the command line requires first creating a [configuration file](configuration_file.md) that specifies the application inputs.
+
+To run the application, activate the virtual environment if necessary, then:
+
+    > openeis runapplication  your_configuration_file.ini
+
+The application should write a `.csv` file containing its results, as well as a `.log` file.
