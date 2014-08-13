@@ -25,8 +25,8 @@ class Command(NoArgsCommand):
             for table in cursor.db.introspection.get_table_list(cursor):
                 if not table.startswith('appoutputdata_'):
                     continue
-                count, = cursor.execute(
-                        'SELECT COUNT(*) FROM ' + table).fetchone()
+                cursor.execute('SELECT COUNT(*) FROM ' + table)
+                count, = cursor.curser.fetchone()
                 if not all_tables and count:
                     continue
                 if verbosity >= 2:
