@@ -44,7 +44,8 @@ class ConfigDescriptor:
                  optional=False,
                  value_default=None,
                  value_min=None,
-                 value_max=None):
+                 value_max=None,
+                 value_list=None):
         # TODO: Throw exception on invalid values
         self.config_type = config_type
         self.display_name = display_name
@@ -52,6 +53,7 @@ class ConfigDescriptor:
         self.value_default = value_default
         self.value_min = value_min
         self.value_max = value_max
+        self.value_list = value_list
         
 class ApplicationDescriptor:
     def __init__(self,
