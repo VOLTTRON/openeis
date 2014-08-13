@@ -36,4 +36,5 @@ class Command(NoArgsCommand):
                 if verbosity >= 2:
                     self.stdout.write('Dropping table: {}'.format(table))
                 if force:
-                    cursor.execute('DROP TABLE ' + table)
+                    options = '' if cursor.db.vendor == 'sqlite' else 'CASCADE'
+                    cursor.execute('DROP TABLE {} {}'.format(table, options))
