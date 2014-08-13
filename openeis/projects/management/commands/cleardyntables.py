@@ -13,9 +13,12 @@ class Command(NoArgsCommand):
     option_list = NoArgsCommand.option_list + (
         make_option('-n', '--dry-run', action='store_true', default=False,
                     help='Do everything except modify the database.'),
+        make_option('-a', '--all-tables', action='store_true', default=False,
+                    help='Also drop non-empty dynamic tables.'),
     )
 
-    def handle_noargs(self, *, verbosity=1, dry_run=False, **options):
+    def handle_noargs(self, *, verbosity=1, dry_run=False, all_tables=False,
+                      **options):
         verbosity = int(verbosity)
         with transaction.atomic():
             cursor = connection.cursor()
@@ -24,7 +27,7 @@ class Command(NoArgsCommand):
                     continue
                 count, = cursor.execute(
                         'SELECT COUNT(*) FROM ' + table).fetchone()
-                if count:
+                if not all_tables and count:
                     continue
                 if verbosity >= 2:
                     self.stdout.write('Dropping table: {}'.format(table))
