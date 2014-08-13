@@ -32,10 +32,14 @@ class Application(DriverApplicationBaseClass):
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
+        
+        values = []
+        values.append("ISB1")
+        values.append("ISB2")
+        
         return {
-            "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True,value_list=values)
             }
-
 
     @classmethod
     def required_input(cls):
