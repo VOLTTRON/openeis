@@ -7,12 +7,8 @@ This section lists some useful API pages available under the OpenEIS server.
 After [starting the server](command_line_basics.md), log in to enable the API pages.
 
 The API pages offers a way to make HTTP [`POST` and `GET` requests](http://en.wikipedia.org/wiki/POST_\(HTTP\)) without going through the user interface.
+Additionally, you may also see past requests made through the GUI.
 `POST` requests allows you to put information on the server and database, while `GET` allows you to obtain information.
-
-*TODO: Clarify: do the API pages allow you to make the requests without going through the interface, or do they allow you to form and see the requests?
-After all, the pages are still accessed via the GUI.*
-
-*TODO: Consider renaming this file to `server_api_pages.md`.
 
 
 ## Overview of use
@@ -24,22 +20,10 @@ what it can parse, what data needs to be input, etc).
 
 The "GET" button displays a [JSON](http://en.wikipedia.org/wiki/JSON) object showing the relevant information from the database.
 At the top of the field there is a header showing:
-
-+ HTTP [request code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes).
-    The request code will tell if the request was a success or not.
-+ Content-Type.
-    *TODO: explain content type*
-+ Allow.
-    Shows the supported [HTTP request methods](http://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol#Request_methods).
-+ vary *TODO: what is "vary"*.
-
-*TODO Consider deleting the bullet list above, as taking up a lot of space for largely self-explanatory information.*
+HTTP [request code](http://en.wikipedia.org/wiki/List_of_HTTP_status_codes), content-type, the allowed [HTTP request methods](http://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol#Request_methods), if the POSTed data can vary. *TODO: what is "vary"*.
 
 The results of `GET` requests can be displayed as formatted or unformatted JSON.
 To view the unformatted version, select "json" from the pull-down menu on the side of the "GET" button (selecting "api" gives the default, formatted version).
-
-
-*TODO: Fill in useful/helpful tips for each page, where appropriate.*
 
 
 ## API Root
@@ -65,11 +49,8 @@ Now you should see a JSON that has an id associated with your project and the na
 
 [http://localhost:8000/api/files](http://localhost:8000/api/files)
 
-This page lists the files uploaded to the server.
+This page lists the files uploaded to the database.
 You may only GET with this page, so you must upload files through the user interface.
-
-*TODO: Files uploaded to server, or to the database?
-Or is this distinction meaningless?*
 
 
 ## Sensor maps page

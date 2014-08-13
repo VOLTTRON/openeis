@@ -3,17 +3,19 @@ Module for testing applications.
 """
 
 from django.test import TestCase
+from django.utils.timezone import utc
 from subprocess import call
 from configparser import ConfigParser
+import datetime
 import csv
 import os
 import math
-import sys
-import datetime
 
 from openeis.applications import get_algorithm_class
 from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
+from openeis.projects import models
+
 
 class AppTestBase(TestCase):
     # Taken directly from runapplication command.
@@ -31,34 +33,38 @@ class AppTestBase(TestCase):
         # Get which application we need
         klass = get_algorithm_class(application)
         # Check which data set we're using
-        dataset_ids = None
-        if config.has_option('global_settings', 'dataset_id'):
-            dataset_id_string = config['global_settings']['dataset_id']
-            dataset_ids = [int(x) for x in dataset_id_string.split(',')]
-
-        # Check which sensor map we are using.
-        sensormap_id = int(config['global_settings']['sensormap_id'])
-        topic_map = {}
-        # Grab the inputs to be used with the application.
-        inputs = config['inputs']
-        for group, topics in inputs.items():
-            topic_map[group] = topics.split()
-
-
-        db_input = DatabaseInput(sensormap_id, topic_map,
-                dataset_ids=dataset_ids)
-
-        output_format = klass.output_format(db_input)
-        file_output = DatabaseOutputFile(application, output_format)
+        dataset_id = int(config['global_settings']['dataset_id'])
+        dataset = models.SensorIngest.objects.get(pk=dataset_id)
 
         kwargs = {}
         if config.has_section('application_config'):
             for arg, str_val in config['application_config'].items():
                 kwargs[arg] = eval(str_val)
 
+        topic_map = {}
+        # Grab the inputs to be used with the application.
+        inputs = config['inputs']
+        for group, topics in inputs.items():
+            topic_map[group] = topics.split()
+
+        now = datetime.datetime.utcnow().replace(tzinfo=utc)
+        analysis = models.Analysis(added=now, started=now, status="running",
+                    dataset=dataset, application=application,
+                    configuration={
+                     'parameters': kwargs,
+                     'inputs': topic_map},
+                     name='cli: {}, dataset {}'.format(application, dataset_id))
+        analysis.save()
+
+        db_input = DatabaseInput(dataset.map.id, topic_map, dataset_id)
+
+        output_format = klass.output_format(db_input)
+        file_output = DatabaseOutputFile(analysis, output_format)
+
         app = klass(db_input, file_output, **kwargs)
         # Execute the application
         app.run_application()
+
 
     def _call_runapplication(self, tables, config_file):
         """
@@ -135,7 +141,7 @@ class AppTestBase(TestCase):
         """
         Checks for differences between the new csv file and the expected csv
         file. If the values are strings, it's checked for exactness.  Numerical
-        values are checked using the _nearly_same function defined below.
+        values are checked using the nearly_same function defined below.
 
         Parameters:
             - test_list: test file contents in a list
@@ -182,14 +188,13 @@ class AppTestBase(TestCase):
                     expe_val_arr.append(float(expected_dict[key][i]))
                     i += 1
                 # Check for approximate sameness.
-                self._nearly_same(test_val_arr, expe_val_arr, key)
+                self.nearly_same(test_val_arr, expe_val_arr, key)
             else:
                 self.assertEqual(test_dict[key], expected_dict[key], \
                     "Something in the " + key + " header doesn't match. They \
                     are " + str(test_dict[key]) + ',' + \
                     str(expected_dict[key])+ '.')
             i = 1
-
 
     def _is_num(self, s):
         """
@@ -207,7 +212,7 @@ class AppTestBase(TestCase):
             return False
 
     # Taken directly from phase one reference code.
-    def _nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
+    def nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
         """
         Compare two numbers or arrays, checking all elements are nearly equal.
 
@@ -241,91 +246,6 @@ class AppTestBase(TestCase):
                 nearlySame = False
             idx += 1
         return( nearlySame)
-
-    # Taken from reference code
-    def _findMean(self, xxs):
-        """
-        Find the mean of non-``NAN`` entries in a vector *xxs*.
-
-        Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`,
-        in order to make explict how ``NAN`` values get handled.
-
-        Parameters:
-            - xxs: a list of numbers
-        Returns:
-            - xxMeans: the list's mean
-        """
-        #
-        # Find sum and count of non-``NAN`` entries.
-        cts = len(xxs)
-        xxSum = 0.0
-        xxCt  = 0
-        for idx in range(cts):
-            xx = xxs[idx]
-            if( not math.isnan(xx) ):
-                xxSum += xx
-                xxCt  += 1
-        #
-        # Find mean.
-        if( xxSum == 0 ):
-            # Here, all-``NAN`` gave ``xxCt == 0``.
-            xxMean = 0
-        else:
-            xxMean = xxSum / xxCt
-        #
-        return( xxMean )
-        #
-
-    # Taken directly from reference code.
-    def _findCorrelationCoeff(self, xxs, yys, expectZeroMeans):
-        """
-        Find the correlation coefficient between two vectors *xxs* and *yys*.
-
-        Do so in a fairly laborious way, i.e., without relying on :mod:`numpy`,
-        in order to make explict how ``NAN`` values get handled.
-
-        Parameters:
-            - xxs, yys: two lists of numbers
-            - expectZeroMeans: whether we expect zero means or not
-        Returns:
-            - corrCoeff: Spearman correlation coefficient of the two lists
-        """
-
-        cts = len(xxs)
-        assert( len(yys) == cts )
-
-        xxMean = self._findMean(xxs)
-        yyMean = self._findMean(yys)
-        if( expectZeroMeans ):
-            assert( math.fabs(xxMean) < 1e-20 )
-            xxMean = 0
-            assert( math.fabs(yyMean) < 1e-20 )
-            yyMean = 0
-
-        xyAccum = 0.0
-        xxAccum = 0.0
-        yyAccum = 0.0
-        for idx in range(cts):
-            xMinusMean = xxs[idx]
-            if( math.isnan(xMinusMean) ):
-                continue
-            xMinusMean -= xxMean
-
-            yMinusMean = yys[idx]
-            if( math.isnan(yMinusMean) ):
-                continue
-            yMinusMean -= yyMean
-
-            xyAccum += xMinusMean * yMinusMean
-            xxAccum += xMinusMean * xMinusMean
-            yyAccum += yMinusMean * yMinusMean
-
-        denom = xxAccum * yyAccum
-        if( denom == 0 ):
-            corrCoeff = 0
-        else:
-            corrCoeff = xyAccum / math.sqrt(denom)
-        return( corrCoeff )
 
     def run_it(self, ini_file, expected_outputs, clean_up=False):
         """
@@ -362,45 +282,4 @@ class AppTestBase(TestCase):
             os.remove(newestLog)
 
 
-    def set_up_datetimes(self, first, last, increment):
-        """
-        Creates an array of datetimes with the FIRST and LAST dateimes inputted
-        with INCREMENTS in seconds.  These datetimes are also in arrays for
-        easy iterating and appending data.
-
-        Parameters:
-            - first: first datetime to start incrementing from
-            - last: final datetime to end on
-            - increment: increments in seconds (int) between each datetime
-        Returns:
-            -base: An array of [datetimes]
-                Ex: [[[datetime.datetime(2014, 1, 1, 0, 0)],
-                    [datetime.datetime(2014, 1, 1, 6, 0)]] 
-        """
-        delta = datetime.timedelta(0, increment)
-
-        base = []
-        while (first != last):
-            base.append([first])
-            first += delta
-        base.append([last])
-
-        return base
-
-    def append_data_to_datetime(self, dates, data):
-        """
-        Takes data and puts it into dates.  Assumes that they are the same
-        length.
-
-        Parameters:
-            - dates: an array of datetimes in lists.
-                Ex: [[[datetime.datetime(2014, 1, 1, 0, 0)],
-                    [datetime.datetime(2014, 1, 1, 6, 0)]]
-            - data: an array of data
-        """
-        assert(len(dates) == len(data))
-        i = 0
-        while (i < len(dates)):
-            dates[i].append(data[i])
-            i += 1
 
