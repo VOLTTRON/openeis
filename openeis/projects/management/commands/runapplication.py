@@ -44,13 +44,6 @@ class Command(BaseCommand):
             dataset_id = int(config['global_settings']['dataset_id'])
             dataset = models.SensorIngest.objects.get(pk=dataset_id)
     
-            sensormap_id = int(config['global_settings']['sensormap_id'])
-            
-            now = datetime.utcnow().replace(tzinfo=utc)
-            analysis = models.Analysis(added=now, started=now, status="running",
-                                       application=application,
-                                       dataset_id=sensormap_id)
-            analysis.save()
             kwargs = {}
             if config.has_section('application_config'):
                 for arg, str_val in config['application_config'].items():
