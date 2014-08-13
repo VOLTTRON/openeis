@@ -24,7 +24,7 @@ class Command(NoArgsCommand):
                     continue
                 count, = cursor.execute(
                         'SELECT COUNT(*) FROM ' + table).fetchone()
-                if not count:
+                if count:
                     continue
                 if verbosity >= 2:
                     self.stdout.write('Dropping table: {}'.format(table))
