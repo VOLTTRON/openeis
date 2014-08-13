@@ -55,6 +55,10 @@ class DatabaseOutput:
 
         self.table_map[LOG_TABLE_NAME] = log_klass
 
+        self.log_level = logging.ERROR
+        if analysis.debug:
+            self.log_level = logging.DEBUG
+
 
     def insert_row(self,table_name,row_data):
         #Dictionary of name and values based on the outputschema of the application
@@ -67,8 +71,9 @@ class DatabaseOutput:
             self.batch_store[table_name] = []
 
     def log(self, msg, level=logging.DEBUG, timestamp=None):
-        logging_fields = {'msg':msg, 'level':level, 'datetime':timestamp}
-        self.insert_row(LOG_TABLE_NAME, logging_fields)
+        if level >= self.log_level:
+            logging_fields = {'msg':msg, 'level':level, 'datetime':timestamp}
+            self.insert_row(LOG_TABLE_NAME, logging_fields)
 
     def close(self):
         for table_name, batch_list in self.batch_store.items():

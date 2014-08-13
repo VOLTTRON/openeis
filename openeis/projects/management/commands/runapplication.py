@@ -11,7 +11,7 @@ from openeis.projects import serializers
 from datetime import datetime
 from django.utils.timezone import utc
 
-from configparser import ConfigParser
+from configparser import ConfigParser, NoOptionError
 
 
 class Command(BaseCommand):
@@ -43,7 +43,12 @@ class Command(BaseCommand):
     
             dataset_id = int(config['global_settings']['dataset_id'])
             dataset = models.SensorIngest.objects.get(pk=dataset_id)
-    
+
+            try:
+                debug = config.getboolean('global_settings', 'debug')
+            except NoOptionError:
+                debug = False
+
             kwargs = {}
             if config.has_section('application_config'):
                 for arg, str_val in config['application_config'].items():
@@ -58,6 +63,7 @@ class Command(BaseCommand):
             now = datetime.utcnow().replace(tzinfo=utc)
             analysis = models.Analysis(added=now, started=now, status="running",
                                        dataset=dataset, application=application,
+                                       debug=debug,
                                        configuration={'parameters': kwargs, 'inputs': topic_map},
                                        name='cli: {}, dataset {}'.format(application, dataset_id))
             analysis.save()
@@ -77,7 +83,10 @@ class Command(BaseCommand):
     
             app = klass(db_input, file_output, **kwargs)
             app.run_application()
-    
+
+            analysis.reports = [serializers.ReportSerializer(report).data for
+                                report in klass.reports(file_output)]
+
             reports = klass.reports(output_format)
     
             for report in reports:
@@ -90,8 +99,6 @@ class Command(BaseCommand):
     
         finally:
             if analysis.status != "error":
-                analysis.reports = [serializers.ReportSerializer(report).data for
-                                    report in klass.reports(file_output)]
                 analysis.status = "complete"
                 analysis.progress_percent = 100
             analysis.ended = datetime.utcnow().replace(tzinfo=utc)
