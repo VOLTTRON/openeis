@@ -5,6 +5,7 @@ Load profile: show building loads over time.
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
+from openeis.applications import reports
 import logging
 
 
@@ -59,7 +60,7 @@ class Application(DriverApplicationBaseClass):
         # Work with topics["OAT"][0] to get building topic
         output_needs = {
             'Load_Profiling': {
-                'hour':OutputDescriptor('datetime', time_topic),
+                'timestamp':OutputDescriptor('datetime', time_topic),
                 'load':OutputDescriptor('float', load_topic)
                 }
             }
@@ -74,9 +75,25 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        display_elements = []
+        report = reports.Report('Building Load Profile Report')
 
-        return display_elements
+        text_blurb = reports.TextBlurb(text="A plot showing building energy consumption over a time period.")
+        report.add_element(text_blurb)
+        
+        xy_dataset_list = []
+        xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'timestamp', 'load'))
+
+        scatter_plot = reports.ScatterPlot(xy_dataset_list,
+                                           title='Time Series Load Profile',
+                                           x_label='Timestamp', 
+                                           y_label='Power'
+                                           )
+
+        report.add_element(scatter_plot)
+
+        report_list = [report]
+
+        return report_list
 
     def execute(self):
         #Called after User hits GO
@@ -87,6 +104,6 @@ class Application(DriverApplicationBaseClass):
 
         for x in load_by_hour[0]:
             self.out.insert_row("Load_Profiling", {
-                'hour': x[0],
+                'timestamp': x[0],
                 'load': x[1]
                 })

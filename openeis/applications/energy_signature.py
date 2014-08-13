@@ -94,7 +94,8 @@ class Application(DriverApplicationBaseClass):
 
         column_info = (('value', 'Sensitivity'),)
 
-#         text_blurb = reports.TextBlurb('')
+        text_blurb = reports.TextBlurb("Analysis of the relationship of power intensity to outdoor temperature.")
+        report.add_element(text_blurb)
         summary_table = reports.Table('Weather_Sensitivity',
                                       column_info,
                                       title='Weather Sensitivity',
@@ -102,13 +103,13 @@ class Application(DriverApplicationBaseClass):
 
         report.add_element(summary_table)
 
-
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'oat', 'load'))
 
         scatter_plot = reports.ScatterPlot(xy_dataset_list,
                                            title='Time Series Load Profile',
-                                           x_label='Outside Air Temperature', y_label='Power')
+                                           x_label='Outside Air Temperature', 
+                                           y_label='Power')
 
         report.add_element(scatter_plot)
         # list of report objects

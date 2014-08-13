@@ -6,6 +6,7 @@ Shows trends in building performance over time.
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.applications import reports
 import logging
 from django.db.models import Sum
 
@@ -82,9 +83,32 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        display_elements = []
+        report = reports.Report('Longitudinal Benchmarking Report')
 
-        return display_elements
+        text_blurb = reports.TextBlurb(text="The plots show total building energy consumption compared over time.")
+        report.add_element(text_blurb)
+        
+        xy_dataset_list = []
+        xy_dataset_list.append(reports.XYDataSet('Electricity', 'year', 'load'))
+        elec_bar_chart = reports.BarChart(xy_dataset_list, 
+                                     title='Annual Building Consumption', 
+                                     x_label='Year', 
+                                     y_label='Electric Load')
+        report.add_element(elec_bar_chart)
+        
+        xy_dataset_list = []
+        xy_dataset_list.append(reports.XYDataSet('Natural Gas', 'Timestamp', 'Natural Gas Load'))
+        natgas_bar_chart = reports.BarChart(xy_dataset_list, 
+                                     title='Annual Building Consumption', 
+                                     x_label='Year', 
+                                     y_label='Natural Gas Load')
+        report.add_element(natgas_bar_chart)
+        
+        # list of report objects
+        report_list = [report]
+        
+        return report_list
+        
 
     def execute(self):
         #Called after User hits GO
