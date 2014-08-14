@@ -402,6 +402,7 @@ class Analysis(models.Model):
     }
     '''
     configuration = JSONField()
+    debug = models.BooleanField(default=False)
     # Ran successfully or not
     status = models.CharField(max_length=50, default='queued')
     # Initially queued

@@ -5,8 +5,9 @@ Load duration: show the proportion of time that the building load is at or above
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
+from openeis.applications import reports
 import logging
-
+import numpy
 
 class Application(DriverApplicationBaseClass):
 
@@ -59,7 +60,8 @@ class Application(DriverApplicationBaseClass):
 
         output_needs = {
             'Load_Duration': {
-                'sorted load':OutputDescriptor('float', load_topic)
+                'sorted load':OutputDescriptor('float', load_topic),
+                'percent time':OutputDescriptor('float', load_topic)
                 }
             }
         return output_needs
@@ -73,10 +75,28 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        display_elements = []
 
-        return display_elements
+        report = reports.Report('Load Duration Report')
+        text_blurb = reports.TextBlurb(text="Analysis of the portion of time that building energy load is at or above a certain threshhold.")
+        report.add_element(text_blurb)
+        
+        xy_dataset_list = []
+        xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'percent time', 'load'))
 
+        scatter_plot = reports.ScatterPlot(xy_dataset_list,
+                                           title='Time Series Load Profile',
+                                           x_label='Percent Time', 
+                                           y_label='Power')
+
+        report.add_element(scatter_plot)
+        # list of report objects
+
+
+        report_list = [report]
+
+        return report_list
+        
+        
     def execute(self):
         #Called after User hits GO
         """
@@ -86,5 +106,8 @@ class Application(DriverApplicationBaseClass):
 
         load_query = self.inp.get_query_sets('load', order_by='value', exclude={'value':None})
 
+        ctr = 1
         for x in load_query[0]:
-            self.out.insert_row("Load_Duration", {"sorted load": x[1]})
+            self.out.insert_row("Load_Duration", { "sorted load": x[1], 
+                                                   "percent time": ctr / len(load_query[0]) } )
+            ctr += 1
