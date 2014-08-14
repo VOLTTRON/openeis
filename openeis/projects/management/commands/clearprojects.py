@@ -8,6 +8,9 @@ from django.core.management.base import NoArgsCommand
 from django.db import connection, transaction
 
 
+_stable_tables = ['accountverification', 'membership', 'organization']:
+
+
 class Command(NoArgsCommand):
     help = 'Remove orphaned dynamic application output tables.'
     option_list = NoArgsCommand.option_list + (
@@ -29,7 +32,7 @@ class Command(NoArgsCommand):
                 if not table.startswith('projects_'):
                     continue
                 if not all_tables:
-                    if table[9:] in ['membership', 'organization']:
+                    if table[9:] in _stable_tables:
                         if verbosity >=2:
                             self.stdout.write('Leaving table: {}'.format(table))
                         continue
