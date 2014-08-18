@@ -5,7 +5,7 @@ Created on Apr 28, 2014
 '''
 
 import logging
-
+import io
 from .. import models
 from . import sensorstore
 from collections import defaultdict
@@ -85,7 +85,7 @@ class DatabaseOutput:
 import csv
 from datetime import datetime
 
-class DatabaseOutputFile(DatabaseOutput):
+class DatabaseOutputIO(DatabaseOutput): 
     def __init__(self, analysis, output_map):
         '''
         analysis - Analysis model instance to associate output to
@@ -103,9 +103,8 @@ class DatabaseOutputFile(DatabaseOutput):
         for table_name, table_description in output_map.items():
             self.output_names[table_name] = table_description.keys()
 
-        file_prefix = analysis.application+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
+        self.file_prefix = analysis.application+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
 
-        log_file = file_prefix + '.log'
         self._logger = logging.getLogger()
         formatter = logging.Formatter('%(levelname)s:%(name)s %(message)s')
         self._logger.setLevel(logging.INFO)
@@ -115,18 +114,20 @@ class DatabaseOutputFile(DatabaseOutput):
         str_handler.setFormatter(formatter)
         self._logger.addHandler(str_handler)
 
-        file_handler = logging.FileHandler(log_file)
+        log_io = io.StringIO()
+        file_handler = logging.StreamHandler(log_io)
         file_handler.setFormatter(formatter)
         self._logger.addHandler(file_handler)
 
         self.csv_table_map = {}
+        self.csv_file_io_table_map = {}
         for table_name, topics in output_map.items():
-            csv_file = file_prefix+'_'+table_name+'.csv'
-            self.csv_table_map[table_name] = csv.DictWriter(open(csv_file,'w', newline=''), topics.keys())
+            csv_file_io = io.StringIO()
+            self.csv_table_map[table_name] = csv.DictWriter(csv_file_io, topics.keys())
             self.csv_table_map[table_name].writeheader()
-
-
-
+            self.csv_file_io_table_map[table_name] = csv_file_io
+            
+       
 #     def insert_row(self,table_name,row_data):
 #         #Dictionary of name and values based on the outputschema of the application
 #         self.table_map[table_name].writerow(row_data)
@@ -142,7 +143,7 @@ class DatabaseOutputFile(DatabaseOutput):
 
     def close(self):
         super().close()
-        print('Writing CSV files.')
+        print('Writing to IO.')
         for table_name, fields in self.output_names.items():
             klass = self.table_map[table_name]
             dict_writer =  self.csv_table_map[table_name]
@@ -150,6 +151,68 @@ class DatabaseOutputFile(DatabaseOutput):
                 row_data = dict((field, getattr(k, field)) for field in fields)
                 dict_writer.writerow(row_data)
 
+class DatabaseOutputFile(DatabaseOutputIO):
+    def __init__(self, analysis, output_map):
+        '''
+        analysis - Analysis model instance to associate output to
+        Expected output_map:
+           {
+               'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')},
+               'Sensor': {'SomeValue':OutputDescriptor('int', 'some_output/value'),
+                          'SomeOtherValue':OutputDescriptor('boolean', 'some_output/value),
+                          'SomeString':OutputDescriptor('string', 'some_output/string)}
+           }
+        '''
+        super().__init__(analysis, output_map)
+        
+    def log(self, msg, level=logging.DEBUG, timestamp=None):
+        super().log(msg, level=level, timestamp=timestamp)
+
+    def close(self):
+        super().close()
+        print('Writing log file.')
+        log_file = self.file_prefix+'.log'
+        with open(log_file,'w') as f:
+            f.write(self._logger.handlers[2].stream.getvalue())
+        print('Writing CSV files.')
+        for table_name in self.csv_file_io_table_map:
+            csv_file_io = self.csv_file_io_table_map[table_name]
+            csv_file = self.file_prefix +'_'+table_name+'.csv'
+            with open(csv_file,'wb') as f:
+                f.write(bytes(csv_file_io.getvalue(), 'UTF-8'))
+                    
+        
+from zipfile import ZipFile
+   
+class DatabaseOutputDebug(DatabaseOutputIO):
+    def __init__(self, analysis, output_map):
+        '''
+        analysis - Analysis model instance to associate output to
+        Expected output_map:
+           {
+               'OAT': {'Timestamp':OutputDescriptor('timestamp', 'foo/bar/timestamp'),'OAT':OutputDescriptor('OutdoorAirTemperature', 'foo/bar/oat')},
+               'Sensor': {'SomeValue':OutputDescriptor('int', 'some_output/value'),
+                          'SomeOtherValue':OutputDescriptor('boolean', 'some_output/value),
+                          'SomeString':OutputDescriptor('string', 'some_output/string)}
+           }
+        '''
+        super().__init__(analysis, output_map)
+        
+    def log(self, msg, level=logging.DEBUG, timestamp=None):
+        super().log(msg, level=level, timestamp=timestamp)
+
+    def close(self):
+        super().close()
+        print('Writing Debug zip file.')
+        zip_file = self.file_prefix +'.zip'
+        with ZipFile(zip_file, 'w') as myzip:
+            lof_file = self.file_prefix+".log"
+            myzip.writestr(lof_file,self._logger.handlers[2].stream.getvalue())
+            for table_name in self.csv_file_io_table_map:
+                csv_file_io = self.csv_file_io_table_map[table_name]
+                csv_file = self.file_prefix +'_'+table_name+'.csv'
+                myzip.writestr(csv_file,csv_file_io.getvalue())    
+                
 
 if __name__ == '__main__':
 
