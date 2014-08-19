@@ -772,3 +772,48 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @link()
     def data(self, request, *args, **kw):
         return _get_output_data(request, self.get_object())
+
+
+class SharedAnalysisPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return (request.method in permissions.SAFE_METHODS or
+                request.user.is_authenticated())
+
+    def has_object_permission(self, request, view, object):
+        return (request.method in permissions.SAFE_METHODS or
+                models.Project.objects.filter(owner=request.user,
+                    pk=object.analysis.dataset.map.project.pk).exists())
+
+
+class SharedAnalysisViewSet(mixins.CreateModelMixin,
+                            mixins.DestroyModelMixin,
+                            viewsets.ReadOnlyModelViewSet):
+    model = models.SharedAnalysis
+    serializer_class = serializers.SharedAnalysisSerializer
+    permission_classes = (SharedAnalysisPermission,)
+
+    def get_queryset(self):
+        try:
+            key = self.request.QUERY_PARAMS['key']
+            return models.SharedAnalysis.objects.filter(key=key)
+        except (KeyError):
+            pass
+
+        user = self.request.user
+        if not user.is_authenticated():
+            return []
+
+        return models.SharedAnalysis.objects.filter(analysis__dataset__map__project__owner=user)
+
+    def pre_save(self, obj):
+        '''Check analysis ownership.'''
+        user = self.request.user
+        if not models.Project.objects.filter(
+                owner=user, pk=obj.analysis.dataset.map.project.pk).exists():
+            raise rest_exceptions.PermissionDenied(
+                    "Invalid analysis pk '{}' - "
+                    'permission denied.'.format(obj.analysis.pk))
+
+    @link()
+    def data(self, request, *args, **kw):
+        return _get_output_data(request, self.get_object().analysis)
