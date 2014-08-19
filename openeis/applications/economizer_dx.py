@@ -50,7 +50,6 @@ operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 '''
 import datetime, logging
-from collections import Counter
 from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor, 
                                   ConfigDescriptor,
@@ -244,9 +243,9 @@ class Application(DrivenApplicationBaseClass):
         return result
 
     def run(self,current_time,points):
-        """
+        '''
         Check application pre-quisites and assemble data set for analysis.
-        """
+        '''
         device_dict = {}
         diagnostic_result = Results()
 
@@ -392,9 +391,9 @@ class Application(DrivenApplicationBaseClass):
     
     
 class temperature_sensor_dx(object):
-    """
+    '''
     Air-side HVAC diagnostic to check the functionality of the air temperature sensors in an AHU/RTU.
-    """
+    '''
     def __init__(self, data_window,temp_difference_threshold,oat_mat_check,temp_damper_threshold):
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -643,7 +642,7 @@ class econ_correctly_off(object):
         '''
         Check application pre-quisites and economizer conditions (Problem or No Problem).
         '''
-        if economizer_conditon and cooling_call:
+        if economizer_conditon:
             diagnostic_result.log(''.join([self.alg_result_messages[2],(' Data corresponding to {timestamp} will not '
                                            'be used for this diagnostic.'.format(timestamp=str(current_time)))]),
                                                                                                  logging.INFO)
