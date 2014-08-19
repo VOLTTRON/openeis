@@ -252,11 +252,22 @@ class TestRestApi(OpenEISTestBase):
         response = client.get('/api/applications')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual(len(response.data), len(_applicationDict))
+
+    def test_applications_valid_params_and_inputs(self):
+        from openeis.applications import (_applicationDict)
+
+        client = APIClient()
+        response = client.get('/api/applications')
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+        client = self.get_authenticated_client()
+        response = client.get('/api/applications')
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(len(response.data), len(_applicationDict))
         for app in response.data:
             self.assertTrue(app['name'] in _applicationDict)
             dictApp = _applicationDict[app['name']]
             self.assertEqual(len(app['parameters']),
-                             len(dictApp.get_config_parameters()))
+                             len(dictApp.get_config_parameters()), "Problem with config parameters for: "+app['name'])
             self.assertEqual(len(app['inputs']),
-                             len(dictApp.required_input()))
-
+                             len(dictApp.required_input()), "Problem with required inputs: "+app['name'])

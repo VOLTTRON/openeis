@@ -7,6 +7,7 @@ Shows extent of daily, weekly, and seasonal load profiles.
 from openeis.applications import reports
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
+from openeis.applications import reports
 import logging
 
 
@@ -32,10 +33,14 @@ class Application(DriverApplicationBaseClass):
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
+        
+        values = []
+        values.append("ISB1")
+        values.append("ISB2")
+        
         return {
-            "building_name": ConfigDescriptor(str, "Building Name", optional=True)
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True,value_list=values)
             }
-
 
     @classmethod
     def required_input(cls):
@@ -80,7 +85,16 @@ class Application(DriverApplicationBaseClass):
         
         report = reports.Report('Heat Map for Load')
         
-        heat_map = reports.HeatMap(table_name='Heat_Map', x_column='hour', y_column='date', z_column='load')
+        text_blurb = reports.TextBlurb(text="Analysis of the extent of a building's daily, weekly, and seasonal shut off.")
+        report.add_element(text_blurb)
+        
+        heat_map = reports.HeatMap(table_name='Building Energy Heat Map', 
+                                   x_column='hour', 
+                                   y_column='date', 
+                                   z_column='load',
+                                   x_label='Hour of the Day', 
+                                   y_label='Date', 
+                                   z_label='Building Load')
         report.add_element(heat_map)
 
         report_list = [report]
@@ -102,6 +116,4 @@ class Application(DriverApplicationBaseClass):
                 'hour': x[0].hour,
                 'load': x[1]
                 }
-            )
-            print(x[0].date(), x[0].hour, x[1])
-            
+            )            
