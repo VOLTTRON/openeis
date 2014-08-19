@@ -23,12 +23,13 @@ To activate the virtual environment from subdirectory `env`:
 The command prompt should change to include `(openeis)` as a prefix.
 For brevity, the sample code does not show this prefix.
 
-Another way to verify that the virtual environment is running is to check that the `python` command runs the appropriate interpreter:
+A more rigorous way to verify that the virtual environment is running is to check that the `python` command runs the appropriate interpreter:
 
     > which python
     openeis_root/env/bin/python
 
 where `openeis_root` is the root directory that contains the OpenEIS project files.
+If `python` does not refer to the executable in the virtual environment, try removing the `env` directory and creating a new virtual environment, as described in the [installation guide](install_guide_unix.md).
 
 
 ## Running the server
