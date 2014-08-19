@@ -116,3 +116,52 @@ class TestAnalysesApi(OpenEISTestBase):
 #        self.assertEqual(response.data[0]['status'], "completed")
 
 
+    def test_sharing_analysis(self):
+        auth_client = self.get_authenticated_client()
+
+        # Can share own analyses
+        response = auth_client.post('/api/shared-analyses', {'analysis': 1})
+        self.assertEqual(status.HTTP_201_CREATED, response.status_code)
+        self.assertEqual(response.data['analysis'], 1)
+        self.assertEqual(response.data['reports'], ['test report'])
+        key = response.data['key']
+
+        # Can see all of own shared analyses
+        response = auth_client.get('/api/shared-analyses')
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['key'], key)
+
+        # Analysis cannot be shared if already shared
+        response = auth_client.post('/api/shared-analyses', {'analysis': 1})
+        self.assertEqual(status.HTTP_400_BAD_REQUEST, response.status_code)
+
+        # SharedAnalysis cannot be edited
+        response = auth_client.post('/api/shared-analyses/1', {'analysis': 2})
+        self.assertEqual(status.HTTP_405_METHOD_NOT_ALLOWED, response.status_code)
+
+        anon_client = APIClient()
+
+        # Cannot list shared analyses
+        response = anon_client.get('/api/shared-analyses')
+        self.assertEqual(response.data, [])
+
+        # Cannot share analyses
+        response = anon_client.post('/api/shared-analyses', {'analysis': 1})
+        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+        # Cannot access shared analysis without key
+        response = anon_client.get('/api/shared-analyses/1')
+        self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
+
+        # Can access shared analysis with key
+        response = anon_client.get('/api/shared-analyses/1?key=' + key)
+        self.assertEqual(response.data['analysis'], 1)
+        self.assertEqual(response.data['reports'], ['test report'])
+
+        # Owner can revoke sharing
+        response = auth_client.delete('/api/shared-analyses/1')
+        self.assertEqual(status.HTTP_204_NO_CONTENT, response.status_code)
+
+        # Cannot access revoked shared analysis
+        response = anon_client.get('/api/shared-analyses/1?key=' + key)
+        self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)

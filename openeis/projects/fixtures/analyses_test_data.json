@@ -21018,5 +21018,21 @@
         "name": "TestProj"
     },
     "pk": 1
+},
+{
+    "model": "projects.analysis",
+    "fields": {
+        "name": "TestAnalysis",
+        "dataset": 1,
+        "application": "daily_sumamry",
+        "configuration": "{}",
+        "debug": 0,
+        "status": "complete",
+        "added": "2014-08-19T00:00:00.001Z",
+        "started": "2014-08-19T00:00:00.001Z",
+        "ended": "2014-08-19T00:00:00.001Z",
+        "progress_percent": 100,
+        "reports": "[\"test report\"]"
+    }
 }
 ]
