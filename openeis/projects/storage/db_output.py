@@ -5,10 +5,17 @@ Created on Apr 28, 2014
 '''
 
 import logging
-
+import io
+import os
+import json
 from .. import models
 from . import sensorstore
 from collections import defaultdict
+from zipfile import ZipFile
+import shutil
+import tempfile
+import csv
+from datetime import datetime
 
 BATCH_SIZE = 1000
 LOG_TABLE_NAME = 'log'
@@ -26,7 +33,7 @@ class DatabaseOutput:
                           'SomeString':OutputDescriptor('string', 'some_output/string)}
            }
         '''
-
+        self.analysis_id = analysis.id
         self.table_map = {}
 
         self.batch_store = defaultdict(list)
@@ -82,8 +89,6 @@ class DatabaseOutput:
                 klass.objects.bulk_create(batch_list)
                 self.batch_store[table_name] = []
 
-import csv
-from datetime import datetime
 
 class DatabaseOutputFile(DatabaseOutput):
     def __init__(self, analysis, output_map):
@@ -103,9 +108,9 @@ class DatabaseOutputFile(DatabaseOutput):
         for table_name, table_description in output_map.items():
             self.output_names[table_name] = table_description.keys()
 
-        file_prefix = analysis.application+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
+        self.file_prefix = analysis.application+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
 
-        log_file = file_prefix + '.log'
+        log_file = self.file_prefix + '.log'
         self._logger = logging.getLogger()
         formatter = logging.Formatter('%(levelname)s:%(name)s %(message)s')
         self._logger.setLevel(logging.INFO)
@@ -120,10 +125,13 @@ class DatabaseOutputFile(DatabaseOutput):
         self._logger.addHandler(file_handler)
 
         self.csv_table_map = {}
+        self.file_table_map = {}
         for table_name, topics in output_map.items():
-            csv_file = file_prefix+'_'+table_name+'.csv'
-            self.csv_table_map[table_name] = csv.DictWriter(open(csv_file,'w', newline=''), topics.keys())
+            csv_file = self.file_prefix+'_'+table_name+'.csv'
+            f = open(csv_file,'w', newline='')
+            self.csv_table_map[table_name] = csv.DictWriter(f, topics.keys())
             self.csv_table_map[table_name].writeheader()
+            self.file_table_map[table_name] = f
 
 
 
@@ -149,7 +157,45 @@ class DatabaseOutputFile(DatabaseOutput):
             for k in klass.objects.all():
                 row_data = dict((field, getattr(k, field)) for field in fields)
                 dict_writer.writerow(row_data)
+            fd = self.file_table_map[table_name]
+            fd.close()
 
+class DatabaseOutputZip(DatabaseOutputFile):
+    def __init__(self, analysis, output_map, config_dict):
+        
+        super().__init__(analysis, output_map)
+        self.config_dict = config_dict
+        
+    def log(self, msg, level=logging.DEBUG, timestamp=None):
+        super().log(msg, level=level, timestamp=timestamp)
+
+    def close(self):
+        super().close()
+        print('Writing Debug zip file.')
+        
+        analysis_folder = os.getcwd()+'/data/files/analysis'
+        if os.path.exists(analysis_folder) == False:
+            os.mkdir(analysis_folder)
+            
+        zip_file = analysis_folder+'/'+str(self.analysis_id)+'.zip'
+        with ZipFile(zip_file, 'w') as myzip:
+            
+            log_file = self.file_prefix+".log"
+            myzip.write(log_file)
+            self._logger.handlers[2].stream.close()
+            os.remove(log_file)
+            
+            d = (self.config_dict)
+            jsonarray = json.dumps(d)
+            config_file = self.file_prefix+'.json'
+            myzip.writestr(config_file,jsonarray)
+            
+            for table_name in self.csv_table_map:
+                csv_file = self.file_prefix +'_'+table_name+'.csv'
+                print(os.path.abspath(csv_file))
+                myzip.write(csv_file)
+                os.remove(csv_file)
+                  
 
 if __name__ == '__main__':
 

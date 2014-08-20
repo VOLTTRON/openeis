@@ -413,6 +413,15 @@ class Analysis(models.Model):
     reports = JSONField()
 
 
+def _share_key():
+    return ''.join(random.choice(_CODE_CHOICES) for i in range(16))
+
+
+class SharedAnalysis(models.Model):
+    analysis = models.OneToOneField(Analysis, primary_key=True)
+    key = models.CharField(max_length=16, default=_share_key)
+
+
 class AppOutput(models.Model):
     analysis = models.ForeignKey(Analysis, related_name='app_output')
     name = models.CharField(max_length=255)

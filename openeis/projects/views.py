@@ -33,7 +33,7 @@ from .storage import sensorstore
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
-from .storage.db_output import DatabaseOutput
+from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
 
@@ -658,9 +658,14 @@ def _perform_analysis(analysis):
 
         klass = get_algorithm_class(analysis.application)
         output_format = klass.output_format(db_input)
-        db_output = DatabaseOutput(analysis, output_format)
-
+        
         kwargs = analysis.configuration['parameters']
+        if analysis.debug:
+            db_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
+        else:
+            db_output = DatabaseOutput(analysis, output_format)
+
+        
 
         app = klass(db_input, db_output, **kwargs)
         app.run_application()
@@ -683,6 +688,44 @@ def _perform_analysis(analysis):
             analysis.progress_percent = 100
         analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
         analysis.save()
+
+
+def _get_output_data(request, analysis):
+    output_name = request.QUERY_PARAMS.get('output', False)
+    start = max(int(request.QUERY_PARAMS.get('start', 0)), 0)
+    try:
+        end = start + int(request.QUERY_PARAMS['count'])
+    except (KeyError, ValueError):
+        end = None
+
+    if not output_name:
+        outputs = {}
+
+        for output in models.AppOutput.objects.filter(analysis=analysis):
+            data_model = sensorstore.get_data_model(output,
+                                                    output.analysis.dataset.map.project.id,
+                                                    output.fields)
+
+            outputs[output.name] = {
+                'rows': data_model.objects.count()
+            }
+
+        return Response(outputs)
+
+    output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
+    data_model = sensorstore.get_data_model(output,
+                                            output.analysis.dataset.map.project.id,
+                                            output.fields)
+
+    start = max(start, 0)
+    rows = data_model.objects.all()[start:end]
+
+    # TODO: return JSON or CSV file as StreamingHTTPResponse instead
+    data_response = []
+    for row in rows:
+        data_response.append({field: getattr(row, field) for field in output.fields})
+
+    return Response(data_response)
 
 
 class AnalysisViewSet(viewsets.ModelViewSet):
@@ -733,45 +776,58 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     @link()
     def data(self, request, *args, **kw):
-        analysis = self.get_object()
+        return _get_output_data(request, self.get_object())
+    
+    @link()
+    def download(self, request, *args, **kwargs):
+        '''Retrieve the debug zip file.'''
+        response = ProtectedMediaResponse('analysis/{}.zip'.format(self.get_object().pk))
+        response['Content-Type'] = 'application/zip; name="analysis-debug.zip"'
+        response['Content-Disposition'] = 'filename="analysis-debug.zip"'
+        return response
 
+
+class SharedAnalysisPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return (request.method in permissions.SAFE_METHODS or
+                request.user.is_authenticated())
+
+    def has_object_permission(self, request, view, object):
+        return (request.method in permissions.SAFE_METHODS or
+                models.Project.objects.filter(owner=request.user,
+                    pk=object.analysis.dataset.map.project.pk).exists())
+
+
+class SharedAnalysisViewSet(mixins.CreateModelMixin,
+                            mixins.DestroyModelMixin,
+                            viewsets.ReadOnlyModelViewSet):
+    model = models.SharedAnalysis
+    serializer_class = serializers.SharedAnalysisSerializer
+    permission_classes = (SharedAnalysisPermission,)
+
+    def get_queryset(self):
         try:
-            output_name = request.QUERY_PARAMS['output']
-        except KeyError:
-            outputs = {}
+            key = self.request.QUERY_PARAMS['key']
+            return models.SharedAnalysis.objects.filter(key=key)
+        except (KeyError):
+            pass
 
-            for output in models.AppOutput.objects.filter(analysis=analysis):
-                data_model = sensorstore.get_data_model(output,
-                                                        output.analysis.dataset.map.project.id,
-                                                        output.fields)
+        user = self.request.user
+        if not user.is_authenticated():
+            return []
 
-                outputs[output.name] = {
-                    'rows': data_model.objects.count()
-                }
+        return models.SharedAnalysis.objects.filter(analysis__dataset__map__project__owner=user)
 
-            return Response(outputs)
-
-        output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
-        data_model = sensorstore.get_data_model(output,
-                                                output.analysis.dataset.map.project.id,
-                                                output.fields)
-
-        try:
-            start = int(request.QUERY_PARAMS['start'])
-        except (KeyError, ValueError):
-            start = 0
-
-        try:
-            end = start + int(request.QUERY_PARAMS['count'])
-        except (KeyError, ValueError):
-            end = None
-
-        start = max(start, 0)
-        rows = data_model.objects.all()[start:end]
-
-        # TODO: return JSON or CSV file as StreamingHTTPResponse instead
-        data_response = []
-        for row in rows:
-            data_response.append({field: getattr(row, field) for field in output.fields})
-
+    def pre_save(self, obj):
+        '''Check analysis ownership.'''
+        user = self.request.user
+        if not models.Project.objects.filter(
+                owner=user, pk=obj.analysis.dataset.map.project.pk).exists():
+            raise rest_exceptions.PermissionDenied(
+                    "Invalid analysis pk '{}' - "
+                    'permission denied.'.format(obj.analysis.pk))
         return Response(data_response)
+
+    @link()
+    def data(self, request, *args, **kw):
+        return _get_output_data(request, self.get_object().analysis)

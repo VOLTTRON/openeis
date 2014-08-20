@@ -29,7 +29,7 @@ class XAccelRedirectResponse(HttpResponse):
 
 
 def _read_file(filename):
-    with open(filename) as file:
+    with open(filename,'rb') as file:
         while True:
             data = file.read(4096)
             if not data:

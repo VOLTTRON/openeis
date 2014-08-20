@@ -2,7 +2,7 @@ from optparse import make_option
 
 from django.core.management.base import BaseCommand, CommandError
 
-from openeis.projects.storage.db_output import DatabaseOutputFile
+from openeis.projects.storage.db_output import DatabaseOutputFile, DatabaseOutputZip
 from openeis.projects.storage.db_input import DatabaseInput
 
 from openeis.applications import get_algorithm_class
@@ -72,7 +72,7 @@ class Command(BaseCommand):
     
             output_format = klass.output_format(db_input)
     
-            file_output = DatabaseOutputFile(analysis, output_format)
+            file_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
     
             if( verbosity > 1 ):
                 print('Running application:', application)
