@@ -21024,7 +21024,7 @@
     "fields": {
         "name": "TestAnalysis",
         "dataset": 1,
-        "application": "daily_sumamry",
+        "application": "daily_summary",
         "configuration": "{}",
         "debug": 0,
         "status": "complete",
@@ -21033,6 +21033,7 @@
         "ended": "2014-08-19T00:00:00.001Z",
         "progress_percent": 100,
         "reports": "[\"test report\"]"
-    }
+    },
+    "pk": 1
 }
 ]
