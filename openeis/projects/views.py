@@ -777,6 +777,14 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @link()
     def data(self, request, *args, **kw):
         return _get_output_data(request, self.get_object())
+    
+    @link()
+    def download(self, request, *args, **kwargs):
+        '''Retrieve the debug zip file.'''
+        response = ProtectedMediaResponse('analysis/{}.zip'.format(self.get_object().pk))
+        response['Content-Type'] = 'application/zip; name="analysis-debug.zip"'
+        response['Content-Disposition'] = 'filename="analysis-debug.zip"'
+        return response
 
 
 class SharedAnalysisPermission(permissions.BasePermission):
@@ -819,14 +827,6 @@ class SharedAnalysisViewSet(mixins.CreateModelMixin,
                     "Invalid analysis pk '{}' - "
                     'permission denied.'.format(obj.analysis.pk))
         return Response(data_response)
-
-    @link()
-    def download(self, request, *args, **kwargs):
-        '''Retrieve the debug zip file.'''
-        response = ProtectedMediaResponse('analysis/{}.zip'.format(self.get_object().pk))
-        response['Content-Type'] = 'application/zip; name="analysis-debug.zip"'
-        response['Content-Disposition'] = 'filename="analysis-debug.zip"'
-        return response
 
     @link()
     def data(self, request, *args, **kw):
