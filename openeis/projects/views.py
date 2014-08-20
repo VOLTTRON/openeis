@@ -658,14 +658,14 @@ def _perform_analysis(analysis):
 
         klass = get_algorithm_class(analysis.application)
         output_format = klass.output_format(db_input)
-        
+
         kwargs = analysis.configuration['parameters']
         if analysis.debug:
             db_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
         else:
             db_output = DatabaseOutput(analysis, output_format)
 
-        
+
 
         app = klass(db_input, db_output, **kwargs)
         app.run_application()
@@ -777,7 +777,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @link()
     def data(self, request, *args, **kw):
         return _get_output_data(request, self.get_object())
-    
+
     @link()
     def download(self, request, *args, **kwargs):
         '''Retrieve the debug zip file.'''
@@ -826,7 +826,6 @@ class SharedAnalysisViewSet(mixins.CreateModelMixin,
             raise rest_exceptions.PermissionDenied(
                     "Invalid analysis pk '{}' - "
                     'permission denied.'.format(obj.analysis.pk))
-        return Response(data_response)
 
     @link()
     def data(self, request, *args, **kw):
