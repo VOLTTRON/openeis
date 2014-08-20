@@ -111,7 +111,7 @@ class Application(DriverApplicationBaseClass):
 
         In this application there is only one column in the report table
         "Sensitivity" and the values are drawn from the "value" column of the
-        output data table that is used, LOAD_PROFILE_TABLE_NAME
+        output data table that is used, WEATHER_SENSITIVITY_TABLE_NAME
         '''
 
         column_info = (('value', 'Sensitivity'),)
@@ -149,7 +149,7 @@ class Application(DriverApplicationBaseClass):
         '''
 
         xy_dataset_list = []
-        ''' Send in the oat and load columns of the Weather_Sensitivity table.'''
+        ''' Send in the oat and load columns of the Load_Profile table.'''
         xy_dataset_list.append(reports.XYDataSet(LOAD_PROFILE_TABLE_NAME, 'oat', 'load'))
 
         '''Create a scatterplot which uses the datasets in the xy_dataset_list'''
