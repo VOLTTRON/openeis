@@ -33,7 +33,7 @@ from .storage import sensorstore
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
-from .storage.db_output import DatabaseOutput
+from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
 
@@ -658,9 +658,14 @@ def _perform_analysis(analysis):
 
         klass = get_algorithm_class(analysis.application)
         output_format = klass.output_format(db_input)
-        db_output = DatabaseOutput(analysis, output_format)
-
+        
         kwargs = analysis.configuration['parameters']
+        if analysis.debug:
+            db_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
+        else:
+            db_output = DatabaseOutput(analysis, output_format)
+
+        
 
         app = klass(db_input, db_output, **kwargs)
         app.run_application()
@@ -775,3 +780,11 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             data_response.append({field: getattr(row, field) for field in output.fields})
 
         return Response(data_response)
+
+    @link()
+    def download(self, request, *args, **kwargs):
+        '''Retrieve the debug zip file.'''
+        response = ProtectedMediaResponse('analysis/{}.zip'.format(self.get_object().pk))
+        response['Content-Type'] = 'application/zip; name="analysis-debug.zip"'
+        response['Content-Disposition'] = 'filename="analysis-debug.zip"'
+        return response
