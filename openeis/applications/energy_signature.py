@@ -104,7 +104,7 @@ class Application(DriverApplicationBaseClass):
         report.add_element(summary_table)
 
         xy_dataset_list = []
-        xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'oat', 'load'))
+        xy_dataset_list.append(reports.XYDataSet('Energy Signature', 'oat', 'load'))
 
         scatter_plot = reports.ScatterPlot(xy_dataset_list,
                                            title='Time Series Load Profile',

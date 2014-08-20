@@ -97,7 +97,7 @@ class Application(DriverApplicationBaseClass):
         report.add_element(elec_bar_chart)
         
         xy_dataset_list = []
-        xy_dataset_list.append(reports.XYDataSet('Natural Gas', 'Timestamp', 'Natural Gas Load'))
+        xy_dataset_list.append(reports.XYDataSet('Natural Gas', 'year', 'natgas'))
         natgas_bar_chart = reports.BarChart(xy_dataset_list, 
                                      title='Annual Building Consumption', 
                                      x_label='Year', 
