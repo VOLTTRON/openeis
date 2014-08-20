@@ -8,29 +8,30 @@ This section describes how to install OpenEIS, under a Unix-like shell.
 
 ## Requirements
 
-Requires:
+Installing OpenEIS requires:
 
 + Python 3
++ OpenEIS project files
 
 *TODO: Describe getting files, or add pointer to documentation on getting and updating the files.*
+
+The instructions shown here assume the OpenEIS project files reside in a root directory called `openeis_root`.
+However, the root directory can have any name.
 
 
 ## Create a virtual environment
 
 OpenEIS generally should be run through a virtual environment.
 
-Create and run the virtual environment from the root directory that contains the OpenEIS project files.
-This directory can have any name.
-The examples here assume this directory is called `openeis_root`:
+Create and the virtual environment by running `bootstrap.py` from the root directory:
 
     > cd  openeis_root
-    > ls bootstrap.py
-
-Create the virtual environment:
-
+    > ls  bootstrap.py
     > python3  bootstrap.py
 
-This will also install Python's package manager, `pip`, as well as [Django](https://www.djangoproject.com/).
+This will create a virtual environment, housed in directory `openeis_root/env`.
+
+The virtual environment will include Python's package manager, `pip`, as well as [Django](https://www.djangoproject.com/).
 Django is the web framework used in OpenEIS.
 It provides a development server to work on, and an easy database to work with.
 

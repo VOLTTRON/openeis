@@ -224,7 +224,6 @@ class DataSetPreviewSerializer(serializers.Serializer):
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
-        
     class Meta:
         model = models.Analysis
         read_only_fields = ('added', 'started', 'ended', 'progress_percent',
@@ -234,6 +233,18 @@ class AnalysisUpdateSerializer(AnalysisSerializer):
     class Meta:
         model = AnalysisSerializer.Meta.model
         read_only_fields = ('dataset', 'application', 'configuration') + AnalysisSerializer.Meta.read_only_fields
+
+
+class SharedAnalysisSerializer(serializers.ModelSerializer):
+    analysis = serializers.PrimaryKeyRelatedField()
+    reports = serializers.SerializerMethodField('_get_reports')
+
+    class Meta:
+        model = models.SharedAnalysis
+        read_only_fields = ('key',)
+
+    def _get_reports(self, obj):
+        return obj.analysis.reports
 
 
 class ApplicationSerializer(serializers.Serializer):

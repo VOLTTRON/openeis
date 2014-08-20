@@ -50,7 +50,6 @@ operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 '''
 import datetime, logging
-from collections import Counter
 from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor, 
                                   ConfigDescriptor,
@@ -85,7 +84,7 @@ class Application(DrivenApplicationBaseClass):
                   oat_mat_check=None,open_damper_threshold=None,
                     
                   oaf_economizing_threshold=None,oa_ra_tempdiff_threshold=None,cooling_enabled_threshold=None,
-                  minimum_damper_signal = None,
+                  minimum_damper_setpoint = None, excess_damper_threshold=None,
                     
                   excess_oaf_threshold=None,
                   desired_oaf=None,
@@ -111,7 +110,7 @@ class Application(DrivenApplicationBaseClass):
         Application.pre_requiste_messages = []
         Application.pre_msg_time = []
 
-        '''Algorithm thresholds (Configurable)'''
+        '''Application thresholds (Configurable)'''
         self.data_window = float(data_window)
         self.mat_low_threshold = float(mat_low_threshold)
         self.mat_high_threshold = float(mat_high_threshold)
@@ -146,12 +145,13 @@ class Application(DrivenApplicationBaseClass):
         self.econ2 = econ_correctly_on(oaf_economizing_threshold, open_damper_threshold,
                                 self.economizer_type,data_window, cfm, eer, data_sample_rate)
         self.econ3 = econ_correctly_off(device_type,self.economizer_type,data_window,
-                                        minimum_damper_signal,cooling_enabled_threshold,desired_oaf, cfm, eer, data_sample_rate)
+                                        minimum_damper_setpoint, excess_damper_threshold, cooling_enabled_threshold,
+                                        desired_oaf, cfm, eer, data_sample_rate)
         self.econ4 = excess_oa_intake(self.economizer_type, device_type,data_window, excess_oaf_threshold,
-                                      minimum_damper_signal, desired_oaf, cfm, eer, data_sample_rate)
-        self.econ5 = insufficient_oa_intake(device_type, self.economizer_type, data_window, ventilation_oaf_threshold,minimum_damper_signal,
+                                      minimum_damper_setpoint, excess_damper_threshold, desired_oaf, cfm, 
+                                      eer, data_sample_rate)
+        self.econ5 = insufficient_oa_intake(device_type, self.economizer_type, data_window, ventilation_oaf_threshold, minimum_damper_setpoint,
                                             insufficient_damper_threshold, desired_oaf)
-        
     @classmethod
     def get_config_parameters(cls):
         '''
@@ -167,7 +167,8 @@ class Application(DrivenApplicationBaseClass):
             'oat_low_threshold': ConfigDescriptor(float, 'Outdoor-air sensor low limit'),
             'oat_high_threshold': ConfigDescriptor(float, 'Outdoor-air sensor high limit'),
             'temp_deadband': ConfigDescriptor(float,'Economizer control temperature deadband'),
-            'minimum_damper_signal': ConfigDescriptor(float, 'Minimum outdoor-air damper command'),
+            'minimum_damper_setpoint': ConfigDescriptor(float, 'Minimum outdoor-air damper setpoint'),
+            'excess_damper_threshold': ConfigDescriptor(float, 'Value above the minimum damper setpoint at which a fault will be called'),
             'cooling_enabled_threshold': ConfigDescriptor(float, 'Amount cooling coil valve must be open for diagnostic to consider unit in cooling mode'),
             'insufficient_damper_threshold': ConfigDescriptor(float, 'Minimum damper position to ensure proper ventilation'),
             'ventilation_oaf_threshold':  ConfigDescriptor(float, 'Threshold on OAF diagnostics'),
@@ -242,9 +243,9 @@ class Application(DrivenApplicationBaseClass):
         return result
 
     def run(self,current_time,points):
-        """
-        Check algorithm pre-quisites and assemble data set for analysis.
-        """
+        '''
+        Check application pre-quisites and assemble data set for analysis.
+        '''
         device_dict = {}
         diagnostic_result = Results()
 
@@ -339,7 +340,7 @@ class Application(DrivenApplicationBaseClass):
 
         if abs(oatemp - ratemp) < self.oa_ra_tempdiff_threshold:
             diagnostic_result.log('Conditions are not favorable for diagnostics ' 
-                                  'corresponding to {timestamp} will not be used'.format(timestamp=str(current_time)), logging.INFO)
+                                  'data corresponding to {timestamp} will not be used.'.format(timestamp=str(current_time)), logging.INFO)
             return diagnostic_result
 
         device_type_error = False
@@ -390,9 +391,9 @@ class Application(DrivenApplicationBaseClass):
     
     
 class temperature_sensor_dx(object):
-    """
+    '''
     Air-side HVAC diagnostic to check the functionality of the air temperature sensors in an AHU/RTU.
-    """
+    '''
     def __init__(self, data_window,temp_difference_threshold,oat_mat_check,temp_damper_threshold):
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -403,7 +404,7 @@ class temperature_sensor_dx(object):
 
         temperature_sensor_dx.temp_sensor_problem = None
 
-        '''Algorithm thresholds (Configurable)'''
+        '''Application thresholds (Configurable)'''
         self.data_window = float(data_window)
         self.temp_difference_threshold = float(temp_difference_threshold)
         self.oat_mat_check = float(oat_mat_check)
@@ -411,7 +412,7 @@ class temperature_sensor_dx(object):
  
     def econ_alg1(self, diagnostic_result,cooling_call, oatemp, ratemp, matemp, damper_signal, current_time):
         '''
-        Check algorithm pre-quisites and assemble data set for analysis.
+        Check application pre-quisites and assemble data set for analysis.
         '''
         if (damper_signal) > self.temp_damper_threshold :
             self.open_damper_oat.append(oatemp)
@@ -430,9 +431,9 @@ class temperature_sensor_dx(object):
         return diagnostic_result
    
     def temperature_sensor_dx(self, result, current_time):
-        """
+        '''
         If the detected problems(s) are consistent then generate a fault message(s).
-        """
+        '''
         avg_oa_temp = sum(self.oa_temp_values)/len(self.oa_temp_values)
         avg_ra_temp = sum(self.ra_temp_values)/len(self.ra_temp_values)
         avg_ma_temp = sum(self.ma_temp_values)/len(self.ma_temp_values)
@@ -452,7 +453,7 @@ class temperature_sensor_dx(object):
             if open_damper_check > self.oat_mat_check:
                 temperature_sensor_dx.temp_sensor_problem = True
                 diagnostic_message = '{name}: OAT and MAT and sensor readings are not consistent \
-                                      when the outdoor-air damper is fully open'.format(name=econ1)
+                                      when the outdoor-air damper is fully open.'.format(name=econ1)
                 color_code = 'RED'
                 dx_table = {
                     'datetime': str(current_time), 
@@ -468,7 +469,7 @@ class temperature_sensor_dx(object):
         if ((avg_oa_temp - avg_ma_temp) > self.temp_difference_threshold and 
             (avg_ra_temp - avg_ma_temp) > self.temp_difference_threshold):
             diagnostic_message = ('{name}: Temperature sensor problem detected.' 
-                                 'Mixed-air temperature is less than outdoor-air and return-air temperature'.format(name=econ1))
+                                 'Mixed-air temperature is less than outdoor-air and return-air temperature.'.format(name=econ1))
             color_code = 'RED'
             dx_table = {
                     'datetime': str(current_time), 
@@ -482,7 +483,7 @@ class temperature_sensor_dx(object):
         elif((avg_ma_temp - avg_oa_temp) > self.temp_difference_threshold and 
              (avg_ma_temp - avg_ra_temp) > self.temp_difference_threshold):
             diagnostic_message = ('{name}: Temperature sensor problem detected. '  
-                                 'Mixed-air temperature is greater than outdoor-air and return-air temperature'.format(name=econ1))
+                                 'Mixed-air temperature is greater than outdoor-air and return-air temperature.'.format(name=econ1))
             temperature_sensor_dx.temp_sensor_problem = True
             color_code = 'RED'
             dx_table = {
@@ -529,9 +530,9 @@ class econ_correctly_on(object):
         self.cfm = cfm
         self.eer = float(eer)
 
-        '''Algorithm result messages'''
-        self.alg_result_messages =['{name}: Conditions are favorable for economizing but the damper is frequently below 100% open'.format(name=econ2),
-                                   '{name}: No problems detected'.format(name=econ2),
+        '''Application result messages'''
+        self.alg_result_messages =['{name}: Conditions are favorable for economizing but the damper is frequently below 100% open.'.format(name=econ2),
+                                   '{name}: No problems detected.'.format(name=econ2),
                                    '{name}: Conditions are favorable for economizing and the damper is 100% '
                                    'open but the OAF indicates the unit is not brining in near 100% OA'.format(name=econ2)]
         
@@ -550,7 +551,7 @@ class econ_correctly_on(object):
         self.ma_temp_values.append(matemp) 
         self.ra_temp_values.append(ratemp)
         self.timestamp.append(current_time)
-        self.ra_temp_values.append(damper_signal)
+        self.damper_signal_values.append(damper_signal)
 
         time_check =  datetime.timedelta(minutes=(self.data_window))
 
@@ -603,6 +604,7 @@ class econ_correctly_on(object):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
+        self.damper_signal_values = []
         diagnostic_message = []
         return result
 
@@ -611,8 +613,9 @@ class econ_correctly_off(object):
     '''
     Air-side HVAC diagnostic to check if an AHU/RTU is economizing when it should not.
     '''
-    def __init__(self,device_type,economizer_type,data_window,
-                minimum_damper_signal,cooling_enabled_threshold, desired_oaf, cfm, eer, data_sample_rate):
+    def __init__(self, economizer_type, device_type, data_window, excess_oaf_threshold,
+                minimum_damper_setpoint, excess_damper_threshold, desired_oaf, cfm, eer, 
+                data_sample_rate):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -621,43 +624,38 @@ class econ_correctly_off(object):
         self.cfm = cfm
         self.eer = float(eer)
         self.timestamp = []
-        self.economizer_diagnostic2_result = []
  
-        '''Algorithm result messages'''
-        self.alg_result_messages =['{name}: Unit should be economizing, no problem detected'.format(name=econ3),
-                                   '{name}: The outdoor-air damper should be at the minimum position but is significantly above that value'.format(name=econ3),
-                                   '{name}: No problems detected'.format(name=econ3),
-                                   '{name}: The diagnostic led to inconclusive results'.format(name=econ3)]
+        '''Application result messages'''
+        self.alg_result_messages = ['{name}: The outdoor-air damper should be at the minimum position but is significantly above that value.'.format(name=econ3),
+                                    '{name}: No problems detected.'.format(name=econ3),
+                                    '{name}: The diagnostic led to inconclusive results,'
+                                    ' could not verify the status of the economizer: '.format(name=econ3)]
         self.data_sample_rate = data_sample_rate
         self.device_type = device_type
         self.data_window = float(data_window)
         self.economizer_type = economizer_type
-        self.minimum_damper_signal = float(minimum_damper_signal)
-        self.cooling_enabled_threshold = float(cooling_enabled_threshold)
+        self.minimum_damper_setpoint = float(minimum_damper_setpoint)
+        self.excess_damper_threshold = float(excess_damper_threshold)
         self.desired_oaf = float(desired_oaf)
     
-    def econ_alg3(self, diagnostic_result,cooling_call, oatemp, ratemp, matemp, damper_signal, economizer_conditon, current_time):
+    def econ_alg3(self, diagnostic_result, cooling_call, oatemp, ratemp, matemp, damper_signal, economizer_conditon, current_time):
         '''
-        Check algorithm pre-quisites and economizer conditions (Problem or No Problem).
+        Check application pre-quisites and economizer conditions (Problem or No Problem).
         '''
-        if economizer_conditon and cooling_call:
-            self.economizer_diagnostic2_result.append(1.0)
-        elif economizer_conditon:
-            self.economizer_diagnostic2_result.append(4.0)
+        if economizer_conditon:
+            diagnostic_result.log(''.join([self.alg_result_messages[2],(' Data corresponding to {timestamp} will not '
+                                           'be used for this diagnostic.'.format(timestamp=str(current_time)))]),
+                                                                                                 logging.INFO)
+            return diagnostic_result
         else:
-            if damper_signal <= self.minimum_damper_signal:
-                self.economizer_diagnostic2_result.append(3.0)
-            else:
-                self.economizer_diagnostic2_result.append(2.0)
-
-        self.oa_temp_values.append(oatemp)
-        self.ma_temp_values.append(matemp) 
-        self.ra_temp_values.append(ratemp)
-        self.timestamp.append(current_time)
-        self.ra_temp_values.append(damper_signal)
-        
-        time_check =  datetime.timedelta(minutes=(self.data_window))
-        self.timestamp.append(current_time)
+            self.damper_signal_values.append(damper_signal)
+            self.oa_temp_values.append(oatemp)
+            self.ma_temp_values.append(matemp) 
+            self.ra_temp_values.append(ratemp)
+            self.timestamp.append(current_time)
+            
+            time_check =  datetime.timedelta(minutes=(self.data_window))
+            self.timestamp.append(current_time)
  
         if ((self.timestamp[-1]-self.timestamp[0]) >= time_check and
             len(self.timestamp) >= 30):
@@ -669,30 +667,25 @@ class econ_correctly_off(object):
         If the detected problems(s) are consistent then generate a fault message(s).
         '''
         desired_oaf = self.desired_oaf/100.0
-        alg_message_count = Counter(self.economizer_diagnostic2_result)
-        alg_message_count = alg_message_count.most_common(1)
+        
+        energy_calc = [(1.08*self.cfm*(ma - (oa*desired_oaf + (ra*(1.0-desired_oaf))))/(1000.0*self.eer)) for
+                       ma, oa, ra in zip(self.ma_temp_values, self.oa_temp_values, self.ra_temp_values) 
+                       if (ma - (oa*desired_oaf + (ra*(1.0-desired_oaf)))) > 0]
+
+        avg_damper = sum(self.damper_signal_values)/len(self.damper_signal_values)
         color_code = 'GREEN'
         energy_impact = 0
 
-        if alg_message_count[0][1] > len(self.timestamp)*(0.35):
-            diagnostic_message = self.alg_result_messages[int(alg_message_count[0][0]-1)]
-            if alg_message_count[0][0] == 1.0 or alg_message_count[0][0] == 3.0:
-                color_code = 'GREEN'
-            elif alg_message_count[0][0] == 2.0:
-                color_code = 'RED'
-            else:
-                color_code = 'GREY'
+        if avg_damper - self.minimum_damper_setpoint > self.excess_damper_threshold:
+            diagnostic_message = self.alg_result_messages[0]
+            color_code = 'RED'
         else:
-            color_code = 'GREY'
-            diagnostic_message = '{name}: This diagnostic was inconclusive'.format(name = econ3)
-
-        energy_calc = [(1.08*self.cfm*(ma - (oa*desired_oaf + (ra*(1.0-desired_oaf))))/(1000.0*self.eer)) for
-                       ma, oa, ra in zip(self.ma_temp_values, self.oa_temp_values, self.ra_temp_values) 
-                       if (ma - (oa*desired_oaf + (ra*(1.0-desired_oaf))) > 0 and color_code == 'RED')]
-
-        if energy_calc:
+            diagnostic_message = '{name}: No problems detected.'.format(name=econ3)
+        
+        if energy_calc and color_code == 'RED':
             dx_time = (len(energy_calc) - 1)*self.data_sample_rate if len(energy_calc) > 1 else 1.0
             energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*dx_time)
+
 
         dx_table = {'datetime': str(current_time), 
                     'diagnostic_name': econ3, 'diagnostic_message': diagnostic_message, 
@@ -704,17 +697,21 @@ class econ_correctly_off(object):
         result.log(diagnostic_message, logging.INFO)
         Application.pre_msg_time = []
         Application.pre_requiste_messages = []
+        self.oa_temp_values = []
+        self.ra_temp_values = []
+        self.ma_temp_values = []
+        self.damper_signal_values = []
         self.timestamp = []
-        self.economizer_diagnostic2_result = []
         return result
-    
+ 
 
 class excess_oa_intake(object):
     '''
     Air-side HVAC diagnostic to check if an AHU/RTU bringing in excess outdoor air.
     '''
-    def __init__(self,economizer_type,device_type,data_window,excess_oaf_threshold,
-                minimum_damper_signal,desired_oaf, cfm, eer, data_sample_rate):
+    def __init__(self, economizer_type, device_type, data_window, excess_oaf_threshold,
+                minimum_damper_setpoint, excess_damper_threshold,
+                desired_oaf, cfm, eer, data_sample_rate):
 
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -725,21 +722,22 @@ class excess_oa_intake(object):
         self.eer = float(eer)
         self.timestamp = []
         
-        '''Algorithm thresholds (Configurable)'''
+        '''Application thresholds (Configurable)'''
         self.data_sample_rate = data_sample_rate
         self.economizer_type = economizer_type
         self.data_window = float(data_window)
         self.excess_oaf_threshold = float(excess_oaf_threshold)
-        self.minimum_damper_signal = float(minimum_damper_signal)
+        self.minimum_damper_setpoint = float(minimum_damper_setpoint)
+        self.excess_damper_threshold = float(excess_damper_threshold)
         self.desired_oaf = float(desired_oaf)
             
     def econ_alg4(self, diagnostic_result,cooling_call, oatemp, ratemp, matemp, damper_signal, economizer_conditon, current_time):
         '''
-        Check algorithm pre-quisites and assemble data set for analysis.
+        Check application pre-quisites and assemble data set for analysis.
         '''
         if economizer_conditon:
             diagnostic_result.log('{name}: The unit may be economizing, data corresponding to {timestamp}'
-                                  'will not be used'.format(timestamp=str(current_time),name=econ4), logging.INFO)
+                                  ' will not be used for this diagnostic.'.format(timestamp=str(current_time),name=econ4), logging.INFO)
             return diagnostic_result
 
         self.damper_signal_values.append(damper_signal)
@@ -760,7 +758,7 @@ class excess_oa_intake(object):
         If the detected problems(s) are consistent then generate a fault message(s).
         '''
         oaf = [(m-r)/(o-r) for o,r,m in zip(self.oa_temp_values,self.ra_temp_values,self.ma_temp_values)]
-
+        diagnostic_message = ''
         avg_oaf = sum(oaf)/len(oaf)*100
         avg_damper = sum(self.damper_signal_values)/len(self.damper_signal_values)
         desired_oaf = self.desired_oaf/100.0
@@ -769,6 +767,7 @@ class excess_oa_intake(object):
                        ma, oa, ra in zip(self.ma_temp_values, self.oa_temp_values, self.ra_temp_values) 
                        if (ma - (oa*desired_oaf + (ra*(1.0-desired_oaf)))) > 0]
         
+        diagnostic_message = ''
         color_code = 'GREEN'
         energy_impact = 0
         self.oa_temp_values = []
@@ -779,7 +778,7 @@ class excess_oa_intake(object):
         Application.pre_requiste_messages = []
         
         if avg_oaf < 0 or avg_oaf > 125.0:
-            diagnostic_message = '{name}: Inconclusive result, the OAF calculation led to an unexpected value'.format(name=econ4)
+            diagnostic_message = '{name}: Inconclusive result, the OAF calculation led to an unexpected value.'.format(name=econ4)
             color_code = 'GREY'
             result.log(diagnostic_message, logging.INFO)
             dx_table = {
@@ -792,53 +791,40 @@ class excess_oa_intake(object):
             result.insert_table_row('Economizer_dx', dx_table)
             return result
 
-        if avg_damper > self.minimum_damper_signal:
+        if avg_damper - self.minimum_damper_setpoint > self.excess_damper_threshold:
             diagnostic_message = ('{name}: The damper should be at the minimum position '
-                                      'for ventilation but is significantly higher than this value'.format(name=econ4))
+                                      'for ventilation but is significantly higher than this value.'.format(name=econ4))
             color_code = 'RED'
-            
+         
             if energy_calc:
                 dx_time = (len(energy_calc) - 1)*self.data_sample_rate if len(energy_calc) > 1 else 1.0
                 energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*dx_time)
-                
-            dx_table = {
-                    'datetime': str(current_time), 
-                    'diagnostic_name': econ4, 
-                    'diagnostic_message': diagnostic_message, 
-                    'energy_impact': energy_impact,
-                    'color_code': color_code
-                    }
-            result.insert_table_row('Economizer_dx', dx_table)
-            return result
 
         if avg_oaf - self.desired_oaf > self.excess_oaf_threshold:
-            diagnostic_message = ('{name}: Excess outdoor-air is being provided, this could increase '
-                                      'heating and cooling energy consumption'.format(name=econ4))
+            if diagnostic_message:
+                diagnostic_message += ('Excess outdoor-air is being provided, this could increase '
+                                      'heating and cooling energy consumption.')
+            else:
+                diagnostic_message = ('{name}: Excess outdoor-air is being provided, this could increase '
+                                      'heating and cooling energy consumption.'.format(name=econ4))
             color_code = 'RED'
             
             if energy_calc:
                 dx_time = (len(energy_calc) - 1)*self.data_sample_rate if len(energy_calc) > 1 else 1.0
                 energy_impact = (sum(energy_calc)*60.0)/(len(energy_calc)*dx_time)
                 
-            dx_table = {
+            
+        elif not diagnostic_message:
+            diagnostic_message = ('{name}: No problems detected for this diagnostic.'.format(name=econ4))
+            color_code = 'GREEN'
+            
+        dx_table = {
                     'datetime': str(current_time), 
                     'diagnostic_name': econ4, 
                     'diagnostic_message': diagnostic_message, 
                     'energy_impact': energy_impact,
                     'color_code': color_code
                     }
-        else:
-            diagnostic_message = ('{name}: The calculated outdoor-air fraction is within configured '
-                                  'limits'.format(name=econ4))
-            color_code = 'GREEN'
-            dx_table = {
-                    'datetime': str(current_time), 
-                    'diagnostic_name': econ4, 
-                    'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
-                    'color_code': color_code
-                    }
-
         result.insert_table_row('Economizer_dx', dx_table)
         result.log(diagnostic_message, logging.INFO)
 
@@ -851,7 +837,7 @@ class insufficient_oa_intake(object):
     Air-side HVAC diagnostic to check if an AHU/RTU bringing in insufficient outdoor air.
     '''
     def __init__(self,device_type,economizer_type,data_window,
-                ventilation_oaf_threshold,minimum_damper_signal,
+                ventilation_oaf_threshold,minimum_damper_setpoint,
                 insufficient_damper_threshold,desired_oaf):
 
             self.oa_temp_values = []
@@ -861,18 +847,17 @@ class insufficient_oa_intake(object):
             self.cool_call_values = []
             self.timestamp = []
     
-            '''Algorithm thresholds (Configurable)'''
+            '''Application thresholds (Configurable)'''
             self.data_window = float(data_window)
             self.ventilation_oaf_threshold = float(ventilation_oaf_threshold)
             self.insufficient_damper_threshold = float(insufficient_damper_threshold)
-            self.minimum_damper_signal = float(minimum_damper_signal)
+            self.minimum_damper_setpoint = float(minimum_damper_setpoint)
             self.desired_oaf = float(desired_oaf)
 
     def econ_alg5(self, diagnostic_result,cooling_call, oatemp, ratemp, matemp, damper_signal, economizer_conditon, current_time): 
         '''
-        Check algorithm pre-quisites and assemble data set for analysis.
+        Check application pre-quisites and assemble data set for analysis.
         '''
-        color_code = 'GREEN'
         if economizer_conditon:
             diagnostic_message = ('{name}: The unit may be economizing, data corresponding to {timestamp}'
                                   'will not be'.format(timestamp=str(current_time),name=econ5))
@@ -899,7 +884,8 @@ class insufficient_oa_intake(object):
         oaf = [(m-r)/(o-r) for o,r,m in zip(self.oa_temp_values,self.ra_temp_values,self.ma_temp_values)]
         avg_oaf = sum(oaf)/len(oaf)*100.0
         avg_damper_signal = sum(self.damper_signal_values)/len(self.damper_signal_values)
-        
+        diagnostic_message = ''
+        energy_impact = 0
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -908,56 +894,42 @@ class insufficient_oa_intake(object):
         self.timestamp = []
 
         if avg_oaf < 0 or avg_oaf > 125.0:
-            diagnostic_message = '{name}: Inconclusive result, the OAF calculation led to an unexpected value'.format(name=econ4)
+            diagnostic_message = '{name}: Inconclusive result, the OAF calculation led to an unexpected value.'.format(name=econ4)
             color_code = 'GREY'
             result.log(diagnostic_message, logging.INFO)
             dx_table = {
                     'datetime': str(current_time), 
                     'diagnostic_name': econ4, 
                     'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
+                    'energy_impact': energy_impact,
                     'color_code': color_code
                     }
             result.insert_table_row('Economizer_dx', dx_table)
             return result
 
-        diagnostic_message = []
-        if (self.minimum_damper_signal - avg_damper_signal) > self.insufficient_damper_threshold:
-            diagnostic_message = ('{name}: Outdoor-air damper is significantly below the minimum '
+        if (self.minimum_damper_setpoint - avg_damper_signal) > self.insufficient_damper_threshold:
+            diagnostic_message = ('{name}: The outdoor-air damper is significantly below the minimum '
                                       'configured damper position'.format(name=econ5))
-            
             color_code = 'RED'
-            dx_table = {
-                    'datetime': str(current_time), 
-                    'diagnostic_name': econ5, 
-                    'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
-                    'color_code': color_code
-                    }
-            result.insert_table_row('Economizer_dx', dx_table)
-            return result
 
         if (self.desired_oaf - avg_oaf) <= self.ventilation_oaf_threshold:
-            diagnostic_message = ('{name}: Insufficient outdoor-air is being provided for ventilation'.format(name=econ5))
+            if diagnostic_message:
+                diagnostic_message += (' Insufficient outdoor-air is being provided for ventilation.')
+            else:
+                diagnostic_message = ('{name}: Insufficient outdoor-air is being provided for ventilation'.format(name=econ5))
             color_code = 'RED'
-            dx_table = {
-                    'datetime': str(current_time), 
-                    'diagnostic_name': econ5, 
-                    'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
-                    'color_code': color_code
-                    }
-        else:
+            
+        elif not diagnostic_message:
             diagnostic_message = ('{name}: The calculated outdoor-air fraction was within acceptable limits'.format(name=econ5))
             color_code = 'GREEN'
-            dx_table = {
+            
+        dx_table = {
                     'datetime': str(current_time), 
                     'diagnostic_name': econ5, 
                     'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
+                    'energy_impact': energy_impact,
                     'color_code': color_code
                     }
-
         result.insert_table_row('Economizer_dx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
