@@ -83,12 +83,12 @@ class Application(DriverApplicationBaseClass):
         for that viz
         """
         
-        report = reports.Report('Heat Map for Load')
+        report = reports.Report('Heat Map for Building Energy Load')
         
         text_blurb = reports.TextBlurb(text="Analysis of the extent of a building's daily, weekly, and seasonal shut off.")
         report.add_element(text_blurb)
         
-        heat_map = reports.HeatMap(table_name='Building Energy Heat Map', 
+        heat_map = reports.HeatMap(table_name='Heat_Map', 
                                    x_column='hour', 
                                    y_column='date', 
                                    z_column='load',

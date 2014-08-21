@@ -89,17 +89,17 @@ class Application(DriverApplicationBaseClass):
         report.add_element(text_blurb)
         
         xy_dataset_list = []
-        xy_dataset_list.append(reports.XYDataSet('Electricity', 'year', 'load'))
+        xy_dataset_list.append(reports.XYDataSet('Longitudinal_BM', 'year', 'load'))
         elec_bar_chart = reports.BarChart(xy_dataset_list, 
-                                     title='Annual Building Consumption', 
+                                     title='Annual Building Consumption (Electricity)', 
                                      x_label='Year', 
                                      y_label='Electric Load')
         report.add_element(elec_bar_chart)
         
         xy_dataset_list = []
-        xy_dataset_list.append(reports.XYDataSet('Natural Gas', 'year', 'natgas'))
+        xy_dataset_list.append(reports.XYDataSet('Longitudinal_BM', 'year', 'natgas'))
         natgas_bar_chart = reports.BarChart(xy_dataset_list, 
-                                     title='Annual Building Consumption', 
+                                     title='Annual Building Consumption (Natural Gas)', 
                                      x_label='Year', 
                                      y_label='Natural Gas Load')
         report.add_element(natgas_bar_chart)
@@ -132,7 +132,7 @@ class Application(DriverApplicationBaseClass):
         merge_load_gas = self.inp.merge(load_by_year, gas_by_year)
 
         for x in merge_load_gas:
-            self.out.insert_row("Longitudinal_BM", {
+            self.out.insert_row('Longitudinal_BM', {
                 'year': x['time'],
                 'load': x['load'][0],
                 'natgas': x['natgas'][0]
