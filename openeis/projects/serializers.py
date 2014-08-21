@@ -243,14 +243,12 @@ class AnalysisUpdateSerializer(AnalysisSerializer):
 
 class SharedAnalysisSerializer(serializers.ModelSerializer):
     analysis = serializers.PrimaryKeyRelatedField()
-    reports = serializers.SerializerMethodField('_get_reports')
+    name = serializers.CharField(source='analysis.name', read_only=True)
+    reports = serializers.CharField(source='analysis.reports', read_only=True)
 
     class Meta:
         model = models.SharedAnalysis
         read_only_fields = ('key',)
-
-    def _get_reports(self, obj):
-        return obj.analysis.reports
 
 
 class ApplicationSerializer(serializers.Serializer):

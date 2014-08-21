@@ -156,6 +156,7 @@ class TestAnalysesApi(OpenEISTestBase):
         # Can access shared analysis with key
         response = anon_client.get('/api/shared-analyses/1?key=' + key)
         self.assertEqual(response.data['analysis'], 1)
+        self.assertEqual(response.data['name'], 'TestAnalysis')
         self.assertEqual(response.data['reports'], ['test report'])
 
         # Owner can revoke sharing
