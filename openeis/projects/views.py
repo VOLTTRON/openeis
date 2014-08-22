@@ -106,6 +106,25 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return HttpResponseRedirect(reverse('datafile-list', request=request) +
                                     '?project={}'.format(project.id))
 
+    @action()
+    def clone(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.DATA)
+        if not serializer.is_valid():
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Fake a clone until clone_project (or similar) is implemented
+        # clone = clone_project(project=self.get_object(),
+        #                       name=request.DATA['name'])
+        # if not clone:
+        #     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        clone = self.get_object()
+        clone.id *= 100
+        clone.name = request.DATA['name']
+
+        serializer = self.get_serializer(clone)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class FileViewSet(mixins.ListModelMixin,
                   mixins.RetrieveModelMixin,
