@@ -7,6 +7,7 @@ Shows the building performance relative to a comparable peer group.
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
+from openeis.applications import reports
 import logging
 from django.db.models import Sum
 from .utils.gen_xml_tgtfndr import gen_xml_targetFinder
@@ -86,7 +87,7 @@ class Application(DriverApplicationBaseClass):
         value_topic = '/'.join(output_topic_base+['crossection', 'value'])
 
         output_needs = {
-            'CrossSectionalBM': {
+            'CrossSectional_BM': {
                 'Metric Name':OutputDescriptor('string', metric_name_topic),
                 'Value':OutputDescriptor('string', value_topic)
                 }
@@ -103,9 +104,33 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        display_elements = []
+        report = reports.Report('Cross Sectional Benchmarking, \
+                                 ENERGY STAR Portfolio Manager')
+        
+        text_blurb = reports.TextBlurb(text="Determine the performance of your \
+                                            building relative to a comparable \
+                                            peer group using Portfolio Manager .")
+        report.add_element(text_blurb)      
 
-        return display_elements
+
+        column_info = (('Value', 'Target Finder Score'),)
+        
+        espmscore_table = reports.Table('CrossSectional_BM',
+                                      column_info,
+                                      title='ENERGY STAR Score',
+                                      description='Scores of 75 or higher qualify for ENERGY STAR Label.\
+                                                   Scores of 50 indicate average energy performance.')
+
+        report.add_element(espmscore_table)
+        
+        text_blurb = reports.TextBlurb(text="Scores of 75 or higher qualify for ENERGY STAR Label.\
+                                             Scores of 50 indicate average energy performance.")
+        report.add_element(text_blurb)
+        # list of report objects
+        report_list = [report]
+        
+        return report_list
+
 
     def execute(self):
         #Called after User hits GO
@@ -157,15 +182,7 @@ class Application(DriverApplicationBaseClass):
             self.out.log(errmessage, logging.WARNING)
         else:
             self.out.log('Analysis successful', logging.INFO)
-            self.out.insert_row('CrossSectionalBM', {
-                'Metric Name': 'Year',
-                'Value': recent_record[0]
-                })
-            self.out.insert_row('CrossSectionalBM', {
-                'Metric Name': 'Target Finder Median Score',
-                'Value': str(PMMetrics['medianScore'][0])
-                })
-            self.out.insert_row('CrossSectionalBM', {
+            self.out.insert_row('CrossSectional_BM', {
                 'Metric Name': 'Target Finder Score',
                 'Value': str(PMMetrics['designScore'][0])
                 })
