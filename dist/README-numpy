@@ -1,0 +1,3 @@
+In order to avoid the problems with compiling numpy on windows systems, we 
+include this zip file.  The contents of the numpy*.zip file should be put
+in the site-packages directory of the virtual environment.
