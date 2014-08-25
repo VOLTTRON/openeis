@@ -12,7 +12,7 @@ def clone_project(project, new_project_name):
     project.name = new_project_name
     project.save()
     
-    clone_data_files(list(data_files), project)
+    #clone_data_files(list(data_files), project)
     clone_sensor_map_definition(list(sensor_maps), project)
         
 def clone_data_files(data_files_list, project):
