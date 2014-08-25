@@ -15,6 +15,8 @@ def clone_project(project, new_project_name):
     #clone_data_files(list(data_files), project)
     clone_sensor_map_definition(list(sensor_maps), project)
         
+    return project
+
 def clone_data_files(data_files_list, project):
     for data_file in data_files_list:
         data_file.id = None

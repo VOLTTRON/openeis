@@ -30,6 +30,7 @@ from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
 from .storage import sensorstore
+from .storage.clone import clone_project
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
@@ -113,15 +114,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # Fake a clone until clone_project (or similar) is implemented
-        # clone = clone_project(project=self.get_object(),
-        #                       name=request.DATA['name'])
-        # if not clone:
-        #     return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        clone = self.get_object()
-        clone.id *= 100
-        clone.name = request.DATA['name']
-
+        clone = clone_project(self.get_object(), request.DATA['name'])
         serializer = self.get_serializer(clone)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
