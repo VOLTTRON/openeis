@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*- {{{
-# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -28,7 +25,7 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 #
-
+#
 # This material was prepared as an account of work sponsored by an
 # agency of the United States Government.  Neither the United States
 # Government nor the United States Department of Energy, nor Battelle,
@@ -42,7 +39,7 @@
 # Reference herein to any specific commercial product, process, or
 # service by trade name, trademark, manufacturer, or otherwise does
 # not necessarily constitute or imply its endorsement, recommendation,
-# r favoring by the United States Government or any agency thereof,
+# or favoring by the United States Government or any agency thereof,
 # or Battelle Memorial Institute. The views and opinions of authors
 # expressed herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
@@ -50,8 +47,6 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
-
-#}}}
 
 '''
 Created on May 11, 2014
@@ -65,55 +60,55 @@ import os
 import json
 
 class TestSensor(unittest.TestCase):
-    
+
     def test_loading_of_building(self):
         self.assertIsNotNone(sensors.building)
-        
-    
+
+
     def test_loading_of_site(self):
         self.assertIsNotNone(sensors.site)
-    
+
     def test_sensors_are_loaded(self):
         self.assertIsNotNone(sensors.sensors)
         self.assertTrue(len(sensors.sensors) > 0)
-        
+
 #        self.assertIsNotNone(sensors.buildings)
 # #         self.assertIsNotNone(sensors.building_sensors)
 # #         self.assertTrue(len(sensors.building_sensors) > 0)
-# #          
+# #
 # #         self.assertIsNotNone(sensors.site_sensors)
 # #         self.assertTrue(len(sensors.site_sensors) > 0)
-#     
+#
 #     def test_buildings_have_address_objects(self):
 #         self.assertIsNotNone(sensors.buildings, msg)
-#         self.assertIsNotNone(sensors.building_sensors., msg)    
-#     
+#         self.assertIsNotNone(sensors.building_sensors., msg)
+#
 #     def test_systems_are_loaded(self):
 #         self.assertIsNotNone(sensors.systems)
 #         self.assertTrue(len(sensors.systems) > 0)
-#     
+#
 #     def test_rtu_system(self):
 #         self.assertIsNotNone(sensors.systems['RTU'])
 #         rtu = sensors.systems['RTU']
 #         self.assertEqual(21, len(rtu.sensors))
-#         
+#
 
-          
-        
-    
+
+
+
     def test_json_and_verify_top_level(self):
         data = os.path.dirname(os.path.realpath(__file__))
         sensor_data_path = os.path.join(data, "../static/projects/json/general_definition.json")
-        
+
         jsonObj = json.load(open(sensor_data_path, 'r'))
         self.assertIsNotNone(jsonObj, "Invalid json object!")
         #self.assertEqual(4, len(jsonObj.keys()), "Invalid keys in json dictionary.")
-        
+
 #         self.assertTrue("sensors" in jsonObj.keys(), "sensors dict is None")
 #         self.assertTrue("systems" in jsonObj.keys(), "systems dict is None")
 #         self.assertTrue("site_sensors" in jsonObj.keys(), "site_sensors dict is None")
 #         self.assertTrue("building_sensors" in jsonObj.keys(), "building_sensors dict is None")
-        
-        
-        
-        
+
+
+
+

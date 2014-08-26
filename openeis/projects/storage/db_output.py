@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*- {{{
-# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -28,7 +25,7 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 #
-
+#
 # This material was prepared as an account of work sponsored by an
 # agency of the United States Government.  Neither the United States
 # Government nor the United States Department of Energy, nor Battelle,
@@ -42,7 +39,7 @@
 # Reference herein to any specific commercial product, process, or
 # service by trade name, trademark, manufacturer, or otherwise does
 # not necessarily constitute or imply its endorsement, recommendation,
-# r favoring by the United States Government or any agency thereof,
+# or favoring by the United States Government or any agency thereof,
 # or Battelle Memorial Institute. The views and opinions of authors
 # expressed herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
@@ -50,8 +47,6 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
-
-#}}}
 
 '''
 Created on Apr 28, 2014
@@ -217,40 +212,40 @@ class DatabaseOutputFile(DatabaseOutput):
 
 class DatabaseOutputZip(DatabaseOutputFile):
     def __init__(self, analysis, output_map, config_dict):
-        
+
         super().__init__(analysis, output_map)
         self.config_dict = config_dict
-        
+
     def log(self, msg, level=logging.DEBUG, timestamp=None):
         super().log(msg, level=level, timestamp=timestamp)
 
     def close(self):
         super().close()
         print('Writing Debug zip file.')
-        
+
         analysis_folder = os.getcwd()+'/data/files/analysis'
         if os.path.exists(analysis_folder) == False:
             os.mkdir(analysis_folder)
-            
+
         zip_file = analysis_folder+'/'+str(self.analysis_id)+'.zip'
         with ZipFile(zip_file, 'w') as myzip:
-            
+
             log_file = self.file_prefix+".log"
             myzip.write(log_file)
             self._logger.handlers[2].stream.close()
             os.remove(log_file)
-            
+
             d = (self.config_dict)
             jsonarray = json.dumps(d)
             config_file = self.file_prefix+'.json'
             myzip.writestr(config_file,jsonarray)
-            
+
             for table_name in self.csv_table_map:
                 csv_file = self.file_prefix +'_'+table_name+'.csv'
                 print(os.path.abspath(csv_file))
                 myzip.write(csv_file)
                 os.remove(csv_file)
-                  
+
 
 if __name__ == '__main__':
 

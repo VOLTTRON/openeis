@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*- {{{
-# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -28,7 +25,7 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 #
-
+#
 # This material was prepared as an account of work sponsored by an
 # agency of the United States Government.  Neither the United States
 # Government nor the United States Department of Energy, nor Battelle,
@@ -42,7 +39,7 @@
 # Reference herein to any specific commercial product, process, or
 # service by trade name, trademark, manufacturer, or otherwise does
 # not necessarily constitute or imply its endorsement, recommendation,
-# r favoring by the United States Government or any agency thereof,
+# or favoring by the United States Government or any agency thereof,
 # or Battelle Memorial Institute. The views and opinions of authors
 # expressed herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
@@ -50,8 +47,6 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
-
-#}}}
 
 """
     Creates the units.json file from the haystack_units.txt input file.
@@ -69,13 +64,13 @@ with open('haystack_units.txt', encoding='utf-8') as builder:
         if len(line) == 0:
             continue
         #print(line)
-        
+
         if line[:2] == '--':
             current_group = line[2:-2].strip()
             groups[current_group] = {}
         else:
             fields = line.split(',')
-            
+
             if len(fields) == 1:
                 groups[current_group][fields[0]]={'key': fields[0],
                                               'value': fields[0]}
@@ -84,5 +79,5 @@ with open('haystack_units.txt', encoding='utf-8') as builder:
                                                   'value': fields[1]}
                 if len(fields) > 2:
                     groups[current_group][fields[0]]['other'] = ','.join(fields[2:])
-                
+
     json.dump(groups, open(OUTPUT_FILE, 'w'), sort_keys=True, indent=4, separators=(',', ':'))
