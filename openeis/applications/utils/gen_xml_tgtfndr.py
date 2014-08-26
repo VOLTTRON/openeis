@@ -1,4 +1,50 @@
-"""Fill for Target Finder XML template replacement."""
+"""
+Fill for Target Finder XML template replacement.
+
+Copyright (c) 2014, The Regents of the University of California, Department
+of Energy contract-operators of the Lawrence Berkeley National Laboratory.
+All rights reserved.
+
+1. Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+
+   (a) Redistributions of source code must retain the copyright notice, this
+   list of conditions and the following disclaimer.
+
+   (b) Redistributions in binary form must reproduce the copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+   (c) Neither the name of the University of California, Lawrence Berkeley
+   National Laboratory, U.S. Dept. of Energy nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+2. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+   ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+   ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+3. You are under no obligation whatsoever to provide any bug fixes, patches,
+   or upgrades to the features, functionality or performance of the source code
+   ("Enhancements") to anyone; however, if you choose to make your Enhancements
+   available either publicly, or directly to Lawrence Berkeley National
+   Laboratory, without imposing a separate written license agreement for such
+   Enhancements, then you hereby grant the following license: a non-exclusive,
+   royalty-free perpetual license to install, use, modify, prepare derivative
+   works, incorporate into other computer software, distribute, and sublicense
+   such enhancements or derivative works thereof, in binary and source code
+   form.
+
+NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
+and includes the following modification: Paragraph 3. has been added.
+"""
 
 
 #--- Provide access.
@@ -16,32 +62,32 @@ import fill_template as fw_fill
 #
 
 
-def gen_xml_targetFinder(bldgMetaData, energyUseList, 
+def gen_xml_targetFinder(bldgMetaData, energyUseList,
                      xmlDirName):
     """
     Fills in the XML template required for Target Finder.
-     
+
     **Args:**
-    
+
     - *bldgMetaData*, dictionary of building properties.
-    - *energyUseList*, list of calculated yearly building energy use.  
+    - *energyUseList*, list of calculated yearly building energy use.
     - *xmlDirName*, string where xml files are written.
-    
+
     **Returns:**
-    
-    - *xmlStrings*, list of strings that are XML-formatted that contains 
-      ``propertyData``, ``propertyUseData``, ``meterData``, and 
+
+    - *xmlStrings*, list of strings that are XML-formatted that contains
+      ``propertyData``, ``propertyUseData``, ``meterData``, and
       ``meterConsumptionData``.
-    
+
     **Notes:**
-    
-    - Energy use is an annual total for each fuel type. 
-    - This fcn also creates separate XML files that the user can upload 
-      to the Portfolio Manager web-based GUI.  
+
+    - Energy use is an annual total for each fuel type.
+    - This fcn also creates separate XML files that the user can upload
+      to the Portfolio Manager web-based GUI.
     """
-    # 
+    #
     # Check inputs
-    assert ( type(bldgMetaData) == dict ) 
+    assert ( type(bldgMetaData) == dict )
     assert ( type(energyUseList) == list )
     #
     xmlTemplateDirName = os.path.abspath(os.path.join(os.path.dirname(__file__), 'xml_template'))
@@ -49,13 +95,13 @@ def gen_xml_targetFinder(bldgMetaData, energyUseList,
         raise Exception('Expecting to find XML template directory at {' +xmlTemplateDirName +'}')
     #
     # Initialize xml replacements
-    # 
-    xml_replacements = dict() 
+    #
+    xml_replacements = dict()
     xml_replacements['{:property-name:}'] = bldgMetaData['bldg-name']
     xml_replacements['{:property-zipcode:}'] = bldgMetaData['zipcode']
     xml_replacements['{:property-floor-area:}'] = bldgMetaData['floor-area']
     xml_replacements['{:property-year-built:}'] = bldgMetaData['year-built']
-    
+
     if 'type' not in bldgMetaData.keys():
         converted_types = translateBldgType(bldgMetaData['function'])
         xml_replacements['{:property-function:}'] = converted_types[0]
@@ -67,20 +113,20 @@ def gen_xml_targetFinder(bldgMetaData, energyUseList,
     fw_copy.ensureDir(xmlDirName)
     outFileFullName = os.path.join(xmlDirName, 'targetFinder.xml')
     outFile = open(outFileFullName, 'w')
-    # 
+    #
     #
     # Generate designEntry replacement. The XML template is separated from main template to allow
-    # for multiple energy uses. 
+    # for multiple energy uses.
     xml_replacements['{:design-entry-text:}'] = __write_estimatedEnergyTag(energyUseList,xmlTemplateDirName)
     #
-    # Generate targetFinder XML  
+    # Generate targetFinder XML
     outDataStr = io.StringIO()
     __fill_xml(xmlTemplateDirName, 'targetFinder.xml', xml_replacements, outDataStr)
     xmlDataStrings = outDataStr.getvalue()
     #
     outFile.write(xmlDataStrings)
     outFile.close()
-    #    
+    #
     return ( xmlDataStrings )
 	#
 	# End :func:`gen_portmngr_xml`.
@@ -88,7 +134,7 @@ def gen_xml_targetFinder(bldgMetaData, energyUseList,
 def __write_estimatedEnergyTag(energyUseList,xmlTemplateDirName):
     """Generate the estimatedEnergyList tag of the XML file."""
 
-    assert (len(energyUseList) > 0) 
+    assert (len(energyUseList) > 0)
     #
     outDataStr = io.StringIO()
     designEntry_text = ''
@@ -125,7 +171,7 @@ def __fill_xml(templateDirName, templateFileName, replacements,
                 print ('-- Pattern:',pattern, '(found on line', lineNo, 'of template file)')
     #
     # End :func:`_fill_xml`.
-    
+
 def translateBldgType(buildingTypeMenu):
         """Translates the building type from options to XML formatted."""
         #
@@ -140,7 +186,7 @@ def translateBldgType(buildingTypeMenu):
             buildingTypeXML = 'financialOffice'
         elif buildingTypeMenu == 'K-12 School':
             buildingFcnXML = 'K-12 School'
-            buildingTypeXML = 'k12School'            
+            buildingTypeXML = 'k12School'
         elif buildingTypeMenu == 'College/University':
             buildingFcnXML = 'College/University'
             buildingTypeXML = 'collegeUniversity'
@@ -149,7 +195,7 @@ def translateBldgType(buildingTypeMenu):
             buildingTypeXML = 'supermarket'
         elif buildingTypeMenu == 'Wholesale Club/Supercenter':
             buildingFcnXML = 'Wholesale Club/Supercenter'
-            buildingTypeXML = 'wholesaleClubSupercenter'            
+            buildingTypeXML = 'wholesaleClubSupercenter'
         elif buildingTypeMenu == 'Hospital (General Medical and Surgical)':
             buildingFcnXML = 'Hospital (General Medical &amp; Surgical)'
             buildingTypeXML = 'hospital'
@@ -183,11 +229,11 @@ def translateBldgType(buildingTypeMenu):
         elif buildingTypeMenu == 'Refrigerated Warehouse':
             buildingFcnXML = 'Refrigerated Warehouse'
             buildingTypeXML = 'refrigeratedWarehouse'
-        else: 
-            # Default value 
+        else:
+            # Default value
             buildingFcnXML = 'Office'
             buildingTypeXML = 'office'
-        #    
+        #
         return (buildingFcnXML,buildingTypeXML)
         #
         # End :meth:`setMenubuttonText`.
