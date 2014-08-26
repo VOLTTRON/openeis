@@ -1,9 +1,28 @@
 import os
+import re
 import sys
 
 from django.core import management as core_management
 
 from . import management
+
+
+# find_commands() searches only for .py files which breaks frozen
+# executables created by cx_Freeze. So we override the function as a fix.
+#
+# See the following links for more information:
+#   https://code.djangoproject.com/ticket/23045
+#   https://code.djangoproject.com/ticket/14952
+
+def find_commands(management_dir):
+    command_dir = os.path.join(management_dir, 'commands')
+    regex = re.compile(r'^([^_].*)\.py[co]?$')
+    try:
+        return [match.group(1) for match in
+                (regex.match(f) for f in os.listdir(command_dir)) if match]
+    except OSError:
+        return []
+find_commands.__doc__ = core_management.find_commands.__doc__
 
 
 # Command discovery is broken in Django when namespace packages are
@@ -21,7 +40,7 @@ _core_get_commands = core_management.get_commands
 def _get_commands():
     commands = _core_get_commands()
     commands.update({name: __package__ for name in
-                     core_management.find_commands(management.__path__[0])})
+                     find_commands(management.__path__[0])})
     core_management.get_commands = _core_get_commands
     return commands
 core_management.get_commands = _get_commands
