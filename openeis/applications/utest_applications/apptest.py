@@ -174,7 +174,7 @@ class AppTestBase(TestCase):
         # Check for differences.
         i = 1
         for key in test_dict:
-            self.assertTrue((len(test_dict[key]) > 1), 
+            self.assertTrue((len(test_dict[key]) > 1),
                     "The application did not run correctly.")
             if (self._is_num(test_dict[key][1])):
                 self.assertEqual(test_dict[key][0], expected_dict[key][0],\
@@ -220,7 +220,7 @@ class AppTestBase(TestCase):
             - xxs, yys: two lists of numbers to compare
             - key: the key to the column we are comparing in output files
             - absTol: absolute tolerance
-            - relTol: relative tolerance 
+            - relTol: relative tolerance
         Returns: True or false depending if the two lists are nearly the same
             or not
         Throws: Assertion error if xxs and yys not nearly the same.
@@ -280,6 +280,3 @@ class AppTestBase(TestCase):
                     (application in k and '.log' in k)]
             newestLog = max(allFiles, key=os.path.getctime)
             os.remove(newestLog)
-
-
-
