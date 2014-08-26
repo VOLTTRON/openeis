@@ -32,14 +32,9 @@ class Application(DriverApplicationBaseClass):
 
     @classmethod
     def get_config_parameters(cls):
-        #Called by UI
-        
-        values = []
-        values.append("ISB1")
-        values.append("ISB2")
-        
+        # Called by UI
         return {
-            "building_name": ConfigDescriptor(str, "Building Name", optional=True,value_list=values)
+            "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
 
     @classmethod
@@ -82,18 +77,18 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        
+
         report = reports.Report('Heat Map for Building Energy Load')
-        
+
         text_blurb = reports.TextBlurb(text="Analysis of the extent of a building's daily, weekly, and seasonal shut off.")
         report.add_element(text_blurb)
-        
-        heat_map = reports.HeatMap(table_name='Heat_Map', 
-                                   x_column='hour', 
-                                   y_column='date', 
+
+        heat_map = reports.HeatMap(table_name='Heat_Map',
+                                   x_column='hour',
+                                   y_column='date',
                                    z_column='load',
-                                   x_label='Hour of the Day', 
-                                   y_label='Date', 
+                                   x_label='Hour of the Day',
+                                   y_label='Date',
                                    z_label='Building Load')
         report.add_element(heat_map)
 
@@ -116,4 +111,4 @@ class Application(DriverApplicationBaseClass):
                 'hour': x[0].hour,
                 'load': x[1]
                 }
-            )            
+            )
