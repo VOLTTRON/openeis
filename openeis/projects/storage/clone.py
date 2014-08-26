@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*- {{{
-# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -28,7 +25,7 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 #
-
+#
 # This material was prepared as an account of work sponsored by an
 # agency of the United States Government.  Neither the United States
 # Government nor the United States Department of Energy, nor Battelle,
@@ -42,7 +39,7 @@
 # Reference herein to any specific commercial product, process, or
 # service by trade name, trademark, manufacturer, or otherwise does
 # not necessarily constitute or imply its endorsement, recommendation,
-# r favoring by the United States Government or any agency thereof,
+# or favoring by the United States Government or any agency thereof,
 # or Battelle Memorial Institute. The views and opinions of authors
 # expressed herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
@@ -51,25 +48,23 @@
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 
-#}}}
-
 from openeis.projects import models
 
 
 def clone_project(project, new_project_name):
-    ''' Clones project. Copies existing project and save with new name. 
+    ''' Clones project. Copies existing project and save with new name.
         Copies sensor map, sensor ingest, sensors and analyses from existing project to cloned project.
     '''
     sensor_maps = models.SensorMapDefinition.objects.filter(project=project)
     #data_files = models.DataFile.objects.filter(project=project)
-    
+
     project.id = None
     project.name = new_project_name
     project.save()
-    
+
     #clone_data_files(list(data_files), project)
     clone_sensor_map_definition(list(sensor_maps), project)
-        
+
     return project
 
 def clone_data_files(data_files_list, project):
@@ -79,28 +74,28 @@ def clone_data_files(data_files_list, project):
 
 def clone_sensor_map_definition(sensor_maps_list,project):
     for sensor_map in sensor_maps_list:
-        
+
         sensor_ingests = models.SensorIngest.objects.filter(map=sensor_map)
         sensors = models.Sensor.objects.filter(map=sensor_map)
-        
+
         sensor_map.id = None
         sensor_map.project = project
         sensor_map.save()
-        
+
         clone_sensor_ingest(list(sensor_ingests),sensor_map)
         clone_sensors(list(sensors), sensor_map)
 
 def clone_sensor_ingest(sensor_ingests_list, sensor_map_definition):
     for sensor_ingest in sensor_ingests_list:
-        
+
         analyses = models.Analysis.objects.filter(dataset=sensor_ingest)
-        
+
         sensor_ingest.id = None
         sensor_ingest.map = sensor_map_definition
         sensor_ingest.save()
-        
+
         clone_analysis(list(analyses), sensor_ingest)
-        
+
 def clone_sensors(sensors_list, sensor_map):
     for sensor in sensors_list:
         sensor.id= None

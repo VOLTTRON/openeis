@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*- {{{
-# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -28,7 +25,7 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 #
-
+#
 # This material was prepared as an account of work sponsored by an
 # agency of the United States Government.  Neither the United States
 # Government nor the United States Department of Energy, nor Battelle,
@@ -42,7 +39,7 @@
 # Reference herein to any specific commercial product, process, or
 # service by trade name, trademark, manufacturer, or otherwise does
 # not necessarily constitute or imply its endorsement, recommendation,
-# r favoring by the United States Government or any agency thereof,
+# or favoring by the United States Government or any agency thereof,
 # or Battelle Memorial Institute. The views and opinions of authors
 # expressed herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
@@ -50,8 +47,6 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
-
-#}}}
 
 '''
 Created on May 22, 2014
@@ -89,18 +84,18 @@ UPLOAD_DATA = '''Date,Hillside OAT [F],Main Meter [kW],Boiler Gas [kBtu/hr]
 9/30/2009 15:00,71.14,261.77,204.11'''
 
 class OpenEISTestBase(TestCase):
-    
-    
+
+
     def get_authenticated_client(self):
         client = APIClient()
         self.assertTrue(client.login(username='test_user', password='test'))
         return client
-    
+
     def upload_temp_file_data(self, project, data=None):
         '''
         Uploads a filestream that is created from a known stream of valid data.
         '''
-        # Create a temp file for uploading to the server.        
+        # Create a temp file for uploading to the server.
         tf = tempfile.NamedTemporaryFile(suffix='.cxv')
         if data:
             tf.write(bytes(data, 'utf-8'))
@@ -108,7 +103,7 @@ class OpenEISTestBase(TestCase):
             tf.write(bytes(UPLOAD_DATA, 'utf-8'))
         tf.flush()
         tf.seek(0)
-        
-        client = self.get_authenticated_client()                         
+
+        client = self.get_authenticated_client()
         return client.post('/api/projects/{}/add_file'.format(project), {'file':tf})
-        
+

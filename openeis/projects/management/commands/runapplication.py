@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*- {{{
-# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
-#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -28,7 +25,7 @@
 # of the authors and should not be interpreted as representing official policies,
 # either expressed or implied, of the FreeBSD Project.
 #
-
+#
 # This material was prepared as an account of work sponsored by an
 # agency of the United States Government.  Neither the United States
 # Government nor the United States Department of Energy, nor Battelle,
@@ -42,7 +39,7 @@
 # Reference herein to any specific commercial product, process, or
 # service by trade name, trademark, manufacturer, or otherwise does
 # not necessarily constitute or imply its endorsement, recommendation,
-# r favoring by the United States Government or any agency thereof,
+# or favoring by the United States Government or any agency thereof,
 # or Battelle Memorial Institute. The views and opinions of authors
 # expressed herein do not necessarily state or reflect those of the
 # United States Government or any agency thereof.
@@ -50,8 +47,6 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
-
-#}}}
 
 from optparse import make_option
 
@@ -83,19 +78,19 @@ class Command(BaseCommand):
         # Django to magically install the plumbing first.
         from openeis.projects.storage import sensorstore
         from openeis.projects import models
-        
-        
-        
+
+
+
         try:
             verbosity = int(verbosity)
-    
+
             config = ConfigParser()
-    
+
             config.read(args[0])
-    
+
             application = config['global_settings']['application']
             klass = get_algorithm_class(application)
-    
+
             dataset_id = int(config['global_settings']['dataset_id'])
             dataset = models.SensorIngest.objects.get(pk=dataset_id)
 
@@ -108,13 +103,13 @@ class Command(BaseCommand):
             if config.has_section('application_config'):
                 for arg, str_val in config['application_config'].items():
                     kwargs[arg] = eval(str_val)
-            
+
             topic_map = {}
-    
+
             inputs = config['inputs']
             for group, topics in inputs.items():
                 topic_map[group] = topics.split()
-    
+
             now = datetime.utcnow().replace(tzinfo=utc)
             analysis = models.Analysis(added=now, started=now, status="running",
                                        dataset=dataset, application=application,
@@ -122,20 +117,20 @@ class Command(BaseCommand):
                                        configuration={'parameters': kwargs, 'inputs': topic_map},
                                        name='cli: {}, dataset {}'.format(application, dataset_id))
             analysis.save()
-    
+
             db_input = DatabaseInput(dataset.map.id, topic_map, dataset_id)
-    
+
             output_format = klass.output_format(db_input)
-    
+
             file_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
-    
+
             if( verbosity > 1 ):
                 print('Running application:', application)
                 if dataset_id is not None:
                     print('- Data set id:', dataset_id)
                 print('- Topic map:', topic_map)
                 print('- Output format:', output_format)
-    
+
             app = klass(db_input, file_output, **kwargs)
             app.run_application()
 
@@ -143,15 +138,15 @@ class Command(BaseCommand):
                                 report in klass.reports(file_output)]
 
             reports = klass.reports(output_format)
-    
+
             for report in reports:
                 print(report)
-        
+
         except Exception as e:
             analysis.status = "error"
             # TODO: log errors
             print(e)
-    
+
         finally:
             if analysis.status != "error":
                 analysis.status = "complete"
