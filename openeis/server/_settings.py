@@ -72,8 +72,10 @@ POSIX_BASE_DIR = os.path.abspath(BASE_DIR)
 if os.path.sep != posixpath.sep:
     POSIX_BASE_DIR = posixpath.join(*POSIX_BASE_DIR.split(os.path.sep))
 
+# Added this hack to get things working with cx_Freeze.
+_dotcount = len(__package__.split('.')) if __package__ else __name__.count('.')
 DATA_DIR = os.path.abspath(
-    os.path.join(*([BASE_DIR] + ['..']*len(__package__.split('.')) + ['data'])))
+    os.path.join(*([BASE_DIR] + ['..']*_dotcount + ['data'])))
 
 
 # Quick-start development settings - unsuitable for production
