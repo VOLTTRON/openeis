@@ -63,7 +63,7 @@ from django.core.management.base import NoArgsCommand
 from django.db import connection, transaction
 
 
-_stable_tables = ['accountverification', 'membership', 'organization']:
+_stable_tables = ['accountverification', 'membership', 'organization']
 
 
 class Command(NoArgsCommand):
