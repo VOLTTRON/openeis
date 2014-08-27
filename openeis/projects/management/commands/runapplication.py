@@ -63,6 +63,8 @@ from django.utils.timezone import utc
 
 from configparser import ConfigParser, NoOptionError
 
+import traceback
+
 
 class Command(BaseCommand):
     help = 'Run an application from the command-line.'
@@ -121,8 +123,8 @@ class Command(BaseCommand):
             db_input = DatabaseInput(dataset.map.id, topic_map, dataset_id)
 
             output_format = klass.output_format(db_input)
-
-            file_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
+    
+            file_output = DatabaseOutputFile(analysis, output_format)
 
             if( verbosity > 1 ):
                 print('Running application:', application)
@@ -145,7 +147,8 @@ class Command(BaseCommand):
         except Exception as e:
             analysis.status = "error"
             # TODO: log errors
-            print(e)
+            print(traceback.format_exc())
+    
 
         finally:
             if analysis.status != "error":
