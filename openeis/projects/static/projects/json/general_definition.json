@@ -181,8 +181,6 @@
             "unit_type": "energy"
         },
         "SupplyFanSpeed": {
-            "maximum": "100",
-            "minimum": "0",
             "data_type": "float",
             "sensor_name": "SupplyFanSpeed",
             "sensor_type": "SupplyFanSpeed",
