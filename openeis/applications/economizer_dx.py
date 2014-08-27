@@ -426,7 +426,7 @@ class temperature_sensor_dx(object):
         time_check =  datetime.timedelta(minutes=(self.data_window))
 
         if ((self.timestamp[-1]-self.timestamp[0]) >= time_check and
-            len(self.timestamp) > 10):
+            len(self.timestamp) > 20):
             diagnostic_result = self.temperature_sensor_dx(diagnostic_result, current_time)
         return diagnostic_result
    
@@ -556,7 +556,7 @@ class econ_correctly_on(object):
         time_check =  datetime.timedelta(minutes=(self.data_window))
 
         if ((self.timestamp[-1]-self.timestamp[0]) >= time_check and
-            len(self.timestamp) >= 10):
+            len(self.timestamp) >= 30):
             diagnostic_result = self.not_economizing_when_needed(diagnostic_result, current_time)
         return diagnostic_result
        

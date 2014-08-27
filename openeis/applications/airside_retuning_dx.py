@@ -83,13 +83,16 @@ class Application(DrivenApplicationBaseClass):
     sa_temp_name = 'sa_temp'
     sat_stpt_name = 'sat_stpt'
     duct_stp_stpt_name = 'duct_stp_stpt'
+    
+    fan_speedcmd_priority=''
+    duct_stp_stpt_priority=''
+    ahu_ccoil_priority = ''
+    sat_stpt_priority=''
+    
     time_format = '%m/%d/%Y %H:%M'
     def __init__(self,*args,
     
-                override_state=None,fan_speedcmd_priority='',fan_speedcmd_name=None, 
-                oa_temp_name=None,fan_status_name=None,duct_stp_stpt_priority='',duct_stp_stpt_name=None,
-                zone_damper_name=None,duct_stp_name=None,
-                
+                override_state=None,
                 data_window=None,number_of_zones=None,auto_correctflag=None, duct_stc_retuning=None,
                 
                 max_duct_stp_stpt=None,
@@ -102,29 +105,30 @@ class Application(DrivenApplicationBaseClass):
                 stpr_diff_threshold=None,oat_threshold=None,
                 zonedpr_max_threshold=None,zonedpr_min_threshold=None,no_zones_dpr_max=None,
                 no_zones_dpr_min=None, dsgn_stp_high=None, dsgn_stp_low=None,
-              
-                sa_temp_name=None, ma_temp_name=None,cool_call_name=None,
-                sat_stpt_name=None,zone_reheat_name=None,
-                ahu_ccoil_priority='',
-                
+        
                 percent_reheat_threshold=None,rht_on_threshold=None,
                 satemp_diff_threshold=None, mat_low_threshold=None,
                 ccoil_on_threshold=None,sat_high_threshold=None,oatemp_diff_threshold=None,
     
-                high_damper_threshold=None,percent_damper_threshold=None,
-                minimum_sat_stpt=None,sat_reduction=None,
+                sat_high_damper_threshold=None,percent_damper_threshold=None,
+                minimum_sat_stpt=None,sat_retuning=None,
 
-                sat_stpt_priority='',
                 reheat_valve_threshold=None,
-                maximum_sat_stpt=None,sat_increase=None,
+                maximum_sat_stpt=None,
 
                 unocc_time_threshold=None,unocc_stp_threshold=None,
                 monday_sch=None,tuesday_sch=None,wednesday_sch=None,thursday_sch=None,
                 friday_sch=None, saturday_sch=None, sunday_sch=None,
                 **kwargs):
         super().__init__(*args, **kwargs)
+        
         Application.pre_requiste_messages = []
         Application.pre_msg_time = []
+
+        if override_state == None:
+            self.override_state =''
+        else:
+            self.override_state = override_state
 
         '''Pre-requisite messages'''
         self.pre_msg0 = 'Fan Status is not available, could not verify system is ON.'
@@ -132,16 +136,13 @@ class Application(DrivenApplicationBaseClass):
     
         self.pre_msg2 = 'Missing required data for diagnostic:  Outside-air temperature.'
         self.pre_msg3 = 'Missing required data for diagnostic:  Duct static pressure'
-        self.pre_msg4 = 'Missing required data for diagnostic:  Zone damper command.'
+        self.pre_msg4 = 'Missing required data for diagnostic:  terminal-box damper-position (all zones).'
          
         self.pre_msg5 = 'Missing required data for diagnostic: Supply-air temperature.'
-        self.pre_msg6 = 'Missing required data for diagnostic: terminal box reheat-valve-positions (all zones).'
+        self.pre_msg6 = 'Missing required data for diagnostic: terminal-box reheat-valve-positions (all zones).'
         self.pre_msg7 = 'Missing required data for diagnostic: Outside-air temperature.'
         self.pre_msg8 = 'Missing required data for diagnostic: Mixed Air Temperature.'
         self.pre_msg9 = 'Missing required data for diagnostic: AHU cooling-coil-position.'
- 
-        if duct_stp_stpt_name == None:
-            duct_stp_stpt_name = ''
  
         '''Point names (Configurable)'''
         self.fan_status_name = Application.fan_status_name
@@ -156,12 +157,12 @@ class Application(DrivenApplicationBaseClass):
         
         self.sat_stpt_name = Application.sat_stpt_name
         self.duct_stp_stpt_name = Application.duct_stp_stpt_name
-        duct_stp_stpt_cname = self.duct_stp_stpt_name_name
+        duct_stp_stpt_cname = self.duct_stp_stpt_name
         
-        self.ahu_ccoil_priority = ahu_ccoil_priority.lower()
-        self.sat_stpt_priority = sat_stpt_priority.lower()
-        self.fan_speedcmd_priority = fan_speedcmd_priority.lower()
-        self.duct_stp_stpt_priority = duct_stp_stpt_priority.lower()
+        self.ahu_ccoil_priority = Application.ahu_ccoil_priority.lower()
+        self.sat_stpt_priority = Application.sat_stpt_priority.lower()
+        self.fan_speedcmd_priority = Application.fan_speedcmd_priority.lower()
+        self.duct_stp_stpt_priority = Application.duct_stp_stpt_priority.lower()
         
         '''Application thresholds (Configurable)'''
         self.data_window = float(data_window)
@@ -170,14 +171,14 @@ class Application(DrivenApplicationBaseClass):
         self.high_supply_fan_threshold = float(high_supply_fan_threshold)
         
         self.static_dx = duct_static_dx(max_duct_stp_stpt,duct_stc_retuning, data_window,
-                                   number_of_zones, duct_high_damper_threhold, _low_damper_threhold,
+                                   number_of_zones, zone_high_damper_threhold, zone_low_damper_threhold,
                                    setpoint_allowable_deviation, auto_correctflag,
                                    hdzone_damper_threshold, min_duct_stp_stpt, duct_stp_stpt_cname,stpr_diff_threshold,
                                    oat_threshold, zonedpr_max_threshold, zonedpr_min_threshold, no_zones_dpr_max, 
                                    no_zones_dpr_min,dsgn_stp_high, dsgn_stp_low)
          
         self.sat_dx = supply_air_temp_dx(data_window, number_of_zones, auto_correctflag, rht_on_threshold,
-                sat_high_damper_threhold, percent_damper_threshold, percent_reheat_threshold,
+                sat_high_damper_threshold, percent_damper_threshold, percent_reheat_threshold,
                 setpoint_allowable_deviation, minimum_sat_stpt, sat_retuning, reheat_valve_threshold,
                 maximum_sat_stpt,satemp_diff_threshold, mat_low_threshold,ccoil_on_threshold, 
                 sat_high_threshold,oatemp_diff_threshold)
@@ -193,8 +194,9 @@ class Application(DrivenApplicationBaseClass):
         '''
         return {
                 'data_window': ConfigDescriptor(float, 'Data Window'),
-                'auto_correctflag': ConfigDescriptor(float, 'Simulate auto-correction (True)'),
+                'auto_correctflag': ConfigDescriptor(bool, 'Simulate auto-correction (True)'),
                 'number_of_zones': ConfigDescriptor(float,'Number of zones served by AHU'),
+                'override_state': ConfigDescriptor(bool, 'Override state only for implementation with live devices'),
                 
                 'max_duct_stp_stpt': ConfigDescriptor(float, 'Maximum static set point allowed with auto-correction'),
                 'high_supply_fan_threshold': ConfigDescriptor(float,'high supply fan command (100)'),
@@ -241,6 +243,7 @@ class Application(DrivenApplicationBaseClass):
                 'friday_sch': ConfigDescriptor(float,  'Monday AHU occupied schedule (6:30;18:30)'),
                 'saturday_sch': ConfigDescriptor(float,  'Monday AHU occupied schedule (6:30;18:30)'),
                 'sunday_sch': ConfigDescriptor(float,  'Monday AHU occupied schedule (6:30;18:30)')
+                
                 }
     
     @classmethod
@@ -287,11 +290,11 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_topic = topics[cls.fan_status_name][0]
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
-        datetime_topic = '/'.join(output_topic_base+['economizer_dx', 'date'])
-        message_topic = '/'.join(output_topic_base+['economizer_dx', 'message'])
-        diagnostic_name = '/'.join(output_topic_base+['economizer_dx', 'diagnostic_name'])
-        energy_impact = '/'.join(output_topic_base+['economizer_dx', 'energy_impact'])
-        color_code = '/'.join(output_topic_base+['economizer_dx', 'color_code'])
+        datetime_topic = '/'.join(output_topic_base+['airside_dx', 'date'])
+        message_topic = '/'.join(output_topic_base+['airside_dx', 'message'])
+        diagnostic_name = '/'.join(output_topic_base+['airside_dx', 'diagnostic_name'])
+        energy_impact = '/'.join(output_topic_base+['airside_dx', 'energy_impact'])
+        color_code = '/'.join(output_topic_base+['airside_dx', 'color_code'])
         
         output_needs = {
             'Airside_dx': {
@@ -317,7 +320,7 @@ class Application(DrivenApplicationBaseClass):
                                    '  This row will be dropped from analysis.']))
             return diagnostic_result
             
-        for key, value in points.iteritems():
+        for key, value in points.items():
             device_dict[key.lower()] = value
 
         Application.pre_msg_time.append(current_time)
@@ -350,7 +353,7 @@ class Application(DrivenApplicationBaseClass):
         static_override_check = False
         sat_override_check = False
         
-        for key, value in device_dict.iteritems():
+        for key, value in device_dict.items():
             if self.fan_speedcmd_name in key:
                 if value > self.high_supply_fan_threshold:
                     low_dx_condition = True
@@ -379,7 +382,7 @@ class Application(DrivenApplicationBaseClass):
         cooling_data = []
         sat_stpt_data = []
 
-        for key, value in device_dict.iteritems():
+        for key, value in device_dict.items():
 
             if key.startswith(self.duct_stp_stpt_name):
                 stc_pr_sp_data.append(value)
@@ -517,11 +520,12 @@ class duct_static_dx(object):
                     energy_impact = None
                     dx_table = {
                                 'datetime': str(self.timestamp[-1]), 
-                                'diagnostic_name': duct_stc_dx, 'diagnostic_message': diagnostic_message, 
+                                'diagnostic_name': duct_stc_dx, 
+                                'diagnostic_message': diagnostic_message, 
                                 'energy_impact': energy_impact,
                                 'color_code': color_code
                                 }
-                    diagnostic_result.insert_table_row('Economizer_dx', dx_table)
+                    diagnostic_result.insert_table_row('Airside_dx', dx_table)
                     diagnostic_result.log(diagnostic_message, logging.INFO)
             diagnostic_result = self.low_ductstatic_sp(diagnostic_result, static_override_check)
             diagnostic_result = self.high_ductstatic_sp(diagnostic_result, static_override_check)
@@ -536,9 +540,9 @@ class duct_static_dx(object):
         '''
         zone_damper_temp = self.zone_damper_values                       
         zone_damper_temp.sort(reverse=False)
-        zone_damper_lowtemp = zone_damper_temp[0:len(zone_damper_temp)/2]
+        zone_damper_lowtemp = zone_damper_temp[0:int(len(zone_damper_temp)/2)]
         zone_damper_lowavg = sum(zone_damper_lowtemp)/len(zone_damper_lowtemp)
-        zone_damper_hightemp = zone_damper_temp[len(zone_damper_temp)/2 +1:-1]
+        zone_damper_hightemp = zone_damper_temp[int(len(zone_damper_temp)/2 +1):-1]
         zone_damper_highavg = sum(zone_damper_hightemp)/len(zone_damper_hightemp)
         energy_impact = None
         
@@ -584,7 +588,7 @@ class duct_static_dx(object):
                     'color_code': color_code
                     }
 
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Airside_dx', dx_table)
         result.log(diagnostic_message,logging.INFO) 
         return result
 
@@ -595,7 +599,7 @@ class duct_static_dx(object):
         '''
         zone_damper_temp = self.zone_damper_values                       
         zone_damper_temp.sort(reverse=True)
-        zone_damper_temp = zone_damper_temp[0:len(zone_damper_temp)/2]
+        zone_damper_temp = zone_damper_temp[0:int(len(zone_damper_temp)/2)]
         avg_zone_damper = sum(zone_damper_temp)/len(zone_damper_temp)
         energy_impact = None
         avg_duct_stpr_stpt = None
@@ -640,7 +644,7 @@ class duct_static_dx(object):
                     'color_code': color_code
                     }
         
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Airside_dx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
         
@@ -685,7 +689,7 @@ class duct_static_dx(object):
                     'color_code': color_code
                     }
         
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Airside_dx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         self.duct_stp_stpt_values = []
         self.duct_stp_values = []
@@ -780,7 +784,7 @@ class supply_air_temp_dx(object):
                                 'energy_impact': energy_impact,
                                 'color_code': color_code
                                 }
-                    diagnostic_result.insert_table_row('Economizer_dx', dx_table)
+                    diagnostic_result.insert_table_row('Airside_dx', dx_table)
                     diagnostic_result.log(diagnostic_message, logging.INFO)
                 diagnostic_result = self.low_sat_sp(diagnostic_result, avg_sat_stpt, sat_override_check)
                 diagnostic_result = self.high_sat_sp(diagnostic_result, avg_sat_stpt, sat_override_check)
@@ -841,7 +845,7 @@ class supply_air_temp_dx(object):
                     'color_code': color_code
                     }
         
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Airside_dx', dx_table)
         result.log(diagnostic_message,logging.INFO)
         return result 
     
@@ -900,7 +904,7 @@ class supply_air_temp_dx(object):
                     'energy_impact': energy_impact,
                     'color_code': color_code
                     }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Airside_dx', dx_table)
         result.log(diagnostic_message,logging.INFO)
         return result
     
@@ -949,7 +953,7 @@ class supply_air_temp_dx(object):
                     'energy_impact': energy_impact,
                     'color_code': color_code
                     }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Airside_dx', dx_table)
 
         result.log(diagnostic_message, logging.INFO)
         self.sat_stpt_values = []
@@ -1070,7 +1074,7 @@ class schedule_dx(object):
                     'energy_impact': energy_impact,
                     'color_code': color_code
                     }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Airside_dx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         self.duct_stp_values = []
         self.fan_status_values=[]
