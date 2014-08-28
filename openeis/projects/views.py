@@ -54,6 +54,7 @@
 #}}}
 
 from contextlib import closing
+from pytz import timezone
 import datetime
 import itertools
 import json
@@ -254,6 +255,8 @@ class FileViewSet(mixins.ListModelMixin,
         count = min(request.QUERY_PARAMS.get(
                      'rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
                     proj_settings.FILE_HEAD_ROWS_MAX)
+        tz_name = request.QUERY_PARAMS.get('time_zone', 'UTC')
+        tzinfo = timezone(tz_name)
         has_header, rows = self.get_object().csv_head(count)
         num_columns = len(rows[0])
         headers = rows.pop(0) if has_header else []
@@ -285,7 +288,7 @@ class FileViewSet(mixins.ListModelMixin,
                 parsed = None
             else:
                 if not dt.tzinfo:
-                    dt = dt.replace(tzinfo=utc)
+                    dt = tzinfo.localize(dt)
                 parsed = dt.isoformat()
             times.append([ts, parsed])
         return Response(times)
