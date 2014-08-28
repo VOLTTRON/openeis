@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*- {{{
+# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
+#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -47,6 +50,8 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
+#
+#}}}
 
 from django.core.management.base import BaseCommand, CommandError
 from openeis.projects import models
