@@ -48,7 +48,7 @@
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
 
-from setuptools import setup
+from setuptools import setup, find_packages
 import sys
 
 install_requires = [
@@ -74,7 +74,9 @@ setup(
     author = 'Bora Akyol',
     author_email = 'bora@pnnl.gov',
     url = 'http://www.pnnl.gov',
-    packages = ['openeis.server', 'openeis.projects'],
+    packages = find_packages(),
+    # ['openeis.server', 'openeis.projects', 
+    #            'openeis.applications', 'openeis.projects.storage'],
 
     install_requires = install_requires,
     entry_points = '''
