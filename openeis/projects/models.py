@@ -184,6 +184,7 @@ class DataFile(models.Model):
             auto_now_add=True, help_text='Date and time file was uploaded')
     comments = models.CharField(max_length=200, blank=True)
     timestamp = JSONField(blank=True)
+    time_zone = models.CharField(max_length=64, blank=True)
 
     def __str__(self):
         return self.file.name
