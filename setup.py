@@ -50,6 +50,7 @@
 
 from setuptools import setup, find_packages
 import sys
+import os
 
 install_requires = [
         'python-dateutil',
@@ -63,6 +64,27 @@ install_requires = [
         'openeis-ui>0.1.dev70',
         'pytz',
 ]
+
+basepath = os.path.dirname(os.path.abspath(__file__))
+
+def get_files(path):
+    '''Recursivly walks a directory returning list of files'''
+    
+    file_names = []
+    abspath = os.path.abspath(path)
+    #print("moving to: ")
+    cpath = os.getcwd()
+    os.chdir(path)
+    
+    for root, dirs, files in os.walk('.', topdown=False):
+        for name in files:
+            if '__pycache__' not in root:
+                #print (name)
+                file_names.append(os.path.join(root, name)) #(os.path.join(root, name)))
+    os.chdir(cpath)
+    
+    print(file_names)
+    return file_names
 
 if sys.platform != 'win32':
     install_requires.append('numpy')
@@ -84,7 +106,7 @@ setup(
         openeis = openeis.server.manage:main
     ''',
     package_data = {
-        'openeis.projects': ['storage/sensormap-schema.json'],
+        'openeis.projects': [ os.path.join('static', x) for x in get_files(os.path.join(basepath, 'openeis', 'projects'))]
     }
 )
 
