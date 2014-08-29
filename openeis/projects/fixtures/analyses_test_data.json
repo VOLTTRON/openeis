@@ -9,7 +9,7 @@
                 0
             ]
         },
-        "file": "projects/1/Bldg90_load_1month_13.csv",
+        "file": "projects/1/1Month_hourly.csv",
         "uploaded": "2014-08-06T22:42:18.829Z"
     },
     "pk": 1
@@ -23,22 +23,22 @@
                 "lbnl": {
                     "level": "site"
                 },
-                "lbnl/bldg90": {
+                "campus/building": {
                     "level": "building"
                 },
-                "lbnl/bldg90/OutdoorAirTemperature": {
+                "campus/building/OutdoorAirTemperature": {
                     "file": "0",
                     "column": "Hillside OAT [F]",
                     "unit": "fahrenheit",
                     "type": "OutdoorAirTemperature"
                 },
-                "lbnl/bldg90/WholeBuildingGas": {
+                "campus/building/WholeBuildingGas": {
                     "file": "0",
                     "column": "Boiler Gas [kBtu/hr]",
                     "unit": "kilobtus_per_hour",
                     "type": "WholeBuildingGas"
                 },
-                "lbnl/bldg90/WholeBuildingElectricity": {
+                "campus/building/WholeBuildingElectricity": {
                     "file": "0",
                     "column": "Main Meter [kW]",
                     "unit": "kilowatt",
@@ -91,7 +91,7 @@
     "fields": {
         "map": 1,
         "data_type": "f",
-        "name": "lbnl/bldg90/OutdoorAirTemperature"
+        "name": "campus/building/OutdoorAirTemperature"
     },
     "pk": 1
 },
@@ -100,7 +100,7 @@
     "fields": {
         "map": 1,
         "data_type": "f",
-        "name": "lbnl/bldg90/WholeBuildingElectricity"
+        "name": "campus/building/WholeBuildingElectricity"
     },
     "pk": 2
 },
@@ -109,7 +109,7 @@
     "fields": {
         "map": 1,
         "data_type": "f",
-        "name": "lbnl/bldg90/WholeBuildingGas"
+        "name": "campus/building/WholeBuildingGas"
     },
     "pk": 3
 },
