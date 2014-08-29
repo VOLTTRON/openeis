@@ -115,9 +115,21 @@ def move_to_working_dir():
         
     finally:
         os.chdir(ORIG_CWD)
+
+
+def make_installer():
+    os.chdir(WORKING_DIR)
+    try:
+        compiler = os.path.join(INNO_SETUP_DIR.replace('/','\\'), 'iscc.exe')
+                                                       
+        ret = subprocess.check_call([compiler, 'setup.iss'])
+    finally:
+        os.chdir(ORIG_CWD)
+        
 def make_setup():
     build_wheels()
     move_to_working_dir()
+    make_installer()
     
 
 if __name__ == '__main__':

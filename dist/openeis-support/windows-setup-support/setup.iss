@@ -6,7 +6,10 @@
 #define MyAppPublisher "Pacific Northwest National Laboratory"
 #define MyAppURL "https://github.com/VOLTTRON/openeis/"
 
-
+;--------------------------------------------------------------------
+; CHANGE ME TO REAL DIR TO OPEN WITH INNO
+; #define SrcRoot "c:\working_dir\data"
+;--------------------------------------------------------------------
 #define SrcRoot "~~WORKING_DIR~~"
 
 [Setup]
