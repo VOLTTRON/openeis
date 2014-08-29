@@ -208,7 +208,8 @@ class TestIngestApi(TestCase):
         # Add size attribute so that it works with the ingest.py correctly
         data_io = io.StringIO(GOOD_DATA)
         data_io.size = len(GOOD_DATA)
-        self.good_data = [('File 1', data_io)]
+        # modified to use timezone data.
+        self.good_data = [('File 1', {'file_name': data_io, 'time_zone': 'America/Los_Angeles'})]
 
         # Do the same as above for the error data.
         data_io = io.StringIO(ERROR_DATA)

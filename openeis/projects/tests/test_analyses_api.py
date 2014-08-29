@@ -105,7 +105,7 @@ class TestAnalysesApi(OpenEISTestBase):
                                              },
                               "inputs": {
                                          "load": [
-                                                  "lbnl/bldg90/WholeBuildingElectricity"
+                                                  "campus/building/WholeBuildingElectricity"
                                                   ]
                                          }
                               }
@@ -150,10 +150,10 @@ class TestAnalysesApi(OpenEISTestBase):
             "configuration": {
                 "inputs": {
                     "oat": [
-                        "lbnl/bldg90/OutdoorAirTemperature"
+                        "campus/building/OutdoorAirTemperature"
                     ],
                     "load": [
-                        "lbnl/bldg90/WholeBuildingElectricity"
+                        "campus/building/WholeBuildingElectricity"
                     ]
                 },
                 "parameters": {}
