@@ -77,18 +77,18 @@ def get_files(path):
     
     file_names = []
     abspath = os.path.abspath(path)
-    #print("moving to: ")
-    cpath = os.getcwd()
+    origpath = os.getcwd()
     os.chdir(path)
     
+    # the walk needs to be relatative to the currently changed
+    # directory. So that it is put into the package correctly.
     for root, dirs, files in os.walk('.', topdown=False):
+        print('ROOT:', root)
         for name in files:
             if '__pycache__' not in root:
-                #print (name)
                 file_names.append(os.path.join(root, name)) #(os.path.join(root, name)))
-    os.chdir(cpath)
+    os.chdir(origpath)
     
-    print(file_names)
     return file_names
 
 if sys.platform != 'win32':
@@ -111,7 +111,7 @@ setup(
         openeis = openeis.server.manage:main
     ''',
     package_data = {
-        'openeis.projects': [ os.path.join('static', x) for x in get_files(os.path.join(basepath, 'openeis', 'projects'))]
+        'openeis.projects': [ os.path.join('static', x) for x in get_files(os.path.join(basepath, 'openeis', 'projects', 'static'))]
     }
 )
 
