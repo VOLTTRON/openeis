@@ -7,7 +7,7 @@
 #define MyAppURL "https://github.com/VOLTTRON/openeis/"
 
 
-#define SrcRoot "c:\openeis-1.0"
+#define SrcRoot "{{WORKING_DIR}}"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -34,14 +34,11 @@ PrivilegesRequired=lowest
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "{#SrcRoot}\python-fresh\*"; DestDir: "{app}\python"; Flags: ignoreversion recursesubdirs
+Source: "{#SrcRoot}\python\*"; DestDir: "{app}\python"; Flags: ignoreversion recursesubdirs
 Source: "{#SrcRoot}\wheels\*"; DestDir: "{app}\wheels"; Flags: ignoreversion recursesubdirs
-Source: "{#SrcRoot}\numpy1.8.2\*"; DestDir: "{app}\python\Lib\site-packages"; Flags: ignoreversion recursesubdirs
-Source: "{#SrcRoot}\openeis\*"; DestDir: "{app}\openeis"; Flags: ignoreversion recursesubdirs
-Source: "{#SrcRoot}\requirements.txt"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#SrcRoot}\get-pip.py"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#SrcRoot}\openeis-personal.py"; DestDir: "{app}"; Flags: ignoreversion
-Source: "{#SrcRoot}\start-openeis.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SrcRoot}\numpy\*"; DestDir: "{app}\python\Lib\site-packages"; Flags: ignoreversion recursesubdirs
+; Source: "{#SrcRoot}\openeis\*"; DestDir: "{app}\openeis"; Flags: ignoreversion recursesubdirs
+Source: "{#SrcRoot}\misc\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
 
 [Run]
 Filename: "{app}\python\python.exe"; Parameters: "{app}\get-pip.py"

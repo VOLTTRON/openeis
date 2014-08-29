@@ -4,6 +4,7 @@
 '''
 import json
 import os
+import posixpath
 import shutil
 import subprocess
 import sys
@@ -47,6 +48,8 @@ MISC_DIR = cfg['MISC_DIR']
 # be obtained through innoextractor program from the internet.
 INNO_SETUP_DIR = cfg['INNO_SETUP_DIR']
 
+ORIG_CWD = os.getcwd()
+
 def move_wheel(src_file):
     '''Move the src_file wheel from the current directories dist dir to wheeldir
 
@@ -64,7 +67,7 @@ def build_wheels():
     This assumes that the executing python has bee activated with
     a bootstrapped python.
 '''
-    orig_cwd = os.getcwd()
+    
     os.chdir(os.path.join(OPENEIS_SRC_DIR))
     try:
         print('Executing wheel on openeis')
@@ -83,10 +86,32 @@ def build_wheels():
                 move_wheel(f)
         
     finally:
-        os.chdir(orig_cwd)
+        os.chdir(ORIG_CWD)
 
+def move_to_working_dir():
+    tocopy=(CLEAN_PYTHON_DIR, NUMPY_DIR, WHEEL_DIR)
+    try:
+        if os.path.exists(WORKING_DIR):
+            shutil.rmtree(WORKING_DIR)
+        os.makedirs(WORKING_DIR)
+        os.chdir(WORKING_DIR)
+
+        
+        shutil.copytree(CLEAN_PYTHON_DIR, "python")
+        shutil.copytree(NUMPY_DIR, "numpy")
+        shutil.copytree(WHEEL_DIR, "wheels")
+        shutil.copytree(MISC_DIR, "misc")
+
+        setup_file = os.path.join(OPENEIS_SRC_DIR, 'dist','openeis-support',
+                                  'windows-setup-support', 'setup.iss')
+        shutil.copy(setup_file, 'setup.iis')
+        
+    finally:
+        os.chdir(ORIG_CWD)
 def make_setup():
     build_wheels()
+    move_to_working_dir()
+    
 
 if __name__ == '__main__':
     make_setup()
