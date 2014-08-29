@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*- {{{
+# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
+#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -47,8 +50,11 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
+#
+#}}}
 
 from contextlib import closing
+from pytz import timezone
 import datetime
 import itertools
 import json
@@ -249,6 +255,8 @@ class FileViewSet(mixins.ListModelMixin,
         count = min(request.QUERY_PARAMS.get(
                      'rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
                     proj_settings.FILE_HEAD_ROWS_MAX)
+        tz_name = request.QUERY_PARAMS.get('time_zone', 'UTC')
+        tzinfo = timezone(tz_name)
         has_header, rows = self.get_object().csv_head(count)
         num_columns = len(rows[0])
         headers = rows.pop(0) if has_header else []
@@ -280,7 +288,7 @@ class FileViewSet(mixins.ListModelMixin,
                 parsed = None
             else:
                 if not dt.tzinfo:
-                    dt = dt.replace(tzinfo=utc)
+                    dt = tzinfo.localize(dt)
                 parsed = dt.isoformat()
             times.append([ts, parsed])
         return Response(times)
@@ -478,7 +486,7 @@ _processes = {}
 def iter_ingest(ingest):
     '''Ingest into the common schema tables from the DataFiles.'''
     sensormap = ingest.map.map
-    files = {f.name: f.file.file.file for f in ingest.files.all()}
+    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone} for f in ingest.files.all()}
     ingest_file = None
     try:
         ingested = list(ingest_files(sensormap, files))
@@ -513,8 +521,10 @@ def iter_ingest(ingest):
                                     level=models.SensorIngestLog.ERROR,
                                     message=str(column))
                         else:
+                            time_zone = timezone(file.time_zone)
+                            time = time.replace(tzinfo = time_zone)
                             obj = cls(ingest=ingest, sensor=sensor, time=time,
-                                value=column)
+                                value=column, time_zone = time_zone)
                         objects.append(obj)
                 yield (objects, file.name, row.position, file.size,
                        processed_bytes + row.position, total_bytes)

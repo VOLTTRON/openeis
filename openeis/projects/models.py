@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*- {{{
+# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
+#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -47,6 +50,8 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
+#
+#}}}
 
 import contextlib
 import json
@@ -179,6 +184,7 @@ class DataFile(models.Model):
             auto_now_add=True, help_text='Date and time file was uploaded')
     comments = models.CharField(max_length=200, blank=True)
     timestamp = JSONField(blank=True)
+    time_zone = models.CharField(max_length=64, blank=True)
 
     def __str__(self):
         return self.file.name
@@ -409,6 +415,7 @@ class BaseSensorData(models.Model):
     sensor = models.ForeignKey(Sensor)
     ingest = models.ForeignKey(SensorIngest)
     time = models.DateTimeField()
+    time_zone = models.CharField(max_length=50, default='UTC')
 
     class Meta:
         abstract = True

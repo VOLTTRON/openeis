@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*- {{{
+# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
+#
 # Copyright (c) 2014, Battelle Memorial Institute
 # All rights reserved.
 #
@@ -47,6 +50,8 @@
 # PACIFIC NORTHWEST NATIONAL LABORATORY
 # operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 # under Contract DE-AC05-76RL01830
+#
+#}}}
 
 '''This command iterates through all tables in the database. All tables
 which name starts with appoutputdata_ and are empty are dropped.
