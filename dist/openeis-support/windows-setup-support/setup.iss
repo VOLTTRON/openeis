@@ -7,7 +7,7 @@
 #define MyAppURL "https://github.com/VOLTTRON/openeis/"
 
 
-#define SrcRoot "{{WORKING_DIR}}"
+#define SrcRoot "~~WORKING_DIR~~"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.

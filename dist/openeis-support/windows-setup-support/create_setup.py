@@ -104,7 +104,14 @@ def move_to_working_dir():
 
         setup_file = os.path.join(OPENEIS_SRC_DIR, 'dist','openeis-support',
                                   'windows-setup-support', 'setup.iss')
-        shutil.copy(setup_file, 'setup.iis')
+        shutil.copy(setup_file, 'setup.iss')
+
+        data = open('setup.iss').read()
+        for x in ('WORKING_DIR',):
+            data = data.replace('~~{}~~'.format(x), cfg[x].replace('/', '\\'))
+
+        with open('setup.iss', 'w') as f:
+            f.write(data)
         
     finally:
         os.chdir(ORIG_CWD)
