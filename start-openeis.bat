@@ -4,7 +4,7 @@
 SET OPENEIS_PORT=54620
 
 ::echo off
-start env\scripts\openeis.exe runserver %OPENEIS_PORT%
+start python\python.exe openeis-personal.py runserver %OPENEIS_PORT%
 
 :: timeout command waits for n seconds before continuing
 :: a hack to make sure the server might have a chance to
