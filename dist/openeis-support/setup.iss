@@ -41,6 +41,7 @@ Source: "{#SrcRoot}\openeis\*"; DestDir: "{app}\openeis"; Flags: ignoreversion r
 Source: "{#SrcRoot}\requirements.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SrcRoot}\get-pip.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SrcRoot}\openeis-personal.py"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#SrcRoot}\start-openeis.bat"; DestDir: "{app}"; Flags: ignoreversion
 
 [Run]
 Filename: "{app}\python\python.exe"; Parameters: "{app}\get-pip.py"
