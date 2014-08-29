@@ -2,8 +2,8 @@
 
     
 '''
-import os
 import json
+import os
 import sys
 
 basedir = os.path.abspath(os.path.dirname(__file__))
@@ -40,6 +40,10 @@ NUMPY_DIR= cfg['NUMPY_DIR']
 # of the installed application when installing on the client
 # machine.
 MISC_DIR = cfg['MISC_DIR']
+
+# The directory of an extracted inno setup folder.  This can
+# be obtained through innoextractor program from the internet.
+INNO_SETUP_DIR = cfg['INNO_SETUP_DIR']
 
 def build_wheels():
     '''Builds the openeis and openeis-ui wheels, puts them in WHEEL_DIR
