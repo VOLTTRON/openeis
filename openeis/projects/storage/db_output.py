@@ -175,9 +175,9 @@ class DatabaseOutputFile(DatabaseOutput):
         str_handler.setFormatter(formatter)
         self._logger.addHandler(str_handler)
 
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(formatter)
-        self._logger.addHandler(file_handler)
+        self.file_handler = logging.FileHandler(log_file)
+        self.file_handler.setFormatter(formatter)
+        self._logger.addHandler(self.file_handler)
 
         self.csv_table_map = {}
         self.file_table_map = {}
@@ -214,7 +214,10 @@ class DatabaseOutputFile(DatabaseOutput):
                 dict_writer.writerow(row_data)
             fd = self.file_table_map[table_name]
             fd.close()
-
+        
+        self._logger.removeHandler(self.file_handler)
+        self.file_handler.close()
+        
 class DatabaseOutputZip(DatabaseOutputFile):
     def __init__(self, analysis, output_map, config_dict):
 
@@ -227,7 +230,7 @@ class DatabaseOutputZip(DatabaseOutputFile):
     def close(self):
         super().close()
         print('Writing Debug zip file.')
-
+        
         analysis_folder = os.getcwd()+'/data/files/analysis'
         if os.path.exists(analysis_folder) == False:
             os.mkdir(analysis_folder)
@@ -235,9 +238,15 @@ class DatabaseOutputZip(DatabaseOutputFile):
         zip_file = analysis_folder+'/'+str(self.analysis_id)+'.zip'
         with ZipFile(zip_file, 'w') as myzip:
 
+            
+            for table_name in self.csv_table_map:
+                csv_file = self.file_prefix +'_'+table_name+'.csv'
+                print(os.path.abspath(csv_file))
+                myzip.write(csv_file)
+                os.remove(csv_file)
+            
             log_file = self.file_prefix+".log"
             myzip.write(log_file)
-            self._logger.handlers[2].stream.close()
             os.remove(log_file)
 
             d = (self.config_dict)
@@ -245,11 +254,7 @@ class DatabaseOutputZip(DatabaseOutputFile):
             config_file = self.file_prefix+'.json'
             myzip.writestr(config_file,jsonarray)
 
-            for table_name in self.csv_table_map:
-                csv_file = self.file_prefix +'_'+table_name+'.csv'
-                print(os.path.abspath(csv_file))
-                myzip.write(csv_file)
-                os.remove(csv_file)
+            
 
 
 if __name__ == '__main__':
