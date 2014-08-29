@@ -2,7 +2,6 @@ from setuptools import setup
 import os
 
 basepath = os.path.dirname(os.path.abspath(__file__))
-print(basepath)
 
 def get_files(path):
     '''Recursivly walks a directory returning list of files'''
