@@ -58,18 +58,39 @@ python installer.py build command.
 Author: Craig Allwardt
 
 '''
-# In order for cx_Freeze to successfully import these, we need
-# to include them here.
-import http.cookies
-import html.entities
-import html.parser
-
 import sys
 import os
-
+from openeis.server.settings import *
+import openeis.server.manage
 from openeis.server.manage import main
 
-if __name__ == '__main__':
+def setup_first_use():
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'openeis.server.settings')
     
-    #os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'openeis.server.settings')
+    from django.contrib.auth.management.commands import changepassword
+    from django.core import management
+    from django.contrib.auth.models import User
+    
+    try:
+        user_count = User.objects.count()
+    except:
+        user_count = 0
+    
+    # If there isn't a superuser then we need to run syncdb and setup our main
+    # superuser for the system.
+    if user_count == 0:
+        # Run the syncdb
+        management.call_command('syncdb', interactive=False)
+
+        # Create the super user and sets his password.
+        # use username openeis/openeis as the super user
+        management.call_command('createsuperuser', interactive=False, username="openeis", email="openeis@fake.it")
+        command = changepassword.Command()
+        command._get_pass = lambda *args: 'openeis'
+        command.execute("openeis")
+
+
+if __name__ == '__main__':
+    setup_first_use()
     main()
+    
