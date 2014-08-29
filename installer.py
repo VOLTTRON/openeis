@@ -63,17 +63,27 @@ from cx_Freeze import setup, Executable
 import sys
 import os
 
-def get_files(root_path):
-    '''Returns list of string with all file in root_path and children'''
+def get_files(root_path, rel_base):
+    '''Returns list of tuples
+    
+    The first element in the tuples is the path to the file on disk.  The
+    second element in the tuple is the path relative to the root in the
+    archive/filesystem.
+    '''
     
     file_paths = []
     for root, dirs, files in os.walk(root_path, topdown=False):
         for name in files:
-            file_paths.append(os.path.join(root, name))
+            #print (name)
+            file_paths.append((os.path.join(root, name), os.path.join(root, name)))
     return file_paths
 
-include_files = get_files(os.path.join('lib', 'openeis-ui', 'openeis', 'ui','static'))
-
+#include_files = get_files(os.path.join('lib', 'openeis-ui', 'openeis', 'ui','static'))
+include_files = get_files('data/static', 'data/static')
+zip_includes = [
+    (r'jsonschema\schemas\draft3.json',r'jsonschema\schemas\draft3.json'),
+    (r'jsonschema\schemas\draft4.json',r'jsonschema\schemas\draft4.json'),
+    ]
 namespace_packages = ['openeis', 'django']
 excludes = []
 packages = [
@@ -85,9 +95,11 @@ packages = [
     ]
 
 build_exe_options = {
+                     
    'namespace_packages': namespace_packages,
    'packages': packages,
-   'include_files': include_files
+   'include_files': include_files,
+   'zip_includes': zip_includes
     }
 
 
@@ -115,7 +127,8 @@ build_exe_options = {
 #"shortcutDir":          #the directory in which to place the shortcut when being installed by an MSI package; see the MSI Shortcut table documentation for more information on what values can be placed here.
 
 executables = [
-    Executable('openeis-personal.py')
+    #Executable('openeis-personal.py'),
+    Executable('serve.py')
 ]
 
 setup(
