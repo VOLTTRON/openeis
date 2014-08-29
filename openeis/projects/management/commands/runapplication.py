@@ -129,7 +129,7 @@ class Command(BaseCommand):
 
             output_format = klass.output_format(db_input)
     
-            file_output = DatabaseOutputFile(analysis, output_format)
+            file_output = DatabaseOutputFile(analysis, output_format, console_output=True)
 
             if( verbosity > 1 ):
                 print('Running application:', application)
