@@ -47,6 +47,7 @@ Source: "{#SrcRoot}\misc\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdi
 Filename: "{app}\python\python.exe"; Parameters: "{app}\get-pip.py"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install wheel"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install --no-index --find-links={app}\wheels -r {app}\requirements.txt"
+Filename: "{app}\start-openeis.bat"; Description: "Launch application"; Flags: postinstall nowait skipifsilent unchecked
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
