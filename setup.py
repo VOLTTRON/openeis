@@ -67,6 +67,7 @@ install_requires = [
         'django-nose',
         'jsonschema',
         'openeis-ui>0.1.dev70',
+        'pytest-django',
         'pytz',
 ]
 

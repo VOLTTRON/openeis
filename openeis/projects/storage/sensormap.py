@@ -178,8 +178,8 @@ class Schema:
         try:
             schema = Schema._sensormap_schema
         except AttributeError:
-            path = os.path.join(os.path.dirname(__file__),
-                                'sensormap-schema.json')
+            path = os.path.join(os.path.dirname(__file__), '..', 'static',
+                                'projects', 'json', 'sensormap-schema.json')
             with open(path) as file:
                 Schema._sensormap_schema = schema = json.load(file)
         copy = schema.copy()

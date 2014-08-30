@@ -67,9 +67,11 @@ def build_wheels():
     This assumes that the executing python has bee activated with
     a bootstrapped python.
 '''
-    
-    os.chdir(os.path.join(OPENEIS_SRC_DIR))
     try:
+        os.chdir(os.path.join(OPENEIS_SRC_DIR))
+        if os.path.exists('build'):
+            shutil.rmtree('build')
+        
         print('Executing wheel on openeis')
         ret = subprocess.check_call(['python', 'setup.py', 'bdist_wheel'])
         
@@ -79,6 +81,8 @@ def build_wheels():
                 
         
         os.chdir(os.path.join(OPENEIS_SRC_DIR, 'lib', 'openeis-ui'))
+        if os.path.exists('build'):
+            shutil.rmtree('build')
         ret = subprocess.check_call(['python', 'setup.py', 'bdist_wheel'])
         
         for f in os.listdir('dist'):
@@ -130,8 +134,20 @@ def make_setup():
     build_wheels()
     move_to_working_dir()
     make_installer()
+
+def rename_src_dir(newpath):
+    global cfg, OPENEIS_SRC_DIR
+    OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'] = newpath.replace('\\','/')
+    if not os.path.exists(OPENEIS_SRC_DIR):
+        sys.stderr.write('invalid src dir {}\n'.format(OPENEIS_SRC_DIR))
+        sys.exit(500)
     
 
 if __name__ == '__main__':
+    
+    if len(sys.argv) > 1:
+        # Change the source dir
+        rename_src_dir(sys.argv[1])
+    
     make_setup()
                

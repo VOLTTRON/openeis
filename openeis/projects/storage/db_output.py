@@ -71,6 +71,7 @@ import shutil
 import tempfile
 import csv
 from datetime import datetime
+from openeis.server.settings import DATA_DIR
 
 BATCH_SIZE = 1000
 LOG_TABLE_NAME = 'log'
@@ -146,7 +147,7 @@ class DatabaseOutput:
 
 
 class DatabaseOutputFile(DatabaseOutput):
-    def __init__(self, analysis, output_map):
+    def __init__(self, analysis, output_map, console_output=False):
         '''
         analysis - Analysis model instance to associate output to
         Expected output_map:
@@ -166,14 +167,15 @@ class DatabaseOutputFile(DatabaseOutput):
         self.file_prefix = analysis.application+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
 
         log_file = self.file_prefix + '.log'
-        self._logger = logging.getLogger()
+        self._logger = logging.Logger(name=analysis.application) #logging.getLogger()
         formatter = logging.Formatter('%(levelname)s:%(name)s %(message)s')
         self._logger.setLevel(logging.INFO)
 
-        str_handler = logging.StreamHandler()
-        str_handler.setLevel(logging.ERROR)
-        str_handler.setFormatter(formatter)
-        self._logger.addHandler(str_handler)
+        if console_output == True:
+            str_handler = logging.StreamHandler()
+            str_handler.setLevel(logging.ERROR)
+            str_handler.setFormatter(formatter)
+            self._logger.addHandler(str_handler)
 
         self.file_handler = logging.FileHandler(log_file)
         self.file_handler.setFormatter(formatter)
@@ -231,7 +233,7 @@ class DatabaseOutputZip(DatabaseOutputFile):
         super().close()
         print('Writing Debug zip file.')
         
-        analysis_folder = os.getcwd()+'/data/files/analysis'
+        analysis_folder = '/'.join((DATA_DIR, 'files','analysis'))
         if os.path.exists(analysis_folder) == False:
             os.mkdir(analysis_folder)
 

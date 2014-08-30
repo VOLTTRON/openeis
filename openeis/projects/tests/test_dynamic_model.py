@@ -60,6 +60,7 @@ from django.conf import settings
 from django.db.models import loading
 from django.test import TestCase
 from django.test.utils import setup_test_environment
+import pytest
 
 from openeis.projects import models
 from openeis.projects.storage import dynamictables as dyn
@@ -86,6 +87,7 @@ def teardown_module():
     models.AppOutput = _AppOutput
 
 
+@pytest.mark.skipif("True")
 class TestDynamicModelCreation(TestCase):
     def setUp(self):
         setup_test_environment()

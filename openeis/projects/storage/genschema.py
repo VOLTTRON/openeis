@@ -67,7 +67,8 @@ def load_json(filename):
          return json.load(file)
 
 def load_schema():
-    path = os.path.join(os.path.dirname(__file__), 'sensormap-schema.json')
+    path = os.path.join(os.path.dirname(__file__), '..', 'static',
+                        'projects', 'json', 'sensormap-schema.json')
     with open(path) as file:
         schema = json.load(file, object_pairs_hook=OrderedDict)
     return schema
