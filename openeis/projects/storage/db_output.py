@@ -71,6 +71,7 @@ import shutil
 import tempfile
 import csv
 from datetime import datetime
+from openeis.server.settings import DATA_DIR
 
 BATCH_SIZE = 1000
 LOG_TABLE_NAME = 'log'
@@ -231,7 +232,7 @@ class DatabaseOutputZip(DatabaseOutputFile):
         super().close()
         print('Writing Debug zip file.')
         
-        analysis_folder = os.getcwd()+'/data/files/analysis'
+        analysis_folder = '/'.join((DATA_DIR, 'files','analysis'))
         if os.path.exists(analysis_folder) == False:
             os.mkdir(analysis_folder)
 
