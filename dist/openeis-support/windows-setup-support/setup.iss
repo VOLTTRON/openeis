@@ -37,15 +37,16 @@ PrivilegesRequired=lowest
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "{#SrcRoot}\python\*"; DestDir: "{app}\python"; Flags: ignoreversion recursesubdirs
-Source: "{#SrcRoot}\wheels\*"; DestDir: "{app}\wheels"; Flags: ignoreversion recursesubdirs
-Source: "{#SrcRoot}\numpy\*"; DestDir: "{app}\python\Lib\site-packages"; Flags: ignoreversion recursesubdirs
+Source: "{#SrcRoot}\python\*"; DestDir: "{app}\python"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
+Source: "{#SrcRoot}\wheels\*"; DestDir: "{app}\wheels"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
+Source: "{#SrcRoot}\numpy\*"; DestDir: "{app}\python\Lib\site-packages"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
 ; Source: "{#SrcRoot}\openeis\*"; DestDir: "{app}\openeis"; Flags: ignoreversion recursesubdirs
-Source: "{#SrcRoot}\misc\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
+Source: "{#SrcRoot}\misc\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
 
 [Run]
 Filename: "{app}\python\python.exe"; Parameters: "{app}\get-pip.py"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install wheel"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install --no-index --find-links={app}\wheels -r {app}\requirements.txt"
+
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
