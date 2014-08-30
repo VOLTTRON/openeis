@@ -134,8 +134,20 @@ def make_setup():
     build_wheels()
     move_to_working_dir()
     make_installer()
+
+def rename_src_dir(newpath):
+    global cfg, OPENEIS_SRC_DIR
+    OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'] = newpath.replace('\\','/')
+    if not os.path.exists(OPENEIS_SRC_DIR):
+        sys.stderr.write('invalid src dir {}\n'.format(OPENEIS_SRC_DIR))
+        sys.exit(500)
     
 
 if __name__ == '__main__':
+    
+    if len(sys.argv) > 1:
+        # Change the source dir
+        rename_src_dir(sys.argv[1])
+    
     make_setup()
                
