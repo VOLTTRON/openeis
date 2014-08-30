@@ -67,9 +67,11 @@ def build_wheels():
     This assumes that the executing python has bee activated with
     a bootstrapped python.
 '''
-    
-    os.chdir(os.path.join(OPENEIS_SRC_DIR))
     try:
+        os.chdir(os.path.join(OPENEIS_SRC_DIR))
+        if os.path.exists('build'):
+            shutil.rmtree('build')
+        
         print('Executing wheel on openeis')
         ret = subprocess.check_call(['python', 'setup.py', 'bdist_wheel'])
         
@@ -79,6 +81,8 @@ def build_wheels():
                 
         
         os.chdir(os.path.join(OPENEIS_SRC_DIR, 'lib', 'openeis-ui'))
+        if os.path.exists('build'):
+            shutil.rmtree('build')
         ret = subprocess.check_call(['python', 'setup.py', 'bdist_wheel'])
         
         for f in os.listdir('dist'):
