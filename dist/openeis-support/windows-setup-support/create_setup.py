@@ -131,15 +131,26 @@ def make_installer():
         os.chdir(ORIG_CWD)
         
 def make_setup():
+    print("Configuration for setup:")
+    for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR', 
+              'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
+        print("{}->{}".format(x, cfg[x]))
     build_wheels()
     move_to_working_dir()
     make_installer()
 
-def rename_src_dir(newpath):
-    global cfg, OPENEIS_SRC_DIR
-    OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'] = newpath.replace('\\','/')
+def rename_dirs(src_dir, working_dir):
+    '''Allow caller to change the source dir and working dir'''
+    global cfg, OPENEIS_SRC_DIR, WORKING_DIR
+    OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'] = src_dir.replace('\\','/')
+    WORKING_DIR = cfg['WORKING_DIR'] = working_dir.replace('\\','/')
+    
     if not os.path.exists(OPENEIS_SRC_DIR):
         sys.stderr.write('invalid src dir {}\n'.format(OPENEIS_SRC_DIR))
+        sys.exit(500)
+
+    if not os.path.exists(WORKING_DIR):
+        sys.stderr.write('invalid src dir {}\n'.format(WORKING_DIR))
         sys.exit(500)
     
 
@@ -147,7 +158,7 @@ if __name__ == '__main__':
     
     if len(sys.argv) > 1:
         # Change the source dir
-        rename_src_dir(sys.argv[1])
+        rename_src_dir(sys.argv[1], sys.argv[2])
     
     make_setup()
                
