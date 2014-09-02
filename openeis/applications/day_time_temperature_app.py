@@ -189,11 +189,11 @@ class Application(DriverApplicationBaseClass):
 
         # Gather loads and outside air temperatures. Reduced to an hourly average
         # TODO: Convert to minutes? 
-        load_query = self.inp.get_query_sets('load',
+        load_query = self.inp.get_query_sets('load', group_by='hour',
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
                                              wrap_for_merge=True)
-        oat_query = self.inp.get_query_sets('oat', 
+        oat_query = self.inp.get_query_sets('oat', group_by='hour', 
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
                                              wrap_for_merge=True)
@@ -208,7 +208,7 @@ class Application(DriverApplicationBaseClass):
         for x in merged_load_oat:
             load_values.append(x['load'][0])
             oat_values.append(x['oat'][0])
-            datetime_values.append(x['time'])
+            datetime_values.append(dt.datetime.strptime(x['time'],'%Y-%m-%d %H'))
             
         trainStartIdx = ttow.findDateIndex(datetime_values, self.training_start)
         trainStopIdx = ttow.findDateIndex(datetime_values, self.training_stop)
