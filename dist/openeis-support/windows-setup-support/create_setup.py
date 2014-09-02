@@ -158,7 +158,7 @@ if __name__ == '__main__':
     
     if len(sys.argv) > 1:
         # Change the source dir
-        rename_src_dir(sys.argv[1], sys.argv[2])
+        rename_dirs(sys.argv[1], sys.argv[2])
     
     make_setup()
                
