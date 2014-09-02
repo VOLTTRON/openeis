@@ -637,7 +637,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
 
 
 def preview_ingestion(sensormap, input_files, count=15):
-    files = {f.name: f.file.file.file for f in input_files}
+    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone} for f in input_files}
     result = {}
     for file in ingest_files(sensormap, files):
         rows = []
@@ -691,7 +691,9 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
                                       for name in path)): value
                                      for path, value in errors.items()},
                                    status=status.HTTP_400_BAD_REQUEST)
+            
             files = obj['files']
+            print(files)
             for file in files:
                 if file.file.project.owner != user:
                     raise rest_exceptions.PermissionDenied()
@@ -853,7 +855,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @link()
     def download(self, request, *args, **kwargs):
         '''Retrieve the debug zip file.'''
-        response = ProtectedMediaResponse('analysis/{}.zip'.format(self.get_object().pk))
+        analysis_dir = posixpath.join(DATA_DIR, 'files', 'analysis', '{}.zip')
+        response = ProtectedMediaResponse(analysis_dir.format(self.get_object().pk))
         response['Content-Type'] = 'application/zip; name="analysis-debug.zip"'
         response['Content-Disposition'] = 'filename="analysis-debug.zip"'
         return response

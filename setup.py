@@ -67,6 +67,7 @@ install_requires = [
         'django-nose',
         'jsonschema',
         'openeis-ui>0.1.dev70',
+        'pytest-django',
         'pytz',
 ]
 
@@ -83,7 +84,6 @@ def get_files(path):
     # the walk needs to be relatative to the currently changed
     # directory. So that it is put into the package correctly.
     for root, dirs, files in os.walk('.', topdown=False):
-        print('ROOT:', root)
         for name in files:
             if '__pycache__' not in root:
                 file_names.append(os.path.join(root, name)) #(os.path.join(root, name)))
