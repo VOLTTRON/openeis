@@ -93,6 +93,7 @@ from .storage.db_input import DatabaseInput
 from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
+from openeis.server.settings import DATA_DIR
 
 _logger = logging.getLogger(__name__)
 
@@ -691,7 +692,7 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
                                       for name in path)): value
                                      for path, value in errors.items()},
                                    status=status.HTTP_400_BAD_REQUEST)
-            
+
             files = obj['files']
             print(files)
             for file in files:
