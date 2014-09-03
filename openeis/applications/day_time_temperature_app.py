@@ -209,32 +209,29 @@ class Application(DriverApplicationBaseClass):
             load_values.append(x['load'][0])
             oat_values.append(x['oat'][0])
             datetime_values.append(dt.datetime.strptime(x['time'],'%Y-%m-%d %H'))
-            
-        trainStartIdx = ttow.findDateIndex(datetime_values, self.training_start)
-        trainStopIdx = ttow.findDateIndex(datetime_values, self.training_stop)
-        predictStartIdx = ttow.findDateIndex(datetime_values, self.prediction_start)
-        predictStopIdx = ttow.findDateIndex(datetime_values, self.prediction_stop)
+
+        indexList = {}
+        indexList['trainingStart'] = ttow.findDateIndex(datetime_values, self.training_start)
+        indexList['trainingStop'] = ttow.findDateIndex(datetime_values, self.training_stop)
+        indexList['predictStart'] = ttow.findDateIndex(datetime_values, self.prediction_start)
+        indexList['predictStop'] = ttow.findDateIndex(datetime_values, self.prediction_stop)
         
-        # # TODO: Make this throw a warning. 
-        # assert( 0 <= trainStartIdx
-            # and trainStartIdx < trainStopIdx
-            # and trainStopIdx <= predictStartIdx
-            # and predictStartIdx < predictStopIdx
-            # and predictStopIdx <= len(fitTimes)
-            # )
-
+        for indx in indexList.keys():
+            if indexList[indx] == None:
+                self.out.log("Date not found in the datelist", logging.WARNING)
+                
         # Break up data into training and prediction periods.
-        timesTrain = datetime_values[trainStartIdx:trainStopIdx]
-        timesPredict = datetime_values[predictStartIdx:predictStopIdx]
+        timesTrain = datetime_values[indexList['trainingStart']:indexList['trainingStop']]
+        timesPredict = datetime_values[indexList['predictStart']:indexList['predictStop']]
 
-        valsTrain = load_values[trainStartIdx:trainStopIdx]
-        valsActual = load_values[predictStartIdx:predictStopIdx]
+        valsTrain = load_values[indexList['trainingStart']:indexList['trainingStop']]
+        valsActual = load_values[indexList['predictStart']:indexList['predictStop']]
 
-        oatsTrain = oat_values[trainStartIdx:trainStopIdx]
-        oatsPredict = oat_values[predictStartIdx:predictStopIdx]
+        oatsTrain = oat_values[indexList['trainingStart']:indexList['trainingStop']]
+        oatsPredict = oat_values[indexList['predictStart']:indexList['predictStop']]
 
         # Generate other information needed for model.
-        timeStepMinutes = (timesTrain[1] -timesTrain[0]).total_seconds()/60  
+        timeStepMinutes = (timesTrain[1] - timesTrain[0]).total_seconds()/60  
         # TODO: Should this be calculated in the utility function
         binCt = 6  # TODO: Allow caller to pass this in as an argument.
 
