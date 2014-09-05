@@ -213,10 +213,15 @@
                                 "FirstStageHeating",
                                 "OccupancyMode",
                                 "SecondStageCooling",
-                                "SecondStageHeating"
+                                "SecondStageHeating",
+                                "BoilerStatus",
+                                "PumpStatus",
+                                "CoolingCall", 
+                                "HeatingCall",
+                                "SupplyFanStatus"
                             ]
                         },
-                        "unit": {"not": {}}
+                        "unit": {"$ref": "#/definitions/units/unitless"}
                     }
                 },
                 {
@@ -229,6 +234,11 @@
                                 "OutdoorAirRelativeHumidity",
                                 "OutdoorDamperSignal",
                                 "ReturnAirRelativeHumidity",
+                                "HotWaterValvePosition",
+                                "PreHeatValvePosition",
+                                "TerminalBoxDamperCommand",
+                                "ChilledWaterValvePosition",
+                                "PumpVFDCommand",
                                 "SupplyFanSpeed"
                             ]
                         },
@@ -253,6 +263,20 @@
                     "properties": {
                         "type": {
                             "enum": [
+                                "DuctStaticPressure",
+                                "DuctStaticPressureSetPoint",
+                                "LoopDifferentialPressure",
+                                "LoopDifferentialPressureSetPoint"
+                            ]
+                        },
+                        "unit": {"$ref": "#/definitions/units/pressure"}
+                    }
+                },
+                {
+                    "required": ["unit"],
+                    "properties": {
+                        "type": {
+                            "enum": [
                                 "WholeBuildingElectricity",
                                 "WholeBuildingGas"
                             ]
@@ -266,11 +290,16 @@
                         "type": {
                             "enum": [
                                 "DischargeAirTemperature",
+                                "DischargeAirTemperatureSetPoint",
                                 "MixedAirTemperature",
+                                "MixedAirTemperatureSetPoint",
                                 "OutdoorAirTemperature",
                                 "ReturnAirTemperature",
                                 "ZoneSetpoint",
-                                "ZoneTemperature"
+                                "ZoneTemperature",
+                                "SupplyWaterTemperature", 
+                                "ReturnWaterTemperature",
+                                "SupplyWaterTemperatureSetPoint"
                             ]
                         },
                         "unit": {"$ref": "#/definitions/units/temperature"}
