@@ -1,5 +1,138 @@
 {
-    "sensors": {
+    "site": {
+        "attribute_list": [
+            "address"
+        ],
+        "sensor_list": [
+            "OutdoorAirTemperature"
+        ],
+        "child_list": [
+            "building",
+            "other"
+        ]
+    },
+    "building": {
+        "attribute_list": [
+            "address"
+        ],
+        "sensor_list": [
+            "OutdoorAirTemperature",
+            "OutdoorAirRelativeHumidity",
+            "WholeBuildingElectricity",
+            "WholeBuildingGas"
+        ],
+        "child_list": [
+            "RTU",
+            "AHU",
+            "HotWaterCentralPlant",
+            "ChilledWaterCentralPlant",
+            "other"
+        ]
+    },
+    "HotWaterCentralPlant": {
+        "sensor_list": [
+            "LoopDifferentialPressure", 
+            "LoopDifferentialPressureSetPoint", 
+            "PumpVFDCommand", 
+            "PumpStatus", 
+            "BoilerStatus", 
+            "SupplyWaterTemperatureSetPoint", 
+            "SupplyWaterTemperature", 
+            "ReturnWaterTemperature"
+        ]
+    }, 
+    "AHU": {
+        "sensor_list": [
+            "SupplyFanSpeed",
+            "SupplyFanStatus",
+            "ChilledWaterValvePosition",
+            "DuctStaticPressure", 
+            "DuctStaticPressureSetPoint", 
+            "OutdoorAirTemperature",
+            "OutdoorAirRelativeHumidity",
+            "MixedAirTemperature",
+            "MixedAirTemperatureSetPoint",
+            "MixedAirRelativeHumidity",  
+            "ReturnAirTemperature",
+            "ReturnAirRelativeHumidity",
+            "DischargeAirTemperature", 
+            "DischargeAirTemperatureSetPoint",
+            "DischargeAirRelativeHumidity", 
+            "OutdoorDamperSignal", 
+            "CoolingCall", 
+            "HeatingCall", 
+            "HotWaterValvePosition", 
+            "PreHeatValvePosition", 
+            "TotalPower", 
+            "SupplyFanPower", 
+            "EconomizerMode", 
+            "OccupancyMode", 
+            "ZoneSetpoint", 
+            "ZoneTemperature",  
+            "TerminalBoxDamperCommand", 
+            "TerminalBoxReheatValvePosition"
+        ]
+    }, 
+    "ChilledWaterCentralPlant": {
+        "sensor_list": [
+            "LoopDifferentialPressure", 
+            "LoopDifferentialPressureSetPoint", 
+            "PumpVFDCommand", 
+            "PumpStatus", 
+            "BoilerStatus", 
+            "SupplyWaterTemperatureSetPoint", 
+            "SupplyWaterTemperature", 
+            "ReturnWaterTemperature"
+        ]
+    }, 
+    "RTU": {
+        "sensor_list": [
+            "OutdoorAirTemperature", 
+            "OutdoorAirRelativeHumidity", 
+            "MixedAirTemperature", 
+            "MixedAirRelativeHumidity", 
+            "ReturnAirTemperature", 
+            "ReturnAirRelativeHumidity", 
+            "DischargeAirTemperature", 
+            "DischargeAirTemperatureSetPoint",
+            "DischargeAirRelativeHumidity",
+            "DuctStaticPressure", 
+            "DuctStaticPressureSetPoint", 
+            "FirstStageCooling", 
+            "SecondStageCooling", 
+            "FirstStageHeating", 
+            "SecondStageHeating", 
+            "TotalPower", 
+            "SupplyFanStatus",
+            "SupplyFanPower", 
+            "SupplyFanSpeed", 
+            "CondenserFanPower", 
+            "OutdoorDamperSignal", 
+            "EconomizerMode", 
+            "OccupancyMode", 
+            "ZoneSetpoint", 
+            "ZoneTemperature", 
+            "CoolingCall", 
+            "HeatingCall", 
+            "TerminalBoxDamperCommand", 
+            "TerminalBoxReheatValvePosition"
+        ]
+    },
+    "other": {
+        "sensor_list": "*",
+        "child_list": [
+            "other"
+        ]
+    },
+    "attributes": {
+        "address": {
+            "address": { "data_type": "string"},
+            "city": { "data_type": "string"},
+            "state": { "data_type": "string"},
+            "zip_code": { "data_type": "string"}
+        }
+    },
+     "sensors": {
         "HotWaterValvePosition": {
             "data_type": "float", 
             "sensor_type": "HotWaterValvePosition", 
@@ -38,15 +171,15 @@
         }, 
         "OutdoorAirRelativeHumidity": {
             "data_type": "float", 
-            "unit_type": "dimensionless", 
             "sensor_name": "OutdoorAirRelativeHumidity", 
-            "sensor_type": "OutdoorAirRelativeHumidity"
+            "sensor_type": "OutdoorAirRelativeHumidity",
+            "unit_type": "dimensionless"
         }, 
         "FirstStageCooling": {
             "data_type": "boolean", 
-            "unit_type": "unitless", 
             "sensor_name": "FirstStageCooling", 
-            "sensor_type": "FirstStageCooling"
+            "sensor_type": "FirstStageCooling",
+            "unit_type": "unitless"
         }, 
         "CoolingCall": {
             "data_type": "boolean", 
@@ -54,17 +187,17 @@
             "sensor_name": "CoolingCall", 
             "unit_type": "unitless"
         }, 
-        "SupplyFanPower": {
-            "data_type": "float", 
+        "SupplyFanPower": { 
             "unit_type": "energy", 
             "sensor_name": "SupplyFanPower", 
-            "sensor_type": "SupplyFanPower"
+            "sensor_type": "SupplyFanPower",
+            "data_type": "float"
         }, 
         "SupplyFanStatus": {
             "data_type": "boolean",
-            "unit_type": "unitless",
             "sensor_name": "SupplyFanStatus", 
-            "sensor_type": "SupplyFanStatus"
+            "sensor_type": "SupplyFanStatus",
+            "unit_type": "unitless"
         }, 
         "PreHeatValvePosition": {
             "data_type": "float", 
@@ -74,15 +207,15 @@
         }, 
         "OccupancyMode": {
             "data_type": "boolean", 
-            "unit_type": "unitless", 
             "sensor_name": "OccupancyMode", 
-            "sensor_type": "OccupancyMode"
+            "sensor_type": "OccupancyMode",
+            "unit_type": "unitless"
         }, 
         "CondenserFanPower": {
-            "data_type": "float", 
-            "unit_type": "energy", 
+            "data_type": "float",  
             "sensor_name": "CondenserFanPower", 
-            "sensor_type": "CondenserFanPower"
+            "sensor_type": "CondenserFanPower",
+            "unit_type": "energy"
         }, 
         "DuctStaticPressureSetPoint": {
             "data_type": "float", 
@@ -91,10 +224,10 @@
             "unit_type": "pressure"
         }, 
         "MixedAirRelativeHumidity": {
-            "data_type": "float", 
-            "unit_type": "dimensionless", 
+            "data_type": "float",  
             "sensor_name": "MixedAirRelativeHumidity", 
-            "sensor_type": "MixedAirRelativeHumidity"
+            "sensor_type": "MixedAirRelativeHumidity",
+            "unit_type": "dimensionless"
         }, 
         "TerminalBoxDamperCommand": {
             "data_type": "float", 
@@ -104,9 +237,9 @@
         }, 
         "SecondStageCooling": {
             "data_type": "boolean", 
-            "unit_type": "unitless", 
             "sensor_name": "SecondStageCooling", 
-            "sensor_type": "SecondStageCooling"
+            "sensor_type": "SecondStageCooling",
+            "unit_type": "unitless"
         }, 
         "ZoneTemperature": {
             "data_type": "float", 
@@ -264,149 +397,5 @@
             "sensor_name": "WholeBuildingElectricity", 
             "sensor_type": "WholeBuildingElectricity"
         }
-    }, 
-    "HotWaterCentralPlant": {
-        "sensor_list": [
-            "LoopDifferentialPressure", 
-            "LoopDifferentialPressureSetPoint", 
-            "PumpVFDCommand", 
-            "PumpStatus", 
-            "BoilerStatus", 
-            "SupplyWaterTemperatureSetPoint", 
-            "SupplyWaterTemperature", 
-            "ReturnWaterTemperature"
-        ]
-    }, 
-    "AHU": {
-        "sensor_list": [
-            "SupplyFanSpeed",
-            "SupplyFanStatus",
-            "ChilledWaterValvePosition",
-            "DuctStaticPressure", 
-            "DuctStaticPressureSetPoint", 
-            "OutdoorAirTemperature",
-            "OutdoorAirRelativeHumidity",
-            "MixedAirTemperature",
-            "MixedAirTemperatureSetPoint",
-            "MixedAirRelativeHumidity",  
-            "ReturnAirTemperature",
-            "ReturnAirRelativeHumidity",
-            "DischargeAirTemperature", 
-            "DischargeAirTemperatureSetPoint",
-            "DischargeAirRelativeHumidity", 
-            "OutdoorDamperSignal", 
-            "CoolingCall", 
-            "HeatingCall", 
-            "HotWaterValvePosition", 
-            "PreHeatValvePosition", 
-            "TotalPower", 
-            "SupplyFanPower", 
-            "EconomizerMode", 
-            "OccupancyMode", 
-            "ZoneSetpoint", 
-            "ZoneTemperature",  
-            "TerminalBoxDamperCommand", 
-            "TerminalBoxReheatValvePosition"
-        ]
-    }, 
-    "building": {
-        "attribute_list": [
-            "address"
-        ], 
-        "child_list": [
-            "RTU", 
-            "AHU",
-            "HotWaterCentralPlant",
-            "ChilledWaterCentralPlant",
-            "other"
-        ], 
-        "sensor_list": [
-            "OutdoorAirTemperature", 
-            "OutdoorAirRelativeHumidity", 
-            "WholeBuildingElectricity", 
-            "WholeBuildingGas"
-        ]
-    }, 
-    "other": {
-        "child_list": [
-            "other"
-        ], 
-        "sensor_list": "*"
-    }, 
-    "ChilledWaterCentralPlant": {
-        "sensor_list": [
-            "LoopDifferentialPressure", 
-            "LoopDifferentialPressureSetPoint", 
-            "PumpVFDCommand", 
-            "PumpStatus", 
-            "BoilerStatus", 
-            "SupplyWaterTemperatureSetPoint", 
-            "SupplyWaterTemperature", 
-            "ReturnWaterTemperature"
-        ]
-    }, 
-    "site": {
-        "attribute_list": [
-            "address"
-        ], 
-        "child_list": [
-            "building", 
-            "other"
-        ], 
-        "sensor_list": [
-            "OutdoorAirTemperature"
-        ]
-    }, 
-    "Pump": {
-        "sensor_list": []
-    }, 
-    "attributes": {
-        "address": {
-            "address": {
-                "data_type": "string"
-            }, 
-            "city": {
-                "data_type": "string"
-            }, 
-            "zip_code": {
-                "data_type": "string"
-            }, 
-            "state": {
-                "data_type": "string"
-            }
-        }
-    },  
-    "RTU": {
-        "sensor_list": [
-            "OutdoorAirTemperature", 
-            "OutdoorAirRelativeHumidity", 
-            "MixedAirTemperature", 
-            "MixedAirRelativeHumidity", 
-            "ReturnAirTemperature", 
-            "ReturnAirRelativeHumidity", 
-            "DischargeAirTemperature", 
-            "DischargeAirTemperatureSetPoint",
-            "DischargeAirRelativeHumidity",
-            "DuctStaticPressure", 
-            "DuctStaticPressureSetPoint", 
-            "FirstStageCooling", 
-            "SecondStageCooling", 
-            "FirstStageHeating", 
-            "SecondStageHeating", 
-            "TotalPower", 
-             "SupplyFanStatus",
-            "SupplyFanPower", 
-            "SupplyFanSpeed", 
-            "CondenserFanPower", 
-            "OutdoorDamperSignal", 
-            "EconomizerMode", 
-            "OccupancyMode", 
-            "ZoneSetpoint", 
-            "ZoneTemperature", 
-            "CoolingCall", 
-            "HeatingCall", 
-            "TerminalBoxDamperCommand", 
-            "TerminalBoxReheatValvePosition"
-        ]
     }
 }

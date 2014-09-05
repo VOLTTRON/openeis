@@ -205,6 +205,7 @@
             "additionalProperties": false,
             "oneOf": [
                 {
+                    "required": ["unit"],
                     "properties": {
                         "type": {
                             "enum": [
@@ -365,6 +366,22 @@
                     "watt_hour"
                 ]
             },
+             "pressure": {
+                "enum": [
+                    "atmosphere",
+                    "bar",
+                    "centimeters_of_mercury",
+                    "centimeters_of_water",
+                    "hectopascal",
+                    "inches_of_mercury",
+                    "inches_of_water",
+                    "kilopascal",
+                    "millibar",
+                    "millimeters_of_mercury",
+                    "pascal",
+                    "pounds_per_square_inch"
+                ]
+            },
             "power": {
                 "enum": [
                     "btus_per_hour",
@@ -388,7 +405,12 @@
                     "fahrenheit",
                     "kelvin"
                 ]
-            }
+            },
+            "unitless": {
+                "enum": [
+                    "status"
+               ]
+           }
         },
 
         "attributes": {
