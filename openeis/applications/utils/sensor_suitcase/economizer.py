@@ -62,7 +62,7 @@ def economizer(DAT, OAT, HVACstat):
         * Assume that each is a 2-D array with datetime and data
         * DAT, OAT, HVACstat should have the same number of points
         * Datetimes must match up
-    Returns: a dictionary of diagnostics or None
+    Returns: a dictionary of diagnostics or False
     """
     # counts points when the economizer is on
     econ_on = 0
@@ -87,4 +87,6 @@ def economizer(DAT, OAT, HVACstat):
         return {'Problem': "Under use of 'free cooling', i.e.,under-economizing.",
                 'Diagnostic': "More than 30 percent of the time, the economizer is not taking advantage of 'free cooling' when it is possible to do so.",
                 'Recommendation': "Ask an HVAC service contractor to check the economizer control sequence, unless the RTU does not have an economizer."}
+    else:
+        return False
 

@@ -51,7 +51,16 @@ def setback_non_op(IAT, DAT, op_hours, HVACstat=None):
     vent_val = non_hvac/len(DAT_non_op)
 
     if ((c_val + h_val + vent_val) > 0.3):
-        return True
+        return {'Problem': "Nighttime thermostat setbacks are not enabled.",
+            'Diagnostic': "More than 30 percent of the data indicates that the \
+                building is being conditioned or ventilated normally during \
+                unoccupied hours.",
+            'Recommendation': "Program your thermostats to decrease the heating
+            setpoint, or increase the cooling setpoint during unoccuppied times.
+            Additionally, you may have a contractor configure the RTU to reduce
+            ventilation."}
+    else:
+        return False
 
 def _grab_data(DAT, IAT, HVACstat=None):
     cool_on = []

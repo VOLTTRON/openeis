@@ -87,4 +87,14 @@ def short_cycling(HVAC_stat):
     print("hoho: ", fault_count)
 
     if (fault_count > 10):
-        return True
+        return {'Problem': "RTU cycling on and off too frequently, potentially \
+                    leading to equipment failure.",
+            'Diagnostic': "For more than 10 consecutive cycles during the \
+                    monitoring period the RTU switched from on to off in under \
+                    5 minutes.",
+            'Recommendation': "Ask HVAC service providers to check refrigerant \
+                    levels, thermostat location, and control sequences."}
+    else:
+        return False
+
+

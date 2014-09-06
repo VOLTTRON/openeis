@@ -108,6 +108,12 @@ def excessive_daylight(light_data, operational_hours):
 
     # if more than half of the days are flagged, there's a problem.
     if (day_flag / day_count > 0.5):
-        return True
+        return {'Problem': "Excessive lighting during occupied/daytime hours.",
+            'Diagnostic': "Even though these spaces are not continuously \
+                    occupied, for more than half of the monitoring period, the \
+                    lights were switched off less than three times a day.",
+            'Recommendation': "Install occupancy sensors in locations with \
+                    intermittent occupancy, or engage occupants to turn the \
+                    lights off when they leave the area."}
     else:
         return False
