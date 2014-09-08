@@ -55,7 +55,7 @@
 
 from django.core.management.base import BaseCommand, CommandError
 from openeis.projects import models
-from openeis.projects.storage import clone
+from openeis.projects.storage.clone import CloneProject
 
 
 class Command(BaseCommand):
@@ -68,4 +68,5 @@ class Command(BaseCommand):
 
         project = models.Project.objects.get(id=project_id)
 
-        clone.clone_project(project, new_project_name)
+        clone_project = CloneProject()
+        clone_project.clone_project(project, new_project_name)

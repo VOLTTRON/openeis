@@ -86,7 +86,7 @@ from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
 from .storage import sensorstore
-from .storage.clone import clone_project
+from .storage.clone import CloneProject
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
@@ -171,7 +171,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-        clone = clone_project(self.get_object(), request.DATA['name'])
+        clone_project = CloneProject()
+        clone = clone_project.clone_project(self.get_object(), request.DATA['name'])
         serializer = self.get_serializer(clone)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
