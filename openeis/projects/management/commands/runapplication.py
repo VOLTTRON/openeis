@@ -128,7 +128,7 @@ class Command(BaseCommand):
             db_input = DatabaseInput(dataset.map.id, topic_map, dataset_id)
 
             output_format = klass.output_format(db_input)
-    
+
             file_output = DatabaseOutputFile(analysis, output_format, console_output=True)
 
             if( verbosity > 1 ):
@@ -142,18 +142,18 @@ class Command(BaseCommand):
             app.run_application()
 
             analysis.reports = [serializers.ReportSerializer(report).data for
-                                report in klass.reports(file_output)]
+                                report in klass.reports(output_format)]
 
-            reports = klass.reports(output_format)
+#            reports = klass.reports(output_format)
 
-            for report in reports:
+            for report in analysis.reports:
                 print(report)
 
         except Exception as e:
             analysis.status = "error"
             # TODO: log errors
             print(traceback.format_exc())
-    
+
 
         finally:
             if analysis.status != "error":
