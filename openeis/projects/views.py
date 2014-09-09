@@ -490,7 +490,7 @@ _processes = {}
 def iter_ingest(ingest):
     '''Ingest into the common schema tables from the DataFiles.'''
     sensormap = ingest.map.map
-    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone} for f in ingest.files.all()}
+    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone, 'time_offset':f.file.time_offset} for f in ingest.files.all()}
     ingest_file = None
     try:
         ingested = list(ingest_files(sensormap, files))
@@ -527,8 +527,10 @@ def iter_ingest(ingest):
                         else:
                             time_zone = timezone(file.time_zone)
 #                            time = time.astimezone(time_zone)
+                            if file.time_offset != 0:
+                                time += datetime.timedelta(seconds=file.time_offset)
                             obj = cls(ingest=ingest, sensor=sensor, time=time,
-                                value=column, time_zone = time_zone, time_offset = file.time_offset)
+                                value=column, time_zone = time_zone)
                         objects.append(obj)
                 yield (objects, file.name, row.position, file.size,
                        processed_bytes + row.position, total_bytes)

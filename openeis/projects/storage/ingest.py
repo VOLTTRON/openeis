@@ -344,7 +344,7 @@ def get_sensor_parsers(sensormap):
     return columns
 
 
-IngestFile = namedtuple('IngestFile', 'name size sensors types rows time_zone')
+IngestFile = namedtuple('IngestFile', 'name size sensors types rows time_zone time_offset')
 
 
 def ingest_files(sensormap, files):
@@ -372,13 +372,14 @@ def ingest_files(sensormap, files):
     for file_id, file_dict in files:
         file  = file_dict['file_name']
         time_zone = file_dict['time_zone']
+        time_offset = file_dict['time_offset']
         try:
             size = file.size
         except AttributeError:
             size = os.stat(file.fileno()).st_size
         names, types, columns = zip(*columnmap[file_id])
         rows = ingest_file(file, columns)
-        yield IngestFile(file_id, size, names, types, rows, time_zone)
+        yield IngestFile(file_id, size, names, types, rows, time_zone, time_offset)
 
 
 def main(argv=sys.argv):
