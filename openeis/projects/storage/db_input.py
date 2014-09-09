@@ -83,10 +83,14 @@ from  django.db.models import Sum
 
 #from foo import get_sensor
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 from pprint import pprint
+import pytz
+
 from openeis.projects.storage.sensorstore import get_sensors
+
+MAX_DATE =  pytz.utc.localize(datetime.max - timedelta(days=5))
 
 class DatabaseInput:
 
@@ -127,7 +131,7 @@ class DatabaseInput:
         pass
 
     @staticmethod
-    def merge(*args, drop_partial_lines=True):
+    def merge(*args, drop_partial_lines=True, fill_in_data=None):
         '''
             args  - one or more results returned from get_query_sets() method
             drop_partial_lines - whether to drop incomplete sets, missing values are represented by None
@@ -200,14 +204,62 @@ class DatabaseInput:
                         try:
                             new_current.append(query[1].__next__())
                         except StopIteration:
-                            new_current.append((datetime.max,None))
+                            new_current.append((MAX_DATE,None))
                 current = new_current
                 oldest = min(current, key=lambda x:x[0] )[0]
-                if oldest == datetime.max:
+                if oldest == MAX_DATE:
                     break
 
 
         return merge_drop() if drop_partial_lines else merge_no_drop()
+
+    @staticmethod
+    def merge_fill_in_data(*args, drop_partial_lines=True, fill_in_data=None):
+        "Incomplete rows provide last known reading for missing values or None if no good value"
+        #pass in a timedelta to advance time
+        managed_query_sets = []
+
+        latest_value = []
+
+        for arg in args:
+            for group, query_set_list in arg.items():
+                for query_set in query_set_list:
+                    managed_query_sets.append((group,query_set.__iter__()))
+                    latest_value.append(None)
+        current = [x[1].__next__() for x in managed_query_sets]
+        oldest = min(current, key=lambda x:x[0] )[0]
+
+        while True:
+            result = defaultdict(list)
+            result['time']  = oldest
+            index = 0
+            for value, query in zip(current, managed_query_sets):
+
+                if value[0] == oldest:
+                    result[query[0]].append(value[1])
+                    latest_value[index] = value[1]
+                else:
+                    result[query[0]].append(latest_value[index])
+
+                index += 1
+
+            yield result
+            new_current = []
+            for value, query in zip(current, managed_query_sets):
+                if value[0] != oldest:
+                    new_current.append(value)
+                else:
+                    try:
+                        new_current.append(query[1].__next__())
+                    except StopIteration:
+                        new_current.append((MAX_DATE,None))
+            current = new_current
+            oldest = min(current, key=lambda x:x[0] )[0]
+            if oldest == MAX_DATE:
+                break
+
+
+
 
     def get_query_sets(self, group_name,
                        order_by='time',
