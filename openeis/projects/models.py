@@ -185,6 +185,7 @@ class DataFile(models.Model):
     comments = models.CharField(max_length=200, blank=True)
     timestamp = JSONField(blank=True)
     time_zone = models.CharField(max_length=64, blank=True)
+    time_offset = models.FloatField(default=0)
 
     def __str__(self):
         return self.file.name
