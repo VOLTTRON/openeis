@@ -213,7 +213,7 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(response.data, expected)
         # Test preview from invalid sensormap.
         data = json.dumps({'map': {'version': 1, 'files': {}, 'sensors': {}},
-                           'files': [{'name': '0', 'file': {'filename': file_id, 'time_zone': 'America/Los_Angeles'}}]})
+                           'files': [{'name': '0', 'file': {'filename': file_id, 'time_zone': 'America/Los_Angeles', 'time_offset': '-300'}}]})
         response = client.post('/api/datasets/preview', data,
                 content_type='application/json', Accept='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
