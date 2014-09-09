@@ -257,8 +257,8 @@ class FileViewSet(mixins.ListModelMixin,
         count = min(request.QUERY_PARAMS.get(
                      'rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
                     proj_settings.FILE_HEAD_ROWS_MAX)
-        tz_name = request.QUERY_PARAMS.get('time_zone', 'UTC')
-        tzinfo = timezone(tz_name)
+        tzinfo = timezone(request.QUERY_PARAMS.get('time_zone', 'UTC'))
+        time_offset = float(request.QUERY_PARAMS.get('time_offset', 0))
         has_header, rows = self.get_object().csv_head(count)
         num_columns = len(rows[0])
         headers = rows.pop(0) if has_header else []
@@ -289,6 +289,8 @@ class FileViewSet(mixins.ListModelMixin,
             except (ValueError, TypeError):
                 parsed = None
             else:
+                if time_offset != 0:
+                    dt += datetime.timedelta(seconds=time_offset)
                 if not dt.tzinfo:
                     dt = tzinfo.localize(dt)
                 parsed = dt.isoformat()
