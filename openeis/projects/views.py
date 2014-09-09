@@ -524,7 +524,7 @@ def iter_ingest(ingest):
                                     message=str(column))
                         else:
                             time_zone = timezone(file.time_zone)
-                            time = time.replace(tzinfo = time_zone)
+                            time = time.astimezone(time_zone)
                             obj = cls(ingest=ingest, sensor=sensor, time=time,
                                 value=column, time_zone = time_zone)
                         objects.append(obj)
