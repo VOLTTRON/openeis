@@ -528,7 +528,7 @@ def iter_ingest(ingest):
                             time_zone = timezone(file.time_zone)
 #                            time = time.astimezone(time_zone)
                             obj = cls(ingest=ingest, sensor=sensor, time=time,
-                                value=column, time_zone = time_zone)
+                                value=column, time_zone = time_zone, time_offset = file.time_offset)
                         objects.append(obj)
                 yield (objects, file.name, row.position, file.size,
                        processed_bytes + row.position, total_bytes)
