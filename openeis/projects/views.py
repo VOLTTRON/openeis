@@ -86,7 +86,7 @@ from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
 from .storage import sensorstore
-from .storage.clone import clone_project
+from .storage.clone import CloneProject
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
@@ -171,7 +171,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
 
-        clone = clone_project(self.get_object(), request.DATA['name'])
+        clone_project = CloneProject()
+        clone = clone_project.clone_project(self.get_object(), request.DATA['name'])
         serializer = self.get_serializer(clone)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -256,8 +257,8 @@ class FileViewSet(mixins.ListModelMixin,
         count = min(request.QUERY_PARAMS.get(
                      'rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
                     proj_settings.FILE_HEAD_ROWS_MAX)
-        tz_name = request.QUERY_PARAMS.get('time_zone', 'UTC')
-        tzinfo = timezone(tz_name)
+        tzinfo = timezone(request.QUERY_PARAMS.get('time_zone', 'UTC'))
+        time_offset = float(request.QUERY_PARAMS.get('time_offset', 0))
         has_header, rows = self.get_object().csv_head(count)
         num_columns = len(rows[0])
         headers = rows.pop(0) if has_header else []
@@ -288,6 +289,8 @@ class FileViewSet(mixins.ListModelMixin,
             except (ValueError, TypeError):
                 parsed = None
             else:
+                if time_offset != 0:
+                    dt += datetime.timedelta(seconds=time_offset)
                 if not dt.tzinfo:
                     dt = tzinfo.localize(dt)
                 parsed = dt.isoformat()
@@ -523,7 +526,7 @@ def iter_ingest(ingest):
                                     message=str(column))
                         else:
                             time_zone = timezone(file.time_zone)
-                            time = time.replace(tzinfo = time_zone)
+#                            time = time.astimezone(time_zone)
                             obj = cls(ingest=ingest, sensor=sensor, time=time,
                                 value=column, time_zone = time_zone)
                         objects.append(obj)

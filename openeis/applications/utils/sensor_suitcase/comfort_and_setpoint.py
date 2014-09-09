@@ -50,7 +50,7 @@ from numpy import mean
 
 def comfort_and_setpoint(IAT, DAT, op_hours, HVACstat=None):
     """
-    Checks if the building is comfortable.
+    Checks if the building is comfortable and if the setpoints are too narrow.
 
     Parameters:
         - IAT: Indoor air temperature
@@ -61,6 +61,12 @@ def comfort_and_setpoint(IAT, DAT, op_hours, HVACstat=None):
             - 2d array with each element as [datetime, data]
         - op_hours: operational hours, list
             - [operational hours, [days operating], [holidays]]
+
+    Returns:
+        - setpoint_flag: Dictionary of the problem, diagnostic, recommendation,
+            and savings if there is an issue, otherwise is False.
+        - comfort_flag: Dictionary of the problem, diagnostic, recommendation,
+            and savings if there is an issue, otherwise is False.
     """
     # separate data to get occupied data
     IAT_op, IAT_non_op = \
@@ -114,22 +120,50 @@ def comfort_and_setpoint(IAT, DAT, op_hours, HVACstat=None):
             heat_on.append(IAT_op[i][1])
         i += 1
 
+    # grab the average
     heating_setpt = mean(heat_on)
     cooling_setpt = mean(cool_on)
 
     if ((heating_setpt > 76) and (cooling_setpt < 72)):
-        setpoint_flag = True
+        setpoint_flag = {'Problem': "Overly narrow separation between heating \
+            and cooling setpoints.",
+        'Diagnostic': "During occupied hours, the cooling setpoint was lower \
+                than 76F and the heating setpoint was greater than 72F.",
+        'Recommendation': "Adjust the heating and cooling setpoints so that \
+                they differ by more than four degrees."}
     else:
         setpoint_flat = False
 
     if (over_cool/len(DAT_op) > 0.3):
-        comfort_flag = "Over cooling flag"
+        comfort_flag = {'Problem:' "Over-conditioning, thermostat cooling \
+                setpoint is low",
+        'Diagnostic': "More than 30 percent of the time, the cooling setpoint \
+                during occupied hours was lower than 75F, a temperature that \
+                is comfortable to most occupants",
+        'Recommendation': "Program your thermostats to increase the cooling
+            setpoint during occupied hours."}
     elif (under_cool/len(DAT_op) > 0.3):
-        comfort_flag = "Under cooling flag"
+        comfort_flag =  {'Problem': "Under-conditioning, thermostat cooling \
+                setpoint is high.",
+        'Diagnostic':  "More than 30 percent of the time, the cooling setpoint \
+                during occupied hours was greater than 80F.",
+        'Recommendation': "Program your thermostats to decrease the cooling \
+                setpoint to improve building comfort during occupied hours."}
     elif (over_heat/len(DAT_op) > 0.3):
-        comfort_flag = "Over heating flag"
+        comfort_flag = {'Problem': "Over-conditioning, thermostat heating \
+                setpoint is high.",
+        'Diagnostic': "More than 30 percent of the time, the heating setpoint \
+                during occupied hours was greater than 72F, a temperature that \
+                is comfortable to most occupants.",
+        'Recommendation': "Program your thermostats to decrease the heating
+            setpoint during occupied hours."}
     elif (under_heat/len(DAT_op) > 0.3):
-        comfort_flag = "Under heating flag"
+        comfort_flag = {'Problem': "Under-conditioning - thermostat heating \
+                setpoint is low.",
+        'Diagnostic': "For more than 30% of the time, the cooling setpoint \
+                during occupied hours was less than 69 degrees F.",
+        'Recommendation': "Program thermostats to increase the heating \
+                setpoint to improve building comfort during occupied hours."}
     else:
         comfort_flag = False
 

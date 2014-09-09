@@ -166,9 +166,9 @@ class Application(DrivenApplicationBaseClass):
             'rat_high_threshold': ConfigDescriptor(float, 'Return-air sensor high limit'),
             'oat_low_threshold': ConfigDescriptor(float, 'Outdoor-air sensor low limit'),
             'oat_high_threshold': ConfigDescriptor(float, 'Outdoor-air sensor high limit'),
-            'temp_deadband': ConfigDescriptor(float,'Economizer control temperature deadband'),
-            'minimum_damper_setpoint': ConfigDescriptor(float, 'Minimum outdoor-air damper setpoint'),
-            'excess_damper_threshold': ConfigDescriptor(float, 'Value above the minimum damper setpoint at which a fault will be called'),
+            'temp_deadband': ConfigDescriptor(float,'Economizer control temperature dead-band'),
+            'minimum_damper_setpoint': ConfigDescriptor(float, 'Minimum outdoor-air damper set point'),
+            'excess_damper_threshold': ConfigDescriptor(float, 'Value above the minimum damper set point at which a fault will be called'),
             'cooling_enabled_threshold': ConfigDescriptor(float, 'Amount cooling coil valve must be open for diagnostic to consider unit in cooling mode'),
             'insufficient_damper_threshold': ConfigDescriptor(float, 'Minimum damper position to ensure proper ventilation'),
             'ventilation_oaf_threshold':  ConfigDescriptor(float, 'Threshold on OAF diagnostics'),
@@ -185,12 +185,12 @@ class Application(DrivenApplicationBaseClass):
             'tonnage': ConfigDescriptor(float, 'AHU/RTU cooling capacity in tons'),
             'eer': ConfigDescriptor(float, 'AHU/RTU rated EER')
            }
-        
+
     @classmethod
     def required_input(cls):
         '''
         Generate required inputs with description for
-        user.
+        user
         '''
         return {
             cls.fan_status_name: InputDescriptor('SupplyFanStatus', 'AHU Supply Fan Status', count_min=1),
@@ -214,10 +214,10 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def output_format(cls, input_object):
-        """
+        '''
         Called when application is staged.
         Output will have the date-time and  error-message.
-        """
+        '''
         result = super().output_format(input_object)
         
         topics = input_object.get_topics()
@@ -248,11 +248,6 @@ class Application(DrivenApplicationBaseClass):
         '''
         device_dict = {}
         diagnostic_result = Results()
-
-        if None in points.values():
-            diagnostic_result.log(''.join(['Missing data for timestamp: ',str(current_time),
-                                   '  This row will be dropped from analysis.']), logging.INFO)
-            return diagnostic_result
 
         for key, value in points.items():
             device_dict[key.lower()] = value
@@ -285,19 +280,19 @@ class Application(DrivenApplicationBaseClass):
         ratemp_data, cooling_data = [], [] 
 
         for key, value in device_dict.items():
-            if key.startswith(self.damper_signal_name): 
+            if key.startswith(self.damper_signal_name) and value != None: 
                 damper_data.append(value)
 
-            elif key.startswith(self.oa_temp_name):
+            elif key.startswith(self.oa_temp_name) and value != None:
                 oatemp_data.append(value)
                 
-            elif key.startswith(self.ma_temp_name):
+            elif key.startswith(self.ma_temp_name) and value != None: 
                 matemp_data.append(value)
 
-            elif key.startswith(self.ra_temp_name):
+            elif key.startswith(self.ra_temp_name) and value != None:
                 ratemp_data.append(value)
             
-            elif key.startswith(self.cool_call_name):
+            elif key.startswith(self.cool_call_name) and value != None:
                 cooling_data.append(value)
         
         if not oatemp_data:
@@ -452,14 +447,14 @@ class temperature_sensor_dx(object):
 
             if open_damper_check > self.oat_mat_check:
                 temperature_sensor_dx.temp_sensor_problem = True
-                diagnostic_message = '{name}: OAT and MAT and sensor readings are not consistent \
-                                      when the outdoor-air damper is fully open.'.format(name=econ1)
+                diagnostic_message = ('{name}: OAT and MAT and sensor readings are not consistent '
+                                      'when the outdoor-air damper is fully open.'.format(name=econ1))
                 color_code = 'RED'
                 dx_table = {
                     'datetime': str(current_time), 
                     'diagnostic_name': econ1, 
                     'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
+                    'energy_impact': None,
                     'color_code': color_code
                     }
                 result.insert_table_row('Economizer_dx', dx_table)
@@ -475,7 +470,7 @@ class temperature_sensor_dx(object):
                     'datetime': str(current_time), 
                     'diagnostic_name': econ1, 
                     'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
+                    'energy_impact': None,
                     'color_code': color_code
                     }
             temperature_sensor_dx.temp_sensor_problem = True
@@ -490,7 +485,7 @@ class temperature_sensor_dx(object):
                     'datetime': str(current_time), 
                     'diagnostic_name': econ1, 
                     'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
+                    'energy_impact': None,
                     'color_code': color_code
                     }
  
@@ -502,7 +497,18 @@ class temperature_sensor_dx(object):
                     'datetime': str(current_time), 
                     'diagnostic_name': econ1, 
                     'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
+                    'energy_impact': None,
+                    'color_code': color_code
+                    }
+        else:
+            diagnostic_message = '{name}: Diagnostic was inconclusive'.format(name=econ1)
+            temperature_sensor_dx.temp_sensor_problem = False
+            color_code = 'GREEN'
+            dx_table = {
+                    'datetime': str(current_time), 
+                    'diagnostic_name': econ1, 
+                    'diagnostic_message': diagnostic_message, 
+                    'energy_impact': None,
                     'color_code': color_code
                     }
         result.insert_table_row('Economizer_dx', dx_table)
@@ -568,7 +574,7 @@ class econ_correctly_on(object):
         avg_oaf = sum(oaf)/len(oaf)*100.0
         avg_damper_signal = sum(self.damper_signal_values)/len(self.damper_signal_values)
         color_code = 'GREEN'
-        energy_impact = 0
+        energy_impact = None
 
         if  avg_damper_signal < self.open_damper_threshold:
             diagnostic_message = (self.alg_result_messages[0])
@@ -673,14 +679,14 @@ class econ_correctly_off(object):
                        if (ma - (oa*desired_oaf + (ra*(1.0-desired_oaf)))) > 0]
 
         avg_damper = sum(self.damper_signal_values)/len(self.damper_signal_values)
-        color_code = 'GREEN'
-        energy_impact = 0
 
         if avg_damper - self.minimum_damper_setpoint > self.excess_damper_threshold:
             diagnostic_message = self.alg_result_messages[0]
             color_code = 'RED'
         else:
             diagnostic_message = '{name}: No problems detected.'.format(name=econ3)
+            color_code = 'GREEN'
+            energy_impact = None
         
         if energy_calc and color_code == 'RED':
             dx_time = (len(energy_calc) - 1)*self.data_sample_rate if len(energy_calc) > 1 else 1.0
@@ -767,9 +773,9 @@ class excess_oa_intake(object):
                        ma, oa, ra in zip(self.ma_temp_values, self.oa_temp_values, self.ra_temp_values) 
                        if (ma - (oa*desired_oaf + (ra*(1.0-desired_oaf)))) > 0]
         
-        diagnostic_message = ''
+        diagnostic_message = '{name}: Inconclusive diagnostic.'.format(name=econ4)
         color_code = 'GREEN'
-        energy_impact = 0
+        energy_impact = None
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -785,7 +791,7 @@ class excess_oa_intake(object):
                     'datetime': str(current_time), 
                     'diagnostic_name': econ4, 
                     'diagnostic_message': diagnostic_message, 
-                    'energy_impact': 0.0,
+                    'energy_impact': None,
                     'color_code': color_code
                     }
             result.insert_table_row('Economizer_dx', dx_table)
@@ -884,8 +890,9 @@ class insufficient_oa_intake(object):
         oaf = [(m-r)/(o-r) for o,r,m in zip(self.oa_temp_values,self.ra_temp_values,self.ma_temp_values)]
         avg_oaf = sum(oaf)/len(oaf)*100.0
         avg_damper_signal = sum(self.damper_signal_values)/len(self.damper_signal_values)
-        diagnostic_message = ''
-        energy_impact = 0
+        diagnostic_message = '{name}: Inconclusive diagnostic.'.format(name=econ5)
+        color_code = 'GREY'
+        energy_impact = None
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []

@@ -205,6 +205,7 @@
             "additionalProperties": false,
             "oneOf": [
                 {
+                    "required": ["unit"],
                     "properties": {
                         "type": {
                             "enum": [
@@ -213,10 +214,15 @@
                                 "FirstStageHeating",
                                 "OccupancyMode",
                                 "SecondStageCooling",
-                                "SecondStageHeating"
+                                "SecondStageHeating",
+                                "BoilerStatus",
+                                "PumpStatus",
+                                "CoolingCall", 
+                                "HeatingCall",
+                                "SupplyFanStatus"
                             ]
                         },
-                        "unit": {"not": {}}
+                        "unit": {"$ref": "#/definitions/units/unitless"}
                     }
                 },
                 {
@@ -229,6 +235,11 @@
                                 "OutdoorAirRelativeHumidity",
                                 "OutdoorDamperSignal",
                                 "ReturnAirRelativeHumidity",
+                                "HotWaterValvePosition",
+                                "PreHeatValvePosition",
+                                "TerminalBoxDamperCommand",
+                                "ChilledWaterValvePosition",
+                                "PumpVFDCommand",
                                 "SupplyFanSpeed"
                             ]
                         },
@@ -253,6 +264,20 @@
                     "properties": {
                         "type": {
                             "enum": [
+                                "DuctStaticPressure",
+                                "DuctStaticPressureSetPoint",
+                                "LoopDifferentialPressure",
+                                "LoopDifferentialPressureSetPoint"
+                            ]
+                        },
+                        "unit": {"$ref": "#/definitions/units/pressure"}
+                    }
+                },
+                {
+                    "required": ["unit"],
+                    "properties": {
+                        "type": {
+                            "enum": [
                                 "WholeBuildingElectricity",
                                 "WholeBuildingGas"
                             ]
@@ -266,11 +291,16 @@
                         "type": {
                             "enum": [
                                 "DischargeAirTemperature",
+                                "DischargeAirTemperatureSetPoint",
                                 "MixedAirTemperature",
+                                "MixedAirTemperatureSetPoint",
                                 "OutdoorAirTemperature",
                                 "ReturnAirTemperature",
                                 "ZoneSetpoint",
-                                "ZoneTemperature"
+                                "ZoneTemperature",
+                                "SupplyWaterTemperature", 
+                                "ReturnWaterTemperature",
+                                "SupplyWaterTemperatureSetPoint"
                             ]
                         },
                         "unit": {"$ref": "#/definitions/units/temperature"}
@@ -336,6 +366,22 @@
                     "watt_hour"
                 ]
             },
+             "pressure": {
+                "enum": [
+                    "atmosphere",
+                    "bar",
+                    "centimeters_of_mercury",
+                    "centimeters_of_water",
+                    "hectopascal",
+                    "inches_of_mercury",
+                    "inches_of_water",
+                    "kilopascal",
+                    "millibar",
+                    "millimeters_of_mercury",
+                    "pascal",
+                    "pounds_per_square_inch"
+                ]
+            },
             "power": {
                 "enum": [
                     "btus_per_hour",
@@ -359,7 +405,12 @@
                     "fahrenheit",
                     "kelvin"
                 ]
-            }
+            },
+            "unitless": {
+                "enum": [
+                    "status"
+               ]
+           }
         },
 
         "attributes": {

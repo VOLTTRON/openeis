@@ -23,44 +23,99 @@
         ],
         "child_list": [
             "RTU",
-            "Chiller",
+            "AHU",
+            "HotWaterCentralPlant",
+            "ChilledWaterCentralPlant",
             "other"
         ]
     },
-    "RTU": {
+    "HotWaterCentralPlant": {
         "sensor_list": [
+            "LoopDifferentialPressure", 
+            "LoopDifferentialPressureSetPoint", 
+            "PumpVFDCommand", 
+            "PumpStatus", 
+            "BoilerStatus", 
+            "SupplyWaterTemperatureSetPoint", 
+            "SupplyWaterTemperature", 
+            "ReturnWaterTemperature"
+        ]
+    }, 
+    "AHU": {
+        "sensor_list": [
+            "SupplyFanSpeed",
+            "SupplyFanStatus",
+            "ChilledWaterValvePosition",
+            "DuctStaticPressure", 
+            "DuctStaticPressureSetPoint", 
             "OutdoorAirTemperature",
             "OutdoorAirRelativeHumidity",
             "MixedAirTemperature",
-            "MixedAirRelativeHumidity",
+            "MixedAirTemperatureSetPoint",
+            "MixedAirRelativeHumidity",  
             "ReturnAirTemperature",
             "ReturnAirRelativeHumidity",
-            "DischargeAirTemperature",
+            "DischargeAirTemperature", 
+            "DischargeAirTemperatureSetPoint",
+            "DischargeAirRelativeHumidity", 
+            "OutdoorDamperSignal", 
+            "CoolingCall", 
+            "HeatingCall", 
+            "HotWaterValvePosition", 
+            "PreHeatValvePosition", 
+            "TotalPower", 
+            "SupplyFanPower", 
+            "EconomizerMode", 
+            "OccupancyMode", 
+            "ZoneSetpoint", 
+            "ZoneTemperature",  
+            "TerminalBoxDamperCommand", 
+            "TerminalBoxReheatValvePosition"
+        ]
+    }, 
+    "ChilledWaterCentralPlant": {
+        "sensor_list": [
+            "LoopDifferentialPressure", 
+            "LoopDifferentialPressureSetPoint", 
+            "PumpVFDCommand", 
+            "PumpStatus", 
+            "BoilerStatus", 
+            "SupplyWaterTemperatureSetPoint", 
+            "SupplyWaterTemperature", 
+            "ReturnWaterTemperature"
+        ]
+    }, 
+    "RTU": {
+        "sensor_list": [
+            "OutdoorAirTemperature", 
+            "OutdoorAirRelativeHumidity", 
+            "MixedAirTemperature", 
+            "MixedAirRelativeHumidity", 
+            "ReturnAirTemperature", 
+            "ReturnAirRelativeHumidity", 
+            "DischargeAirTemperature", 
+            "DischargeAirTemperatureSetPoint",
             "DischargeAirRelativeHumidity",
-            "FirstStageCooling",
-            "SecondStageCooling",
-            "FirstStageHeating",
-            "SecondStageHeating",
-            "TotalPower",
-            "SupplyFanPower",
-            "CondenserFanPower",
-            "OutdoorDamperSignal",
-            "EconomizerMode",
-            "OccupancyMode",
-            "ZoneSetpoint",
-            "ZoneTemperature",
-            "SupplyFanSpeed"
-        ]
-    },
-    "Chiller": {
-        "sensor_list": [
-        ],
-        "child_list": [
-            "Pump"
-        ]
-    },
-    "Pump": {
-        "sensor_list": [
+            "DuctStaticPressure", 
+            "DuctStaticPressureSetPoint", 
+            "FirstStageCooling", 
+            "SecondStageCooling", 
+            "FirstStageHeating", 
+            "SecondStageHeating", 
+            "TotalPower", 
+            "SupplyFanStatus",
+            "SupplyFanPower", 
+            "SupplyFanSpeed", 
+            "CondenserFanPower", 
+            "OutdoorDamperSignal", 
+            "EconomizerMode", 
+            "OccupancyMode", 
+            "ZoneSetpoint", 
+            "ZoneTemperature", 
+            "CoolingCall", 
+            "HeatingCall", 
+            "TerminalBoxDamperCommand", 
+            "TerminalBoxReheatValvePosition"
         ]
     },
     "other": {
@@ -77,144 +132,270 @@
             "zip_code": { "data_type": "string"}
         }
     },
-    "sensors": {
-        "CondenserFanPower": {
-            "data_type": "float",
-            "sensor_name": "CondenserFanPower",
-            "sensor_type": "CondenserFanPower",
-            "unit_type": "energy"
-        },
-        "DischargeAirRelativeHumidity": {
-            "data_type": "float",
-            "sensor_name": "DischargeAirRelativeHumidity",
-            "sensor_type": "DischargeAirRelativeHumidity",
+     "sensors": {
+        "HotWaterValvePosition": {
+            "data_type": "float", 
+            "sensor_type": "HotWaterValvePosition", 
+            "sensor_name": "HotWaterValvePosition", 
             "unit_type": "dimensionless"
-        },
-        "DischargeAirTemperature": {
-            "data_type": "float",
-            "sensor_name": "DischargeAirTemperature",
-            "sensor_type": "DischargeAirTemperature",
+        }, 
+        "DischargeAirTemperatureSetPoint": {
+            "data_type": "float", 
+            "sensor_type": "DischargeAirTemperatureSetPoint", 
+            "sensor_name": "DischargeAirTemperatureSetPoint", 
             "unit_type": "temperature"
+        }, 
+        "TotalPower": {
+            "data_type": "float", 
+            "unit_type": "energy", 
+            "sensor_name": "TotalPower", 
+            "sensor_type": "TotalPower"
+        }, 
+        "OutdoorDamperSignal": {
+            "data_type": "float", 
+            "unit_type": "dimensionless", 
+            "sensor_name": "OutdoorDamperSignal", 
+            "sensor_type": "OutdoorDamperSignal"
         },
-        "EconomizerMode": {
-            "data_type": "boolean",
-            "sensor_name": "EconomizerMode",
-            "sensor_type": "EconomizerMode",
-            "unit_type": "dimensionless"
-        },
-        "FirstStageCooling": {
-            "data_type": "boolean",
-            "sensor_name": "FirstStageCooling",
-            "sensor_type": "FirstStageCooling",
-            "unit_type": "dimensionless"
-        },
-        "FirstStageHeating": {
-            "data_type": "boolean",
-            "sensor_name": "FirstStageHeating",
-            "sensor_type": "FirstStageHeating",
-            "unit_type": "dimensionless"
-        },
-        "MixedAirRelativeHumidity": {
-            "data_type": "float",
-            "sensor_name": "MixedAirRelativeHumidity",
-            "sensor_type": "MixedAirRelativeHumidity",
-            "unit_type": "dimensionless"
-        },
-        "MixedAirTemperature": {
-            "data_type": "float",
-            "sensor_name": "MixedAirTemperature",
-            "sensor_type": "MixedAirTemperature",
-            "unit_type": "temperature"
-        },
-        "OccupancyMode": {
-            "data_type": "boolean",
-            "sensor_name": "OccupancyMode",
-            "sensor_type": "OccupancyMode",
-            "unit_type": "dimensionless"
-        },
+        "LoopDifferentialPressure": {
+            "data_type": "float", 
+            "sensor_type": "LoopDifferentialPressure", 
+            "sensor_name": "LoopDifferentialPressure", 
+            "unit_type": "pressure"
+        }, 
+        "LoopDifferentialPressureSetPoint": {
+            "data_type": "float", 
+            "sensor_type": "LoopDifferentialPressureSetPoint", 
+            "sensor_name": "LoopDifferentialPressureSetPoint", 
+            "unit_type": "pressure"
+        }, 
         "OutdoorAirRelativeHumidity": {
-            "data_type": "float",
-            "sensor_name": "OutdoorAirRelativeHumidity",
+            "data_type": "float", 
+            "sensor_name": "OutdoorAirRelativeHumidity", 
             "sensor_type": "OutdoorAirRelativeHumidity",
             "unit_type": "dimensionless"
-        },
-        "OutdoorAirTemperature": {
-            "data_type": "float",
-            "sensor_name": "OutdoorAirTemperature",
-            "sensor_type": "OutdoorAirTemperature",
-            "unit_type": "temperature"
-        },
-        "OutdoorDamperSignal": {
-            "data_type": "float",
-            "sensor_name": "OutdoorDamperSignal",
-            "sensor_type": "OutdoorDamperSignal",
-            "unit_type": "dimensionless"
-        },
-        "ReturnAirRelativeHumidity": {
-            "data_type": "float",
-            "sensor_name": "ReturnAirRelativeHumidity",
-            "sensor_type": "ReturnAirRelativeHumidity",
-            "unit_type": "dimensionless"
-        },
-        "ReturnAirTemperature": {
-            "data_type": "float",
-            "sensor_name": "ReturnAirTemperature",
-            "sensor_type": "ReturnAirTemperature",
-            "unit_type": "temperature"
-        },
-        "SecondStageCooling": {
-            "data_type": "boolean",
-            "sensor_name": "SecondStageCooling",
-            "sensor_type": "SecondStageCooling",
-            "unit_type": "temperature"
-        },
-        "SecondStageHeating": {
-            "data_type": "boolean",
-            "sensor_name": "SecondStageHeating",
-            "sensor_type": "SecondStageHeating",
-            "unit_type": "temperature"
-        },
-        "SupplyFanPower": {
-            "data_type": "float",
-            "sensor_name": "SupplyFanPower",
+        }, 
+        "FirstStageCooling": {
+            "data_type": "boolean", 
+            "sensor_name": "FirstStageCooling", 
+            "sensor_type": "FirstStageCooling",
+            "unit_type": "unitless"
+        }, 
+        "CoolingCall": {
+            "data_type": "boolean", 
+            "sensor_type": "CoolingCall", 
+            "sensor_name": "CoolingCall", 
+            "unit_type": "unitless"
+        }, 
+        "SupplyFanPower": { 
+            "unit_type": "energy", 
+            "sensor_name": "SupplyFanPower", 
             "sensor_type": "SupplyFanPower",
-            "unit_type": "energy"
-        },
-        "SupplyFanSpeed": {
-            "data_type": "float",
-            "sensor_name": "SupplyFanSpeed",
-            "sensor_type": "SupplyFanSpeed",
+            "data_type": "float"
+        }, 
+        "SupplyFanStatus": {
+            "data_type": "boolean",
+            "sensor_name": "SupplyFanStatus", 
+            "sensor_type": "SupplyFanStatus",
+            "unit_type": "unitless"
+        }, 
+        "PreHeatValvePosition": {
+            "data_type": "float", 
+            "sensor_type": "PreHeatValvePosition", 
+            "sensor_name": "PreHeatValvePosition", 
             "unit_type": "dimensionless"
-        },
-        "TotalPower": {
-            "data_type": "float",
-            "sensor_name": "TotalPower",
-            "sensor_type": "TotalPower",
+        }, 
+        "OccupancyMode": {
+            "data_type": "boolean", 
+            "sensor_name": "OccupancyMode", 
+            "sensor_type": "OccupancyMode",
+            "unit_type": "unitless"
+        }, 
+        "CondenserFanPower": {
+            "data_type": "float",  
+            "sensor_name": "CondenserFanPower", 
+            "sensor_type": "CondenserFanPower",
             "unit_type": "energy"
-        },
-       "WholeBuildingElectricity":{
-            "data_type": "float",
-            "sensor_name": "WholeBuildingElectricity",
-            "sensor_type": "WholeBuildingElectricity",
-            "unit_type": "power"
-        },
-        "WholeBuildingGas":{
-            "data_type": "float",
-            "sensor_name": "WholeBuildingGas",
-            "sensor_type": "WholeBuildingGas",
-            "unit_type": "power"
-        },
-        "ZoneSetpoint": {
-            "data_type": "float",
-            "sensor_name": "ZoneSetpoint",
-            "sensor_type": "ZoneSetpoint",
-            "unit_type": "temperature"
-        },
+        }, 
+        "DuctStaticPressureSetPoint": {
+            "data_type": "float", 
+            "sensor_type": "DuctStaticPressureSetPoint", 
+            "sensor_name": "DuctStaticPressureSetPoint", 
+            "unit_type": "pressure"
+        }, 
+        "MixedAirRelativeHumidity": {
+            "data_type": "float",  
+            "sensor_name": "MixedAirRelativeHumidity", 
+            "sensor_type": "MixedAirRelativeHumidity",
+            "unit_type": "dimensionless"
+        }, 
+        "TerminalBoxDamperCommand": {
+            "data_type": "float", 
+            "sensor_type": "TerminalBoxDamperCommand", 
+            "sensor_name": "TerminalBoxDamperCommand", 
+            "unit_type": "dimensionless"
+        }, 
+        "SecondStageCooling": {
+            "data_type": "boolean", 
+            "sensor_name": "SecondStageCooling", 
+            "sensor_type": "SecondStageCooling",
+            "unit_type": "unitless"
+        }, 
         "ZoneTemperature": {
-            "data_type": "float",
-            "sensor_name": "ZoneTemperature",
-            "sensor_type": "ZoneTemperature",
+            "data_type": "float", 
+            "unit_type": "temperature", 
+            "sensor_name": "ZoneTemperature", 
+            "sensor_type": "ZoneTemperature"
+        }, 
+        "SupplyFanSpeed": {
+            "data_type": "float", 
+            "unit_type": "dimensionless", 
+            "sensor_name": "SupplyFanSpeed", 
+            "sensor_type": "SupplyFanSpeed"
+        }, 
+        "DischargeAirTemperature": {
+            "data_type": "float", 
+            "unit_type": "temperature", 
+            "sensor_name": "DischargeAirTemperature", 
+            "sensor_type": "DischargeAirTemperature"
+        }, 
+        "ReturnAirTemperature": {
+            "data_type": "float", 
+            "unit_type": "temperature", 
+            "sensor_name": "ReturnAirTemperature", 
+            "sensor_type": "ReturnAirTemperature"
+        }, 
+        "DischargeAirRelativeHumidity": {
+            "data_type": "float", 
+            "unit_type": "dimensionless", 
+            "sensor_name": "DischargeAirRelativeHumidity", 
+            "sensor_type": "DischargeAirRelativeHumidity"
+        }, 
+        "SecondStageHeating": {
+            "data_type": "boolean", 
+            "unit_type": "unitless", 
+            "sensor_name": "SecondStageHeating", 
+            "sensor_type": "SecondStageHeating"
+        }, 
+        "WholeBuildingGas": {
+            "data_type": "float", 
+            "unit_type": "power", 
+            "sensor_name": "WholeBuildingGas", 
+            "sensor_type": "WholeBuildingGas"
+        }, 
+        "BoilerStatus": {
+            "data_type": "boolean", 
+            "sensor_type": "BoilerStatus", 
+            "sensor_name": "BoilerStatus", 
+            "unit_type": "unitless"
+        }, 
+        "ChilledWaterValvePosition": {
+            "data_type": "float", 
+            "sensor_type": "ChilledWaterValvePosition", 
+            "sensor_name": "ChilledWaterValvePosition", 
+            "unit_type": "dimensionless"
+        }, 
+        "FirstStageHeating": {
+            "data_type": "boolean", 
+            "unit_type": "unitless", 
+            "sensor_name": "FirstStageHeating", 
+            "sensor_type": "FirstStageHeating"
+        }, 
+        "PumpStatus": {
+            "data_type": "boolean", 
+            "sensor_type": "PumpStatus", 
+            "sensor_name": "PumpStatus", 
+            "unit_type": "unitless"
+        }, 
+        "OutdoorAirTemperature": {
+            "data_type": "float", 
+            "unit_type": "temperature", 
+            "sensor_name": "OutdoorAirTemperature", 
+            "sensor_type": "OutdoorAirTemperature"
+        }, 
+        "EconomizerMode": {
+            "data_type": "boolean", 
+            "unit_type": "unitless",
+            "sensor_name": "EconomizerMode", 
+            "sensor_type": "EconomizerMode"
+        }, 
+        "ZoneSetpoint": {
+            "data_type": "float", 
+            "unit_type": "temperature", 
+            "sensor_name": "ZoneSetpoint", 
+            "sensor_type": "ZoneSetpoint"
+        }, 
+        "SupplyWaterTemperature": {
+            "data_type": "float", 
+            "sensor_type": "SupplyWaterTemperature", 
+            "sensor_name": "SupplyWaterTemperature", 
             "unit_type": "temperature"
+        }, 
+        "SupplyWaterTemperatureSetPoint": {
+            "data_type": "float", 
+            "sensor_type": "SupplyWaterTemperatureSetPoint", 
+            "sensor_name": "SupplyWaterTemperatureSetPoint", 
+            "unit_type": "temperature"
+        }, 
+        "TerminalBoxReheatValvePosition": {
+            "data_type": "float", 
+            "sensor_type": "TerminalBoxReheatValvePosition", 
+            "sensor_name": "TerminalBoxReheatValvePosition", 
+            "unit_type": "dimensionless"
+        }, 
+        "DuctStaticPressure": {
+            "data_type": "float", 
+            "sensor_type": "DuctStaticPressure", 
+            "sensor_name": "DuctStaticPressure", 
+            "unit_type": "pressure"
+        }, 
+        "ReturnWaterTemperature": {
+            "data_type": "float", 
+            "sensor_type": "ReturnWaterTemperature", 
+            "sensor_name": "ReturnWaterTemperature", 
+            "unit_type": "temperature"
+        }, 
+        "CommpressorCommand": {
+            "data_type": "boolean", 
+            "sensor_type": "CommpressorCommand", 
+            "sensor_name": "CommpressorCommand", 
+            "unit_type": "unitless"
+        }, 
+        "MixedAirTemperature": {
+            "data_type": "float", 
+            "unit_type": "temperature", 
+            "sensor_name": "MixedAirTemperature", 
+            "sensor_type": "MixedAirTemperature"
+        }, 
+        "MixedAirTemperatureSetPoint": {
+            "data_type": "float", 
+            "unit_type": "temperature", 
+            "sensor_name": "MixedAirTemperatureSetPoint", 
+            "sensor_type": "MixedAirTemperatureSetPoint"
+        }, 
+        "ReturnAirRelativeHumidity": {
+            "data_type": "float", 
+            "unit_type": "dimensionless", 
+            "sensor_name": "ReturnAirRelativeHumidity", 
+            "sensor_type": "ReturnAirRelativeHumidity"
+        }, 
+        "HeatingCall": {
+            "data_type": "boolean", 
+            "sensor_type": "HeatingCall", 
+            "sensor_name": "HeatingCall", 
+            "unit_type": "unitless"
+        }, 
+        "PumpVFDCommand": {
+            "data_type": "float", 
+            "sensor_type": "PumpVFDCommand", 
+            "sensor_name": "PumpVFDCommand", 
+            "unit_type": "dimensionless"
+        }, 
+        "WholeBuildingElectricity": {
+            "data_type": "float", 
+            "unit_type": "power", 
+            "sensor_name": "WholeBuildingElectricity", 
+            "sensor_type": "WholeBuildingElectricity"
         }
     }
 }
