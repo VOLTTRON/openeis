@@ -763,7 +763,7 @@ def _perform_analysis(analysis):
     finally:
         if analysis.status != "error":
             analysis.reports = [serializers.ReportSerializer(report).data for
-                                report in klass.reports(db_output)]
+                                report in klass.reports(output_format)]
             analysis.status = "complete"
             analysis.progress_percent = 100
         analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
