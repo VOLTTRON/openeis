@@ -118,9 +118,9 @@ class Application(DriverApplicationBaseClass):
         # Called when app is staged
         """
         Output:
-            Energy Signature: outside air temperature and loads.
-                Data will be used for scatter plot.
-            Weather Sensitivity: dependent on OAT and loads.
+            datetimeValues: datetime objectes for each energy value.
+            predictedValues: values returned after applying the day_time model
+            measuredValues: values directly measured from the building
         """
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
