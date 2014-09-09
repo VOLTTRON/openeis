@@ -750,11 +750,6 @@ def _perform_analysis(analysis):
         app = klass(db_input, db_output, **kwargs)
         app.run_application()
 
-        reports = klass.reports(output_format)
-
-        for report in reports:
-            print(report)
-
     except Exception as e:
         analysis.status = "error"
         # TODO: log errors
