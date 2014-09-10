@@ -643,7 +643,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
 
 
 def preview_ingestion(sensormap, input_files, count=15):
-    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone} for f in input_files}
+    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone, 'time_offset': f.file.time_offset} for f in input_files}
     result = {}
     for file in ingest_files(sensormap, files):
         rows = []
