@@ -1,4 +1,60 @@
+# -*- coding: utf-8 -*- {{{
+# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
+#
+# Copyright (c) 2014, Battelle Memorial Institute
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# The views and conclusions contained in the software and documentation are those
+# of the authors and should not be interpreted as representing official policies,
+# either expressed or implied, of the FreeBSD Project.
+#
+#
+# This material was prepared as an account of work sponsored by an
+# agency of the United States Government.  Neither the United States
+# Government nor the United States Department of Energy, nor Battelle,
+# nor any of their employees, nor any jurisdiction or organization
+# that has cooperated in the development of these materials, makes
+# any warranty, express or implied, or assumes any legal liability
+# or responsibility for the accuracy, completeness, or usefulness or
+# any information, apparatus, product, software, or process disclosed,
+# or represents that its use would not infringe privately owned rights.
+#
+# Reference herein to any specific commercial product, process, or
+# service by trade name, trademark, manufacturer, or otherwise does
+# not necessarily constitute or imply its endorsement, recommendation,
+# or favoring by the United States Government or any agency thereof,
+# or Battelle Memorial Institute. The views and opinions of authors
+# expressed herein do not necessarily state or reflect those of the
+# United States Government or any agency thereof.
+#
+# PACIFIC NORTHWEST NATIONAL LABORATORY
+# operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
+# under Contract DE-AC05-76RL01830
+#
+#}}}
+
 from contextlib import closing
+from pytz import timezone
 import datetime
 import itertools
 import json
@@ -30,12 +86,14 @@ from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
 from .storage import sensorstore
+from .storage.clone import CloneProject
 from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
-from .storage.db_output import DatabaseOutput
+from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
+from openeis.server.settings import DATA_DIR
 
 _logger = logging.getLogger(__name__)
 
@@ -105,6 +163,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         return HttpResponseRedirect(reverse('datafile-list', request=request) +
                                     '?project={}'.format(project.id))
+
+    @action()
+    def clone(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.DATA)
+        if not serializer.is_valid():
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        clone_project = CloneProject()
+        clone = clone_project.clone_project(self.get_object(), request.DATA['name'])
+        serializer = self.get_serializer(clone)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class FileViewSet(mixins.ListModelMixin,
@@ -187,6 +257,8 @@ class FileViewSet(mixins.ListModelMixin,
         count = min(request.QUERY_PARAMS.get(
                      'rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
                     proj_settings.FILE_HEAD_ROWS_MAX)
+        tzinfo = timezone(request.QUERY_PARAMS.get('time_zone', 'UTC'))
+        time_offset = float(request.QUERY_PARAMS.get('time_offset', 0))
         has_header, rows = self.get_object().csv_head(count)
         num_columns = len(rows[0])
         headers = rows.pop(0) if has_header else []
@@ -217,8 +289,10 @@ class FileViewSet(mixins.ListModelMixin,
             except (ValueError, TypeError):
                 parsed = None
             else:
+                if time_offset != 0:
+                    dt += datetime.timedelta(seconds=time_offset)
                 if not dt.tzinfo:
-                    dt = dt.replace(tzinfo=utc)
+                    dt = tzinfo.localize(dt)
                 parsed = dt.isoformat()
             times.append([ts, parsed])
         return Response(times)
@@ -416,7 +490,7 @@ _processes = {}
 def iter_ingest(ingest):
     '''Ingest into the common schema tables from the DataFiles.'''
     sensormap = ingest.map.map
-    files = {f.name: f.file.file.file for f in ingest.files.all()}
+    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone, 'time_offset':f.file.time_offset} for f in ingest.files.all()}
     ingest_file = None
     try:
         ingested = list(ingest_files(sensormap, files))
@@ -451,8 +525,15 @@ def iter_ingest(ingest):
                                     level=models.SensorIngestLog.ERROR,
                                     message=str(column))
                         else:
-                            obj = cls(ingest=ingest, sensor=sensor, time=time,
-                                value=column)
+                            time_zone = timezone(file.time_zone)
+#                             time = time.astimezone(time_zone)
+                            if file.time_offset != 0:
+                                time_with_offset = time + datetime.timedelta(seconds=file.time_offset)
+                                obj = cls(ingest=ingest, sensor=sensor, time=time_with_offset,
+                                          value=column, time_zone = time_zone)
+                            else:
+                                obj = cls(ingest=ingest, sensor=sensor, time=time,
+                                          value=column, time_zone = time_zone)
                         objects.append(obj)
                 yield (objects, file.name, row.position, file.size,
                        processed_bytes + row.position, total_bytes)
@@ -565,7 +646,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
 
 
 def preview_ingestion(sensormap, input_files, count=15):
-    files = {f.name: f.file.file.file for f in input_files}
+    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone, 'time_offset': f.file.time_offset} for f in input_files}
     result = {}
     for file in ingest_files(sensormap, files):
         rows = []
@@ -619,7 +700,9 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
                                       for name in path)): value
                                      for path, value in errors.items()},
                                    status=status.HTTP_400_BAD_REQUEST)
+
             files = obj['files']
+            print(files)
             for file in files:
                 if file.file.project.owner != user:
                     raise rest_exceptions.PermissionDenied()
@@ -658,17 +741,17 @@ def _perform_analysis(analysis):
 
         klass = get_algorithm_class(analysis.application)
         output_format = klass.output_format(db_input)
-        db_output = DatabaseOutput(analysis, output_format)
 
         kwargs = analysis.configuration['parameters']
+        if analysis.debug:
+            db_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
+        else:
+            db_output = DatabaseOutput(analysis, output_format)
+
+
 
         app = klass(db_input, db_output, **kwargs)
         app.run_application()
-
-        reports = klass.reports(output_format)
-
-        for report in reports:
-            print(report)
 
     except Exception as e:
         analysis.status = "error"
@@ -678,11 +761,49 @@ def _perform_analysis(analysis):
     finally:
         if analysis.status != "error":
             analysis.reports = [serializers.ReportSerializer(report).data for
-                                report in klass.reports(db_output)]
+                                report in klass.reports(output_format)]
             analysis.status = "complete"
             analysis.progress_percent = 100
         analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
         analysis.save()
+
+
+def _get_output_data(request, analysis):
+    output_name = request.QUERY_PARAMS.get('output', False)
+    start = max(int(request.QUERY_PARAMS.get('start', 0)), 0)
+    try:
+        end = start + int(request.QUERY_PARAMS['count'])
+    except (KeyError, ValueError):
+        end = None
+
+    if not output_name:
+        outputs = {}
+
+        for output in models.AppOutput.objects.filter(analysis=analysis):
+            data_model = sensorstore.get_data_model(output,
+                                                    output.analysis.dataset.map.project.id,
+                                                    output.fields)
+
+            outputs[output.name] = {
+                'rows': data_model.objects.count()
+            }
+
+        return Response(outputs)
+
+    output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
+    data_model = sensorstore.get_data_model(output,
+                                            output.analysis.dataset.map.project.id,
+                                            output.fields)
+
+    start = max(start, 0)
+    rows = data_model.objects.all()[start:end]
+
+    # TODO: return JSON or CSV file as StreamingHTTPResponse instead
+    data_response = []
+    for row in rows:
+        data_response.append({field: getattr(row, field) for field in output.fields})
+
+    return Response(data_response)
 
 
 class AnalysisViewSet(viewsets.ModelViewSet):
@@ -733,45 +854,58 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     @link()
     def data(self, request, *args, **kw):
-        analysis = self.get_object()
+        return _get_output_data(request, self.get_object())
 
+    @link()
+    def download(self, request, *args, **kwargs):
+        '''Retrieve the debug zip file.'''
+        analysis_dir = posixpath.join(DATA_DIR, 'files', 'analysis', '{}.zip')
+        response = ProtectedMediaResponse(analysis_dir.format(self.get_object().pk))
+        response['Content-Type'] = 'application/zip; name="analysis-debug.zip"'
+        response['Content-Disposition'] = 'filename="analysis-debug.zip"'
+        return response
+
+
+class SharedAnalysisPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return (request.method in permissions.SAFE_METHODS or
+                request.user.is_authenticated())
+
+    def has_object_permission(self, request, view, object):
+        return (request.method in permissions.SAFE_METHODS or
+                models.Project.objects.filter(owner=request.user,
+                    pk=object.analysis.dataset.map.project.pk).exists())
+
+
+class SharedAnalysisViewSet(mixins.CreateModelMixin,
+                            mixins.DestroyModelMixin,
+                            viewsets.ReadOnlyModelViewSet):
+    model = models.SharedAnalysis
+    serializer_class = serializers.SharedAnalysisSerializer
+    permission_classes = (SharedAnalysisPermission,)
+
+    def get_queryset(self):
         try:
-            output_name = request.QUERY_PARAMS['output']
-        except KeyError:
-            outputs = {}
+            key = self.request.QUERY_PARAMS['key']
+            return models.SharedAnalysis.objects.filter(key=key)
+        except (KeyError):
+            pass
 
-            for output in models.AppOutput.objects.filter(analysis=analysis):
-                data_model = sensorstore.get_data_model(output,
-                                                        output.analysis.dataset.map.project.id,
-                                                        output.fields)
+        user = self.request.user
+        if not user.is_authenticated():
+            return []
 
-                outputs[output.name] = {
-                    'rows': data_model.objects.count()
-                }
+        return models.SharedAnalysis.objects.filter(analysis__dataset__map__project__owner=user)
 
-            return Response(outputs)
+    def pre_save(self, obj):
+        '''Check analysis ownership.'''
+        user = self.request.user
+        if not models.Project.objects.filter(
+                owner=user, pk=obj.analysis.dataset.map.project.pk).exists():
+            raise rest_exceptions.PermissionDenied(
+                    "Invalid analysis pk '{}' - "
+                    'permission denied.'.format(obj.analysis.pk))
 
-        output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
-        data_model = sensorstore.get_data_model(output,
-                                                output.analysis.dataset.map.project.id,
-                                                output.fields)
-
-        try:
-            start = int(request.QUERY_PARAMS['start'])
-        except (KeyError, ValueError):
-            start = 0
-
-        try:
-            end = start + int(request.QUERY_PARAMS['count'])
-        except (KeyError, ValueError):
-            end = None
-
-        start = max(start, 0)
-        rows = data_model.objects.all()[start:end]
-
-        # TODO: return JSON or CSV file as StreamingHTTPResponse instead
-        data_response = []
-        for row in rows:
-            data_response.append({field: getattr(row, field) for field in output.fields})
-
-        return Response(data_response)
+    @link()
+    def data(self, request, *args, **kw):
+        return _get_output_data(request, self.get_object().analysis)

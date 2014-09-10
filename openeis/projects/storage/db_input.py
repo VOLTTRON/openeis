@@ -1,3 +1,58 @@
+# -*- coding: utf-8 -*- {{{
+# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
+#
+# Copyright (c) 2014, Battelle Memorial Institute
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# The views and conclusions contained in the software and documentation are those
+# of the authors and should not be interpreted as representing official policies,
+# either expressed or implied, of the FreeBSD Project.
+#
+#
+# This material was prepared as an account of work sponsored by an
+# agency of the United States Government.  Neither the United States
+# Government nor the United States Department of Energy, nor Battelle,
+# nor any of their employees, nor any jurisdiction or organization
+# that has cooperated in the development of these materials, makes
+# any warranty, express or implied, or assumes any legal liability
+# or responsibility for the accuracy, completeness, or usefulness or
+# any information, apparatus, product, software, or process disclosed,
+# or represents that its use would not infringe privately owned rights.
+#
+# Reference herein to any specific commercial product, process, or
+# service by trade name, trademark, manufacturer, or otherwise does
+# not necessarily constitute or imply its endorsement, recommendation,
+# or favoring by the United States Government or any agency thereof,
+# or Battelle Memorial Institute. The views and opinions of authors
+# expressed herein do not necessarily state or reflect those of the
+# United States Government or any agency thereof.
+#
+# PACIFIC NORTHWEST NATIONAL LABORATORY
+# operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
+# under Contract DE-AC05-76RL01830
+#
+#}}}
+
 '''
 Created on Apr 28, 2014
 
@@ -28,10 +83,14 @@ from  django.db.models import Sum
 
 #from foo import get_sensor
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 from pprint import pprint
+import pytz
+
 from openeis.projects.storage.sensorstore import get_sensors
+
+MAX_DATE =  pytz.utc.localize(datetime.max - timedelta(days=5))
 
 class DatabaseInput:
 
@@ -72,7 +131,7 @@ class DatabaseInput:
         pass
 
     @staticmethod
-    def merge(*args, drop_partial_lines=True):
+    def merge(*args, drop_partial_lines=True, fill_in_data=None):
         '''
             args  - one or more results returned from get_query_sets() method
             drop_partial_lines - whether to drop incomplete sets, missing values are represented by None
@@ -145,14 +204,62 @@ class DatabaseInput:
                         try:
                             new_current.append(query[1].__next__())
                         except StopIteration:
-                            new_current.append((datetime.max,None))
+                            new_current.append((MAX_DATE,None))
                 current = new_current
                 oldest = min(current, key=lambda x:x[0] )[0]
-                if oldest == datetime.max:
+                if oldest == MAX_DATE:
                     break
 
 
         return merge_drop() if drop_partial_lines else merge_no_drop()
+
+    @staticmethod
+    def merge_fill_in_data(*args, drop_partial_lines=True, fill_in_data=None):
+        "Incomplete rows provide last known reading for missing values or None if no good value"
+        #pass in a timedelta to advance time
+        managed_query_sets = []
+
+        latest_value = []
+
+        for arg in args:
+            for group, query_set_list in arg.items():
+                for query_set in query_set_list:
+                    managed_query_sets.append((group,query_set.__iter__()))
+                    latest_value.append(None)
+        current = [x[1].__next__() for x in managed_query_sets]
+        oldest = min(current, key=lambda x:x[0] )[0]
+
+        while True:
+            result = defaultdict(list)
+            result['time']  = oldest
+            index = 0
+            for value, query in zip(current, managed_query_sets):
+
+                if value[0] == oldest:
+                    result[query[0]].append(value[1])
+                    latest_value[index] = value[1]
+                else:
+                    result[query[0]].append(latest_value[index])
+
+                index += 1
+
+            yield result
+            new_current = []
+            for value, query in zip(current, managed_query_sets):
+                if value[0] != oldest:
+                    new_current.append(value)
+                else:
+                    try:
+                        new_current.append(query[1].__next__())
+                    except StopIteration:
+                        new_current.append((MAX_DATE,None))
+            current = new_current
+            oldest = min(current, key=lambda x:x[0] )[0]
+            if oldest == MAX_DATE:
+                break
+
+
+
 
     def get_query_sets(self, group_name,
                        order_by='time',

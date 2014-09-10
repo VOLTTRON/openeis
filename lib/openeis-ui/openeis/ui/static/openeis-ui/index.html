@@ -6,11 +6,13 @@
     <meta charset="utf-8">
     <meta name="description" content="OpenEIS building energy analysis system.">
     <title>OpenEIS</title>
+    <link rel="stylesheet" href="css/normalize.css">
     <link rel="stylesheet" href="css/app.css">
+    <style>[ng-cloak] { display: none; }</style>
 </head>
 
 <body ng-class="{ 'body--modal-open': modalOpen() }">
-    <div class="top-bar" ng-if="account">
+    <div class="top-bar" ng-cloak ng-if="account">
         <nav class="container">
             <h1><a href="projects">OpenEIS</a></h1><!-- comment to remove whitespace between inline-block elements
          --><ul>
@@ -26,6 +28,11 @@
     </div>
     <div ng-view></div>
     <script type="text/javascript" src="settings.js"></script>
+<script type="text/javascript" src="js/d3.min.js"></script>
+<script type="text/javascript" src="js/jstz.min.js"></script>
+<script type="text/javascript" src="js/angular.min.js"></script>
+<script type="text/javascript" src="js/angular-file-upload.min.js"></script>
+<script type="text/javascript" src="js/angular-recursion.min.js"></script>
 <script type="text/javascript" src="js/app.min.js"></script>
 </body>
 

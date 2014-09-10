@@ -418,6 +418,12 @@
             "value":"\u03a9m"
         }
     },
+    "unitless":{
+        "status":{
+            "key":"status",
+            "value": "status"
+       }
+    },
     "energy":{
         "btu":{
             "key":"btu",

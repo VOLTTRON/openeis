@@ -2,11 +2,56 @@
 Cross-sectional benchmarking: retrieve an ENERGY STAR score from EPA's Target Finder.
 
 Shows the building performance relative to a comparable peer group.
+
+Copyright (c) 2014, The Regents of the University of California, Department
+of Energy contract-operators of the Lawrence Berkeley National Laboratory.
+All rights reserved.
+
+1. Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+
+   (a) Redistributions of source code must retain the copyright notice, this
+   list of conditions and the following disclaimer.
+
+   (b) Redistributions in binary form must reproduce the copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+   (c) Neither the name of the University of California, Lawrence Berkeley
+   National Laboratory, U.S. Dept. of Energy nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+2. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+   ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+   ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+3. You are under no obligation whatsoever to provide any bug fixes, patches,
+   or upgrades to the features, functionality or performance of the source code
+   ("Enhancements") to anyone; however, if you choose to make your Enhancements
+   available either publicly, or directly to Lawrence Berkeley National
+   Laboratory, without imposing a separate written license agreement for such
+   Enhancements, then you hereby grant the following license: a non-exclusive,
+   royalty-free perpetual license to install, use, modify, prepare derivative
+   works, incorporate into other computer software, distribute, and sublicense
+   such enhancements or derivative works thereof, in binary and source code
+   form.
+
+NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
+and includes the following modification: Paragraph 3. has been added.
 """
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
+from openeis.applications import reports
 import logging
 from django.db.models import Sum
 from .utils.gen_xml_tgtfndr import gen_xml_targetFinder
@@ -86,7 +131,7 @@ class Application(DriverApplicationBaseClass):
         value_topic = '/'.join(output_topic_base+['crossection', 'value'])
 
         output_needs = {
-            'CrossSectionalBM': {
+            'CrossSectional_BM': {
                 'Metric Name':OutputDescriptor('string', metric_name_topic),
                 'Value':OutputDescriptor('string', value_topic)
                 }
@@ -103,9 +148,33 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        display_elements = []
+        report = reports.Report('Cross Sectional Benchmarking, \
+                                 ENERGY STAR Portfolio Manager')
 
-        return display_elements
+        text_blurb = reports.TextBlurb(text="Determine the performance of your \
+                                            building relative to a comparable \
+                                            peer group using Portfolio Manager .")
+        report.add_element(text_blurb)
+
+
+        column_info = (('Value', 'Target Finder Score'),)
+
+        espmscore_table = reports.Table('CrossSectional_BM',
+                                      column_info,
+                                      title='ENERGY STAR Score',
+                                      description='Scores of 75 or higher qualify for ENERGY STAR Label.\
+                                                   Scores of 50 indicate average energy performance.')
+
+        report.add_element(espmscore_table)
+
+        text_blurb = reports.TextBlurb(text="Scores of 75 or higher qualify for ENERGY STAR Label.\
+                                             Scores of 50 indicate average energy performance.")
+        report.add_element(text_blurb)
+        # list of report objects
+        report_list = [report]
+
+        return report_list
+
 
     def execute(self):
         #Called after User hits GO
@@ -157,15 +226,7 @@ class Application(DriverApplicationBaseClass):
             self.out.log(errmessage, logging.WARNING)
         else:
             self.out.log('Analysis successful', logging.INFO)
-            self.out.insert_row('CrossSectionalBM', {
-                'Metric Name': 'Year',
-                'Value': recent_record[0]
-                })
-            self.out.insert_row('CrossSectionalBM', {
-                'Metric Name': 'Target Finder Median Score',
-                'Value': str(PMMetrics['medianScore'][0])
-                })
-            self.out.insert_row('CrossSectionalBM', {
+            self.out.insert_row('CrossSectional_BM', {
                 'Metric Name': 'Target Finder Score',
                 'Value': str(PMMetrics['designScore'][0])
                 })

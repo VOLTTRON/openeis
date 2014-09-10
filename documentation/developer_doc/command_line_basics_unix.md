@@ -8,6 +8,7 @@ This section describes basic command-line interactions with OpenEIS, under a Uni
 + Activating the virtual environment
 + Running the server
 + Killing the server
++ Running an application
 
 
 ## Activating the virtual environment
@@ -22,12 +23,13 @@ To activate the virtual environment from subdirectory `env`:
 The command prompt should change to include `(openeis)` as a prefix.
 For brevity, the sample code does not show this prefix.
 
-Another way to verify that the virtual environment is running is to check that the `python` command runs the appropriate interpreter:
+A more rigorous way to verify that the virtual environment is running is to check that the `python` command runs the appropriate interpreter:
 
     > which python
     openeis_root/env/bin/python
 
 where `openeis_root` is the root directory that contains the OpenEIS project files.
+If `python` does not refer to the executable in the virtual environment, try removing the `env` directory and creating a new virtual environment, as described in the [installation guide](install_guide_unix.md).
 
 
 ## Running the server
@@ -37,7 +39,7 @@ After activating the virtual environment, run the OpenEIS server by:
     > openeis  runserver
 
 It should now be possible to open a web browser to the main entry point, [http://localhost:8000](http://localhost:8000).
-The server also supports a number of useful [API](server_api_tricks.md) pages.
+The server also supports a number of useful [API](server_api_pages.md) pages.
 
 
 ## Killing the server
@@ -70,3 +72,14 @@ The `fuser` utility can list the process holding the port (however, this doesn't
 After identifying the process holding the port, kill it:
 
     > kill -9  <pid-of-interest>
+
+
+## Running an application
+
+Running an application from the command line requires first creating a [configuration file](configuration_file.md) that specifies the application inputs.
+
+To run the application, activate the virtual environment if necessary, then:
+
+    > openeis runapplication  your_configuration_file.ini
+
+The application should write a `.csv` file containing its results, as well as a `.log` file.
