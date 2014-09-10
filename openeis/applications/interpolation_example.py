@@ -104,7 +104,7 @@ class Application(DriverApplicationBaseClass):
         oats = topics['oat']
 
         output_needs =  {'Time_Table':
-                            {'time':OutputDescriptor('timestamp', 'site/building/analysis/date'),
+                            {'time':OutputDescriptor('string', 'site/building/analysis/date'),
                              'load':OutputDescriptor('float', 'site/building/analysis/load')}}
         for count, oat in enumerate(oats):
             name = "oat" + str(count)
@@ -157,10 +157,15 @@ class Application(DriverApplicationBaseClass):
 
         for row in data:
             ts = row['time']
-            ts = ts.astimezone(timezone('US/Pacific'))
+
+            tz = timezone('America/Los_Angeles')
+            print(tz)
+#            ts = ts.astimezone(timezone('US/Pacific'))
             oats = row['oat']
 
-            row_to_write = {"time": ts, "load": row['load'][0]}
+            timestring = ts.strftime("%Y-%m-%d %H:%M")
+
+            row_to_write = {"time": timestring, "load": row['load'][0]}
 
             count = 0
             for oat in oats:
