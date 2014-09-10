@@ -106,11 +106,9 @@ class Application(DriverApplicationBaseClass):
         output_needs =  {'Time_Table':
                             {'time':OutputDescriptor('timestamp', 'site/building/analysis/date'),
                              'load':OutputDescriptor('float', 'site/building/analysis/load')}}
-        count = 0
-        for oat in oats:
+        for count, oat in enumerate(oats):
             name = "oat" + str(count)
             output_needs['Time_Table'][name] = OutputDescriptor('float', 'site/building/analysis/{}'.format(name))
-            count += 1
 
         return output_needs
 
@@ -129,11 +127,10 @@ class Application(DriverApplicationBaseClass):
 
         column_info = (('time', 'Timestamp'), ('load', 'Load'))
 
-        keys = output_object['Time_Table'].keys()
+        keys = list(output_object['Time_Table'].keys())
+        keys.sort()
 
-        for key in keys:
-            if key.startswith('oat'):
-                column_info = column_info +((key,key),)
+        column_info += tuple((key,key) for key in keys if key.startswith('oat'))
 
         text_blurb = reports.TextBlurb('')
         summary_table = reports.Table('Time_Table',
@@ -164,10 +161,15 @@ class Application(DriverApplicationBaseClass):
             oats = row['oat']
 
             row_to_write = {"time": ts, "load": row['load'][0]}
+
             count = 0
             for oat in oats:
                 name = 'oat'+str(count)
                 row_to_write[name] = oats[count]
                 count += 1
+
+#            for count, oat in oats:
+#                name = 'oat'+str(count)
+#                row_to_write[name] = oats[count]
             self.out.insert_row("Time_Table", row_to_write)
 
