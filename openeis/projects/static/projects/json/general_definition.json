@@ -19,7 +19,8 @@
             "OutdoorAirTemperature",
             "OutdoorAirRelativeHumidity",
             "WholeBuildingElectricity",
-            "WholeBuildingGas"
+            "WholeBuildingGas",
+            "LightingStatus"
         ],
         "child_list": [
             "RTU",
@@ -396,6 +397,12 @@
             "unit_type": "power", 
             "sensor_name": "WholeBuildingElectricity", 
             "sensor_type": "WholeBuildingElectricity"
+        }, 
+        "LightingStatus": {
+            "data_type": "boolean", 
+            "unit_type": "unitless", 
+            "sensor_name": "LightingStatus", 
+            "sensor_type": "LightingStatus"
         }
     }
 }
