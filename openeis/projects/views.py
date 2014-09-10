@@ -526,11 +526,14 @@ def iter_ingest(ingest):
                                     message=str(column))
                         else:
                             time_zone = timezone(file.time_zone)
-#                            time = time.astimezone(time_zone)
+#                             time = time.astimezone(time_zone)
                             if file.time_offset != 0:
-                                time += datetime.timedelta(seconds=file.time_offset)
-                            obj = cls(ingest=ingest, sensor=sensor, time=time,
-                                value=column, time_zone = time_zone)
+                                time_with_offset = time + datetime.timedelta(seconds=file.time_offset)
+                                obj = cls(ingest=ingest, sensor=sensor, time=time_with_offset,
+                                          value=column, time_zone = time_zone)
+                            else:
+                                obj = cls(ingest=ingest, sensor=sensor, time=time,
+                                          value=column, time_zone = time_zone)
                         objects.append(obj)
                 yield (objects, file.name, row.position, file.size,
                        processed_bytes + row.position, total_bytes)
