@@ -64,11 +64,12 @@ install_requires = [
         #'django-guardian',
         'djangorestframework>=2.3,<2.4',
         'django-rest-swagger>=0.1,<0.2',
-        'django-nose',
+        #'django-nose',
         'jsonschema',
         'openeis-ui>0.1.dev70',
         'pytest-django',
         'pytz',
+        'pytest-django'
 ]
 
 basepath = os.path.dirname(os.path.abspath(__file__))
