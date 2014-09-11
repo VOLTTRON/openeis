@@ -490,8 +490,10 @@ _processes = {}
 def iter_ingest(ingest):
     '''Ingest into the common schema tables from the DataFiles.'''
     sensormap = ingest.map.map
-    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone, 'time_offset':f.file.time_offset} for f in ingest.files.all()}
-    print("FILES",files)
+    files = {f.name: {'file': f.file.file.file,
+                      'time_offset':f.file.time_offset,
+                      'time_zone': f.file.time_zone}
+             for f in ingest.files.all()}
     ingest_file = None
     try:
         ingested = list(ingest_files(sensormap, files))
@@ -512,6 +514,9 @@ def iter_ingest(ingest):
             for row in file.rows:
                 time = row.columns[0]
 
+                if file.time_offset != 0:
+                    time += datetime.timedelta(seconds=file.time_offset)
+
                 objects = []
                 if isinstance(time, IngestError):
                     obj = models.SensorIngestLog(file=ingest_file,
@@ -527,16 +532,8 @@ def iter_ingest(ingest):
                                     level=models.SensorIngestLog.ERROR,
                                     message=str(column))
                         else:
-                            time_zone = timezone(file.time_zone)
-#                            time = timezone(file.time_zone).localize(time)
-#                            time = time.astimezone(timezone('UTC'))
-                            if file.time_offset != 0:
-                                time_with_offset = time + datetime.timedelta(seconds=file.time_offset)
-                                obj = cls(ingest=ingest, sensor=sensor, time=time_with_offset,
-                                          value=column, time_zone = time_zone)
-                            else:
-                                obj = cls(ingest=ingest, sensor=sensor, time=time,
-                                          value=column, time_zone = time_zone)
+                            obj = cls(ingest=ingest, sensor=sensor, time=time,
+                                      value=column)
                         objects.append(obj)
                 yield (objects, file.name, row.position, file.size,
                        processed_bytes + row.position, total_bytes)
@@ -649,7 +646,10 @@ class DataSetViewSet(viewsets.ModelViewSet):
 
 
 def preview_ingestion(sensormap, input_files, count=15):
-    files = {f.name: {'file_name': f.file.file.file, 'time_zone': f.file.time_zone, 'time_offset': f.file.time_offset} for f in input_files}
+    files = {f.name: {'file': f.file.file.file,
+                      'time_zone': f.file.time_zone,
+                      'time_offset': f.file.time_offset}
+             for f in input_files}
     result = {}
     for file in ingest_files(sensormap, files):
         rows = []

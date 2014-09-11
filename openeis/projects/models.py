@@ -416,7 +416,6 @@ class BaseSensorData(models.Model):
     sensor = models.ForeignKey(Sensor)
     ingest = models.ForeignKey(SensorIngest)
     time = models.DateTimeField()
-    time_zone = models.CharField(max_length=50, default='UTC')
 
     class Meta:
         abstract = True

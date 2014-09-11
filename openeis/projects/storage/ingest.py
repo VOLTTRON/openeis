@@ -359,7 +359,7 @@ IngestFile = namedtuple('IngestFile', 'name size sensors types rows time_zone ti
 def ingest_files(sensormap, files):
     '''Iterate over each file_dict in files to return a file parser iterator.
 
-    file_dict is a dictionary with a file_name and time_zone as keys.
+    file_dict is a dictionary with file, time_offset, and time_zone as keys.
 
     Creates a generator to iterate over each file in files and yield
     IngestFile objects with the following attributes:
@@ -379,7 +379,7 @@ def ingest_files(sensormap, files):
     if hasattr(files, 'items'):
         files = files.items()
     for file_id, file_dict in files:
-        file  = file_dict['file_name']
+        file = file_dict['file']
         time_zone = file_dict['time_zone']
         time_offset = file_dict['time_offset']
         try:
