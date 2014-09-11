@@ -56,11 +56,11 @@
 '''Ingest CSV files and parse them according to a sensor defintion.'''
 
 from collections import namedtuple
-from datetime import datetime, timezone
+from datetime import datetime
 import json
 import os
 import sys
-
+import pytz
 import dateutil.parser
 
 from .csvfile import CSVFile
@@ -142,15 +142,16 @@ class DateTimeColumn(BaseColumn):
 
     data_type = 'datetime'
 
-    def __init__(self, column, *, formats=(), sep=' ', tzinfo=timezone.utc, **kwargs):
+    def __init__(self, column, *, formats=(), sep=' ', tzinfo=pytz.utc, **kwargs):
         super().__init__(column, **kwargs)
         self.formats = formats
         self.sep = sep
         self.tzinfo = tzinfo
+#        print ("ingest", tzinfo)
 
     def _ensure_tz(self, dt):
         if not dt.tzinfo and self.tzinfo:
-            return dt.replace(tzinfo=self.tzinfo)
+            return  self.tzinfo.localize(dt)
         return dt
 
     def __call__(self, row):
@@ -302,7 +303,7 @@ def ingest_file(file, columns):
                 [col(row) for col in columns]) for row in csv_file if row)
 
 
-def get_sensor_parsers(sensormap):
+def get_sensor_parsers(sensormap, files):
     '''Generate a mapping of files and sensor paths to columns.
 
     Returns a dictionary with the files from sensormap['files'] as keys
@@ -310,6 +311,7 @@ def get_sensor_parsers(sensormap):
     sensor path, a data type, and a column parser. The first entry in
     the list has a path of None and is the timestamp parser.
     '''
+
     def column_number(filename, column):
         if isinstance(column, (list, tuple)):
             return [column_number(filename, col) for col in column]
@@ -317,13 +319,20 @@ def get_sensor_parsers(sensormap):
             file = sensormap['files'][filename]
             return file['signature']['headers'].index(column)
         return column
+
+    def get_tz(fileid):
+        return pytz.timezone(files[fileid]['time_zone'])
+
     def date_format(file):
         fmt = file['timestamp'].get('format')
         return [fmt] if fmt else []
     path = os.path.join(os.path.dirname(os.path.dirname(__file__)),
                         'static', 'projects', 'json', 'general_definition.json')
+
     columns = {name: [(None, DateTimeColumn.data_type,
-                     DateTimeColumn(column_number(name, file['timestamp']['columns']),
+#                     DateTimeColumn(column_number(name, file['timestamp']['columns']),
+                    DateTimeColumn(column_number(name, file['timestamp']['columns']),
+                                   tzinfo=get_tz(name),
                                    formats=date_format(file)))]
              for name, file in sensormap['files'].items()}
     with open(path) as file:
@@ -366,7 +375,7 @@ def ingest_files(sensormap, files):
     sensors, types, and rows.columns is the timestamp and is represented
     by a sensor name of None.
     '''
-    columnmap = get_sensor_parsers(sensormap)
+    columnmap = get_sensor_parsers(sensormap, files)
     if hasattr(files, 'items'):
         files = files.items()
     for file_id, file_dict in files:
