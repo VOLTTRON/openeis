@@ -56,7 +56,7 @@
 '''Ingest CSV files and parse them according to a sensor defintion.'''
 
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 import sys
@@ -142,15 +142,19 @@ class DateTimeColumn(BaseColumn):
 
     data_type = 'datetime'
 
-    def __init__(self, column, *, formats=(), sep=' ', tzinfo=pytz.utc, **kwargs):
+    def __init__(self, column, *, formats=(), sep=' ', tzinfo=pytz.utc,
+                 time_offset=0, **kwargs):
         super().__init__(column, **kwargs)
         self.formats = formats
         self.sep = sep
         self.tzinfo = tzinfo
+        self.time_offset = time_offset
 
     def _ensure_tz(self, dt):
         if not dt.tzinfo and self.tzinfo:
-            dt =   self.tzinfo.localize(dt)
+            dt = self.tzinfo.localize(dt)
+        if self.time_offset != 0:
+            dt += timedelta(seconds=self.time_offset)
         return dt.astimezone(pytz.utc)
 
     def __call__(self, row):
@@ -332,6 +336,7 @@ def get_sensor_parsers(sensormap, files):
 #                     DateTimeColumn(column_number(name, file['timestamp']['columns']),
                     DateTimeColumn(column_number(name, file['timestamp']['columns']),
                                    tzinfo=get_tz(name),
+                                   time_offset=files[name]['time_offset'],
                                    formats=date_format(file)))]
              for name, file in sensormap['files'].items()}
     with open(path) as file:
@@ -358,7 +363,7 @@ IngestFile = namedtuple('IngestFile', 'name size sensors types rows time_zone ti
 def ingest_files(sensormap, files):
     '''Iterate over each file_dict in files to return a file parser iterator.
 
-    file_dict is a dictionary with a file_name and time_zone as keys.
+    file_dict is a dictionary with file, time_offset, and time_zone as keys.
 
     Creates a generator to iterate over each file in files and yield
     IngestFile objects with the following attributes:
@@ -378,7 +383,7 @@ def ingest_files(sensormap, files):
     if hasattr(files, 'items'):
         files = files.items()
     for file_id, file_dict in files:
-        file  = file_dict['file_name']
+        file = file_dict['file']
         time_zone = file_dict['time_zone']
         time_offset = file_dict['time_offset']
         try:

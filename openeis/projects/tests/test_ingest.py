@@ -209,7 +209,7 @@ class TestIngestApi(TestCase):
         data_io = io.StringIO(GOOD_DATA)
         data_io.size = len(GOOD_DATA)
         # modified to use timezone data.
-        self.good_data = [('File 1', {'file_name': data_io, 'time_zone': 'America/Los_Angeles', 'time_offset': '-300'})]
+        self.good_data = [('File 1', {'file': data_io, 'time_zone': 'America/Los_Angeles', 'time_offset': '-300'})]
 
         # Do the same as above for the error data.
         data_io = io.StringIO(ERROR_DATA)
