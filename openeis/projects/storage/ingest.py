@@ -147,12 +147,11 @@ class DateTimeColumn(BaseColumn):
         self.formats = formats
         self.sep = sep
         self.tzinfo = tzinfo
-#        print ("ingest", tzinfo)
 
     def _ensure_tz(self, dt):
         if not dt.tzinfo and self.tzinfo:
-            return  self.tzinfo.localize(dt)
-        return dt
+            dt = self.tzinfo.localize(dt)
+        return dt.astimezone(pytz.utc)
 
     def __call__(self, row):
         columns = [self.column] if isinstance(self.column, int) else self.column
