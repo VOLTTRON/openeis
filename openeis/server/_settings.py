@@ -105,6 +105,7 @@ INSTALLED_APPS = (
     'openeis.projects',
     'rest_framework',
     'rest_framework_swagger',
+    'django_pytest',
     #'django_nose',
     'openeis.ui',
 )
@@ -159,8 +160,8 @@ TEMPLATE_DIRS = (
     posixpath.join(POSIX_BASE_DIR, "templates"),
 )
 
-# Setup of django_nose based upon readme at https://github.com/django-nose/django-nose
-TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
+# Setup of django_nose based upon readme at https://github.com/buchuki/django-pytest
+TEST_RUNNER = 'django_pytest.test_runner.TestRunner'
 
 PROTECTED_MEDIA_URL = '/files/'
 PROTECTED_MEDIA_ROOT = os.path.join(DATA_DIR, 'files')
