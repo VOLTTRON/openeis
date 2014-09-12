@@ -67,7 +67,10 @@ install_requires = [
         #'django-nose',
         'jsonschema',
         'openeis-ui>0.1.dev70',
+        # note we use both of them.  django-pytest allows the
+        # runner when using openeis test
         'pytest-django',
+        'django-pytest',
         'pytz',
         'pytest-django'
 ]
