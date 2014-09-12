@@ -369,7 +369,7 @@ You can look at the documentation for `nearly_same` in AppTestBase.py.
 
 In order to run the test, call:
 
-    > openeis test applications/utest_applications/your_test_file.py
+    > py.test applications/utest_applications/your_test_file.py
 
 *TODO: If you create your own file, how do you get it to run as part of an automated test suite?
 Does Django/OpenEIS "know" to run any .py file it finds in a certain directory?
@@ -381,7 +381,7 @@ Right now, the only time I (DML) know for sure the tests run is if I kick them o
 
 Output from a successful test resembles the following:
 
-    nosetests applications/utest_applications/test_applications.py --verbosity=1
+    py.test applications/utest_applications/test_applications.py
     Creating test database for alias 'default'...
     ...................................
     ----------------------------------------------------------------------
@@ -400,7 +400,7 @@ In addition to dots, and `F` or `E` may appear:
 
 An example of an error is as follows:
 
-    nosetests applications/utest_applications/test_applications.py --verbosity=1
+    py.test applications/utest_applications/test_applications.py --verbosity=1
     Creating test database for alias 'default'...
     .............................E.....
     ======================================================================
@@ -421,7 +421,7 @@ The output will tell you how many errors there were and which test failed.
 
 If a test failed, it will look like:
 
-    nosetests applications/utest_applications/test_applications.py --verbosity=1
+    py.test applications/utest_applications/test_applications.py --verbosity=1
     Creating test database for alias 'default'...
     .......................F............
     ======================================================================
