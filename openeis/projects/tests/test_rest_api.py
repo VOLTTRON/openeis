@@ -60,6 +60,7 @@ from datetime import datetime, timezone
 import io
 import json
 import os
+import pprint
 import tempfile
 import time
 
@@ -173,23 +174,29 @@ class TestRestApi(OpenEISTestBase):
                 }
             }
         }
-        expected = {
-            '0': {
-                'errors': [],
-                'data': [
-                    [datetime(2009, 9, 29, 15, 0, tzinfo=timezone.utc), 74.72],
-                    [datetime(2009, 9, 29, 16, 0, tzinfo=timezone.utc), 75.52],
-                    [datetime(2009, 9, 29, 17, 0, tzinfo=timezone.utc), 75.78],
-                    [datetime(2009, 9, 29, 18, 0, tzinfo=timezone.utc), 76.19],
-                    [datetime(2009, 9, 29, 19, 0, tzinfo=timezone.utc), 76.72]
-                ]
-            }
-        }
+        expected = {   '0': {   'data': [   [   datetime(2009, 9, 29, 22, 5, tzinfo=timezone.utc),
+                             74.72],
+                         [   datetime(2009, 9, 29, 23, 5, tzinfo=timezone.utc),
+                             75.52],
+                         [   datetime(2009, 9, 30, 0, 5, tzinfo=timezone.utc),
+                             75.78],
+                         [   datetime(2009, 9, 30, 1, 5, tzinfo=timezone.utc),
+                             76.19],
+                         [   datetime(2009, 9, 30, 2, 5, tzinfo=timezone.utc),
+                             76.72]],
+             'errors': []}}
+
         # Add data file
         response = self.upload_temp_file_data(1)
         file_id = response.data['id']
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         client = self.get_authenticated_client()
+
+        data = json.dumps({'time_offset': 300, 'time_zone': 'America/Los_Angeles'})
+        response = client.patch('/api/files/' + str(file_id), data, content_type='application/json', Accept='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
         # Generate preview from explicit sensormap.
         data = json.dumps({'map': sensormap,
                            'files': [{'name': '0', 'file': file_id}],
