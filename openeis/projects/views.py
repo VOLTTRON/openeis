@@ -513,10 +513,6 @@ def iter_ingest(ingest):
             ingest_file = ingest.files.get(name=file.name)
             for row in file.rows:
                 time = row.columns[0]
-
-                if file.time_offset != 0:
-                    time += datetime.timedelta(seconds=file.time_offset)
-
                 objects = []
                 if isinstance(time, IngestError):
                     obj = models.SensorIngestLog(file=ingest_file,
