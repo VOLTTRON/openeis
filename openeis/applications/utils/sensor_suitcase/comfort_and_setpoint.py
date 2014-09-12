@@ -48,14 +48,14 @@ and includes the following modification: Paragraph 3. has been added.
 from utils.separate_hours import separate_hours
 from numpy import mean
 
-def comfort_and_setpoint(IAT, DAT, op_hours, HVACstat=None):
+def comfort_and_setpoint(ZAT, DAT, op_hours, HVACstat=None):
     """
     Checks if the building is comfortable and if the setpoints are too narrow.
 
     Parameters:
-        - IAT: Indoor air temperature
+        - ZAT: Zone air temperature
             - 2d array with each element as [datetime, data]
-        - DAT: Diffuser air temperature
+        - DAT: Discharge air temperature
             - 2d array with each element as [datetime, data]
         - HVACstat (optional): HVAC status
             - 2d array with each element as [datetime, data]
@@ -69,8 +69,8 @@ def comfort_and_setpoint(IAT, DAT, op_hours, HVACstat=None):
             and savings if there is an issue, otherwise is False.
     """
     # separate data to get occupied data
-    IAT_op, IAT_non_op = \
-        separate_hours(IAT, op_hours[0], op_hours[1], op_hours[2])
+    ZAT_op, ZAT_non_op = \
+        separate_hours(ZAT, op_hours[0], op_hours[1], op_hours[2])
     DAT_op, DAT_non_op = \
         separate_hours(DAT, op_hours[0], op_hours[1], op_hours[2])
 
@@ -92,8 +92,8 @@ def comfort_and_setpoint(IAT, DAT, op_hours, HVACstat=None):
     # iterate through the data
     i = 0
     while (i < len(DAT_op)):
-        # if DAT is less than 90% of IAT, it's cooling
-        if (DAT_op[i][1] < (0.9 * IAT_op[i][1])):
+        # if DAT is less than 90% of ZAT, it's cooling
+        if (DAT_op[i][1] < (0.9 * ZAT_op[i][1])):
             # If there's HVAC, make sure it's actually cooling
             if (HVACstat):
                 if (HVAC_op[i][1] != 3):
@@ -104,9 +104,9 @@ def comfort_and_setpoint(IAT, DAT, op_hours, HVACstat=None):
             # if DAT is greater than 80 F, it's under cooling
             elif (DAT_op[i][1] > 80):
                 under_cool += 1
-            cool_on.append(IAT_op[i][1])
-        # if DAT greater than 110% IAT, then it's heating
-        elif (DAT_op[i][1] > (1.1 * IAT_op[i][1])):
+            cool_on.append(ZAT_op[i][1])
+        # if DAT greater than 110% ZAT, then it's heating
+        elif (DAT_op[i][1] > (1.1 * ZAT_op[i][1])):
             # if there's HVAC status, make sure it's actually heating
             if (HVACstat):
                 if (HVAC_op[i][1] == 0):
@@ -117,7 +117,7 @@ def comfort_and_setpoint(IAT, DAT, op_hours, HVACstat=None):
             # if DAT is over 72 F, it's over heating
             elif (DAT_op[i][1] > 72):
                 over_heat += 1
-            heat_on.append(IAT_op[i][1])
+            heat_on.append(ZAT_op[i][1])
         i += 1
 
     # grab the average

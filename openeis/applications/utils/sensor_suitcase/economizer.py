@@ -55,7 +55,7 @@ def economizer(DAT, OAT, HVACstat):
     it will return a dictionary of diagnostics.
 
     Parameters: DAT, OAT, HVACstat
-        - DAT: diffuser air temperature
+        - DAT: discharge air temperature
         - OAT: outdoor air temperature
         - HVACstat: HVAC status
             - HVAC: 0 - off 1 - fan 3 - compressor
