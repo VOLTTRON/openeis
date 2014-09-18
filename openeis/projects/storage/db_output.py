@@ -52,6 +52,7 @@
 # under Contract DE-AC05-76RL01830
 #
 #}}}
+from setuptools.tests.test_sdist import posix
 
 '''
 Created on Apr 28, 2014
@@ -72,6 +73,7 @@ import tempfile
 import csv
 from datetime import datetime
 from openeis.server.settings import DATA_DIR
+import posixpath
 
 BATCH_SIZE = 1000
 LOG_TABLE_NAME = 'log'
@@ -159,6 +161,8 @@ class DatabaseOutputFile(DatabaseOutput):
            }
         '''
         super().__init__(analysis, output_map)
+        
+        self.temp_dir = tempfile.mkdtemp()
 
         self.output_names = {}
         for table_name, table_description in output_map.items():
@@ -166,7 +170,7 @@ class DatabaseOutputFile(DatabaseOutput):
 
         self.file_prefix = analysis.application+'_'+datetime.now().strftime('%m-%d-%Y %H %M %S')
 
-        log_file = self.file_prefix + '.log'
+        log_file = posixpath.join(self.temp_dir,self.file_prefix + '.log')
         self._logger = logging.Logger(name=analysis.application) #logging.getLogger()
         formatter = logging.Formatter('%(levelname)s:%(name)s %(message)s')
         self._logger.setLevel(logging.INFO)
@@ -184,7 +188,7 @@ class DatabaseOutputFile(DatabaseOutput):
         self.csv_table_map = {}
         self.file_table_map = {}
         for table_name, topics in output_map.items():
-            csv_file = self.file_prefix+'_'+table_name+'.csv'
+            csv_file = posixpath.join(self.temp_dir,self.file_prefix+'_'+table_name+'.csv')
             f = open(csv_file,'w', newline='')
             self.csv_table_map[table_name] = csv.DictWriter(f, topics.keys())
             self.csv_table_map[table_name].writeheader()
@@ -242,14 +246,16 @@ class DatabaseOutputZip(DatabaseOutputFile):
 
             
             for table_name in self.csv_table_map:
-                csv_file = self.file_prefix +'_'+table_name+'.csv'
+                csv_file = posixpath.join(self.temp_dir,self.file_prefix +'_'+table_name+'.csv')
                 print(os.path.abspath(csv_file))
-                myzip.write(csv_file)
-                os.remove(csv_file)
+                myzip.write(csv_file, arcname=self.file_prefix +'_'+table_name+'.csv')
+                #os.remove(csv_file)
             
-            log_file = self.file_prefix+".log"
-            myzip.write(log_file)
-            os.remove(log_file)
+            log_file = posixpath.join(self.temp_dir, self.file_prefix+".log")
+            myzip.write(log_file, arcname = self.file_prefix+".log")
+            #os.remove(log_file)
+
+            shutil.rmtree(self.temp_dir, True)
 
             d = (self.config_dict)
             jsonarray = json.dumps(d)
