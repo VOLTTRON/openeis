@@ -166,8 +166,9 @@ def make_requirements():
         # Don't include libs thata aren't in pypi numpy is explicitly handled differently
         if not l.startswith("-e") and not l.startswith('openeis') and not l.startswith('numpy'):
             lines += l
-            
-    #open(WORKING_DIR.repFilename: "{app}\python\Scripts\pip.exe"; Parameters: "install --no-index --find-links={app}\wheels -r {app}\requirements.txt"lace('/','\\')+"\\requirements.txt", 'w').write(lines)
+    
+    open(WORKING_DIR.replace('/','\\')+"\\requirements.txt", 'w').write(lines)        
+    
     # now build all of the wheels for the requirements file
     ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', WORKING_DIR.replace('/','\\')+'\\requirements.txt'])
     
