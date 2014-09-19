@@ -127,7 +127,7 @@ class Application(DriverApplicationBaseClass):
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('Load_Profiling', 'timestamp', 'load'))
 
-        scatter_plot = reports.ScatterPlot(xy_dataset_list,
+        scatter_plot = reports.DatetimeScatterPlot(xy_dataset_list,
                                            title='Time Series Load Profile',
                                            x_label='Timestamp',
                                            y_label='Power'
