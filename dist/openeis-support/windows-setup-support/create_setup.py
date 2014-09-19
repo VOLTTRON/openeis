@@ -135,6 +135,7 @@ def make_setup():
     for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR', 
               'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
         print("{}->{}".format(x, cfg[x]))
+    make_requirements()
     build_wheels()
     move_to_working_dir()
     make_installer()
@@ -152,6 +153,23 @@ def rename_dirs(src_dir, working_dir):
     if not os.path.exists(WORKING_DIR):
         sys.stderr.write('invalid src dir {}\n'.format(WORKING_DIR))
         sys.exit(500)
+        
+def make_requirements():
+    global WORKING_DIR, WHEEL_DIR
+    
+    if not os.path.exists('env/Scripts/pip.exe'):
+        raise Exception('must be called from root directory of the openeis project.')
+    
+    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(WORKING_DIR.replace('/','\\')+"\\requirements.txt", 'w'))
+    lines = ''
+    for l in open(WORKING_DIR.replace('/','\\')+"\\requirements.txt"):
+        # Don't include libs thata aren't in pypi numpy is explicitly handled differently
+        if not l.startswith("-e") and not l.startswith('openeis') and not l.startswith('numpy'):
+            lines += l
+            
+    #open(WORKING_DIR.repFilename: "{app}\python\Scripts\pip.exe"; Parameters: "install --no-index --find-links={app}\wheels -r {app}\requirements.txt"lace('/','\\')+"\\requirements.txt", 'w').write(lines)
+    # now build all of the wheels for the requirements file
+    ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', WORKING_DIR.replace('/','\\')+'\\requirements.txt'])
     
 
 if __name__ == '__main__':
@@ -160,5 +178,8 @@ if __name__ == '__main__':
         # Change the source dir
         rename_dirs(sys.argv[1], sys.argv[2])
     
+    #if os.path.isdir(WHEEL_DIR.replace('/','\\')):
+    #    shutil.rmtree(WHEEL_DIR.replace('/','\\'))
+    #os.makedirs(WHEEL_DIR.replace('/','\\'))
     make_setup()
                
