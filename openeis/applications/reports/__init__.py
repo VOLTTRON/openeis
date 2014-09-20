@@ -143,6 +143,9 @@ class BarChart(XYPlot):
 class ScatterPlot(XYPlot):
     pass
 
+class DatetimeScatterPlot(XYPlot):
+    pass
+
 class HeatMap(ReportElement):
 
     def __init__(self, table_name, x_column, y_column, z_column, x_label=None, y_label=None, z_label=None, **kwargs):
