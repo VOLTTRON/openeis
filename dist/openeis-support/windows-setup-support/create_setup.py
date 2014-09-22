@@ -13,6 +13,17 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 setup_cfg = os.path.join(basedir, 'setup.cfg.json')
 if not os.path.exists(setup_cfg):
     sys.stderr.write('Invalid config file specified\n\t{}'.format(setup_cfg))
+    sys.stderr.write('An example setup file looks like:\n'+"""
+{
+    "CLEAN_PYTHON_DIR": "C:/openeis-1.0/python-fresh",
+    "WORKING_DIR": "C:/openeis-1.0/Output",
+    "OPENEIS_SRC_DIR": "C:/Users/d3m614/git/openeis",
+    "WHEEL_DIR": "C:/openeis-1.0/wheels",
+    "NUMPY_DIR": "C:/openeis-1.0/numpy1.8.2",
+    "MISC_DIR": "C:/openeis-1.0/misc",
+    "INNO_SETUP_DIR": "C:/extracted_inno_setup"
+}
+""")
     sys.exit()
 
 cfg = json.loads(open(setup_cfg, 'r').read())
@@ -73,7 +84,7 @@ def build_wheels():
             shutil.rmtree('build')
         
         print('Executing wheel on openeis')
-        ret = subprocess.check_call(['python', 'setup.py', 'bdist_wheel'])
+        ret = subprocess.check_call([r'env\Scripts\python.exe', 'setup.py', 'bdist_wheel'])
         
         for f in os.listdir('dist'):
             if f[-3:] == 'whl':
@@ -83,7 +94,7 @@ def build_wheels():
         os.chdir(os.path.join(OPENEIS_SRC_DIR, 'lib', 'openeis-ui'))
         if os.path.exists('build'):
             shutil.rmtree('build')
-        ret = subprocess.check_call(['python', 'setup.py', 'bdist_wheel'])
+        ret = subprocess.check_call([r'..\..\env\scripts\python.exe', 'setup.py', 'bdist_wheel'])
         
         for f in os.listdir('dist'):
             if f[-3:] == 'whl':
