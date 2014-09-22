@@ -31,33 +31,33 @@ cfg = json.loads(open(setup_cfg, 'r').read())
 
 # This is the python (extracted from the msi file)
 # that should be distributed with openeis.
-CLEAN_PYTHON_DIR = cfg['CLEAN_PYTHON_DIR']
+CLEAN_PYTHON_DIR = cfg['CLEAN_PYTHON_DIR'].replace('/', '\\')
 
 # A writeable directory for full installation
 # of support files.
-WORKING_DIR = cfg['WORKING_DIR']
+WORKING_DIR = cfg['WORKING_DIR'].replace('/', '\\')
 
 # The checked out src directory from the git repository.
-OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR']
+OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'].replace('/', '\\')
 
 # The location of the cache wheel directory so we
 # don't need to re download things from the internet.
-WHEEL_DIR = cfg['WHEEL_DIR']
+WHEEL_DIR = cfg['WHEEL_DIR'].replace('/', '\\')
 
 # A folder that contains a numpy and numpy dist egg info file.
 # This folder needs to be suitable for droping directly into
 # the site-packages directory of the python distributed by
 # openeis
-NUMPY_DIR= cfg['NUMPY_DIR']
+NUMPY_DIR= cfg['NUMPY_DIR'].replace('/', '\\')
 
 # Misc directory that will get copied to the root directory
 # of the installed application when installing on the client
 # machine.
-MISC_DIR = cfg['MISC_DIR']
+MISC_DIR = cfg['MISC_DIR'].replace('/', '\\')
 
 # The directory of an extracted inno setup folder.  This can
 # be obtained through innoextractor program from the internet.
-INNO_SETUP_DIR = cfg['INNO_SETUP_DIR']
+INNO_SETUP_DIR = cfg['INNO_SETUP_DIR'].replace('/', '\\')
 
 ORIG_CWD = os.getcwd()
 
