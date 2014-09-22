@@ -72,6 +72,10 @@ def move_wheel(src_file):
     shutil.move(os.path.join('dist', src_file),
                              os.path.join(WHEEL_DIR, src_file))
 
+def cleanup():
+    if os.path.exists('build'):
+        shutil.rmtree('build')
+        
 def build_wheels():
     '''Builds the openeis and openeis-ui wheels, puts them in WHEEL_DIR
 
@@ -94,7 +98,7 @@ def build_wheels():
         os.chdir(os.path.join(OPENEIS_SRC_DIR, 'lib', 'openeis-ui'))
         if os.path.exists('build'):
             shutil.rmtree('build')
-        ret = subprocess.check_call([r'..\..\env\scripts\python.exe', 'setup.py', 'bdist_wheel'])
+        ret = subprocess.check_call([r'{}\env\scripts\python.exe'.format(OPENEIS_SRC_DIR), 'setup.py', 'bdist_wheel'])
         
         for f in os.listdir('dist'):
             if f[-3:] == 'whl':
@@ -150,6 +154,7 @@ def make_setup():
     build_wheels()
     move_to_working_dir()
     make_installer()
+    cleanup()
 
 def rename_dirs(src_dir, working_dir):
     '''Allow caller to change the source dir and working dir'''
@@ -166,22 +171,22 @@ def rename_dirs(src_dir, working_dir):
         sys.exit(500)
         
 def make_requirements():
-    global WORKING_DIR, WHEEL_DIR
+    global MISC_DIR, WHEEL_DIR
     
     if not os.path.exists('env/Scripts/pip.exe'):
         raise Exception('must be called from root directory of the openeis project.')
     
-    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(WORKING_DIR.replace('/','\\')+"\\requirements.txt", 'w'))
+    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(MISC_DIR.replace('/','\\')+"\\requirements.txt", 'w'))
     lines = ''
-    for l in open(WORKING_DIR.replace('/','\\')+"\\requirements.txt"):
+    for l in open(MISC_DIR.replace('/','\\')+"\\requirements.txt"):
         # Don't include libs thata aren't in pypi numpy is explicitly handled differently
         if not l.startswith("-e") and not l.startswith('openeis') and not l.startswith('numpy'):
             lines += l
     
-    open(WORKING_DIR.replace('/','\\')+"\\requirements.txt", 'w').write(lines)        
+    open(MISC_DIR.replace('/','\\')+"\\requirements.txt", 'w').write(lines)        
     
     # now build all of the wheels for the requirements file
-    ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', WORKING_DIR.replace('/','\\')+'\\requirements.txt'])
+    ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
     
 
 if __name__ == '__main__':
