@@ -51,7 +51,8 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 from openeis.applications import reports
 import logging
-import numpy
+from .utils import conversion_utils as cu
+# import numpy
 
 class Application(DriverApplicationBaseClass):
 
@@ -130,11 +131,9 @@ class Application(DriverApplicationBaseClass):
         scatter_plot = reports.ScatterPlot(xy_dataset_list,
                                            title='Time Series Load Profile',
                                            x_label='Percent Time',
-                                           y_label='Power')
+                                           y_label='Energy [kWh]')
 
         report.add_element(scatter_plot)
-        # list of report objects
-
 
         report_list = [report]
 
@@ -150,8 +149,15 @@ class Application(DriverApplicationBaseClass):
 
         load_query = self.inp.get_query_sets('load', order_by='value', exclude={'value':None})
 
+        # Get conversion factor
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        
+        load_convertfactor = cu.conversiontoKWH(load_unit)
+        
         ctr = 1
         for x in load_query[0]:
-            self.out.insert_row("Load_Duration", { "sorted load": x[1],
+            self.out.insert_row("Load_Duration", { "sorted load": x[1]*load_convertfactor,
                                                    "percent time": ctr / len(load_query[0]) } )
             ctr += 1

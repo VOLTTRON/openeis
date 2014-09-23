@@ -50,6 +50,8 @@ and includes the following modification: Paragraph 3. has been added.
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 from openeis.applications import reports
+from .utils import conversion_utils as cu
+import datetime as dt
 import logging
 
 
@@ -119,10 +121,11 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
+        
         report = reports.Report('Building Load Profile Report')
 
         text_blurb = reports.TextBlurb(text="A plot showing building energy consumption over a time period.")
-        report.add_element(text_blurb)
+        report.add_element(text_blurb)        
 
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('Load_Profiling', 'timestamp', 'load'))
@@ -130,9 +133,8 @@ class Application(DriverApplicationBaseClass):
         scatter_plot = reports.DatetimeScatterPlot(xy_dataset_list,
                                            title='Time Series Load Profile',
                                            x_label='Timestamp',
-                                           y_label='Power'
+                                           y_label='Energy [kWh]'
                                            )
-
         report.add_element(scatter_plot)
 
         report_list = [report]
@@ -144,10 +146,20 @@ class Application(DriverApplicationBaseClass):
         "Outputs values for line graph."
         self.out.log("Starting analysis", logging.INFO)
 
-        load_by_hour = self.inp.get_query_sets('load', exclude={'value': None})
+        # Get the units and the conversion factor. 
+        self.out.log("Find the conversion factor.", logging.INFO)
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        #
+        load_convertfactor = cu.conversiontoKWH(load_unit)
+        
+        load_by_hour = self.inp.get_query_sets('load', 
+                                                exclude={'value': None},
+                                                group_by='hour')
 
         for x in load_by_hour[0]:
             self.out.insert_row("Load_Profiling", {
-                'timestamp': x[0],
-                'load': x[1]
+                'timestamp': dt.datetime.strptime(x[0],'%Y-%m-%d %H'),
+                'load': x[1]*load_convertfactor 
                 })

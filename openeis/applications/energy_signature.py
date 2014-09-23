@@ -57,6 +57,7 @@ from openeis.applications import reports
 import logging
 from django.db.models import Avg
 from .utils.spearman import findSpearmanRank
+from .utils import conversion_utils as cu
 
 
 class Application(DriverApplicationBaseClass):
@@ -111,7 +112,7 @@ class Application(DriverApplicationBaseClass):
         value_topic = '/'.join(output_topic_base + ['energysignature', 'weather sensitivity'])
         oat_topic = '/'.join(output_topic_base + ['energysignature', 'oat'])
         load_topic = '/'.join(output_topic_base + ['energysignature', 'load'])
-
+        
         output_needs = {
             'Weather_Sensitivity': {
                 'value':OutputDescriptor('string', value_topic)
@@ -152,13 +153,10 @@ class Application(DriverApplicationBaseClass):
 
         scatter_plot = reports.ScatterPlot(xy_dataset_list,
                                            title='Time Series Load Profile',
-                                           x_label='Outside Air Temperature',
-                                           y_label='Power')
+                                           x_label='Outside Air Temperature [F]',
+                                           y_label='Energy [kWh]')
 
         report.add_element(scatter_plot)
-        # list of report objects
-
-
 
         report_list = [report]
 
@@ -182,6 +180,14 @@ class Application(DriverApplicationBaseClass):
                                              exclude={'value':None},
                                              wrap_for_merge=True)
 
+        # Get conversion factor
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
+        
+        load_convertfactor = cu.conversiontoKWH(load_unit)
+        
         merged_load_oat = self.inp.merge(load_query, oat_query)
 
         load_values = []
@@ -189,8 +195,16 @@ class Application(DriverApplicationBaseClass):
 
         # Output for scatter plot
         for x in merged_load_oat:
-            load_values.append(x['load'][0])
-            oat_values.append(x['oat'][0])
+            if temperature_unit == 'celcius':
+                convertedTemp = cu.convertCelciusToFahrenheit(x['oat'][0])
+            elif temperature_unit == 'kelvin':
+                convertedTemp = cu.convertKelvinToCelcius(
+                                cu.convertCelciusToFahrenheit(x['oat'][0]))
+            else: 
+                convertedTemp = x['oat'][0]
+        
+            load_values.append(x['load'][0]*load_convertfactor)
+            oat_values.append(convertedTemp)
             self.out.insert_row("Scatterplot", {
                 "oat": x['oat'][0],
                 "load": x['load'][0]
@@ -201,5 +215,5 @@ class Application(DriverApplicationBaseClass):
         # TODO weather sensitivity as attribute for report generation
 
         self.out.insert_row("Weather_Sensitivity", {
-            "value": str(weather_sensitivity)
+            "value": "{:.2f}".format(weather_sensitivity)
             })

@@ -52,6 +52,7 @@ from openeis.applications import reports
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 from openeis.applications import reports
+from .utils import conversion_utils as cu
 import logging
 
 
@@ -133,7 +134,7 @@ class Application(DriverApplicationBaseClass):
                                    z_column='load',
                                    x_label='Hour of the Day',
                                    y_label='Date',
-                                   z_label='Building Load')
+                                   z_label='Building Energy [kWh]')
         report.add_element(heat_map)
 
         report_list = [report]
@@ -149,10 +150,19 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting analysis", logging.INFO)
 
         loads = self.inp.get_query_sets('load', exclude={'value':None})
+        
+        # Get conversion factor
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        
+        load_convertfactor = cu.conversiontoKWH(load_unit)
+        print (load_convertfactor)
+        
         for x in loads[0]:
             self.out.insert_row("Heat_Map", {
                 'date': x[0].date(),
                 'hour': x[0].hour,
-                'load': x[1]
+                'load': x[1]*load_convertfactor
                 }
             )
