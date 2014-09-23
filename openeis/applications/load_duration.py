@@ -134,6 +134,20 @@ class Application(DriverApplicationBaseClass):
                                            y_label='Energy [kWh]')
 
         report.add_element(scatter_plot)
+        text_guide1 = reports.TextBlurb(text="The highest loads should occur a small fraction of the \
+                                              the time ideally.")
+        report.add_element(text_guide1)                
+        
+        text_guide2 = reports.TextBlurb(text="If the building is near its peak load for a significant\
+                                              portion of the time, the HVAC equipment could be\
+                                              undersized or there could be systems that are\
+                                              running more than necessary.")
+        report.add_element(text_guide2)
+        
+        text_guide3 = reports.TextBlurb(text="If the laod is near peak for only a short\
+                                              duration of time there may be an opportunity\
+                                              to reduce peak demand charges.")
+        report.add_element(text_guide3)        
 
         report_list = [report]
 

@@ -116,13 +116,15 @@ class Application(DriverApplicationBaseClass):
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
-        description_topic = '/'.join(output_topic_base + ['dailySummary',
-                                                        'description'])
+        metricname_topic = '/'.join(output_topic_base + ['dailySummary','metricname'])
         value_topic = '/'.join(output_topic_base + ['dailySummary', 'value'])
+        description_topic = '/'.join(output_topic_base + ['dailySummary', 'description'])
+        
         output_needs = {
             'Daily_Summary_Table': {
-                'Metric':OutputDescriptor('string', description_topic),
-                'value':OutputDescriptor('string', value_topic)
+                'Metric':OutputDescriptor('string', metricname_topic),
+                'value':OutputDescriptor('string', value_topic),
+                'description':OutputDescriptor('string', description_topic)
                 }
             }
         return output_needs
@@ -144,7 +146,7 @@ class Application(DriverApplicationBaseClass):
 
         report = reports.Report(rep_desc)
 
-        column_info = (('Metric', 'Summary Metrics'), ('value', 'Summary Values'))
+        column_info = (('Metric', 'Summary Metrics'), ('value', 'Summary Values'),('description','Guide'))
 
 #         text_blurb = reports.TextBlurb('')
         summary_table = reports.Table('Daily_Summary_Table',
@@ -192,7 +194,7 @@ class Application(DriverApplicationBaseClass):
         load_day_list_5 = []
 
         # find peak load benchmark
-        peakLoad = load_max * 1000
+        peakLoad = load_max 
         peakLoadIntensity = peakLoad / floorAreaSqft
 
         # gather values in the 95th and 5th percentile every day
@@ -242,35 +244,60 @@ class Application(DriverApplicationBaseClass):
 
 
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Load Max Intensity",
-            "value": str(load_max / floorAreaSqft)
+            "Metric": "Load Max Intensity [W/sf]",
+            "value": "{:.2f}".format((load_max * 1000.) / floorAreaSqft),
+            "description": "The daily maximum usage could be dominated by a single large load, or\
+                            could be the sum of several smaller ones. Long periods of usage near\
+                            the maximum increase overall energy use."
             })
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Load Min Intensity",
-            "value": str(load_min / floorAreaSqft)
+            "Metric": "Load Min Intensity [W/sf]",
+            "value": "{:.2f}".format((load_min * 1000.)/ floorAreaSqft),
+            "description": "Minimum usage is often dominated by loads that run 24 hours a day.\
+                            In homes, these include refrigerators and vampire loads.\
+                            In commercial buildings, these include ventilation, hallway lighting,\
+                            computers, and vampire loads."
             })
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Daily Load 95th Percentile",
-            "value": str(load_day_95_mean)
+            "Metric": "Daily Load 95th Percentile [kW]",
+            "value": "{:.2f}".format(load_day_95_mean),
+            "description": "Another way of calculating the peak load, which excludes extreme data points."
             })
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Daily Load 5th Percentile",
-            "value": str(load_day_5_mean)
+            "Metric": "Daily Load 5th Percentile [kW]",
+            "value": "{:.2f}".format(load_day_5_mean),
+            "description": "Another way of calculating the base load, which excludes extreme data points."
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Daily Load Ratio",
-            "value": str(load_day_ratio_mean)
+            "value": "{:.2f}".format(load_day_ratio_mean),
+            "description": "Values over 0.33 indicate that significant loads are shut off\
+                            for parts of the day. To save energy, look to extend and deepen\
+                            shutoff periods, while also reducing peak energy use."
             })
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Daily Load Range",
-            "value": str(load_day_range_mean)
+            "Metric": "Daily Load Range [kW]",
+            "value": "{:.2f}".format(load_day_range_mean),
+            "description": "This is a rough estimate of the total load turned on and off\
+                            every day. Higher values may indicate good control, but could\
+                            also indicate excessive peak usage."
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Load Variability",
-            "value": str(load_variability)
+            "value": "{:.2f}".format(load_variability),
+            "description":"This metric is used to understand regularity of operations,\
+                           and the likelihood of consistency in the building’s demand \
+                           responsiveness. It represents a coefficient of variation that\
+                           ranges from 0 to 1, which can be interpreted based on rule of thumb\
+                           guidelines. For example, variability above 0.15 is generally \
+                           considered high for commercial buildings."
             })
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Peak Load Benchmark",
-            "value": str(peakLoadIntensity)
+            "Metric": "Peak Load Benchmark [W/sf]",
+            "value": "{:.2f}".format(peakLoadIntensity * 1000.),
+            "description": "This is the absolute maximum electric load based on all of your data.\
+                            The median for commercial buildings under 150,000 sf is 4.4 W/sf.\
+                            Values much higher than 4.4 therefore indicate an opportunity to\
+                            improve building performance."
             })
 

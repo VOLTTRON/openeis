@@ -148,6 +148,12 @@ class Application(DriverApplicationBaseClass):
 
         report.add_element(summary_table)
 
+        text_guide1 = reports.TextBlurb(text="If weather sensitivity > 0.7 the building energy use\
+                                            is \"highly\" sensitive to outside air temperature. \
+                                            There may be opportunities to improve building insulation \
+                                            and ventilation.")
+        report.add_element(text_guide1)
+
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'oat', 'load'))
 
@@ -157,6 +163,19 @@ class Application(DriverApplicationBaseClass):
                                            y_label='Energy [kWh]')
 
         report.add_element(scatter_plot)
+        
+        text_guide2 = reports.TextBlurb(text="The lack of any pattern may indicate \
+                                               your building is not sensitive to outdoor\
+                                               temperature.")
+        report.add_element(text_guide2)        
+        
+        text_guide3 = reports.TextBlurb(text="A steep slope indicates high sensitivity to outdoor temperature.")
+        report.add_element(text_guide3)     
+
+        text_guide4 = reports.TextBlurb(text="The balance point is the temperature at which the \
+                                              building does not require any heating or cooling.")
+        report.add_element(text_guide4)  
+        
 
         report_list = [report]
 

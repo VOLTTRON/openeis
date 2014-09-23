@@ -137,6 +137,18 @@ class Application(DriverApplicationBaseClass):
                                    z_label='Building Energy [kWh]')
         report.add_element(heat_map)
 
+        text_guide1 = reports.TextBlurb(text="Horizontal banding indicates shut off during\
+                                              periodic days (e.g. weekends).")
+        report.add_element(text_guide1)
+
+        text_guide2 = reports.TextBlurb(text="Unusual or unexplainable \"hot spots\"\
+                                              may indicate poor equipment control.")
+        report.add_element(text_guide2)
+
+        text_guide3 = reports.TextBlurb(text="Vertical banding indicates consistent\
+                                              consistent daily scheduling of usage.")
+        report.add_element(text_guide3)
+
         report_list = [report]
 
         return report_list

@@ -136,6 +136,22 @@ class Application(DriverApplicationBaseClass):
                                            y_label='Energy [kWh]'
                                            )
         report.add_element(scatter_plot)
+        
+        text_guide1 = reports.TextBlurb(text="Do loads decrease during lower occupancy periods\
+                                              (e.g. weekends or overnight)?")
+        report.add_element(text_guide1)
+        
+        text_guide2 = reports.TextBlurb(text="Does the width of similar load profiles correspond\
+                                              to occupancy schedule?")
+        report.add_element(text_guide2)
+        
+        text_guide3 = reports.TextBlurb(text="Minima should occur during unoccupied hours\
+                                              and be as close to zero as possible.")
+        report.add_element(text_guide3)        
+        
+        text_guide4 = reports.TextBlurb(text="Does the weekly profile correspond to occupancy\
+                                              and use for each day for a typical week?")
+        report.add_element(text_guide4)
 
         report_list = [report]
 

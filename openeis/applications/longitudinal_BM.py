@@ -154,6 +154,18 @@ class Application(DriverApplicationBaseClass):
                                      x_label='Year',
                                      y_label='Natural Gas Energy [kBTU]')
         report.add_element(natgas_bar_chart)
+
+        text_guide1 = reports.TextBlurb(text="Compare energy use in the base year to that in the later years.")
+        report.add_element(text_guide1)
+
+        text_guide2 = reports.TextBlurb(text="A persistent or large increase in bar height\
+                                              reflects growing annual energy use and possible\
+                                              efficiency opportunities.")
+        report.add_element(text_guide2)
+        
+        text_guide3 = reports.TextBlurb(text="A significant efficiency improvement would result\
+                                              in a downward trend of decreasing bar height.")
+        report.add_element(text_guide3)
         
         report_list = [report]
 
