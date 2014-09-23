@@ -17,6 +17,9 @@ def findDateIndex(datelist, locatedate):
            break
         else:
            ctr += 1
+    if (dateIndex == None): 
+        newlocatedate = locatedate - dt.timedelta(days=1)
+        dateIndex = findDateIndex(datelist, newlocatedate)
          
     return dateIndex
         
