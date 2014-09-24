@@ -216,7 +216,8 @@ def stage2(directory=_path):
         except ImportError:
             get_pip()
     ensure_ui()
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '-e', directory])
+    subprocess.check_call([sys.executable, '-m',
+        'pip', 'install', '--global-option', '-q', '-e', directory])
     for names in [('data',), ('data', 'static')]:
         path = os.path.join(directory, *names)
         if not os.path.exists(path):

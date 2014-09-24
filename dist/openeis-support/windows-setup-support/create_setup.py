@@ -1,6 +1,60 @@
-''' Automation file for building openeis installer for distribution.
+# -*- coding: utf-8 -*- {{{
+# vim: set fenc=utf-8 ft=python sw=4 ts=4 sts=4 et:
+#
+# Copyright (c) 2014, Battelle Memorial Institute
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# The views and conclusions contained in the software and documentation are those
+# of the authors and should not be interpreted as representing official policies,
+# either expressed or implied, of the FreeBSD Project.
+#
+#
+# This material was prepared as an account of work sponsored by an
+# agency of the United States Government.  Neither the United States
+# Government nor the United States Department of Energy, nor Battelle,
+# nor any of their employees, nor any jurisdiction or organization
+# that has cooperated in the development of these materials, makes
+# any warranty, express or implied, or assumes any legal liability
+# or responsibility for the accuracy, completeness, or usefulness or
+# any information, apparatus, product, software, or process disclosed,
+# or represents that its use would not infringe privately owned rights.
+#
+# Reference herein to any specific commercial product, process, or
+# service by trade name, trademark, manufacturer, or otherwise does
+# not necessarily constitute or imply its endorsement, recommendation,
+# or favoring by the United States Government or any agency thereof,
+# or Battelle Memorial Institute. The views and opinions of authors
+# expressed herein do not necessarily state or reflect those of the
+# United States Government or any agency thereof.
+#
+# PACIFIC NORTHWEST NATIONAL LABORATORY
+# operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
+# under Contract DE-AC05-76RL01830
+#
+#}}}
 
-    
+
+''' Automation file for building openeis installer for distribution.   
 '''
 import json
 import os
@@ -13,6 +67,17 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 setup_cfg = os.path.join(basedir, 'setup.cfg.json')
 if not os.path.exists(setup_cfg):
     sys.stderr.write('Invalid config file specified\n\t{}'.format(setup_cfg))
+    sys.stderr.write('An example setup file looks like:\n'+"""
+{
+    "CLEAN_PYTHON_DIR": "C:/openeis-1.0/python-fresh",
+    "WORKING_DIR": "C:/openeis-1.0/Output",
+    "OPENEIS_SRC_DIR": "C:/Users/d3m614/git/openeis",
+    "WHEEL_DIR": "C:/openeis-1.0/wheels",
+    "NUMPY_DIR": "C:/openeis-1.0/numpy1.8.2",
+    "MISC_DIR": "C:/openeis-1.0/misc",
+    "INNO_SETUP_DIR": "C:/extracted_inno_setup"
+}
+""")
     sys.exit()
 
 cfg = json.loads(open(setup_cfg, 'r').read())
@@ -20,33 +85,33 @@ cfg = json.loads(open(setup_cfg, 'r').read())
 
 # This is the python (extracted from the msi file)
 # that should be distributed with openeis.
-CLEAN_PYTHON_DIR = cfg['CLEAN_PYTHON_DIR']
+CLEAN_PYTHON_DIR = cfg['CLEAN_PYTHON_DIR'].replace('/', '\\')
 
 # A writeable directory for full installation
 # of support files.
-WORKING_DIR = cfg['WORKING_DIR']
+WORKING_DIR = cfg['WORKING_DIR'].replace('/', '\\')
 
 # The checked out src directory from the git repository.
-OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR']
+OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'].replace('/', '\\')
 
 # The location of the cache wheel directory so we
 # don't need to re download things from the internet.
-WHEEL_DIR = cfg['WHEEL_DIR']
+WHEEL_DIR = cfg['WHEEL_DIR'].replace('/', '\\')
 
 # A folder that contains a numpy and numpy dist egg info file.
 # This folder needs to be suitable for droping directly into
 # the site-packages directory of the python distributed by
 # openeis
-NUMPY_DIR= cfg['NUMPY_DIR']
+NUMPY_DIR= cfg['NUMPY_DIR'].replace('/', '\\')
 
 # Misc directory that will get copied to the root directory
 # of the installed application when installing on the client
 # machine.
-MISC_DIR = cfg['MISC_DIR']
+MISC_DIR = cfg['MISC_DIR'].replace('/', '\\')
 
 # The directory of an extracted inno setup folder.  This can
 # be obtained through innoextractor program from the internet.
-INNO_SETUP_DIR = cfg['INNO_SETUP_DIR']
+INNO_SETUP_DIR = cfg['INNO_SETUP_DIR'].replace('/', '\\')
 
 ORIG_CWD = os.getcwd()
 
@@ -61,6 +126,10 @@ def move_wheel(src_file):
     shutil.move(os.path.join('dist', src_file),
                              os.path.join(WHEEL_DIR, src_file))
 
+def cleanup():
+    if os.path.exists('build'):
+        shutil.rmtree('build')
+        
 def build_wheels():
     '''Builds the openeis and openeis-ui wheels, puts them in WHEEL_DIR
 
@@ -73,7 +142,7 @@ def build_wheels():
             shutil.rmtree('build')
         
         print('Executing wheel on openeis')
-        ret = subprocess.check_call(['python', 'setup.py', 'bdist_wheel'])
+        ret = subprocess.check_call([r'env\Scripts\python.exe', 'setup.py', 'bdist_wheel'])
         
         for f in os.listdir('dist'):
             if f[-3:] == 'whl':
@@ -83,7 +152,7 @@ def build_wheels():
         os.chdir(os.path.join(OPENEIS_SRC_DIR, 'lib', 'openeis-ui'))
         if os.path.exists('build'):
             shutil.rmtree('build')
-        ret = subprocess.check_call(['python', 'setup.py', 'bdist_wheel'])
+        ret = subprocess.check_call([r'{}\env\scripts\python.exe'.format(OPENEIS_SRC_DIR), 'setup.py', 'bdist_wheel'])
         
         for f in os.listdir('dist'):
             if f[-3:] == 'whl':
@@ -135,9 +204,11 @@ def make_setup():
     for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR', 
               'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
         print("{}->{}".format(x, cfg[x]))
+    make_requirements()
     build_wheels()
     move_to_working_dir()
     make_installer()
+    cleanup()
 
 def rename_dirs(src_dir, working_dir):
     '''Allow caller to change the source dir and working dir'''
@@ -152,6 +223,24 @@ def rename_dirs(src_dir, working_dir):
     if not os.path.exists(WORKING_DIR):
         sys.stderr.write('invalid src dir {}\n'.format(WORKING_DIR))
         sys.exit(500)
+        
+def make_requirements():
+    global MISC_DIR, WHEEL_DIR
+    
+    if not os.path.exists('env/Scripts/pip.exe'):
+        raise Exception('must be called from root directory of the openeis project.')
+    
+    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(MISC_DIR.replace('/','\\')+"\\requirements.txt", 'w'))
+    lines = ''
+    for l in open(MISC_DIR.replace('/','\\')+"\\requirements.txt"):
+        # Don't include libs thata aren't in pypi numpy is explicitly handled differently
+        if not l.startswith("-e") and not l.startswith('openeis') and not l.startswith('numpy'):
+            lines += l
+    
+    open(MISC_DIR.replace('/','\\')+"\\requirements.txt", 'w').write(lines)        
+    
+    # now build all of the wheels for the requirements file
+    ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
     
 
 if __name__ == '__main__':
@@ -160,5 +249,8 @@ if __name__ == '__main__':
         # Change the source dir
         rename_dirs(sys.argv[1], sys.argv[2])
     
+    #if os.path.isdir(WHEEL_DIR.replace('/','\\')):
+    #    shutil.rmtree(WHEEL_DIR.replace('/','\\'))
+    #os.makedirs(WHEEL_DIR.replace('/','\\'))
     make_setup()
                

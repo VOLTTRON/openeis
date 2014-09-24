@@ -1,5 +1,7 @@
 """
 Implement a building baseline load prediction model based on temperature and time-of-week (TTOW).
+Calculates the <total/cumulative> savings from the difference between predicted 
+and measured energy use.
 
 See Johanna L. Mathieu, Phillip N. Price, Sila Kiliccote, and Mary Ann Piette,
 "Quantifying Changes in Building Electricity Use, with Application to Demand Response",
@@ -52,7 +54,7 @@ All rights reserved.
 NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
-
+# TODO: Make sure this is working!
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
     OutputDescriptor, ConfigDescriptor
@@ -61,6 +63,7 @@ import logging
 import datetime as dt
 from django.db.models import Avg
 from .utils.baseline_models import day_time_temperature_model as ttow
+from .utils import conversion_utils as cu
 
 
 
@@ -95,6 +98,7 @@ class Application(DriverApplicationBaseClass):
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
+        # load_query = self.inp.get_query_sets('load', group_by='day')
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True),
             "training_startdate": ConfigDescriptor(str, "Training Start Date (YYYY-MM-DD)", optional=False),
@@ -130,12 +134,14 @@ class Application(DriverApplicationBaseClass):
         time_values = '/'.join(output_topic_base + ['daytimetemperature', 'datetime'])
         predicted_values = '/'.join(output_topic_base + ['daytimetemperature', 'predicted'])
         measured_values  = '/'.join(output_topic_base + ['daytimetemperature', 'measured'])
+        cusum_values  = '/'.join(output_topic_base + ['daytimetemperature', 'cusum'])
 
         output_needs = {
             'DayTimeTemperatureModel': {
                 'datetimeValues': OutputDescriptor('datetime', time_values),
-                'predictedValues': OutputDescriptor('float', predicted_values),
-                'measuredValues' : OutputDescriptor('float', measured_values)
+                'measured': OutputDescriptor('float', measured_values),
+                'predicted': OutputDescriptor('float', predicted_values),
+                'cumulativeSum' : OutputDescriptor('float', cusum_values)
                 }
             }
         return output_needs
@@ -151,29 +157,26 @@ class Application(DriverApplicationBaseClass):
         for that viz
         """
 
-        report = reports.Report('Day-Time-Temperature Baseline Model')
+        report = reports.Report('Whole-Building Energy Savings')
 
-        text_blurb = reports.TextBlurb(text="Analysis shows baseline model and the measured values for a single building.")
+        text_blurb = reports.TextBlurb(text="Analysis shows the cumulative sum of the savings between the \
+                                            baseline model and the measured values for a single building.")
         report.add_element(text_blurb)
 
         xy_dataset_list = []
-        xy_dataset_list.append(reports.XYDataSet('DayTimeTemperatureModel', 'datetimeValues', 'predictedValues'))
-        baseline_plot = reports.ScatterPlot(xy_dataset_list,
-                                           title='Baseline Model',
-                                           x_label='Timestamp',
-                                           y_label='Power'
-                                           )
-        report.add_element(baseline_plot)
-
-        xy_dataset_list = []
-        xy_dataset_list.append(reports.XYDataSet('DayTimeTemperatureModel', 'datetimeValues', 'measuredValues'))
-        measured_plot = reports.ScatterPlot(xy_dataset_list,
-                                   title='Measured Values',
+        xy_dataset_list.append(reports.XYDataSet('DayTimeTemperatureModel', 'datetimeValues', 'cumulativeSum'))
+        cumsum_plot = reports.DatetimeScatterPlot(xy_dataset_list,
+                                   title='Cumulative Savings',
                                    x_label='Timestamp',
-                                   y_label='Power'
+                                   y_label='Energy [kWh]'
                                    )
-        report.add_element(measured_plot)
-
+        report.add_element(cumsum_plot)
+        
+        text_guide1= reports.TextBlurb(text="A flat slope of the cumulative sum time series indicates that use has\
+                                             remained the same. A positive slope indicates energy savings, while a \
+                                             negative slope indicates that more energy is being used after the \
+                                             supposed \"improvement\" date")
+        report.add_element(text_guide1)
         
         report_list = [report]
 
@@ -188,7 +191,7 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting Day Time Temperature Analysis", logging.INFO)
 
         # Gather loads and outside air temperatures. Reduced to an hourly average
-        # TODO: Convert to minutes? 
+        
         load_query = self.inp.get_query_sets('load', group_by='hour',
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
@@ -198,6 +201,14 @@ class Application(DriverApplicationBaseClass):
                                              exclude={'value':None},
                                              wrap_for_merge=True)
 
+        # Get conversion factor
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
+        
+        load_convertfactor = cu.conversiontoKWH(load_unit)
+        
         # Match the values by timestamp
         merged_load_oat = self.inp.merge(load_query, oat_query) 
 
@@ -206,15 +217,27 @@ class Application(DriverApplicationBaseClass):
         datetime_values = []
 
         for x in merged_load_oat:
-            load_values.append(x['load'][0])
-            oat_values.append(x['oat'][0])
+            if temperature_unit == 'celcius':
+                convertedTemp = cu.convertCelciusToFahrenheit(x['oat'][0])
+            elif temperature_unit == 'kelvin':
+                convertedTemp = cu.convertKelvinToCelcius(
+                                cu.convertCelciusToFahrenheit(x['oat'][0]))
+            else: 
+                convertedTemp = x['oat'][0]
+                
+            load_values.append(x['load'][0] * load_convertfactor) #Converted to kWh
+            oat_values.append(convertedTemp)
             datetime_values.append(dt.datetime.strptime(x['time'],'%Y-%m-%d %H'))
 
         indexList = {}
         indexList['trainingStart'] = ttow.findDateIndex(datetime_values, self.training_start)
+        self.out.log('@trainingStart '+str(indexList['trainingStart']), logging.INFO)
         indexList['trainingStop'] = ttow.findDateIndex(datetime_values, self.training_stop)
+        self.out.log('@trainingStop '+str(indexList['trainingStop']), logging.INFO)
         indexList['predictStart'] = ttow.findDateIndex(datetime_values, self.prediction_start)
+        self.out.log('@predictStart '+str(indexList['predictStart']), logging.INFO)
         indexList['predictStop'] = ttow.findDateIndex(datetime_values, self.prediction_stop)
+        self.out.log('@predictStop '+str(indexList['predictStop']), logging.INFO)
         
         for indx in indexList.keys():
             if indexList[indx] == None:
@@ -246,11 +269,15 @@ class Application(DriverApplicationBaseClass):
         # Apply the model.
         self.out.log("Applying baseline model", logging.INFO)
         valsPredict = ttow.applyModel(ttowModel, timesPredict, oatsPredict)
-            
+        
         # Output for scatter plot
+        prevSum = 0
         for ctr in range(len(timesPredict)):
+            # Calculate cumulative savings. 
+            prevSum += (valsPredict[ctr] - valsActual[ctr])
             self.out.insert_row("DayTimeTemperatureModel", { 
                                 "datetimeValues": timesPredict[ctr],
-                                "predictedValues": valsPredict[ctr],
-                                "measuredValues": valsActual[ctr]
+                                "measured": valsActual[ctr],
+                                "predicted": valsPredict[ctr],
+                                "cumulativeSum": prevSum
                                 })

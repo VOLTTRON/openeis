@@ -57,6 +57,7 @@ from openeis.applications import reports
 import logging
 from django.db.models import Avg
 from .utils.spearman import findSpearmanRank
+from .utils import conversion_utils as cu
 
 
 class Application(DriverApplicationBaseClass):
@@ -111,7 +112,7 @@ class Application(DriverApplicationBaseClass):
         value_topic = '/'.join(output_topic_base + ['energysignature', 'weather sensitivity'])
         oat_topic = '/'.join(output_topic_base + ['energysignature', 'oat'])
         load_topic = '/'.join(output_topic_base + ['energysignature', 'load'])
-
+        
         output_needs = {
             'Weather_Sensitivity': {
                 'value':OutputDescriptor('string', value_topic)
@@ -147,18 +148,34 @@ class Application(DriverApplicationBaseClass):
 
         report.add_element(summary_table)
 
+        text_guide1 = reports.TextBlurb(text="If weather sensitivity > 0.7 the building energy use\
+                                            is \"highly\" sensitive to outside air temperature. \
+                                            There may be opportunities to improve building insulation \
+                                            and ventilation.")
+        report.add_element(text_guide1)
+
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'oat', 'load'))
 
         scatter_plot = reports.ScatterPlot(xy_dataset_list,
                                            title='Time Series Load Profile',
-                                           x_label='Outside Air Temperature',
-                                           y_label='Power')
+                                           x_label='Outside Air Temperature [F]',
+                                           y_label='Energy [kWh]')
 
         report.add_element(scatter_plot)
-        # list of report objects
+        
+        text_guide2 = reports.TextBlurb(text="The lack of any pattern may indicate \
+                                               your building is not sensitive to outdoor\
+                                               temperature.")
+        report.add_element(text_guide2)        
+        
+        text_guide3 = reports.TextBlurb(text="A steep slope indicates high sensitivity to outdoor temperature.")
+        report.add_element(text_guide3)     
 
-
+        text_guide4 = reports.TextBlurb(text="The balance point is the temperature at which the \
+                                              building does not require any heating or cooling.")
+        report.add_element(text_guide4)  
+        
 
         report_list = [report]
 
@@ -182,6 +199,14 @@ class Application(DriverApplicationBaseClass):
                                              exclude={'value':None},
                                              wrap_for_merge=True)
 
+        # Get conversion factor
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
+        
+        load_convertfactor = cu.conversiontoKWH(load_unit)
+        
         merged_load_oat = self.inp.merge(load_query, oat_query)
 
         load_values = []
@@ -189,8 +214,16 @@ class Application(DriverApplicationBaseClass):
 
         # Output for scatter plot
         for x in merged_load_oat:
-            load_values.append(x['load'][0])
-            oat_values.append(x['oat'][0])
+            if temperature_unit == 'celcius':
+                convertedTemp = cu.convertCelciusToFahrenheit(x['oat'][0])
+            elif temperature_unit == 'kelvin':
+                convertedTemp = cu.convertKelvinToCelcius(
+                                cu.convertCelciusToFahrenheit(x['oat'][0]))
+            else: 
+                convertedTemp = x['oat'][0]
+        
+            load_values.append(x['load'][0]*load_convertfactor)
+            oat_values.append(convertedTemp)
             self.out.insert_row("Scatterplot", {
                 "oat": x['oat'][0],
                 "load": x['load'][0]
@@ -201,5 +234,5 @@ class Application(DriverApplicationBaseClass):
         # TODO weather sensitivity as attribute for report generation
 
         self.out.insert_row("Weather_Sensitivity", {
-            "value": str(weather_sensitivity)
+            "value": "{:.2f}".format(weather_sensitivity)
             })
