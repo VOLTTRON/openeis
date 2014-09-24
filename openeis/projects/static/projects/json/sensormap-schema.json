@@ -222,7 +222,8 @@
                                 "CoolingCall", 
                                 "HeatingCall",
                                 "SupplyFanStatus",
-                                "LightingStatus"
+                                "LightingStatus",
+                                "HVACStatus"
                             ]
                         },
                         "unit": {"$ref": "#/definitions/units/unitless"}
