@@ -22,7 +22,8 @@
             "OutdoorAirRelativeHumidity",
             "WholeBuildingElectricity",
             "WholeBuildingGas",
-            "LightingStatus"
+            "LightingStatus",
+            "HVACStatus"
         ],
         "child_list": [
             "RTU",
@@ -57,6 +58,7 @@
             "ChilledWaterValvePosition",
             "DuctStaticPressure",
             "DuctStaticPressureSetPoint",
+            "HVACStatus",
             "OutdoorAirTemperature",
             "OutdoorAirRelativeHumidity",
             "MixedAirTemperature",
@@ -129,6 +131,7 @@
             "ZoneTemperature",
             "CoolingCall",
             "HeatingCall",
+            "HVACStatus",
             "TerminalBoxDamperCommand",
             "TerminalBoxReheatValvePosition"
         ]
@@ -856,6 +859,12 @@
             "unit_type": "unitless",
             "sensor_name": "LightingStatus",
             "sensor_type": "LightingStatus"
+        },
+        "HVACStatus": {
+            "data_type": "integer",
+            "unit_type": "unitless",
+            "sensor_name": "HVACStatus",
+            "sensor_type": "HVACStatus"
         }
     }
 }
