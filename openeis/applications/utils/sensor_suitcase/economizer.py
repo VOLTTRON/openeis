@@ -47,7 +47,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 import datetime
 
-def economizer(DAT, OAT, HVACstat):
+def economizer(DAT, OAT, HVACstat, ele_cost, area):
     """
     Economizer takes in diffuser air temperature (DAT), outdoor air temperature
     (OAT), and HVAC status (HVACstat) and checks if it is economizing for more
@@ -86,7 +86,8 @@ def economizer(DAT, OAT, HVACstat):
     if (percentage < 0.7):
         return {'Problem': "Under use of 'free cooling', i.e.,under-economizing.",
                 'Diagnostic': "More than 30 percent of the time, the economizer is not taking advantage of 'free cooling' when it is possible to do so.",
-                'Recommendation': "Ask an HVAC service contractor to check the economizer control sequence, unless the RTU does not have an economizer."}
+                'Recommendation': "Ask an HVAC service contractor to check the economizer control sequence, unless the RTU does not have an economizer.",
+                'Savings': get_CBECS(area)[5] * 0.1 * ele_cost}
     else:
         return False
 

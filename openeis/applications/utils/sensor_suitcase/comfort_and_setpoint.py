@@ -48,7 +48,7 @@ and includes the following modification: Paragraph 3. has been added.
 from utils.separate_hours import separate_hours
 from numpy import mean
 
-def comfort_and_setpoint(ZAT, DAT, op_hours, HVACstat=None):
+def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
     """
     Checks if the building is comfortable and if the setpoints are too narrow.
 
@@ -124,46 +124,70 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, HVACstat=None):
     heating_setpt = mean(heat_on)
     cooling_setpt = mean(cool_on)
 
+    percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
+                 percent_HVe = get_CBECS(area)
+
+    percent_op = len(ZAT_op)/len(ZAT)
+    over_cooling_perc = over_cool/len(DAT_op)
+    over_heat_perc = over_heat/len(DAT_op)
+
+    cooling_savings = (76 - cooling_setpt) * 0.03 * over_cooling_perc * \
+            percent_c * ele_cost * percent_op
+    heating_savings = (heating_setpt - 72) * 0.03 * over_heat_perc * \
+            percent_h * ele_cost * percent_op
+
     if ((heating_setpt > 76) and (cooling_setpt < 72)):
-        setpoint_flag = {'Problem': "Overly narrow separation between heating \
+        setpoint_flag = {
+        'Problem': "Overly narrow separation between heating \
             and cooling setpoints.",
         'Diagnostic': "During occupied hours, the cooling setpoint was lower \
                 than 76F and the heating setpoint was greater than 72F.",
         'Recommendation': "Adjust the heating and cooling setpoints so that \
-                they differ by more than four degrees."}
+                they differ by more than four degrees.",
+        'Savings': cooling_savings + heating_savings
+        }
     else:
-        setpoint_flat = False
+        setpoint_flag = False
 
-    if (over_cool/len(DAT_op) > 0.3):
-        comfort_flag = {'Problem:' "Over-conditioning, thermostat cooling \
-                setpoint is low",
+    if (over_cooling_perc > 0.3):
+        comfort_flag = {
+        'Problem:': "Over-conditioning, thermostat cooling setpoint is low",
         'Diagnostic': "More than 30 percent of the time, the cooling setpoint \
                 during occupied hours was lower than 75F, a temperature that \
                 is comfortable to most occupants",
-        'Recommendation': "Program your thermostats to increase the cooling
-            setpoint during occupied hours."}
+        'Recommendation': "Program your thermostats to increase the cooling \
+                setpoint during occupied hours.",
+        'Savings': cooling_savings
+        }
     elif (under_cool/len(DAT_op) > 0.3):
-        comfort_flag =  {'Problem': "Under-conditioning, thermostat cooling \
+        comfort_flag =  {
+        'Problem': "Under-conditioning, thermostat cooling \
                 setpoint is high.",
         'Diagnostic':  "More than 30 percent of the time, the cooling setpoint \
                 during occupied hours was greater than 80F.",
         'Recommendation': "Program your thermostats to decrease the cooling \
-                setpoint to improve building comfort during occupied hours."}
-    elif (over_heat/len(DAT_op) > 0.3):
-        comfort_flag = {'Problem': "Over-conditioning, thermostat heating \
+                setpoint to improve building comfort during occupied hours."
+        }
+    elif (over_heat_perc > 0.3):
+        comfort_flag = {
+        'Problem': "Over-conditioning, thermostat heating \
                 setpoint is high.",
         'Diagnostic': "More than 30 percent of the time, the heating setpoint \
                 during occupied hours was greater than 72F, a temperature that \
                 is comfortable to most occupants.",
-        'Recommendation': "Program your thermostats to decrease the heating
-            setpoint during occupied hours."}
+        'Recommendation': "Program your thermostats to decrease the heating \
+            setpoint during occupied hours.",
+        'Savings': heating_savings
+        }
     elif (under_heat/len(DAT_op) > 0.3):
-        comfort_flag = {'Problem': "Under-conditioning - thermostat heating \
+        comfort_flag = {
+        'Problem': "Under-conditioning - thermostat heating \
                 setpoint is low.",
         'Diagnostic': "For more than 30% of the time, the cooling setpoint \
                 during occupied hours was less than 69 degrees F.",
         'Recommendation': "Program thermostats to increase the heating \
-                setpoint to improve building comfort during occupied hours."}
+                setpoint to improve building comfort during occupied hours."
+        }
     else:
         comfort_flag = False
 

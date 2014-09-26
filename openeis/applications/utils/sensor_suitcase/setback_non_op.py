@@ -2,7 +2,7 @@ from datetime import datetime
 from utils.separate_hours import separate_hours
 import numpy as np
 
-def setback_non_op(ZAT, DAT, op_hours, HVACstat=None):
+def setback_non_op(ZAT, DAT, op_hours, ele_cost, area, HVACstat=None):
     """
     Checks to see if a location is being cooled or heated during non-operational
     hours.
@@ -48,19 +48,29 @@ def setback_non_op(ZAT, DAT, op_hours, HVACstat=None):
         if ((pt > avg_DAT_h_occ) or (abs(pt - avg_DAT_h_occ) < 0.1)):
             h_flag += 1
 
-    c_val = c_flag/len(DAT_non_op)
-    h_val = h_flag/len(DAT_non_op)
-    vent_val = non_hvac/len(DAT_non_op)
+    non_op_data_len = len(DAT_non_op)
+    c_val = c_flag/non_op_data_len
+    h_val = h_flag/non_op_data_len
+    vent_val = non_hvac/non_op_data_len
+    percent_unocc = non_op_data_len/len(DAT)
 
     if ((c_val + h_val + vent_val) > 0.3):
+        percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
+                 percent_HVe = get_CBECS(area)
+        c_savings = (80-minIATcUnocc) * 0.03 * c_val * percent_c * ele_cost \
+                * percent_unocc
+        h_savings = (maxIAThUnocc-55) * 0.03 * h_val * percent_h * ele_cost \
+                * percent_unocc
+        ven_savings = 0.06* vent_val * ele_cost * percent_unocc
         return {'Problem': "Nighttime thermostat setbacks are not enabled.",
             'Diagnostic': "More than 30 percent of the data indicates that the \
-                building is being conditioned or ventilated normally during \
-                unoccupied hours.",
-            'Recommendation': "Program your thermostats to decrease the heating
-            setpoint, or increase the cooling setpoint during unoccuppied times.
-            Additionally, you may have a contractor configure the RTU to reduce
-            ventilation."}
+                    building is being conditioned or ventilated normally \
+                    during unoccupied hours.",
+            'Recommendation': "Program your thermostats to decrease the \
+                    heating setpoint, or increase the cooling setpoint during \
+                    unoccuppied times.  Additionally, you may have a \
+                    contractor configure the RTU to reduce ventilation.",
+            'Savings': c_savings + h_savings + ven_savings}
     else:
         return False
 
