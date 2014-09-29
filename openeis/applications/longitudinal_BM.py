@@ -53,6 +53,7 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor, Ou
 from openeis.applications import reports
 import logging
 from django.db.models import Sum
+from .utils import conversion_utils as cu
 
 
 class Application(DriverApplicationBaseClass):
@@ -88,8 +89,8 @@ class Application(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-            'load':InputDescriptor('WholeBuildingElectricity','Building Load'),
-            'natgas':InputDescriptor('WholeBuildingGas', 'Natural Gas usage')
+            'load':InputDescriptor('WholeBuildingElectricity','Building Electicity Load'),
+            'natgas':InputDescriptor('WholeBuildingGas', 'Natural Gas Usage')
             }
 
     @classmethod
@@ -100,13 +101,15 @@ class Application(DriverApplicationBaseClass):
         aggregated over the year.
         """
         topics = input_object.get_topics()
-        load_topic = topics['load'][0]
-        load_topic_parts = load_topic.split('/')
+        base_topic = topics['load'][0]
+        load_topic_parts = base_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
+
         year_topic = '/'.join(output_topic_base+['longitudinalbm', 'time'])
         load_topic = '/'.join(output_topic_base+['longitudinalbm', 'load'])
         gas_topic = '/'.join(output_topic_base+['longitudinalbm', 'natgas'])
-
+        
+        
         #stuff needed to put inside output, will output by row, each new item
         #is a new file, title must match title in execute when writing to out
         output_needs = {
@@ -127,6 +130,10 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
+        # topics = input_object.get_topics()
+        # meta_topics = input_object.get_topics_meta()
+        # load_units = meta_topics['load'][base_topic]['unit']
+        
         report = reports.Report('Longitudinal Benchmarking Report')
 
         text_blurb = reports.TextBlurb(text="The plots show total building energy consumption compared over time.")
@@ -137,7 +144,7 @@ class Application(DriverApplicationBaseClass):
         elec_bar_chart = reports.BarChart(xy_dataset_list,
                                      title='Annual Building Consumption (Electricity)',
                                      x_label='Year',
-                                     y_label='Electric Load')
+                                     y_label='Electric Energy [kWh]')
         report.add_element(elec_bar_chart)
 
         xy_dataset_list = []
@@ -145,10 +152,21 @@ class Application(DriverApplicationBaseClass):
         natgas_bar_chart = reports.BarChart(xy_dataset_list, 
                                      title='Annual Building Consumption (Natural Gas)',
                                      x_label='Year',
-                                     y_label='Natural Gas Load')
+                                     y_label='Natural Gas Energy [kBTU]')
         report.add_element(natgas_bar_chart)
 
-        # list of report objects
+        text_guide1 = reports.TextBlurb(text="Compare energy use in the base year to that in the later years.")
+        report.add_element(text_guide1)
+
+        text_guide2 = reports.TextBlurb(text="A persistent or large increase in bar height\
+                                              reflects growing annual energy use and possible\
+                                              efficiency opportunities.")
+        report.add_element(text_guide2)
+        
+        text_guide3 = reports.TextBlurb(text="A significant efficiency improvement would result\
+                                              in a downward trend of decreasing bar height.")
+        report.add_element(text_guide3)
+        
         report_list = [report]
 
         return report_list
@@ -161,8 +179,10 @@ class Application(DriverApplicationBaseClass):
         and aggregated gas amounts.
         """
         self.out.log("Starting analysis", logging.INFO)
-
-        #grabs data by year and reduces it
+        
+        #grabs data by year and reduces it. 
+        # Note: Assumes all of the energy data are in a per hour basis. 
+        # Valid calculation to sum the data by 'year'. 
         load_by_year = self.inp.get_query_sets('load', group_by='year',
                                                group_by_aggregation=Sum,
                                                exclude={'value':None},
@@ -175,9 +195,18 @@ class Application(DriverApplicationBaseClass):
 
         merge_load_gas = self.inp.merge(load_by_year, gas_by_year)
 
+        # Get conversion factor.
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        natgas_unit = meta_topics['natgas'][base_topic['natgas'][0]]['unit']
+
+        load_convertfactor = cu.conversiontoKWH(load_unit)
+        natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
+
         for x in merge_load_gas:
             self.out.insert_row('Longitudinal_BM', {
                 'year': x['time'],
-                'load': x['load'][0],
-                'natgas': x['natgas'][0]
+                'load': x['load'][0]*load_convertfactor,
+                'natgas': x['natgas'][0]*natgas_convertfactor
                 })

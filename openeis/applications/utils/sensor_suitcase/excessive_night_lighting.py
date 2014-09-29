@@ -47,13 +47,13 @@ and includes the following modification: Paragraph 3. has been added.
 
 import datetime
 
-def excessive_nighttime(light_data, operational_hours):
+def excessive_nighttime(light_data, operational_hours, ele_cost):
     """
     Excessive Nighttime Lightingchecks to see a single sensor should be flagged.
     Parameters:
         - light_data: a 2d array with datetime and data
             - lights are on (1) or off (0)
-            - assumes light_data is only for operational hours
+            - assumes light_data is only for non-operational hours
         - operational_hours: building's operational in hours a day
     Returns: True or False (true meaning that this sensor should be flagged)
     """
@@ -99,7 +99,15 @@ def excessive_nighttime(light_data, operational_hours):
         total_time = (time_on.seconds / 60)
 
     if ((total_time / day_count) > 3):
-        return {'Problem': "Excessive lighting during unoccupied/nighttime \
+        percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
+                 percent_HVe = get_CBECS(area)
+        total_time = light_data[len(light_data - 1)][0] - first_time
+        total_weeks = ((total_time.days * 24) + (total_time.seconds / 3600)) \
+                / 168
+        avg_week = ((total_time.days * 24) + (total_time.seconds / 3600)) \
+                / total_weeks
+        return {
+            'Problem': "Excessive lighting during unoccupied/nighttime \
                 hours.",
             'Diagnostic': "For more than half of the monitoring period, the \
                     lights were on for more than three hours during \
@@ -107,7 +115,10 @@ def excessive_nighttime(light_data, operational_hours):
             'Recommendation': "Install occupancy sensors in locations where it \
                     is not necessary or intended for the lights to be on all \
                     night, or encourage occupants to turn the lights off upon \
-                    exit."}
+                    exit.",
+            'Savings': (0.4 * 0.1 * ele_cost * percent_l * \
+                    (avg_week/(24*7-med_num_op_hrs)))
+        }
     else:
         return False
 

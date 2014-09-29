@@ -47,7 +47,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 import datetime
 
-def excessive_daylight(light_data, operational_hours):
+def excessive_daylight(light_data, operational_hours, area, ele_cost):
     """
     Excessive Daylight checks to see a single sensor should be flagged.
     Parameters:
@@ -108,12 +108,23 @@ def excessive_daylight(light_data, operational_hours):
 
     # if more than half of the days are flagged, there's a problem.
     if (day_flag / day_count > 0.5):
-        return {'Problem': "Excessive lighting during occupied/daytime hours.",
+        percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
+                 percent_HVe = get_CBECS(area)
+        total_time = light_data[len(light_data - 1)][0] - first_time
+        total_weeks = ((total_time.days * 24) + (total_time.seconds / 3600)) \
+                / 168
+        avg_week = ((total_time.days * 24) + (total_time.seconds / 3600)) \
+                / total_weeks
+        return {
+            'Problem': "Excessive lighting during occupied/daytime hours.",
             'Diagnostic': "Even though these spaces are not continuously \
                     occupied, for more than half of the monitoring period, the \
                     lights were switched off less than three times a day.",
             'Recommendation': "Install occupancy sensors in locations with \
                     intermittent occupancy, or engage occupants to turn the \
-                    lights off when they leave the area."}
+                    lights off when they leave the area.",
+                    'Savings': ele_cost * percent_l * 0.6 * 0.1 * \
+                            (avg_week/med_num_op_hrs)
+        }
     else:
         return False

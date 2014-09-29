@@ -56,6 +56,7 @@ import logging
 from django.db.models import Sum
 from .utils.gen_xml_tgtfndr import gen_xml_targetFinder
 from .utils.retrieveEnergyStarScore_tgtfndr import retrieveScore
+from .utils import conversion_utils as cu
 
 
 class Application(DriverApplicationBaseClass):
@@ -96,12 +97,33 @@ class Application(DriverApplicationBaseClass):
 
     @classmethod
     def get_config_parameters(cls):
-        #Called by UI
+        #Called by UI.
+
+        buildingTypeList = ('Bank Branch',
+                    'Bank or Financial Institution',
+                    'Barracks',
+                    'Courthouse',
+                    'Distribution Center',
+                    'Hospital (General Medical and Surgical)',
+                    'Hotel',
+                    'House of Worship',
+                    'K-12 School',
+                    'Medical Office',
+                    'Non-Refrigerated Warehouse',
+                    'Office', 
+                    'Refrigerated Warehouse',
+                    'Residence Hall/Dormitory',   
+                    'Retail Store', 
+                    'Senior Care Community', 
+                    'Supermarket/Grocery Store', 
+                    'Wholesale Club/Supercenter') 
+        
+        
         return {
             "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=5000),
             "building_year_constructed": ConfigDescriptor(int, "Construction Year", value_min=1800, value_max=2014),
             "building_name": ConfigDescriptor(str, "Building Name", optional=True),
-            "building_function": ConfigDescriptor(str, "Building Function", optional=True),
+            "building_function": ConfigDescriptor(str, "Building Function", value_list=buildingTypeList),
             "building_zipcode": ConfigDescriptor(str, "Building Zipcode")
             }
 
@@ -123,7 +145,7 @@ class Application(DriverApplicationBaseClass):
         aggregated over the year.
         """
         topics = input_object.get_topics()
-
+        print (topics)
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
@@ -161,16 +183,14 @@ class Application(DriverApplicationBaseClass):
 
         espmscore_table = reports.Table('CrossSectional_BM',
                                       column_info,
-                                      title='ENERGY STAR Score',
-                                      description='Scores of 75 or higher qualify for ENERGY STAR Label.\
-                                                   Scores of 50 indicate average energy performance.')
+                                      title='ENERGY STAR Score')
 
         report.add_element(espmscore_table)
 
-        text_blurb = reports.TextBlurb(text="Scores of 75 or higher qualify for ENERGY STAR Label.\
+        text_guide = reports.TextBlurb(text="Scores of 75 or higher qualify for ENERGY STAR Label.\
                                              Scores of 50 indicate average energy performance.")
-        report.add_element(text_blurb)
-        # list of report objects
+        report.add_element(text_guide)
+
         report_list = [report]
 
         return report_list
@@ -193,6 +213,7 @@ class Application(DriverApplicationBaseClass):
         bldgMetaData['function']    = self.building_function
         bldgMetaData['zipcode']     = self.building_zipcode
 
+        # NOTE: Hourly values are preferred to make calculations easier.
         load_by_year = self.inp.get_query_sets('load', group_by='year',
                                                group_by_aggregation=Sum,
                                                exclude={'value':None},
@@ -211,10 +232,18 @@ class Application(DriverApplicationBaseClass):
 
         recent_record = merge_data_list[len(merge_data_list)-1]
 
-        #TODO: Get units from sensor maps.
+        # Get units from sensor maps.
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        natgas_unit = meta_topics['natgas'][base_topic['natgas'][0]]['unit']
+        
+        load_convertfactor = cu.conversiontoKWH(load_unit)
+        natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
+        
         #TODO: Convert values to units that are PM Manager values.
-        energyUseList = [['Electric','kWh (thousand Watt-hours)',int(recent_record[1])],
-                         ['Natural Gas','kBtu (thousand Btu)',int(recent_record[2])]]
+        energyUseList = [['Electric','kWh (thousand Watt-hours)',int(recent_record[1]*load_convertfactor)],
+                         ['Natural Gas','kBtu (thousand Btu)',int(recent_record[2]*natgas_convertfactor)]]
 
         # Generate XML-formatted data to pass data to the webservice.
         targetFinder_xml = gen_xml_targetFinder(bldgMetaData,energyUseList,'z_targetFinder_xml')
