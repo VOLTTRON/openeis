@@ -1,8 +1,7 @@
 from datetime import datetime
-from utils.separate_hours import separate_hours
 import numpy as np
 
-def setback_non_op(ZAT, DAT, op_hours, ele_cost, area, HVACstat=None):
+def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
     """
     Checks to see if a location is being cooled or heated during non-operational
     hours.
@@ -14,6 +13,7 @@ def setback_non_op(ZAT, DAT, op_hours, ele_cost, area, HVACstat=None):
             - 0 - off, 1 - ventilation, 3 - compressor
         - op_hours: operational hours
             - [[operational hours], [business days], [holidays]]
+        - elec_cost: The electricity cost used to calculate savings.
     Returns:
         - flag indicating whether or not this should be flagged
     """
@@ -57,11 +57,11 @@ def setback_non_op(ZAT, DAT, op_hours, ele_cost, area, HVACstat=None):
     if ((c_val + h_val + vent_val) > 0.3):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
                  percent_HVe = get_CBECS(area)
-        c_savings = (80-minIATcUnocc) * 0.03 * c_val * percent_c * ele_cost \
+        c_savings = (80-minIATcUnocc) * 0.03 * c_val * percent_c * elec_cost \
                 * percent_unocc
-        h_savings = (maxIAThUnocc-55) * 0.03 * h_val * percent_h * ele_cost \
+        h_savings = (maxIAThUnocc-55) * 0.03 * h_val * percent_h * elec_cost \
                 * percent_unocc
-        ven_savings = 0.06* vent_val * ele_cost * percent_unocc
+        ven_savings = 0.06* vent_val * elec_cost * percent_unocc
         return {'Problem': "Nighttime thermostat setbacks are not enabled.",
             'Diagnostic': "More than 30 percent of the data indicates that the \
                     building is being conditioned or ventilated normally \
@@ -100,3 +100,30 @@ def _grab_data(DAT, ZAT, HVACstat=None):
                     vent_on += 1
         i += 1
     return cool_on, heat_on, vent_on
+
+def separate_hours(data, op_hours, days_op, holidays=[]):
+    """
+    Given a dataset and a building's operational hours, this function will
+    separate data from operational hours and non-operational hours.
+
+    Parameters:
+        - data: array of arrays that have [datetime, data]
+        - op_hours: operational hour for the building in military time
+            - i.e. [9, 17]
+        - days_op: days of the week it is operational as a list
+            - Monday = 1, Tuesday = 2 ... Sunday = 7
+            - i.e. [1, 2, 3, 4, 5] is Monday through Friday
+        - holidays: a list of datetime.date that are holidays.
+            - data with these dates will be put into non-operational hours
+    """
+    operational = []
+    non_op = []
+    for point in data:
+        if (point[0].date in holidays) or \
+            (point[0].isoweekday() not in days_op):
+            non_op.append(point)
+        elif ((point[0].hour >= op_hours[0]) and (point[0].hour < op_hours[1])):
+            operational.append(point)
+        else:
+            non_op.append(point)
+    return operational, non_op

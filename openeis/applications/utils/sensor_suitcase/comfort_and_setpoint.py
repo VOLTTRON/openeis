@@ -44,11 +44,10 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
-
-from utils.separate_hours import separate_hours
 from numpy import mean
+from datetime import datetime
 
-def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
+def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
     """
     Checks if the building is comfortable and if the setpoints are too narrow.
 
@@ -61,7 +60,7 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
             - 2d array with each element as [datetime, data]
         - op_hours: operational hours, list
             - [operational hours, [days operating], [holidays]]
-
+        - elec_cost: The electricity cost used to calculate savings.
     Returns:
         - setpoint_flag: Dictionary of the problem, diagnostic, recommendation,
             and savings if there is an issue, otherwise is False.
@@ -132,9 +131,9 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
     over_heat_perc = over_heat/len(DAT_op)
 
     cooling_savings = (76 - cooling_setpt) * 0.03 * over_cooling_perc * \
-            percent_c * ele_cost * percent_op
+            percent_c * elec_cost * percent_op
     heating_savings = (heating_setpt - 72) * 0.03 * over_heat_perc * \
-            percent_h * ele_cost * percent_op
+            percent_h * elec_cost * percent_op
 
     if ((heating_setpt > 76) and (cooling_setpt < 72)):
         setpoint_flag = {
@@ -193,4 +192,30 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
 
     return comfort_flag, setpoint_flag
 
+def separate_hours(data, op_hours, days_op, holidays=[]):
+    """
+    Given a dataset and a building's operational hours, this function will
+    separate data from operational hours and non-operational hours.
+
+    Parameters:
+        - data: array of arrays that have [datetime, data]
+        - op_hours: operational hour for the building in military time
+            - i.e. [9, 17]
+        - days_op: days of the week it is operational as a list
+            - Monday = 1, Tuesday = 2 ... Sunday = 7
+            - i.e. [1, 2, 3, 4, 5] is Monday through Friday
+        - holidays: a list of datetime.date that are holidays.
+            - data with these dates will be put into non-operational hours
+    """
+    operational = []
+    non_op = []
+    for point in data:
+        if (point[0].date in holidays) or \
+            (point[0].isoweekday() not in days_op):
+            non_op.append(point)
+        elif ((point[0].hour >= op_hours[0]) and (point[0].hour < op_hours[1])):
+            operational.append(point)
+        else:
+            non_op.append(point)
+    return operational, non_op
 
