@@ -7,7 +7,7 @@ This section describes basic command-line interactions with OpenEIS, under a Uni
 
 + Activating the virtual environment
 + Running the server
-+ Killing the server
++ [Killing the server](#killserver)
 + Running an application
 
 
@@ -42,6 +42,7 @@ It should now be possible to open a web browser to the main entry point, [http:/
 The server also supports a number of useful [API](server_api_pages.md) pages.
 
 
+<a name="killserver"/>
 ## Killing the server
 
 In general, entering `Control-C` in the same terminal used to start the server, will stop the server.
