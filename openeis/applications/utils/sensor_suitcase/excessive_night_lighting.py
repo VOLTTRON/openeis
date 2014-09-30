@@ -47,7 +47,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 import datetime
 
-def excessive_nighttime(light_data, operational_hours, ele_cost):
+def excessive_nighttime(light_data, operational_hours, elec_cost):
     """
     Excessive Nighttime Lightingchecks to see a single sensor should be flagged.
     Parameters:
@@ -55,6 +55,7 @@ def excessive_nighttime(light_data, operational_hours, ele_cost):
             - lights are on (1) or off (0)
             - assumes light_data is only for non-operational hours
         - operational_hours: building's operational in hours a day
+        - elec_cost: The electricity cost used to calculate savings.
     Returns: True or False (true meaning that this sensor should be flagged)
     """
     # Grabs the first time it starts logging so we know when the next day is
@@ -116,7 +117,7 @@ def excessive_nighttime(light_data, operational_hours, ele_cost):
                     is not necessary or intended for the lights to be on all \
                     night, or encourage occupants to turn the lights off upon \
                     exit.",
-            'Savings': (0.4 * 0.1 * ele_cost * percent_l * \
+            'Savings': (0.4 * 0.1 * elec_cost * percent_l * \
                     (avg_week/(24*7-med_num_op_hrs)))
         }
     else:

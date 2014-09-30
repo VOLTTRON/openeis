@@ -47,7 +47,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 import datetime
 
-def economizer(DAT, OAT, HVACstat, ele_cost, area):
+def economizer(DAT, OAT, HVACstat, elec_cost, area):
     """
     Economizer takes in diffuser air temperature (DAT), outdoor air temperature
     (OAT), and HVAC status (HVACstat) and checks if it is economizing for more
@@ -62,6 +62,7 @@ def economizer(DAT, OAT, HVACstat, ele_cost, area):
         * Assume that each is a 2-D array with datetime and data
         * DAT, OAT, HVACstat should have the same number of points
         * Datetimes must match up
+        - elec_cost: The electricity cost used to calculate savings.
     Returns: a dictionary of diagnostics or False
     """
     # counts points when the economizer is on
@@ -87,7 +88,7 @@ def economizer(DAT, OAT, HVACstat, ele_cost, area):
         return {'Problem': "Under use of 'free cooling', i.e.,under-economizing.",
                 'Diagnostic': "More than 30 percent of the time, the economizer is not taking advantage of 'free cooling' when it is possible to do so.",
                 'Recommendation': "Ask an HVAC service contractor to check the economizer control sequence, unless the RTU does not have an economizer.",
-                'Savings': get_CBECS(area)[5] * 0.1 * ele_cost}
+                'Savings': get_CBECS(area)[5] * 0.1 * elec_cost}
     else:
         return False
 

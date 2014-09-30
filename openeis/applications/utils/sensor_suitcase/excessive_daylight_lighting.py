@@ -47,7 +47,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 import datetime
 
-def excessive_daylight(light_data, operational_hours, area, ele_cost):
+def excessive_daylight(light_data, operational_hours, area, elec_cost):
     """
     Excessive Daylight checks to see a single sensor should be flagged.
     Parameters:
@@ -55,6 +55,7 @@ def excessive_daylight(light_data, operational_hours, area, ele_cost):
             - lights are on (1) or off (0)
             - assumes light_data is only for operational hours
         - operational_hours: building's operational in hours a day
+        - elec_cost: The electricity cost used to calculate savings.
     Returns: True or False (true meaning that this sensor should be flagged)
     """
     # Grabs the first time it starts logging so we know when the next day is
@@ -123,7 +124,7 @@ def excessive_daylight(light_data, operational_hours, area, ele_cost):
             'Recommendation': "Install occupancy sensors in locations with \
                     intermittent occupancy, or engage occupants to turn the \
                     lights off when they leave the area.",
-                    'Savings': ele_cost * percent_l * 0.6 * 0.1 * \
+            'Savings': elec_cost * percent_l * 0.6 * 0.1 * \
                             (avg_week/med_num_op_hrs)
         }
     else:
