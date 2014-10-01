@@ -179,7 +179,7 @@ class DataFile(models.Model):
     }
 
     project = models.ForeignKey(Project, related_name='files')
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=100)
     file = models.FileField(
             upload_to=_data_file_path, storage=ProtectedFileSystemStorage())
     uploaded = models.DateTimeField(
