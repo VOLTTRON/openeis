@@ -66,10 +66,9 @@ class Application(DriverApplicationBaseClass):
     def __init__(self, *args, building_name=None,
                               building_area,
                               electricity_cost,
-                              day_start,
-                              day_end,
+                              operating_hours,
                               operating_days,
-                              holidays,
+                              holidays=[],
                               **kwargs):
         # Called after app has been staged
         """
@@ -92,10 +91,14 @@ class Application(DriverApplicationBaseClass):
             operating_days_list.append(int(daysint))
 
         holiday_list = []
-        for dates in holidays.split(','): 
-            holiday_list.append(dt.datetime.strptime(dates.strip(),'%Y-%m-%d').date())
+        if holidays != []:
+            for dates in holidays.split(','): 
+                holiday_list.append(dt.datetime.strptime(dates.strip(),'%Y-%m-%d').date())
+        hour_int = []
+        for hour in operating_hours.split(','): 
+            hour_int.append(int(hour))
         
-        self.operating_sched = [[day_start, day_end],
+        self.operating_sched = [hour_int,
                                 operating_days_list,
                                 holiday_list]
                                 
@@ -105,17 +108,14 @@ class Application(DriverApplicationBaseClass):
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
-        operating_hours = np.arange(24)
         
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True),
             "building_area": ConfigDescriptor(float, "Building Area"),
             "electricity_cost": ConfigDescriptor(float, "Electricity Cost"),
-            "day_start": ConfigDescriptor(int, "Start of Operating Schedule", value_list=operating_hours),
-            "day_end": ConfigDescriptor(int, "End of Operating Schedule", value_list=operating_hours),
-            "operating_days": ConfigDescriptor(str, "List the weekdays when building is operated.\n \
-                                                     (1 = Monday, 7 = Sunday), separated by commas"),
-            "holidays": ConfigDescriptor(str, "List the holidays (YYYY-MM-DD) in the dataset, separated by commas."),
+            "operating_hours": ConfigDescriptor(str, "Operating Schedule: 'begin, end' (e.g. 8,17)'"),
+            "operating_days": ConfigDescriptor(str, "List the weekdays when building is operated: \n (1 = Monday, 7 = Sunday), separated by commas"),
+            "holidays": ConfigDescriptor(str, "List the holidays (YYYY-MM-DD) in the dataset, separated by commas.", optional=True),
             }
 
 
@@ -127,7 +127,7 @@ class Application(DriverApplicationBaseClass):
             'zat':InputDescriptor('ZoneTemperature', 'Zone/Indoor Temperature'),
             'dat':InputDescriptor('DischargeAirTemperature', 'Discharge Air Temperature'),
             'oat':InputDescriptor('OutdoorAirTemperature', 'Outdoor Air Temperature'),
-            'hvacstatus':InputDescriptor('HVACStatus', 'HVAC Equipment Status', optional=True)
+            'hvacstatus':InputDescriptor('HVACStatus', 'HVAC Equipment Status')
             }
 
     @classmethod
