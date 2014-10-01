@@ -43,7 +43,6 @@ All rights reserved.
 NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
-
 from numpy import mean
 from datetime import datetime
 from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
@@ -73,6 +72,7 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
         separate_hours(ZAT, op_hours[0], op_hours[1], op_hours[2])
     DAT_op, DAT_non_op = \
         separate_hours(DAT, op_hours[0], op_hours[1], op_hours[2])
+        
     # get data in which cooling/heating are considered on
     cool_on = []
     heat_on = []
@@ -162,7 +162,7 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
 
     if (over_cooling_perc > 0.3):
         comfort_flag = {
-        'Problem:': "Over-conditioning, thermostat cooling setpoint is low",
+        'Problem': "Over-conditioning, thermostat cooling setpoint is low",
         'Diagnostic': "More than 30 percent of the time, the cooling setpoint \
                 during occupied hours was lower than 75F, a temperature that \
                 is comfortable to most occupants",
