@@ -81,8 +81,8 @@ def economizer(DAT, OAT, HVACstat, elec_cost, area):
             if (HVACstat[i][1] != 0):
                 RTU_on += 1
         i += 1
-
-    # percentage is when the economizer is on
+        
+    # Percentage is when the economizer is on
     percentage = econ_on/RTU_on
     if (percentage < 0.7):
         return {'Problem': "Under use of 'free cooling', i.e.,under-economizing.",
@@ -90,5 +90,5 @@ def economizer(DAT, OAT, HVACstat, elec_cost, area):
                 'Recommendation': "Ask an HVAC service contractor to check the economizer control sequence, unless the RTU does not have an economizer.",
                 'Savings': get_CBECS(area)[5] * 0.1 * elec_cost}
     else:
-        return False
+        return {}
 

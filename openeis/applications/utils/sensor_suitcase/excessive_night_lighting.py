@@ -46,8 +46,9 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
+from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
 
-def excessive_nighttime(light_data, operational_hours, elec_cost):
+def excessive_nighttime(light_data, operational_hours, area, elec_cost):
     """
     Excessive Nighttime Lightingchecks to see a single sensor should be flagged.
     Parameters:
@@ -72,7 +73,14 @@ def excessive_nighttime(light_data, operational_hours, elec_cost):
         last_on = first_time
     else:
         lights_on = False
-
+        
+    # Find the first index when lights are on.
+    # FIXME: Is this a valid substitution? 
+    for light_dpt in light_data:
+        if light_dpt[1]:
+            last_on = light_dpt[0]
+            break
+            
     # iterate through the light data
     i = 1
     while (i < len(light_data)):
@@ -88,10 +96,10 @@ def excessive_nighttime(light_data, operational_hours, elec_cost):
         if ((lights_on) and (light_data[i][1] == 0)):
             lights_on = False
             time_on += (light_data[i][0] - last_on)
-        # check if lights were turned on, set last_On to the current time
+        # check if lights were turned on, set last_on to the current time
         elif ((not lights_on) and (light_data[i][1] == 1)):
             on = True
-            last_On = light_data[i][0]
+            last_on = light_data[i][0]
         i += 1
 
     if (time_on.days != 0):
@@ -101,8 +109,8 @@ def excessive_nighttime(light_data, operational_hours, elec_cost):
 
     if ((total_time / day_count) > 3):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
-                 percent_HVe = get_CBECS(area)
-        total_time = light_data[len(light_data - 1)][0] - first_time
+                 percent_HV = get_CBECS(area)
+        total_time = light_data[-1][0] - first_time
         total_weeks = ((total_time.days * 24) + (total_time.seconds / 3600)) \
                 / 168
         avg_week = ((total_time.days * 24) + (total_time.seconds / 3600)) \
@@ -121,5 +129,5 @@ def excessive_nighttime(light_data, operational_hours, elec_cost):
                     (avg_week/(24*7-med_num_op_hrs)))
         }
     else:
-        return False
+        return {}
 

@@ -46,6 +46,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from datetime import datetime, timedelta
+from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
 
 def short_cycling(HVAC_stat, elec_cost):
     """
@@ -84,7 +85,6 @@ def short_cycling(HVAC_stat, elec_cost):
         if (delta.seconds < 300):
             fault_count += 1
         i += 1
-
     if (fault_count > 10):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
                  percent_HVe = get_CBECS(area)
@@ -97,6 +97,6 @@ def short_cycling(HVAC_stat, elec_cost):
                     levels, thermostat location, and control sequences.",
             'Savings': (percent_h + percent_c) * 10 * elec_cost}
     else:
-        return False
+        return {}
 
 
