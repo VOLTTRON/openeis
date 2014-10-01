@@ -62,18 +62,18 @@ from openeis.applications import reports
 import logging
 import datetime as dt
 from django.db.models import Avg
-from .utils.baseline_models import day_time_temperature_model as ttow
-from .utils import conversion_utils as cu
+from openeis.applications.utils.baseline_models import day_time_temperature_model as ttow
+from openeis.applications.utils import conversion_utils as cu
 
 
 
 class Application(DriverApplicationBaseClass):
 
     def __init__(self, *args, building_name=None, 
-                              training_startdate=None,
-                              training_stopdate=None,
-                              prediction_startdate=None,
-                              prediction_stopdate=None,
+                              baseline_startdate=None,
+                              baseline_stopdate=None,
+                              savings_startdate=None,
+                              savings_stopdate=None,
                               **kwargs):
         # Called after app has been staged
         """
@@ -89,11 +89,10 @@ class Application(DriverApplicationBaseClass):
             self.default_building_name_used = True
 
         self.building_name = building_name
-        self.training_start = dt.datetime.strptime(training_startdate, '%Y-%m-%d')
-        self.training_stop = dt.datetime.strptime(training_stopdate, '%Y-%m-%d') 
-        self.prediction_start = dt.datetime.strptime(prediction_startdate, '%Y-%m-%d') 
-        self.prediction_stop = dt.datetime.strptime(prediction_stopdate, '%Y-%m-%d')
-        
+        self.baseline_start = dt.datetime.strptime(baseline_startdate, '%Y-%m-%d')
+        self.baseline_stop = dt.datetime.strptime(baseline_stopdate, '%Y-%m-%d') 
+        self.savings_start = dt.datetime.strptime(savings_startdate, '%Y-%m-%d') 
+        self.savings_stop = dt.datetime.strptime(savings_stopdate, '%Y-%m-%d')
 
     @classmethod
     def get_config_parameters(cls):
@@ -101,10 +100,10 @@ class Application(DriverApplicationBaseClass):
         # load_query = self.inp.get_query_sets('load', group_by='day')
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True),
-            "training_startdate": ConfigDescriptor(str, "Training Start Date (YYYY-MM-DD)", optional=False),
-            "training_stopdate": ConfigDescriptor(str, "Training End Date (YYYY-MM-DD)", optional=False),
-            "prediction_startdate": ConfigDescriptor(str, "Prediction Start Date (YYYY-MM-DD)", optional=False),
-            "prediction_stopdate": ConfigDescriptor(str, "Prediction End Date (YYYY-MM-DD)", optional=False)
+            "baseline_startdate": ConfigDescriptor(str, "Baseline Start Date (YYYY-MM-DD)", optional=False),
+            "baseline_stopdate": ConfigDescriptor(str, "Baseline End Date (YYYY-MM-DD)", optional=False),
+            "savings_startdate": ConfigDescriptor(str, "Savings Start Date (YYYY-MM-DD)", optional=False),
+            "savings_stopdate": ConfigDescriptor(str, "Savings End Date (YYYY-MM-DD)", optional=False)
             }
 
 
@@ -166,7 +165,7 @@ class Application(DriverApplicationBaseClass):
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('DayTimeTemperatureModel', 'datetimeValues', 'cumulativeSum'))
         cumsum_plot = reports.DatetimeScatterPlot(xy_dataset_list,
-                                   title='Cumulative Savings',
+                                   title='Cumulative Whole Building Energy Savings',
                                    x_label='Timestamp',
                                    y_label='Energy [kWh]'
                                    )
@@ -228,15 +227,15 @@ class Application(DriverApplicationBaseClass):
             load_values.append(x['load'][0] * load_convertfactor) #Converted to kWh
             oat_values.append(convertedTemp)
             datetime_values.append(dt.datetime.strptime(x['time'],'%Y-%m-%d %H'))
-
+            
         indexList = {}
-        indexList['trainingStart'] = ttow.findDateIndex(datetime_values, self.training_start)
+        indexList['trainingStart'] = ttow.findDateIndex(datetime_values, self.baseline_start)
         self.out.log('@trainingStart '+str(indexList['trainingStart']), logging.INFO)
-        indexList['trainingStop'] = ttow.findDateIndex(datetime_values, self.training_stop)
+        indexList['trainingStop'] = ttow.findDateIndex(datetime_values, self.baseline_stop)
         self.out.log('@trainingStop '+str(indexList['trainingStop']), logging.INFO)
-        indexList['predictStart'] = ttow.findDateIndex(datetime_values, self.prediction_start)
+        indexList['predictStart'] = ttow.findDateIndex(datetime_values, self.savings_start)
         self.out.log('@predictStart '+str(indexList['predictStart']), logging.INFO)
-        indexList['predictStop'] = ttow.findDateIndex(datetime_values, self.prediction_stop)
+        indexList['predictStop'] = ttow.findDateIndex(datetime_values, self.savings_stop)
         self.out.log('@predictStop '+str(indexList['predictStop']), logging.INFO)
         
         for indx in indexList.keys():
