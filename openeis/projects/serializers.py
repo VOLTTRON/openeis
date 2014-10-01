@@ -102,10 +102,6 @@ class CreateFileSerializer(serializers.ModelSerializer):
         file = attrs[source].file
         try:
             csv_file = CSVFile(file)
-            cols = len(next(csv_file))
-            for row in csv_file:
-                if len(row) != cols:
-                    raise csv.Error('Inconsistent number of columns')
         except csv.Error as e:
             raise serializers.ValidationError(str(e))
         file.seek(0)
