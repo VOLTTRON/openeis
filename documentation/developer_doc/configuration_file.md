@@ -5,11 +5,20 @@
 
 A configuration file describes parameters needed to run an application from the [command line](command_line_basics_unix.md).
 The configuration file provides the application with the same information that would be collected by the graphical user interface.
-You can also run the application on the configuration file through the [API](server_api_pages.md).
+You can also run the application through the [API](server_api_pages.md).
 
 *TODO: Add appropriate link to running application through GUI, once available in user documentation.*
 
+Contents:
 
++ [Configuration file structure](#fileStructure)
++ File sections
+    + [global settings](#secGlobalSettings)
+    + [application_config](#secApplicationConfig)
+    + [inputs](#secInputs)
+
+
+<a name="fileStructure"/>
 ## Configuration file structure
 
 A configuration file has the following structure:
@@ -29,7 +38,8 @@ A configuration file has the following structure:
 (This example happens to come from file `openeis/applications/utest_applications/utest_daily_summary/daily_summary_floats.ini`.)
 
 
-## [global settings]
+<a name="secGlobalSettings"/>
+## File section: [global settings]
 
 The `[global settings]` section includes:
 
@@ -41,16 +51,18 @@ The `[global settings]` section includes:
   The sensor map to use from the database.
 
 The `dataset_id` and `sensormap_id` are numbered starting from 1.
-To inspect the current database for valid numbers, use the [server API](server_api_pages.md).
+To inspect the current database for valid entries, use the [server API](server_api_pages.md).
 
 
-## [application_config]
+<a name="secApplicationConfig"/>
+## File section: [application_config]
 
 The `application_config` section lists all configuration parameters needed for an application.
 The keys correspond to the keys in the dictionary returned by an application's `get_config_parameters()` method.
 
 
-## [inputs]
+<a name="secInputs"/>
+## File section: [inputs]
 
 The `inputs` section identifies the data to use when running the application.
 The keys correspond to the keys in the dictionary returned by an application's `required_input()` method.

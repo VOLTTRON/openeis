@@ -1,17 +1,30 @@
-# OpenEIS Server API Tricks
+# OpenEIS Server API
 
 
 ## Introduction
 
 This section lists some useful API pages available under the OpenEIS server.
-After [starting the server](command_line_basics.md), log in to enable the API pages.
+After [starting the server](command_line_basics.md#startServer), log in to enable the API pages.
 
 The API pages offers a way to make HTTP [`POST` and `GET` requests](http://en.wikipedia.org/wiki/POST_\(HTTP\)) without going through the user interface.
 Additionally, you may also see past requests made through the GUI.
 `POST` requests allows you to put information on the server and database, while `GET` allows you to obtain information.
 
+Contents:
 
-## Overview of use
++ [Overview](#apiOverview)
++ [API root](#apiRoot)
++ Pages:
+    + [Projects](#pageProjects)
+    + [Files](#pageFiles)
+    + [Sensor maps](#pageSensorMaps)
+    + [Datasets](#pageDatasets)
+    + [Authentication](#pageAuthentication)
+    + [Analyses](#pageAnalyses)
+
+
+<a name="apiOverview"/>
+## Overview
 
 Most API pages have "OPTIONS" and "GET" buttons near the top.
 
@@ -26,7 +39,8 @@ The results of `GET` requests can be displayed as formatted or unformatted JSON.
 To view the unformatted version, select "json" from the pull-down menu on the side of the "GET" button (selecting "api" gives the default, formatted version).
 
 
-## API Root
+<a name="apiRoot"/>
+## API root
 
 [http://localhost:8000/api/](http://localhost:8000/api/)
 
@@ -34,6 +48,7 @@ This is the root of the API.
 This is where you may access all of the available API pages.
 
 
+<a name="pageProjects"/>
 ## Projects page
 
 [http://localhost:8000/api/projects](http://localhost:8000/api/projects)
@@ -45,6 +60,7 @@ You can also put the name of your project under "Raw data" in the "name" field.
 Now you should see a JSON that has an id associated with your project and the name you had given it.
 
 
+<a name="pageFiles"/>
 ## Files page
 
 [http://localhost:8000/api/files](http://localhost:8000/api/files)
@@ -53,6 +69,7 @@ This page lists the files uploaded to the database.
 You may only GET with this page, so you must upload files through the user interface.
 
 
+<a name="pageSensorMaps"/>
 ## Sensor maps page
 
 [http://localhost:8000/api/sensormaps](http://localhost:8000/api/sensormaps)
@@ -63,6 +80,7 @@ The sensor map you post must be in JSON format.
 It is easiest to first input a sensor map with the user interface and then copy the JSON format for input.
 
 
+<a name="pageDatasets"/>
 ## Datasets page
 
 [http://localhost:8000/api/datasets](http://localhost:8000/api/datasets)
@@ -70,6 +88,7 @@ It is easiest to first input a sensor map with the user interface and then copy 
 *TODO: Describe datasets page*
 
 
+<a name="pageAuthentication"/>
 ## Authentication page
 
 [http://localhost:8000/api/auth](http://localhost:8000/api/auth)
@@ -78,6 +97,7 @@ This page lists all of the usernames on the database right now.
 You may only GET from this page, so new users must be added through the user interface.
 
 
+<a name="pageAnalyses"/>
 ## Analyses page
 
 [http://localhost:8000/api/analyses](http://localhost:8000/api/analyses)

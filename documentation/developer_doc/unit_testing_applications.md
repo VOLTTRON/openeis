@@ -195,7 +195,7 @@ If you wish to run a test on multiple fixtures, you must be cautious for this re
 The ids on different projects will map to different things and thus cause problems.
 
 
-# Writing a unit test
+## Writing a unit test
 
 For each test file, you should create a new class called `TestSomething` and it should extend `AppTestBase`.
 
@@ -277,10 +277,9 @@ Put all of the fixtures needed in a list and set equal to "fixtures" at the begi
                              'utest_your_application',
                              'your_application_fixture.json')]
 
-
 This is how Django knows which fixtures to install at the beginning of each test.
 Join the paths using `os.path.join` because different operating systems join paths differently.
-With this, Python is able to figure out what operating system it is running on and thus how to join the paths correctly.  For documentation, go [here](https://docs.python.org/3.3/library/os.path.html).
+With this, Python is able to figure out what operating system it is running on and thus how to [join the paths](https://docs.python.org/3.3/library/os.path.html) correctly.
 Set the `config_file` to the path the of the configuration file made for this test.
 The configuration file holds all of the parameters for running the application.  `run_it` will run the application with the configuration file.
 
@@ -289,7 +288,7 @@ The configuration file holds all of the parameters for running the application. 
                                        'utest_your_application',
                                        'your_application_same_number.ini')
 
-To tolerate more than one output file from an application, `expected_files` is a Python dictionary.
+To allow more than one output file from an application, `expected_files` is a Python dictionary.
 Set the key to be the output name and the value to be the file path.
 `run_it` will find these files and compare the output of running the application to the expected output.
 

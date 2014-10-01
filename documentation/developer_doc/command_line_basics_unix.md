@@ -5,16 +5,17 @@
 
 This section describes basic command-line interactions with OpenEIS, under a Unix-like shell:
 
-+ Activating the virtual environment
-+ Running the server
-+ [Killing the server](#killserver)
-+ Running an application
++ [Activating the virtual environment](#activateVirtualEnv)
++ [Starting the server](#startServer)
++ [Killing the server](#killServer)
++ [Running an application](#runApplication)
 
 
+<a name="activateVirtualEnv"/>
 ## Activating the virtual environment
 
 OpenEIS generally should be run through a virtual environment.
-See the [installation guide](install_guide_unix.md) for details on creating a virtual environment.
+See the [installation guide](install_guide_unix.md#createVirtualEnv) for details on creating a virtual environment.
 
 To activate the virtual environment from subdirectory `env`:
 
@@ -29,20 +30,21 @@ A more rigorous way to verify that the virtual environment is running is to chec
     openeis_root/env/bin/python
 
 where `openeis_root` is the root directory that contains the OpenEIS project files.
-If `python` does not refer to the executable in the virtual environment, try removing the `env` directory and creating a new virtual environment, as described in the [installation guide](install_guide_unix.md).
+If `python` does not refer to the executable in the virtual environment, try removing the `env` directory and creating a new virtual environment, as described in the [installation guide](install_guide_unix.md#createVirtualEnv).
 
 
-## Running the server
+<a name="startServer"/>
+## Starting the server
 
 After activating the virtual environment, run the OpenEIS server by:
 
     > openeis  runserver
 
 It should now be possible to open a web browser to the main entry point, [http://localhost:8000](http://localhost:8000).
-The server also supports a number of useful [API](server_api_pages.md) pages.
+The server also supports a number of useful [API pages](server_api_pages.md).
 
 
-<a name="killserver"/>
+<a name="killServer"/>
 ## Killing the server
 
 In general, entering `Control-C` in the same terminal used to start the server, will stop the server.
@@ -75,6 +77,7 @@ After identifying the process holding the port, kill it:
     > kill -9  <pid-of-interest>
 
 
+<a name="runApplication"/>
 ## Running an application
 
 Running an application from the command line requires first creating a [configuration file](configuration_file.md) that specifies the application inputs.
