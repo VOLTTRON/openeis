@@ -3,7 +3,7 @@
 
 ## Introduction
 
-A configuration file describes parameters needed to run an application from the [command line](command_line_basics_unix.md).
+A configuration file describes parameters needed to run an application from the [command line](command_line_basics_unix.md#runApplication).
 The configuration file provides the application with the same information that would be collected by the graphical user interface.
 You can also run the application through the [API](server_api_pages.md).
 

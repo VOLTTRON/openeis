@@ -4,7 +4,7 @@
 ## Introduction
 
 This section lists some useful API pages available under the OpenEIS server.
-After [starting the server](command_line_basics.md#startServer), log in to enable the API pages.
+After [starting the server](command_line_basics_unix.md#startServer), log in to enable the API pages.
 
 The API pages offers a way to make HTTP [`POST` and `GET` requests](http://en.wikipedia.org/wiki/POST_\(HTTP\)) without going through the user interface.
 Additionally, you may also see past requests made through the GUI.

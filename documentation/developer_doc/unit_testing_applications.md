@@ -437,3 +437,5 @@ If a test failed, it will look like:
     Destroying test database for alias 'default'...
 
 Similar to the error, `nose` will give a traceback to the failure, which test failed, and how many tests failed.
+*TODO: Commit message on changeset 667509f5d1931c71364fc0b80368e3ea0101aa59 states that `nose` has been replaced by `py.test`.
+How does this affect not only the statement above, but the entirety of this document?*
