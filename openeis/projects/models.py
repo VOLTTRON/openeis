@@ -145,7 +145,9 @@ class Project(models.Model):
 
 
 def _data_file_path(instance, filename):
-    return posixpath.join('projects', str(instance.project.pk), filename)
+    name = '{}-{}'.format(instance.project.pk,
+            ''.join(random.choice(_CODE_CHOICES) for i in range(32)))
+    return posixpath.join('projects', 'data', name)
 
 
 class DataFile(models.Model):
@@ -178,11 +180,12 @@ class DataFile(models.Model):
     }
 
     project = models.ForeignKey(Project, related_name='files')
+    name = models.CharField(max_length=255)
     file = models.FileField(
             upload_to=_data_file_path, storage=ProtectedFileSystemStorage())
     uploaded = models.DateTimeField(
             auto_now_add=True, help_text='Date and time file was uploaded')
-    comments = models.CharField(max_length=200, blank=True)
+    comments = models.CharField(max_length=255, blank=True)
     timestamp = JSONField(blank=True)
     time_zone = models.CharField(max_length=64, blank=True)
     time_offset = models.FloatField(default=0)

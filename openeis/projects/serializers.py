@@ -85,6 +85,8 @@ class CreateFileSerializer(serializers.ModelSerializer):
 
     It ensures the file is associated with the appropriate project.
     '''
+
+    name = serializers.CharField(required=False)
     timestamp = JSONField(required=False)
 
     class Meta:
@@ -105,6 +107,11 @@ class CreateFileSerializer(serializers.ModelSerializer):
         except csv.Error as e:
             raise serializers.ValidationError(str(e))
         file.seek(0)
+        return attrs
+
+    def validate_name(self, attrs, source):
+        if not attrs.get(source):
+            attrs[source] = getattr(attrs.get('file'), 'name', '')
         return attrs
 
     def restore_object(self, attrs, instance=None):
@@ -129,10 +136,8 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.DataFile
-        read_only_fields = ('project', 'file')
-
-    def transform_file(self, obj, value):
-        return posixpath.basename(value)
+        read_only_fields = ('project',)
+        exclude = ('file',)
 
     def transform_download_url(self, obj, value):
         return reverse('datafile-download', kwargs={'pk': value},

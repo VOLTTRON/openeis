@@ -170,7 +170,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if not serializer.is_valid():
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
-
         clone_project = CloneProject()
         clone = clone_project.clone_project(self.get_object(), request.DATA['name'])
         serializer = self.get_serializer(clone)
@@ -214,10 +213,12 @@ class FileViewSet(mixins.ListModelMixin,
     @link()
     def download(self, request, *args, **kwargs):
         '''Retrieve the file.'''
-        file = self.get_object().file
+        data_file = self.get_object()
+        name = data_file.name.replace('"', '\\"')
+        file = data_file.file
         response = ProtectedMediaResponse(file.name)
-        response['Content-Type'] = 'text/csv; name="{}"'.format(
-                file.name.replace('"', '\\"'))
+        response['Content-Type'] = 'text/csv; name="{}"'.format(name)
+        response['Content-Disposition'] = 'filename="{}"'.format(name)
         return response
 
     @link()
