@@ -145,9 +145,8 @@ class Project(models.Model):
 
 
 def _data_file_path(instance, filename):
-    name = '{}-{}'.format(instance.project.pk,
-            ''.join(random.choice(_CODE_CHOICES) for i in range(32)))
-    return posixpath.join('projects', 'data', name)
+    name = ''.join(random.choice(_CODE_CHOICES) for i in range(32))
+    return posixpath.join('projects', 'datafiles', name)
 
 
 class DataFile(models.Model):
