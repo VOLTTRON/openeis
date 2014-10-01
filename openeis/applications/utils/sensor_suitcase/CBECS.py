@@ -1,4 +1,6 @@
 """
+Grab CBECS data used to calculate savings in Sensor Suitcase algorithms.
+
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -44,32 +46,34 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
+def get_CBECS(area):
+    if (area <= 5000):
+        percentLe = 0.24
+        percentH = 0.31
+        percentC = 0.07
+        medNumOpHrs = 48
+        perHeaCoo = 0.38
+        percentHV = 0.16
+    elif ((area > 5001) and (area <= 10000)):
+        percentLe = 0.31
+        percentH = 0.38
+        percentC = 0.07
+        medNumOpHrs = 50
+        perHeaCoo = 0.45
+        percentHV = 0.18
+    elif ((area > 10001) and (area <= 25000)):
+        percentLe = 0.37
+        percentH = 0.42
+        percentC = 0.06
+        medNumOpHrs = 55
+        perHeaCoo = 0.48
+        percentHV = 0.16
+    else:
+        percentLe = 0.34
+        percentH = 0.39
+        percentC = 0.08
+        medNumOpHrs = 60
+        perHeaCoo = 0.47
+        percentHV = 0.2
+    return percentLe, percentH, percentC, medNumOpHrs, perHeaCoo, percentHV
 
-from datetime import datetime
-
-def separate_hours(data, op_hours, days_op, holidays=[]):
-    """
-    Given a dataset and a building's operational hours, this function will
-    separate data from operational hours and non-operational hours.
-
-    Parameters:
-        - data: array of arrays that have [datetime, data]
-        - op_hours: operational hour for the building in military time
-            - i.e. [9, 17]
-        - days_op: days of the week it is operational as a list
-            - Monday = 1, Tuesday = 2 ... Sunday = 7
-            - i.e. [1, 2, 3, 4, 5] is Monday through Friday
-        - holidays: a list of datetime.date that are holidays.
-            - data with these dates will be put into non-operational hours
-    """
-    operational = []
-    non_op = []
-    for point in data:
-        if (point[0].date in holidays) or \
-            (point[0].isoweekday() not in days_op):
-            non_op.append(point)
-        elif ((point[0].hour >= op_hours[0]) and (point[0].hour < op_hours[1])):
-            operational.append(point)
-        else:
-            non_op.append(point)
-    return operational, non_op

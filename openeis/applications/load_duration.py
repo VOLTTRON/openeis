@@ -129,7 +129,7 @@ class Application(DriverApplicationBaseClass):
         xy_dataset_list.append(reports.XYDataSet('Load_Duration', 'percent time', 'sorted load'))
 
         scatter_plot = reports.ScatterPlot(xy_dataset_list,
-                                           title='Time Series Load Profile',
+                                           title='Load Duration',
                                            x_label='Percent Time',
                                            y_label='Energy [kWh]')
 
@@ -144,7 +144,7 @@ class Application(DriverApplicationBaseClass):
                                               running more than necessary.")
         report.add_element(text_guide2)
         
-        text_guide3 = reports.TextBlurb(text="If the laod is near peak for only a short\
+        text_guide3 = reports.TextBlurb(text="If the load is near peak for only a short\
                                               duration of time there may be an opportunity\
                                               to reduce peak demand charges.")
         report.add_element(text_guide3)        
