@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-04/schema#",
-    "title": "Sensor Map Defintion",
-    "description": "Schema for input data to sensor map definition.",
+    "title": "Data Map Defintion",
+    "description": "Schema for input data to data map definition.",
 
     "type": "object",
     "required": ["version", "files", "sensors"],
@@ -188,7 +188,7 @@
         },
 
         "sensor": {
-            "title": "Sensor map base schema",
+            "title": "Data map base schema",
             "description": "Defines base constraints on all sensors. Uses allOf as to enforce valid type and unit.",
             "type": "object",
             "required": ["type", "file", "column"],

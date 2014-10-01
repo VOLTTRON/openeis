@@ -73,7 +73,7 @@ from openeis.projects.storage.ingest import ingest_files, IngestError
 from openeis.projects.views import perform_ingestion
 
 
-SENSOR_MAP_JSON = '''
+DATA_MAP_JSON = '''
 {
   "version": 1,
   "files": {
@@ -199,11 +199,11 @@ class TestIngestApi(TestCase):
 
     def setUp(self):
         '''
-        Initializes the sensor map and sets up a good_data and error_data instance variables
+        Initializes the data map and sets up a good_data and error_data instance variables
         to run tests against.
         '''
         # Set this up so that we are ready to use whichever we need in the functions.
-        self.sensormap = json.loads(SENSOR_MAP_JSON)
+        self.datamap = json.loads(DATA_MAP_JSON)
         # Create file like object for reading from.
         # Add size attribute so that it works with the ingest.py correctly
         data_io = io.StringIO(GOOD_DATA)
@@ -222,7 +222,7 @@ class TestIngestApi(TestCase):
 #    def test_ingest_good_data_all_rows_ingested(self):
 #
 #        expected_rows = len(GOOD_DATA.split(sep='\n'))
-#        files = ingest_files(self.sensormap, self.good_data)
+#        files = ingest_files(self.datamap, self.good_data)
 #
 #        self.assertIsNotNone(files, "ingest_files returned none value")
 #        rowcount = 1
@@ -242,7 +242,7 @@ class TestIngestApi(TestCase):
     def test_ingest_bad_data(self):
         # Ignore the header
         expected_rows = len(ERROR_DATA.split(sep='\n')) - 1
-        files = ingest_files(self.sensormap, self.error_data)
+        files = ingest_files(self.datamap, self.error_data)
 
         self.assertIsNotNone(files, "ingest_files returned none value")
         rowcount = 2 # Data starts at line 2
@@ -265,5 +265,5 @@ class TestIngestApi(TestCase):
 
     def test_save_good_data(self):
         expected_rows = len(ERROR_DATA.split(sep='\n')) - 1
-        files = ingest_files(self.sensormap, self.error_data)
+        files = ingest_files(self.datamap, self.error_data)
 

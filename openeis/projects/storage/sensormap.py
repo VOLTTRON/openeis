@@ -176,12 +176,12 @@ class Schema:
         '''Return a copy of schema with its own copy of 'definitions'.
         '''
         try:
-            schema = Schema._sensormap_schema
+            schema = Schema._datamap_schema
         except AttributeError:
             path = os.path.join(os.path.dirname(__file__), '..', 'static',
                                 'projects', 'json', 'sensormap-schema.json')
             with open(path) as file:
-                Schema._sensormap_schema = schema = json.load(file)
+                Schema._datamap_schema = schema = json.load(file)
         copy = schema.copy()
         copy['definitions'] = schema['definitions'].copy()
         return copy
