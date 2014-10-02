@@ -115,7 +115,7 @@ class IsProjectOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.project.owner == request.user
 
-class IsSensorMapDefOwner(permissions.BasePermission):
+class IsDataMapOwner(permissions.BasePermission):
     '''Restrict access to the owner of the parent project.'''
     def has_object_permission(self, request, view, obj):
         return obj.map.project.owner == request.user
@@ -462,19 +462,19 @@ class AccountViewSet(mixins.CreateModelMixin,
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SensorMapDefViewSet(viewsets.ModelViewSet):
-    '''Manipulate all sensor maps owned by the active user.'''
+class DataMapViewSet(viewsets.ModelViewSet):
+    '''Manipulate all data maps owned by the active user.'''
 
-    model = models.SensorMapDefinition
-    serializer_class = serializers.SensorMapDefSerializer
+    model = models.DataMap
+    serializer_class = serializers.DataMapSerializer
     permission_classes = (permissions.IsAuthenticated, IsProjectOwner)
     filter_backends = (filters.DjangoFilterBackend,)
     filter_fields = ('project', 'name')
 
     def get_queryset(self):
-        '''Only allow users to see sensor maps they own.'''
+        '''Only allow users to see data maps they own.'''
         user = self.request.user
-        return models.SensorMapDefinition.objects.filter(project__owner=user)
+        return models.DataMap.objects.filter(project__owner=user)
 
     def pre_save(self, obj):
         '''Check the project owner against the current user.'''
@@ -490,14 +490,14 @@ _processes = {}
 
 def iter_ingest(ingest):
     '''Ingest into the common schema tables from the DataFiles.'''
-    sensormap = ingest.map.map
+    datamap = ingest.map.map
     files = {f.name: {'file': f.file.file.file,
                       'time_offset':f.file.time_offset,
                       'time_zone': f.file.time_zone}
              for f in ingest.files.all()}
     ingest_file = None
     try:
-        ingested = list(ingest_files(sensormap, files))
+        ingested = list(ingest_files(datamap, files))
         total_bytes = sum(file.size for file in ingested)
         processed_bytes = 0.0
         for file in ingested:
@@ -596,7 +596,7 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
 class DataSetViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
     serializer_class = serializers.SensorIngestSerializer
-    permission_classes = (permissions.IsAuthenticated, IsSensorMapDefOwner)
+    permission_classes = (permissions.IsAuthenticated, IsDataMapOwner)
 
     @link(permission_classes = (permissions.IsAuthenticated,))
     def status(self, request, *args, **kwargs):
@@ -642,13 +642,13 @@ class DataSetViewSet(viewsets.ModelViewSet):
         return queryset.filter(map__project=project)
 
 
-def preview_ingestion(sensormap, input_files, count=15):
+def preview_ingestion(datamap, input_files, count=15):
     files = {f.name: {'file': f.file.file.file,
                       'time_zone': f.file.time_zone,
                       'time_offset': f.file.time_offset}
              for f in input_files}
     result = {}
-    for file in ingest_files(sensormap, files):
+    for file in ingest_files(datamap, files):
         rows = []
         errors = []
         for row in file.rows:
@@ -675,7 +675,7 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
 
     If map has a property of 'id', then the map with the given ID is
     retreived from the database and used (if owned by the current user).
-    Otherwise, map should be a valid sensor map definition and will be
+    Otherwise, map should be a valid data map definition and will be
     validated before processing continues. Set rows to change the number
     of rows returned for each file.
     '''
@@ -688,13 +688,13 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
         if serializer.is_valid():
             user = self.request.user
             obj = serializer.object
-            sensormap = obj['map']
-            if 'id' in sensormap:
-                sensormap = get_object_or_404(models.SensorMapDefinition,
-                                  pk=sensormap['id'], project__owner=user).map
+            datamap = obj['map']
+            if 'id' in datamap:
+                datamap = get_object_or_404(models.DataMap,
+                                  pk=datamap['id'], project__owner=user).map
             else:
                 schema = Schema()
-                errors = schema.validate(sensormap)
+                errors = schema.validate(datamap)
                 if errors:
                     return Response({('map' + ''.join('[{!r}]'.format(name)
                                       for name in path)): value
@@ -708,7 +708,7 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
                     raise rest_exceptions.PermissionDenied()
             count = min(obj.get('rows', proj_settings.FILE_HEAD_ROWS_DEFAULT),
                         proj_settings.FILE_HEAD_ROWS_MAX)
-            result = preview_ingestion(sensormap, files, count=count)
+            result = preview_ingestion(datamap, files, count=count)
             return Response(result, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -735,9 +735,9 @@ def _perform_analysis(analysis):
         analysis.save()
 
         dataset_id = analysis.dataset.id
-        sensormap_id = analysis.dataset.map.id
+        datamap_id = analysis.dataset.map.id
         topic_map = analysis.configuration["inputs"]
-        db_input = DatabaseInput(sensormap_id, topic_map, dataset_id)
+        db_input = DatabaseInput(datamap_id, topic_map, dataset_id)
 
         klass = get_algorithm_class(analysis.application)
         output_format = klass.output_format(db_input)

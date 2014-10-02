@@ -94,7 +94,7 @@ MAX_DATE =  pytz.utc.localize(datetime.max - timedelta(days=5))
 
 class DatabaseInput:
 
-    def __init__(self, sensormap_id, topic_map, dataset_id=None):
+    def __init__(self, datamap_id, topic_map, dataset_id=None):
         '''
         Expected topic_map:
         {
@@ -106,22 +106,21 @@ class DatabaseInput:
         self.topic_map = topic_map.copy()
 
         self.dataset_id = dataset_id
-        self.sensormap_id = sensormap_id
 
-        self.sensor_map = {}
+        self.data_map = {}
         self.sensor_meta_map = {}
         for input_name, topics in self.topic_map.items():
-            self.sensor_map[input_name] = tuple(get_sensors(sensormap_id,x)[0] for x in topics)
+            self.data_map[input_name] = tuple(get_sensors(datamap_id,x)[0] for x in topics)
 
         self.topic_meta = {}
 
-        self.map_defintion = get_sensormap(sensormap_id)
+        self.map_defintion = get_sensormap(dataset_id)
 
         for input_name, topics in self.topic_map.items():
             self.topic_meta[input_name] = {}
             for topic in topics:
-                self.topic_meta[input_name][topic] = get_sensors(sensormap_id,topic)[0][0]
-                self.topic_meta[input_name][topic]['timezone'] = self.get_tz_for_sensor(topic)
+                self.topic_meta[input_name][topic] = get_sensors(datamap_id,topic)[0][0]
+                self.topic_meta[input_name][topic]['timezone'] = self.get_tz_for_sensor(input_name, topic)
 
     def get_topics(self):
         return self.topic_map.copy()
@@ -129,11 +128,10 @@ class DatabaseInput:
     def get_sensormap(self):
         return self.map_defintion
 
-    def get_tz_for_sensor(self, sensor_topic):
+    def get_tz_for_sensor(self, group, sensor_topic):
         #pop off base of topic
         base = sensor_topic.split('/')[0]
-        pprint(self.map_defintion)
-        tz = self.map_defintion['sensors'][base]['attributes']['timezone']
+        tz = self.map_defintion[sensor_topic]['timezone']
         return tz
 
     def get_topics_meta(self):
@@ -302,7 +300,7 @@ class DatabaseInput:
         returns => {group:result list} if wrap_for_merge is True
         otherwise returns => result list
         """
-        qs = (x() for _,x in self.sensor_map[group_name])
+        qs = (x() for _,x in self.data_map[group_name])
 
         if self.dataset_id is not None:
             qs = (x.filter(ingest_id=self.dataset_id) for x in qs)

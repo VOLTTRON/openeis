@@ -70,27 +70,20 @@ from openeis.projects.storage import sensorstore
 now = lambda: datetime.now().replace(tzinfo=timezone.utc)
 
 
-def setup_module():
-    # Replace models.AppOutput with empty model to avoid dealing with
-    # required fields and foreign keys. Replace it after tests run.
-    global _AppOutput
-    model = _AppOutput = models.AppOutput
-    meta = type('Meta', (), {'db_table': 'appoutput_test'})
-    del loading.cache.app_models[model._meta.app_label][model._meta.model_name]
-    models.AppOutput = type('AppOutput', (models.models.Model,),
-                            {'__module__': model.__module__, 'Meta': meta})
-    dyn.create_table(models.AppOutput)
-
-
-def teardown_module():
-    global _AppOutput
-    models.AppOutput = _AppOutput
-
-
-@pytest.mark.skipif("True")
 class TestDynamicModelCreation(TestCase):
     def setUp(self):
+        # Replace models.AppOutput with empty model to avoid dealing with
+        # required fields and foreign keys. Replace it after tests run.
+        model = self._AppOutput = models.AppOutput
+        meta = type('Meta', (), {'db_table': 'appoutput_test'})
+        del loading.cache.app_models[model._meta.app_label][model._meta.model_name]
+        models.AppOutput = type('AppOutput', (models.models.Model,),
+                                {'__module__': model.__module__, 'Meta': meta})
+        dyn.create_table(models.AppOutput)
         setup_test_environment()
+
+    def tearDown(self):
+        models.AppOutput = self._AppOutput
 
     def test_table_naming(self):
         '''Test that table and fields are properly named and ordered.
