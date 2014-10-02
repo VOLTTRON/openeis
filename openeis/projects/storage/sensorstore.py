@@ -107,16 +107,15 @@ def get_data_model(output, project_id, fields):
     return model
 
 
-def put_sensors(sensormap_id, topicstreams):
+def put_sensors(datamap_id, topicstreams):
     '''Persists a sensors data to the datastore.
 
     At this point the topicstreams have been validated as correct and
     will now be persisted in the database.
 
     Arguments:
-        sensormap_id - references a SensorMapDefinition.  The
-                       SensorMapDefinition will be used to formulate how
-                       to reference specific columns of data.
+        datamap_id - references a DataMap.  The DataMap will be used to
+                     formulate how to reference specific columns of data.
 
         topicstreams - A list of topic, stream pairs
                        Ex
@@ -134,7 +133,7 @@ def put_sensors(sensormap_id, topicstreams):
     pass
 
 
-def get_sensors(sensormap_id, topics):
+def get_sensors(datamap_id, topics):
     '''Get querysets for to given topics.
 
     get_sensors() returns a list of two-tuples. The first element is a
@@ -146,10 +145,10 @@ def get_sensors(sensormap_id, topics):
     if isinstance(topics, str):
         topics = [topics]
     result = []
-    mapdef = models.SensorMapDefinition.objects.get(pk=sensormap_id)
-    sensormap = mapdef.map
+    mapdef = models.DataMap.objects.get(pk=datamap_id)
+    datamap = mapdef.map
     for topic in topics:
-        meta = sensormap['sensors'][topic]
+        meta = datamap['sensors'][topic]
         # XXX: Augment metadata by adding general definition properties
         if 'type' in meta:
             sensor = mapdef.sensors.get(name=topic)

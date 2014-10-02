@@ -172,9 +172,18 @@ class Application(DriverApplicationBaseClass):
         
         load_by_hour = self.inp.get_query_sets('load', 
                                                 exclude={'value': None},
-                                                group_by='hour')
-
-        for x in load_by_hour[0]:
+                                                group_by='hour')[0]
+                                                
+        # Limit the number of datapoints, have 2 weeks worth of data. 
+        # 24 hours x 14 days = 336.
+        if len(load_by_hour) > 336:
+            start = len(load_by_hour) - 336
+            end = len(load_by_hour) - 1
+        else: 
+            start = 0
+            end = len(load_by_hour)
+            
+        for x in load_by_hour[start:end]:
             self.out.insert_row("Load_Profiling", {
                 'timestamp': dt.datetime.strptime(x[0],'%Y-%m-%d %H'),
                 'load': x[1]*load_convertfactor 

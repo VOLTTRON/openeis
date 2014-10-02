@@ -145,7 +145,8 @@ class Project(models.Model):
 
 
 def _data_file_path(instance, filename):
-    return posixpath.join('projects', str(instance.project.pk), filename)
+    name = ''.join(random.choice(_CODE_CHOICES) for i in range(32))
+    return posixpath.join('projects', 'datafiles', name)
 
 
 class DataFile(models.Model):
@@ -178,11 +179,12 @@ class DataFile(models.Model):
     }
 
     project = models.ForeignKey(Project, related_name='files')
+    name = models.CharField(max_length=100)
     file = models.FileField(
             upload_to=_data_file_path, storage=ProtectedFileSystemStorage())
     uploaded = models.DateTimeField(
             auto_now_add=True, help_text='Date and time file was uploaded')
-    comments = models.CharField(max_length=200, blank=True)
+    comments = models.CharField(max_length=255, blank=True)
     timestamp = JSONField(blank=True)
     time_zone = models.CharField(max_length=64, blank=True)
     time_offset = models.FloatField(default=0)
@@ -234,8 +236,8 @@ class AccountVerification(models.Model):
     data = JSONField(blank=True)
 
 
-class SensorMapDefinition(models.Model):
-    project = models.ForeignKey(Project, related_name='sensor_maps')
+class DataMap(models.Model):
+    project = models.ForeignKey(Project, related_name='datamaps')
     name = models.CharField(max_length=100)
     map = JSONField()
 
@@ -250,7 +252,7 @@ class SensorMapDefinition(models.Model):
                 self.__class__.__name__, self.project, self.name)
 
     def clean_fields(self, exclude=None):
-        '''Validate JSON against sensor map schema.'''
+        '''Validate JSON against data map schema.'''
         super().clean_fields(exclude=exclude)
         if exclude and 'map' in exclude:
             return
@@ -264,7 +266,7 @@ class SensorMapDefinition(models.Model):
 
 
 class SensorIngest(models.Model):
-    map = models.ForeignKey(SensorMapDefinition, related_name='ingests')
+    map = models.ForeignKey(DataMap, related_name='ingests')
     # time of ingest
     start = models.DateTimeField(auto_now_add=True)
     end = models.DateTimeField(null=True, default=None)
@@ -276,7 +278,7 @@ class SensorIngest(models.Model):
 
 class SensorIngestFile(models.Model):
     ingest = models.ForeignKey(SensorIngest, related_name='files')
-    # name matches a file in the sensor map definition
+    # name matches a file in the data map definition
     name = models.CharField(max_length=255)
     file = models.ForeignKey(DataFile, related_name='ingests')
 
@@ -309,7 +311,7 @@ class Sensor(models.Model):
     DATA_TYPE_CHOICES = ((BOOLEAN, 'boolean'), (FLOAT, 'float'),
                          (INTEGER, 'integer'), (STRING, 'string'))
 
-    map = models.ForeignKey(SensorMapDefinition, related_name='sensors')
+    map = models.ForeignKey(DataMap, related_name='sensors')
     # name matches the sensor path in the definition
     name = models.CharField(max_length=255)
     data_type = models.CharField(max_length=1, choices=DATA_TYPE_CHOICES)

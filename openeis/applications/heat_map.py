@@ -53,6 +53,7 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 from openeis.applications import reports
 from .utils import conversion_utils as cu
+import datetime as dt
 import logging
 
 
@@ -146,7 +147,7 @@ class Application(DriverApplicationBaseClass):
         report.add_element(text_guide2)
 
         text_guide3 = reports.TextBlurb(text="Vertical banding indicates consistent\
-                                              consistent daily scheduling of usage.")
+                                              daily scheduling of usage.")
         report.add_element(text_guide3)
 
         report_list = [report]
@@ -155,13 +156,12 @@ class Application(DriverApplicationBaseClass):
 
     def execute(self):
         #Called after User hits GO
-        #maybe can be combined with dailySummary
         """
         Output values for Heat Map.
         """
         self.out.log("Starting analysis", logging.INFO)
 
-        loads = self.inp.get_query_sets('load', exclude={'value':None})
+        loads = self.inp.get_query_sets('load', group_by='hour', exclude={'value':None})
         
         # Get conversion factor
         base_topic = self.inp.get_topics()
@@ -171,10 +171,22 @@ class Application(DriverApplicationBaseClass):
         load_convertfactor = cu.conversiontoKWH(load_unit)
         print (load_convertfactor)
         
+        self.out.log("@length of a month"+str(len(loads[0])), logging.INFO)
+        
+        # Limit the number of datapoints, have 2 weeks worth of data. 
+        # 24 hours x 14 days = 336.
+        # if len(loads[0]) > 336:
+            # start = len(loads[0]) - 336
+            # end = len(loads[0]) - 1
+        # else: 
+            # start = 0
+            # end = len(loads[0])
+        
         for x in loads[0]:
+            datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
             self.out.insert_row("Heat_Map", {
-                'date': x[0].date(),
-                'hour': x[0].hour,
+                'date': datevalue.date(),
+                'hour': datevalue.hour,
                 'load': x[1]*load_convertfactor
                 }
             )

@@ -97,8 +97,8 @@ class AccountVerificationAdmin(admin.ModelAdmin):
     list_filter = ('initiated', 'what')
 
 
-class SensorMapDefAdmin(admin.ModelAdmin):
-    model = models.SensorMapDefinition
+class DataMapAdmin(admin.ModelAdmin):
+    model = models.DataMap
     list_display = ('name', 'project', 'owner')
     list_filter = ('project', 'project__owner')
     search_fields = ('name', 'project__name', 'project__owner__user',
@@ -112,4 +112,4 @@ admin.site.register(User, UserAdmin)
 admin.site.register(models.Organization, OrganizationAdmin)
 admin.site.register(models.Project, ProjectAdmin)
 admin.site.register(models.AccountVerification, AccountVerificationAdmin)
-admin.site.register(models.SensorMapDefinition, SensorMapDefAdmin)
+admin.site.register(models.DataMap, DataMapAdmin)

@@ -46,8 +46,9 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
+from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
 
-def excessive_daylight(light_data, operational_hours, area, ele_cost):
+def excessive_daylight(light_data, operational_hours, area, elec_cost):
     """
     Excessive Daylight checks to see a single sensor should be flagged.
     Parameters:
@@ -55,6 +56,7 @@ def excessive_daylight(light_data, operational_hours, area, ele_cost):
             - lights are on (1) or off (0)
             - assumes light_data is only for operational hours
         - operational_hours: building's operational in hours a day
+        - elec_cost: The electricity cost used to calculate savings.
     Returns: True or False (true meaning that this sensor should be flagged)
     """
     # Grabs the first time it starts logging so we know when the next day is
@@ -72,13 +74,20 @@ def excessive_daylight(light_data, operational_hours, area, ele_cost):
     # lights were last set to on to the first time
     if (light_data[0][1] == 1):
         lights_on = True
-        last_on = first_time
     else:
         lights_on = False
 
+    # Find the first index when lights are on.
+    # FIXME: Is this a valid substitution? 
+    for light_dpt in light_data:
+        if light_dpt[1]:
+            last_on = light_dpt[0]
+            break
+            
     # iterate through the light data
     i = 1
-    while (i < len(light_data)):
+    # while (i < len(light_data)):
+    while (i < 323):
         # check if it's a new day
         if (light_data[i][0].time() == first_time.time()):
             # check if it should be flagged, time delta is in seconds so / 3600
@@ -94,23 +103,24 @@ def excessive_daylight(light_data, operational_hours, area, ele_cost):
                     ((time_on_hours / operational_hours) > 0.5)):
                 day_flag += 1
             day_count += 1
+            
         # check lights were turned off, if so, increment on_to_off, lights
         # are now off, add time on to timeOn
         if ((lights_on) and (light_data[i][1] == 0)):
             on_to_off += 1
             lights_on = False
             time_on += (light_data[i][0] - last_on)
-        # check if lights were turned on, set last_On to the current time
+        # check if lights were turned on, set last_on to the current time
         elif ((not lights_on) and (light_data[i][1] == 1)):
             on = True
-            last_On = light_data[i][0]
+            last_on = light_data[i][0]
         i += 1
-
+        
     # if more than half of the days are flagged, there's a problem.
     if (day_flag / day_count > 0.5):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
-                 percent_HVe = get_CBECS(area)
-        total_time = light_data[len(light_data - 1)][0] - first_time
+                 percent_HV = get_CBECS(area)
+        total_time = light_data[-1][0] - first_time
         total_weeks = ((total_time.days * 24) + (total_time.seconds / 3600)) \
                 / 168
         avg_week = ((total_time.days * 24) + (total_time.seconds / 3600)) \
@@ -123,8 +133,8 @@ def excessive_daylight(light_data, operational_hours, area, ele_cost):
             'Recommendation': "Install occupancy sensors in locations with \
                     intermittent occupancy, or engage occupants to turn the \
                     lights off when they leave the area.",
-                    'Savings': ele_cost * percent_l * 0.6 * 0.1 * \
+            'Savings': elec_cost * percent_l * 0.6 * 0.1 * \
                             (avg_week/med_num_op_hrs)
         }
     else:
-        return False
+        return {}

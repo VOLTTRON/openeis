@@ -306,10 +306,10 @@ def ingest_file(file, columns):
                 [col(row) for col in columns]) for row in csv_file if row)
 
 
-def get_sensor_parsers(sensormap, files):
+def get_sensor_parsers(datamap, files):
     '''Generate a mapping of files and sensor paths to columns.
 
-    Returns a dictionary with the files from sensormap['files'] as keys
+    Returns a dictionary with the files from datamap['files'] as keys
     and a list of 3-tuples as values, with each tuple containing a
     sensor path, a data type, and a column parser. The first entry in
     the list has a path of None and is the timestamp parser.
@@ -319,7 +319,7 @@ def get_sensor_parsers(sensormap, files):
         if isinstance(column, (list, tuple)):
             return [column_number(filename, col) for col in column]
         if isinstance(column, str):
-            file = sensormap['files'][filename]
+            file = datamap['files'][filename]
             return file['signature']['headers'].index(column)
         return column
 
@@ -338,10 +338,10 @@ def get_sensor_parsers(sensormap, files):
                                    tzinfo=get_tz(name),
                                    time_offset=files[name]['time_offset'],
                                    formats=date_format(file)))]
-             for name, file in sensormap['files'].items()}
+             for name, file in datamap['files'].items()}
     with open(path) as file:
         prototypes = json.load(file)['sensors']
-    for name, sensor in sorted(sensormap['sensors'].items()):
+    for name, sensor in sorted(datamap['sensors'].items()):
         if 'type' not in sensor:
             continue
         type = sensor['type']
@@ -360,7 +360,7 @@ def get_sensor_parsers(sensormap, files):
 IngestFile = namedtuple('IngestFile', 'name size sensors types rows time_zone time_offset')
 
 
-def ingest_files(sensormap, files):
+def ingest_files(datamap, files):
     '''Iterate over each file_dict in files to return a file parser iterator.
 
     file_dict is a dictionary with file, time_offset, and time_zone as keys.
@@ -368,9 +368,9 @@ def ingest_files(sensormap, files):
     Creates a generator to iterate over each file in files and yield
     IngestFile objects with the following attributes:
 
-      name - File name mapping keys from files to sensormap['files'].
+      name - File name mapping keys from files to datamap['files'].
       size - Total size of the file.
-      sensors - List of sensor names from sensormap['sensors'].
+      sensors - List of sensor names from datamap['sensors'].
       types - List of data types to expect in data.
       rows - Iterator to return Row instances of parsed file data.
 
@@ -379,7 +379,7 @@ def ingest_files(sensormap, files):
     sensors, types, and rows.columns is the timestamp and is represented
     by a sensor name of None.
     '''
-    columnmap = get_sensor_parsers(sensormap, files)
+    columnmap = get_sensor_parsers(datamap, files)
     if hasattr(files, 'items'):
         files = files.items()
     for file_id, file_dict in files:
@@ -405,11 +405,11 @@ def main(argv=sys.argv):
     def log(name, row, col, exc):
         sys.stderr.write('error: {}:{}:{}: {}\n'.format(name, row, col, exc))
     with open(argv[1]) as file:
-        sensormap = json.load(file)
+        datamap = json.load(file)
     files = zip(argv[2::2],
                 [open(filename, 'rb') for filename in argv[3::2]])
     errmsg = 'error: {0.name}:{1.line_num}:{1.column}[{1.index}]: {1.exc}\n'
-    for file in ingest_files(sensormap, files):
+    for file in ingest_files(datamap, files):
         print(file.name)
         print(file.sensors)
         for row in file.rows:
