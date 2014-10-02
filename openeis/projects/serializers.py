@@ -248,7 +248,8 @@ class SensorIngestLogSerializer(serializers.ModelSerializer):
         fields = ('file', 'message', 'level', 'column', 'row' )
 
 
-class SensorIngestSerializer(serializers.ModelSerializer):
+class SensorIngestCreateSerializer(serializers.ModelSerializer):
+
     files = SensorIngestFileSerializer(many=True, required=True)
 
     class Meta:
@@ -270,6 +271,22 @@ class SensorIngestSerializer(serializers.ModelSerializer):
         # XXX: check that file signatures match
         if errors:
             raise serializers.ValidationError({'files': errors})
+        return attrs
+
+
+class SensorIngestSerializer(serializers.ModelSerializer):
+
+    files = SensorIngestFileSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = models.SensorIngest
+        read_only_fields = ('start', 'end', 'map')
+
+    def validate(self, attrs):
+        # Empty names slipped by with PATCH, so catch them here.
+        if not attrs['name']:
+            raise serializers.ValidationError(
+                {'name': ['This field is required.']})
         return attrs
 
 

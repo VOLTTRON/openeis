@@ -595,7 +595,6 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
 
 class DataSetViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
-    serializer_class = serializers.SensorIngestSerializer
     permission_classes = (permissions.IsAuthenticated, IsDataMapOwner)
 
     @link(permission_classes = (permissions.IsAuthenticated,))
@@ -640,6 +639,11 @@ class DataSetViewSet(viewsets.ModelViewSet):
         except ValueError:
             return []
         return queryset.filter(map__project=project)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return serializers.SensorIngestCreateSerializer
+        return serializers.SensorIngestSerializer
 
 
 def preview_ingestion(datamap, input_files, count=15):

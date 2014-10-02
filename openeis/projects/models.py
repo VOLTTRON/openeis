@@ -266,6 +266,7 @@ class DataMap(models.Model):
 
 
 class SensorIngest(models.Model):
+    name = models.CharField(max_length=100)
     map = models.ForeignKey(DataMap, related_name='ingests')
     # time of ingest
     start = models.DateTimeField(auto_now_add=True)
