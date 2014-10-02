@@ -88,7 +88,7 @@ from collections import defaultdict
 from pprint import pprint
 import pytz
 
-from openeis.projects.storage.sensorstore import get_sensors
+from openeis.projects.storage.sensorstore import get_sensors, get_sensormap
 
 MAX_DATE =  pytz.utc.localize(datetime.max - timedelta(days=5))
 
@@ -106,6 +106,7 @@ class DatabaseInput:
         self.topic_map = topic_map.copy()
 
         self.dataset_id = dataset_id
+        self.sensormap_id = sensormap_id
 
         self.sensor_map = {}
         self.sensor_meta_map = {}
@@ -114,13 +115,26 @@ class DatabaseInput:
 
         self.topic_meta = {}
 
+        self.map_defintion = get_sensormap(sensormap_id)
+
         for input_name, topics in self.topic_map.items():
             self.topic_meta[input_name] = {}
             for topic in topics:
                 self.topic_meta[input_name][topic] = get_sensors(sensormap_id,topic)[0][0]
+                self.topic_meta[input_name][topic]['timezone'] = self.get_tz_for_sensor(topic)
 
     def get_topics(self):
         return self.topic_map.copy()
+
+    def get_sensormap(self):
+        return self.map_defintion
+
+    def get_tz_for_sensor(self, sensor_topic):
+        #pop off base of topic
+        base = sensor_topic.split('/')[0]
+        pprint(self.map_defintion)
+        tz = self.map_defintion['sensors'][base]['attributes']['timezone']
+        return tz
 
     def get_topics_meta(self):
         '''Returns topics with their meta data'''
