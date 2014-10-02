@@ -59,11 +59,20 @@ from django.test import TestCase
 from rest_framework.test import APIClient
 from django.core.urlresolvers import reverse
 
-
-import json
 import codecs
+import json
+import os
+import shutil
 
 from test_utils import get_authenticated_client
+
+BAD_GENERAL_DEF_TEXT = """
+{"site": {"attribute_list": ["address"],"sensor_list": ["OutdoorAirTemperature"],"child_list": ["building","other"]},
+"building": {"attribute_list": ["address"],"sensor_list": ["OutdoorAirTemperature","OutdoorAirRelativeHumidity","WholeBuildingElectricity","WholeBuildingGas"],"child_list": ["RTU","Chiller","other"]},
+"RTU": {"sensor_list": ["OutdoorAirTemperature","OutdoorAirRelativeHumidity","MixedAirTemperature","MixedAirRelativeHumidity","ReturnAirTemperature","ReturnAirRelativeHumidity","DischargeAirTemperature","DischargeAirRelativeHumidity","FirstStageCooling","SecondStageCooling","FirstStageHeating","SecondStageHeating","TotalPower","SupplyFanPower","CondenserFanPower","OutdoorDamperSignal","EconomizerMode","OccupancyMode","ZoneSetpoint","ZoneTemperature","SupplyFanSpeed"]},
+"Chiller": {"sensor_list": [],"child_list": ["Pump"]},
+"Pump": {"sensor_list": []},"other": {"sensor_list": "*","child_list": ["other"]},"attributes": {"address": {"address": { "data_type": "string"},"city": { "data_type": "string"},"state": { "data_type": "string"},"zip_code": { "data_type": "string"}}},
+"sensors": {"CondenserFanPower": {"data_type": "float","sensor_name": "CondenserFanPower","sensor_type": "CondenserFanPower","unit_type": "energy"},"DischargeAirRelativeHumidity": {"data_type": "float","sensor_name": "DischargeAirRelativeHumidity","sensor_type": "DischargeAirRelativeHumidity","unit_type": "dimensionless"},"DischargeAirTemperature": {"data_type": "float","sensor_name": "DischargeAirTemperature","sensor_type": "DischargeAirTemperature","unit_type": "temperature"},"EconomizerMode": {"data_type": "boolean","sensor_name": "EconomizerMode","sensor_type": "EconomizerMode","unit_type": "dimensionless"},"FirstStageCooling": {"data_type": "boolean","sensor_name": "FirstStageCooling","sensor_type": "FirstStageCooling","unit_type": "dimensionless"},"FirstStageHeating": {"data_type": "boolean","sensor_name": "FirstStageHeating","sensor_type": "FirstStageHeating","unit_type": "dimensionless"},"MixedAirRelativeHumidity": {"data_type": "float","sensor_name": "MixedAirRelativeHumidity","sensor_type": "MixedAirRelativeHumidity","unit_type": "dimensionless"},"MixedAirTemperature": {"data_type": "float","sensor_name": "MixedAirTemperature","sensor_type": "MixedAirTemperature","unit_type": "temperature"},"OccupancyMode": {"data_type": "boolean","sensor_name": "OccupancyMode","sensor_type": "OccupancyMode","unit_type": "dimensionless"},"OutdoorAirRelativeHumidity": {"data_type": "float","sensor_name": "OutdoorAirRelativeHumidity","sensor_type": "OutdoorAirRelativeHumidity","unit_type": "dimensionless"},"OutdoorAirTemperature": {"data_type": "float","sensor_name": "OutdoorAirTemperature","sensor_type": "OutdoorAirTemperature","unit_type": "temperature"},"OutdoorDamperSignal": {"data_type": "float","sensor_name": "OutdoorDamperSignal","sensor_type": "OutdoorDamperSignal","unit_type": "dimensionless"},"ReturnAirRelativeHumidity": {"data_type": "float","sensor_name": "ReturnAirRelativeHumidity","sensor_type": "ReturnAirRelativeHumidity","unit_type": "dimensionless"},"ReturnAirTemperature": {"data_type": "float","sensor_name": "ReturnAirTemperature","sensor_type": "ReturnAirTemperature","unit_type": "temperature"},"SecondStageCooling": {"data_type": "boolean","sensor_name": "SecondStageCooling","sensor_type": "SecondStageCooling","unit_type": "temperature"},"SecondStageHeating": {"data_type": "boolean","sensor_name": "SecondStageHeating","sensor_type": "SecondStageHeating","unit_type": "temperature"},"SupplyFanPower": {"data_type": "float","sensor_name": "SupplyFanPower","sensor_type": "SupplyFanPower","unit_type": "energy"},"SupplyFanSpeed": {"maximum": "100","minimum": "0","data_type": "float","sensor_name": "SupplyFanSpeed","sensor_type": "SupplyFanSpeed","unit_type": "dimensionless"},"TotalPower": {"data_type": "float","sensor_name": "TotalPower","sensor_type": "TotalPower","unit_type": "energy"},   "WholeBuildingElectricity":{"data_type": "float","sensor_name": "WholeBuildingElectricity","sensor_type": "WholeBuildingElectricity","unit_type": "power"},"WholeBuildingGas":{"data_type": "float","sensor_name": "WholeBuildingGas","sensor_type": "WholeBuildingGas","unit_type": "power"},"ZoneSetpoint": {"data_type": "float","sensor_name": "ZoneSetpoint","sensor_type": "ZoneSetpoint","unit_type": "temperature"},"ZoneTemperature": {"data_type": "float","sensor_name": "ZoneTemperature","sensor_type": "ZoneTemperature","unit_type": "temperature"}}}"""
 
 
 class TestSilentIngest(TestCase):
@@ -77,6 +86,22 @@ class TestSilentIngest(TestCase):
     
     def setUp(self):
         self.client = get_authenticated_client()
+        static_json_folder = os.path.join(os.path.dirname(__file__), '..', 'static', 'projects', 'json')
+        self.original_def_file = os.path.join(static_json_folder, 'general_definition.json')
+        self.bak_def_file = os.path.join(static_json_folder, 'general_definition.json.bak')
+        
+        shutil.move(self.original_def_file, self.bak_def_file)
+        # Write the bad file.
+        open(self.original_def_file, 'w').write(BAD_GENERAL_DEF_TEXT)
+        
+        
+        
+    def tearDown(self):
+        # remove the "faked" data from the original file location
+        os.remove(self.original_def_file)
+        shutil.move(self.bak_def_file, self.original_def_file)
+               
+        
     
     def verify_fixture_loaded_properly(self):
 #         url = '/api/projects'
@@ -100,6 +125,9 @@ class TestSilentIngest(TestCase):
     def test_silent_ingest_failure(self):
         self.verify_fixture_loaded_properly()
         # Create the ingest request
-        
+        url = '/api/datasets'
+        parameters = {"map":1,"files":[{"name":"0","file":1}]}
+        response = self.client.post(url, parameters, format='json')
+        assert response.status == '200'
         
         
