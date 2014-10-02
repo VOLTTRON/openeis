@@ -485,6 +485,14 @@ class DataMapViewSet(viewsets.ModelViewSet):
                     "Invalid project pk '{}' - "
                     'permission denied.'.format(obj.project.pk))
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return serializers.CreateDataMapSerializer
+        obj = getattr(self, 'object', None)
+        if obj and obj.ingests.count() or hasattr(self, 'object_list'):
+            return serializers.ReadOnlyDataMapSerializer
+        return serializers.DataMapSerializer
+
 
 _processes = {}
 

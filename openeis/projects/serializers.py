@@ -228,10 +228,19 @@ class LoginSerializer(serializers.Serializer):
                 attrs.get('password', instance and instance[1]))
 
 
+class CreateDataMapSerializer(serializers.ModelSerializer):
+    map = JSONField()
+    class Meta:
+        model = models.DataMap
+
 class DataMapSerializer(serializers.ModelSerializer):
     map = JSONField()
     class Meta:
         model = models.DataMap
+        read_only_fields = ('project',)
+
+class ReadOnlyDataMapSerializer(DataMapSerializer):
+    map = JSONField(read_only=True)
 
 
 class SensorIngestFileSerializer(serializers.ModelSerializer):
