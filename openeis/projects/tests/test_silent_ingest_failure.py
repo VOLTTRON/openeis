@@ -58,8 +58,12 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from django.core.urlresolvers import reverse
+
+
 import json
 import codecs
+
+from test_utils import get_authenticated_client
 
 
 class TestSilentIngest(TestCase):
@@ -72,28 +76,30 @@ class TestSilentIngest(TestCase):
     fixtures = ['silent_ingest_fixture.json']
     
     def setUp(self):
-        self.utfReader = codecs.getreader("utf-8")
+        self.client = get_authenticated_client()
     
     def verify_fixture_loaded_properly(self):
-        url = '/api/projects'
-        client = APIClient()
-        assert client.login(username='test_user', password='test')
-        response = client.get(url)
-        assert response.data[0]['id'] == 1
-        assert response.data[0]['name'] == 'test'
+#         url = '/api/projects'
+#         client = APIClient()
+#         assert client.login(username='test_user', password='test')
+#         response = client.get(url)
+#         assert response.data[0]['id'] == 1
+#         assert response.data[0]['name'] == 'test'
         url = '/api/sensormaps'
-        response = client.get(url)
+        response = self.client.get(url)
         assert response.data[0]['id'] == 1
         assert response.data[0]['name'] == 'ready-map'
         assert response.data[0]['project'] == 1
         
         url = '/api/files'
-        response = client.get(url)
+        response = self.client.get(url)
         assert response.data[0]['file'] == 'test_alpha_nwmSyFS.csv'
         assert response.data[0]['time_zone'] == 'America/Los_Angeles'
         
     
     def test_silent_ingest_failure(self):
         self.verify_fixture_loaded_properly()
+        # Create the ingest request
+        
         
         
