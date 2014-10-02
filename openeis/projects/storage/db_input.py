@@ -94,7 +94,7 @@ MAX_DATE =  pytz.utc.localize(datetime.max - timedelta(days=5))
 
 class DatabaseInput:
 
-    def __init__(self, sensormap_id, topic_map, dataset_id=None):
+    def __init__(self, datamap_id, topic_map, dataset_id=None):
         '''
         Expected topic_map:
         {
@@ -107,17 +107,17 @@ class DatabaseInput:
 
         self.dataset_id = dataset_id
 
-        self.sensor_map = {}
+        self.data_map = {}
         self.sensor_meta_map = {}
         for input_name, topics in self.topic_map.items():
-            self.sensor_map[input_name] = tuple(get_sensors(sensormap_id,x)[0] for x in topics)
+            self.data_map[input_name] = tuple(get_sensors(datamap_id,x)[0] for x in topics)
 
         self.topic_meta = {}
 
         for input_name, topics in self.topic_map.items():
             self.topic_meta[input_name] = {}
             for topic in topics:
-                self.topic_meta[input_name][topic] = get_sensors(sensormap_id,topic)[0][0]
+                self.topic_meta[input_name][topic] = get_sensors(datamap_id,topic)[0][0]
 
     def get_topics(self):
         return self.topic_map.copy()
@@ -288,7 +288,7 @@ class DatabaseInput:
         returns => {group:result list} if wrap_for_merge is True
         otherwise returns => result list
         """
-        qs = (x() for _,x in self.sensor_map[group_name])
+        qs = (x() for _,x in self.data_map[group_name])
 
         if self.dataset_id is not None:
             qs = (x.filter(ingest_id=self.dataset_id) for x in qs)

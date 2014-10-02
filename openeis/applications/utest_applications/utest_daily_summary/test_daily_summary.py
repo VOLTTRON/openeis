@@ -1,4 +1,6 @@
 """
+Unit tests for Daily Summary application.
+
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -45,31 +47,49 @@ and includes the following modification: Paragraph 3. has been added.
 """
 
 
-from datetime import datetime
+from openeis.applications.utest_applications.apptest import AppTestBase
+import os
 
-def separate_hours(data, op_hours, days_op, holidays=[]):
-    """
-    Given a dataset and a building's operational hours, this function will
-    separate data from operational hours and non-operational hours.
+class TestDailySummary(AppTestBase):
+    fixtures = [os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                             'daily_summary_fixture.json')]
 
-    Parameters:
-        - data: array of arrays that have [datetime, data]
-        - op_hours: operational hour for the building in military time
-            - i.e. [9, 17]
-        - days_op: days of the week it is operational as a list
-            - Monday = 1, Tuesday = 2 ... Sunday = 7
-            - i.e. [1, 2, 3, 4, 5] is Monday through Friday
-        - holidays: a list of datetime.date that are holidays.
-            - data with these dates will be put into non-operational hours
-    """
-    operational = []
-    non_op = []
-    for point in data:
-        if (point[0].date in holidays) or \
-            (point[0].isoweekday() not in days_op):
-            non_op.append(point)
-        elif ((point[0].hour >= op_hours[0]) and (point[0].hour < op_hours[1])):
-            operational.append(point)
-        else:
-            non_op.append(point)
-    return operational, non_op
+    def setUp(self):
+        self.basedir = os.path.abspath(os.path.dirname(__file__))
+
+    def test_daily_summary_same_numbers(self):
+        ds_same_num_exp = {}
+        ds_same_num_ini = os.path.join(self.basedir,
+                                       'daily_summary_same_number.ini')
+        ds_same_num_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
+                                       'daily_summary_same_number.ref.csv')
+        self.run_it(ds_same_num_ini, ds_same_num_exp, clean_up=True)
+
+    def test_daily_summary_one_to_five(self):
+        ds_onetofive_exp = {}
+        ds_onetofive_ini = os.path.join(self.basedir,
+                                        'daily_summary_onetofive.ini')
+        ds_onetofive_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
+                                        'daily_summary_onetofive.ref.csv')
+        self.run_it(ds_onetofive_ini, ds_onetofive_exp, clean_up=True)
+
+    def test_daily_summary_missing_numbers(self):
+        ds_missing_exp = {}
+        ds_missing_ini = os.path.join(self.basedir,
+                                      'daily_summary_missing.ini')
+        ds_missing_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
+                                      'daily_summary_missing.ref.csv')
+        self.run_it(ds_missing_ini, ds_missing_exp, clean_up=True)
+
+    def test_daily_summary_floats(self):
+        ds_floats_exp = {}
+        ds_floats_ini = os.path.join(self.basedir,
+                                     'daily_summary_floats.ini')
+        ds_floats_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
+                                     'daily_summary_floats.ref.csv')
+        self.run_it(ds_floats_ini, ds_floats_exp, clean_up=True)
+
+    def test_daily_summary_invalid(self):
+        ds_incorrect_ini = os.path.join(self.basedir,
+                                        'daily_summary_invalid.ini')
+        self.assertRaises(Exception, self.run_application, ds_incorrect_ini)

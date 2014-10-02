@@ -135,7 +135,7 @@ class Application(DriverApplicationBaseClass):
         for that viz
         """
 
-        report = reports.Report('Energy Signature Report')
+        report = reports.Report('Energy Signature and Weather Sensitivity Report')
 
         column_info = (('value', 'Sensitivity'),)
 
@@ -158,7 +158,7 @@ class Application(DriverApplicationBaseClass):
         xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'oat', 'load'))
 
         scatter_plot = reports.ScatterPlot(xy_dataset_list,
-                                           title='Time Series Load Profile',
+                                           title='Energy Signature',
                                            x_label='Outside Air Temperature [F]',
                                            y_label='Energy [kWh]')
 

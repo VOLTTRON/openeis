@@ -155,7 +155,7 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_eis174_dataset_preview(self):
-        sensormap = {
+        datamap = {
             "version": 1,
             "files": {
                 "0": {
@@ -197,20 +197,20 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-        # Generate preview from explicit sensormap.
-        data = json.dumps({'map': sensormap,
+        # Generate preview from explicit datamap.
+        data = json.dumps({'map': datamap,
                            'files': [{'name': '0', 'file': file_id}],
                            'rows': 5})
         response = client.post('/api/datasets/preview', data,
                 content_type='application/json', Accept='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, expected)
-        # Add sensor map for next test
-        data = json.dumps({'map': sensormap, 'name': 'test map', 'project': 1})
-        response = client.post('/api/sensormaps', data,
+        # Add data map for next test
+        data = json.dumps({'map': datamap, 'name': 'test map', 'project': 1})
+        response = client.post('/api/datamaps', data,
                 content_type='application/json', Accept='application/json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        # Test preview with existing sensormap.
+        # Test preview with existing datamap.
         data = json.dumps({'map': {'id': response.data['id']},
                            'files': [{'name': '0', 'file': file_id}],
                            'rows': 5})
@@ -218,7 +218,7 @@ class TestRestApi(OpenEISTestBase):
                 content_type='application/json', Accept='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, expected)
-        # Test preview from invalid sensormap.
+        # Test preview from invalid datamap.
         data = json.dumps({'map': {'version': 1, 'files': {}, 'sensors': {}},
                            'files': [{'name': '0', 'file': {'filename': file_id, 'time_zone': 'America/Los_Angeles', 'time_offset': '-300'}}]})
         response = client.post('/api/datasets/preview', data,
@@ -270,31 +270,30 @@ class TestRestApi(OpenEISTestBase):
         self.assertEqual(1, response.data['project'])
         self.assertEqual(original_num_files+1, response.data['id'])
 
-    def test_eis176_can_add_sensormap_with_OAT_site_sensors(self):
+    def test_eis176_can_add_datamap_with_OAT_site_sensors(self):
         '''
-        Creates a sensormap, uploads default file and creates an ingestion using the file.
+        Creates a datamap, uploads default file and creates an ingestion using the file.
         '''
         # upload file
         response = self.upload_temp_file_data(1)
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
         file_id = response.data['id']
 
-        sensor_map = '''{"version":1,"sensors":{"pnnl/OutdoorAirTemperature":{"type":"OutdoorAirTemperature","column":"Hillside OAT [F]","file":"0","unit":"fahrenheit"},"pnnl":{"level":"site"}},"files":{"0":{"timestamp":{"columns":[0]},"signature":{"headers":["Date","Hillside OAT [F]","Main Meter [kW]","Boiler Gas [kBtu/hr]"]}}}}'''
+        data_map = '''{"version":1,"sensors":{"pnnl/OutdoorAirTemperature":{"type":"OutdoorAirTemperature","column":"Hillside OAT [F]","file":"0","unit":"fahrenheit"},"pnnl":{"level":"site"}},"files":{"0":{"timestamp":{"columns":[0]},"signature":{"headers":["Date","Hillside OAT [F]","Main Meter [kW]","Boiler Gas [kBtu/hr]"]}}}}'''
         client = self.get_authenticated_client()
-        response = client.get('/api/sensormaps')
+        response = client.get('/api/datamaps')
         self.assertEqual(status.HTTP_200_OK, response.status_code)
 
-        response = client.post('/api/sensormaps', {'project': 1, 'name': 'testmap1', 'map': sensor_map})
+        response = client.post('/api/datamaps', {'project': 1, 'name': 'testmap1', 'map': data_map})
         self.assertEqual(status.HTTP_201_CREATED, response.status_code)
-        sensor_map_id = response.data['id']
-        self.assertIsNotNone(sensor_map_id)
-        self.assertTrue(sensor_map_id > 0)
+        data_map_id = response.data['id']
+        self.assertIsNotNone(data_map_id)
+        self.assertTrue(data_map_id > 0)
 
         file_json = '[{"file": 0}]'
 
-        response = client.post('/api/datasets', {'files': file_json, 'map': sensor_map_id})
+        response = client.post('/api/datasets', {'files': file_json, 'map': data_map_id})
 
-        print(response.data)
 
     def test_can_authenticate(self):
         """

@@ -43,12 +43,11 @@ All rights reserved.
 NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
-
-
-from utils.separate_hours import separate_hours
 from numpy import mean
+from datetime import datetime
+from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
 
-def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
+def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
     """
     Checks if the building is comfortable and if the setpoints are too narrow.
 
@@ -61,7 +60,7 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
             - 2d array with each element as [datetime, data]
         - op_hours: operational hours, list
             - [operational hours, [days operating], [holidays]]
-
+        - elec_cost: The electricity cost used to calculate savings.
     Returns:
         - setpoint_flag: Dictionary of the problem, diagnostic, recommendation,
             and savings if there is an issue, otherwise is False.
@@ -73,11 +72,10 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
         separate_hours(ZAT, op_hours[0], op_hours[1], op_hours[2])
     DAT_op, DAT_non_op = \
         separate_hours(DAT, op_hours[0], op_hours[1], op_hours[2])
-
+        
     # get data in which cooling/heating are considered on
     cool_on = []
     heat_on = []
-
     # count the times it is deamed uncomfortable
     over_cool = 0
     under_cool = 0
@@ -85,10 +83,10 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
     under_heat = 0
 
     # if there's HVAC status, separate that data
-    if (HVACstat):
+    if (HVACstat != None):
         HVAC_op, HVAC_non_op = \
                 separate_hours(HVACstat, op_hours[0], op_hours[1], op_hours[2])
-
+    
     # iterate through the data
     i = 0
     while (i < len(DAT_op)):
@@ -97,6 +95,7 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
             # If there's HVAC, make sure it's actually cooling
             if (HVACstat):
                 if (HVAC_op[i][1] != 3):
+                    i += 1
                     continue
             # if DAT is less than 75 F, it's over cooling
             if (DAT_op[i][1] < 75):
@@ -110,6 +109,7 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
             # if there's HVAC status, make sure it's actually heating
             if (HVACstat):
                 if (HVAC_op[i][1] == 0):
+                    i += 1
                     continue
             # if DAT is less than 69 F, it's under heating
             if (DAT_op[i][1] < 69):
@@ -119,24 +119,35 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
                 over_heat += 1
             heat_on.append(ZAT_op[i][1])
         i += 1
-
-    # grab the average
-    heating_setpt = mean(heat_on)
-    cooling_setpt = mean(cool_on)
+    
+    # Calculate the average
+    cooling_threshold = 76.
+    heating_threshold = 72.
+    #
+    if heat_on != []:
+        heating_setpt = mean(heat_on)
+    else:
+        heating_setpt = heating_threshold
+        
+    if cool_on != []:
+        cooling_setpt = mean(cool_on)
+    else:
+        cooling_setpt = cooling_threshold
 
     percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
-                 percent_HVe = get_CBECS(area)
-
+                 percent_HV = get_CBECS(area)
+    #
     percent_op = len(ZAT_op)/len(ZAT)
     over_cooling_perc = over_cool/len(DAT_op)
-    over_heat_perc = over_heat/len(DAT_op)
-
-    cooling_savings = (76 - cooling_setpt) * 0.03 * over_cooling_perc * \
-            percent_c * ele_cost * percent_op
-    heating_savings = (heating_setpt - 72) * 0.03 * over_heat_perc * \
-            percent_h * ele_cost * percent_op
-
-    if ((heating_setpt > 76) and (cooling_setpt < 72)):
+    over_heating_perc = over_heat/len(DAT_op)
+    #
+    percent_cooling = over_cooling_perc * percent_c * percent_op
+    cooling_savings = (cooling_threshold - cooling_setpt) * 0.03 * percent_cooling *elec_cost 
+    #
+    percent_heating = over_heating_perc * percent_h * percent_op
+    heating_savings = (heating_setpt - heating_threshold) * 0.03 * percent_heating *elec_cost
+    
+    if ((heating_setpt > heating_threshold) and (cooling_setpt < cooling_threshold)):
         setpoint_flag = {
         'Problem': "Overly narrow separation between heating \
             and cooling setpoints.",
@@ -147,11 +158,11 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
         'Savings': cooling_savings + heating_savings
         }
     else:
-        setpoint_flag = False
+        setpoint_flag = {}
 
     if (over_cooling_perc > 0.3):
         comfort_flag = {
-        'Problem:': "Over-conditioning, thermostat cooling setpoint is low",
+        'Problem': "Over-conditioning, thermostat cooling setpoint is low",
         'Diagnostic': "More than 30 percent of the time, the cooling setpoint \
                 during occupied hours was lower than 75F, a temperature that \
                 is comfortable to most occupants",
@@ -168,7 +179,7 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
         'Recommendation': "Program your thermostats to decrease the cooling \
                 setpoint to improve building comfort during occupied hours."
         }
-    elif (over_heat_perc > 0.3):
+    elif (over_heating_perc > 0.3):
         comfort_flag = {
         'Problem': "Over-conditioning, thermostat heating \
                 setpoint is high.",
@@ -189,8 +200,34 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, ele_cost, HVACstat=None):
                 setpoint to improve building comfort during occupied hours."
         }
     else:
-        comfort_flag = False
+        comfort_flag = {}
 
     return comfort_flag, setpoint_flag
 
+def separate_hours(data, op_hours, days_op, holidays=[]):
+    """
+    Given a dataset and a building's operational hours, this function will
+    separate data from operational hours and non-operational hours.
+
+    Parameters:
+        - data: array of arrays that have [datetime, data]
+        - op_hours: operational hour for the building in military time
+            - i.e. [9, 17]
+        - days_op: days of the week it is operational as a list
+            - Monday = 1, Tuesday = 2 ... Sunday = 7
+            - i.e. [1, 2, 3, 4, 5] is Monday through Friday
+        - holidays: a list of datetime.date that are holidays.
+            - data with these dates will be put into non-operational hours
+    """
+    operational = []
+    non_op = []
+    for point in data:
+        if (point[0].date() in holidays) or \
+            (point[0].isoweekday() not in days_op):
+            non_op.append(point)
+        elif ((point[0].hour >= op_hours[0]) and (point[0].hour < op_hours[1])):
+            operational.append(point)
+        else:
+            non_op.append(point)
+    return operational, non_op
 

@@ -179,11 +179,11 @@ class Application(DriverApplicationBaseClass):
         report.add_element(text_blurb)
 
 
-        column_info = (('Value', 'Target Finder Score'),)
+        column_info = (('Value', 'ENERGY STAR Score'),)
 
         espmscore_table = reports.Table('CrossSectional_BM',
                                       column_info,
-                                      title='ENERGY STAR Score')
+                                      title='Cross-Sectional Benchmarking')
 
         report.add_element(espmscore_table)
 

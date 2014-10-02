@@ -75,5 +75,5 @@ def get_CBECS(area):
         medNumOpHrs = 60
         perHeaCoo = 0.47
         percentHV = 0.2
-    return percentLe, percentH, percentC, medNumOpHrs, perHeaCoo, percentHVe
+    return percentLe, percentH, percentC, medNumOpHrs, perHeaCoo, percentHV
 
