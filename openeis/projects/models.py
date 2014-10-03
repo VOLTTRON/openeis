@@ -64,6 +64,7 @@ from django.contrib.auth.models import User
 from django.db import connections, models
 from django.db.models.query import QuerySet
 from django.core.exceptions import ValidationError
+from django import dispatch
 
 import jsonschema.exceptions
 
@@ -240,6 +241,7 @@ class DataMap(models.Model):
     project = models.ForeignKey(Project, related_name='datamaps')
     name = models.CharField(max_length=100)
     map = JSONField()
+    removed = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('project', 'name')
@@ -266,22 +268,27 @@ class DataMap(models.Model):
 
 
 class SensorIngest(models.Model):
+    project = models.ForeignKey(Project, related_name='datasets')
     name = models.CharField(max_length=100)
-    map = models.ForeignKey(DataMap, related_name='ingests')
+    map = models.ForeignKey(DataMap, related_name='datasets')
     # time of ingest
     start = models.DateTimeField(auto_now_add=True)
     end = models.DateTimeField(null=True, default=None)
 
-    @property
-    def logs(self):
-        return [log for file in self.files.all() for log in file.logs.all()]
+
+@dispatch.receiver(models.signals.post_delete, sender=SensorIngest)
+def handle_dataset_delete(sender, instance, using, **kwargs):
+    datamap = instance.map
+    if datamap and datamap.removed and not datamap.datasets.exists():
+        datamap.delete()
 
 
 class SensorIngestFile(models.Model):
     ingest = models.ForeignKey(SensorIngest, related_name='files')
     # name matches a file in the data map definition
     name = models.CharField(max_length=255)
-    file = models.ForeignKey(DataFile, related_name='ingests')
+    file = models.ForeignKey(DataFile, related_name='ingests',
+                             null=True, on_delete=models.SET_NULL)
 
     class Meta:
         unique_together = ('ingest', 'name')
@@ -295,6 +302,7 @@ class SensorIngestLog(models.Model):
     LOG_LEVEL_CHOICES = ((INFO, 'Info'), (WARNING, 'Warning'),
                          (ERROR, 'Error'), (CRITICAL, 'Critical'))
 
+    dataset = models.ForeignKey(SensorIngest, related_name='logs')
     file = models.ForeignKey(SensorIngestFile, related_name='logs', null=True)
     row = models.IntegerField()
     # Timestamps can include multiple columns
@@ -446,8 +454,10 @@ class StringSensorData(BaseSensorData):
 class Analysis(models.Model):
     '''A run of a single application against a single dataset.'''
 
+    project = models.ForeignKey(Project, related_name='analyses')
     name = models.CharField(max_length=100)
-    dataset = models.ForeignKey(SensorIngest, related_name='analysis')
+    dataset = models.ForeignKey(SensorIngest, related_name='analyses',
+        null=True, on_delete=models.SET_NULL)
     application = models.CharField(max_length=255)
     '''
     Expected configuration to be a json string like
