@@ -211,7 +211,7 @@ class DatabaseOutputFile(DatabaseOutput):
 
     def close(self):
         super().close()
-        print('Writing CSV files.')
+        self._logger.log(logging.INFO, 'Writing CSV files.')
         for table_name, fields in self.output_names.items():
             klass = self.table_map[table_name]
             dict_writer =  self.csv_table_map[table_name]

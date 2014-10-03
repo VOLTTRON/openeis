@@ -78,6 +78,7 @@ input_map =
 }
 
 '''
+import logging
 
 from  django.db.models import Sum
 
@@ -89,6 +90,8 @@ from pprint import pprint
 import pytz
 
 from openeis.projects.storage.sensorstore import get_sensors, get_sensormap
+
+_logger = logging.getLogger(__name__)
 
 MAX_DATE =  pytz.utc.localize(datetime.max - timedelta(days=5))
 
@@ -131,7 +134,15 @@ class DatabaseInput:
     def get_tz_for_sensor(self, group, sensor_topic):
         #pop off base of topic
         base = sensor_topic.split('/')[0]
-        tz = self.map_defintion[sensor_topic]['timezone']
+        
+        #TODO: better warnings
+        if ('attributes' in self.map_defintion['sensors'][base].keys() and
+            'timezone' in self.map_defintion['sensors'][base]['attributes'].keys()):
+            tz = pytz.timezone(self.map_defintion['sensors'][base]['attributes']['timezone'])
+        else:
+            _logger.warning(("No timezone for sensor", sensor_topic))
+            tz = pytz.UTC
+            
         return tz
 
     def get_topics_meta(self):
