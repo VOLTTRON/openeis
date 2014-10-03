@@ -282,6 +282,12 @@ class SensorIngestCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'files': errors})
         return attrs
 
+    def to_native(self, obj):
+        result = super().to_native(obj)
+        if obj and result:
+            result['datamap'] = obj.map.map
+        return result
+
 
 class SensorIngestSerializer(serializers.ModelSerializer):
 
@@ -298,8 +304,10 @@ class SensorIngestSerializer(serializers.ModelSerializer):
                 {'name': ['This field is required.']})
         return attrs
 
-    def transform_map(self, obj, value):
-        return obj.map.map
+    def to_native(self, obj):
+        result = super().to_native(obj)
+        result['datamap'] = obj.map.map
+        return result
 
 
 class DataSetPreviewSerializer(serializers.Serializer):
