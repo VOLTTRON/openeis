@@ -770,10 +770,10 @@ def _perform_analysis(analysis):
         output_format = klass.output_format(db_input)
 
         kwargs = analysis.configuration['parameters']
-        if analysis.debug:
-            db_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
-        else:
-            db_output = DatabaseOutput(analysis, output_format)
+        #if analysis.debug:
+        db_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
+        #else:
+        #    db_output = DatabaseOutput(analysis, output_format)
 
 
 
@@ -782,6 +782,7 @@ def _perform_analysis(analysis):
 
     except Exception as e:
         analysis.status = "error"
+        db_output.appenFileToZip("stackTrace.txt", traceback.format_exc())
         # TODO: log errors
         print(traceback.format_exc())
 
