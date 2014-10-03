@@ -263,7 +263,7 @@ class SensorIngestCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.SensorIngest
-        read_only_fields = ('start', 'end')
+        read_only_fields = ('start', 'end', 'project')
 
     def validate(self, attrs):
         map = attrs['map'].map
@@ -289,7 +289,7 @@ class SensorIngestSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.SensorIngest
-        read_only_fields = ('start', 'end', 'map')
+        read_only_fields = ('start', 'end', 'project', 'map')
 
     def validate(self, attrs):
         # Empty names slipped by with PATCH, so catch them here.
@@ -297,6 +297,9 @@ class SensorIngestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {'name': ['This field is required.']})
         return attrs
+
+    def transform_map(self, obj, value):
+        return obj.map.map
 
 
 class DataSetPreviewSerializer(serializers.Serializer):
@@ -315,12 +318,13 @@ class AnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Analysis
         read_only_fields = ('added', 'started', 'ended', 'progress_percent',
-                            'reports', 'status')
+                            'reports', 'status', 'project')
 
 class AnalysisUpdateSerializer(AnalysisSerializer):
     class Meta:
         model = AnalysisSerializer.Meta.model
-        read_only_fields = ('dataset', 'application', 'configuration') + AnalysisSerializer.Meta.read_only_fields
+        read_only_fields = (('dataset', 'application', 'configuration') +
+                            AnalysisSerializer.Meta.read_only_fields)
 
 
 class SharedAnalysisSerializer(serializers.ModelSerializer):

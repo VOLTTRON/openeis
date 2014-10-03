@@ -85,7 +85,7 @@ class Command(NoArgsCommand):
                     count, = cursor.cursor.fetchone()
                     if count:
                         continue
-                if verbosity >= 2:
+                if verbosity >= 1:
                     self.stdout.write('Dropping table: {}'.format(table))
                 if not dry_run:
                     cursor.execute('DROP TABLE ' + table)

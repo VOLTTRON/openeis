@@ -115,11 +115,6 @@ class IsProjectOwner(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         return obj.project.owner == request.user
 
-class IsDataMapOwner(permissions.BasePermission):
-    '''Restrict access to the owner of the parent project.'''
-    def has_object_permission(self, request, view, obj):
-        return obj.map.project.owner == request.user
-
 class IsAuthenticatedOrPost(permissions.BasePermission):
     '''Restrict access to authenticated users or to POSTs.'''
     def has_object_permission(self, request, view, obj):
@@ -474,13 +469,11 @@ class DataMapViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         '''Only allow users to see data maps they own.'''
         user = self.request.user
-        return models.DataMap.objects.filter(project__owner=user)
+        return models.DataMap.objects.filter(project__owner=user, removed=False)
 
     def pre_save(self, obj):
         '''Check the project owner against the current user.'''
-        user = self.request.user
-        if not models.Project.objects.filter(
-                owner=user, pk=obj.project.pk).exists():
+        if obj.project.owner != self.request.user:
             raise rest_exceptions.PermissionDenied(
                     "Invalid project pk '{}' - "
                     'permission denied.'.format(obj.project.pk))
@@ -489,9 +482,18 @@ class DataMapViewSet(viewsets.ModelViewSet):
         if self.request.method == 'POST':
             return serializers.CreateDataMapSerializer
         obj = getattr(self, 'object', None)
-        if obj and obj.ingests.count() or hasattr(self, 'object_list'):
+        if obj and obj.datasets.exists() or hasattr(self, 'object_list'):
             return serializers.ReadOnlyDataMapSerializer
         return serializers.DataMapSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        obj = self.get_object()
+        if obj.datasets.exists():
+            obj.removed = True
+            obj.save()
+        else:
+            obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 _processes = {}
@@ -524,7 +526,8 @@ def iter_ingest(ingest):
                 time = row.columns[0]
                 objects = []
                 if isinstance(time, IngestError):
-                    obj = models.SensorIngestLog(file=ingest_file,
+                    obj = models.SensorIngestLog(
+                            dataset=ingest, file=ingest_file,
                             row=row.line_num, column=time.column_num,
                             level=models.SensorIngestLog.ERROR,
                             message=str(time))
@@ -532,7 +535,8 @@ def iter_ingest(ingest):
                 else:
                     for (sensor, cls), column in zip(sensors, row.columns[1:]):
                         if isinstance(column, IngestError):
-                            obj = models.SensorIngestLog(file=ingest_file,
+                            obj = models.SensorIngestLog(
+                                    dataset=ingest, file=ingest_file,
                                     row=row.line_num, column=column.column_num,
                                     level=models.SensorIngestLog.ERROR,
                                     message=str(column))
@@ -544,7 +548,8 @@ def iter_ingest(ingest):
                        processed_bytes + row.position, total_bytes)
             processed_bytes += file.size
     except Exception:
-        models.SensorIngestLog.create(file=ingest_file, row=0, column=0,
+        models.SensorIngestLog.create(dataset=ingest, file=ingest_file,
+                                      row=0, column=0,
                                       level=models.SensorIngestLog.CRITICAL,
                                       message='an unhandled server error '
                                               'occurred during ingestion')
@@ -603,7 +608,9 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
 
 class DataSetViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
-    permission_classes = (permissions.IsAuthenticated, IsDataMapOwner)
+    permission_classes = (permissions.IsAuthenticated, IsProjectOwner)
+    filter_backends = (filters.DjangoFilterBackend,)
+    filter_fields = ('project', 'name')
 
     @link(permission_classes = (permissions.IsAuthenticated,))
     def status(self, request, *args, **kwargs):
@@ -624,8 +631,16 @@ class DataSetViewSet(viewsets.ModelViewSet):
         '''Retrieves all errors that occured during an ingestion.'''
         ingest = self.get_object()
         serializer = serializers.SensorIngestLogSerializer(
-                ingest.logs, many=True)
+                ingest.logs.all(), many=True)
         return Response(serializer.data)
+
+    def pre_save(self, obj):
+        '''Check the project owner against the current user.'''
+        if obj.map.project.owner != self.request.user:
+            raise rest_exceptions.PermissionDenied(
+                    "Invalid map pk '{}' - "
+                    'permission denied.'.format(obj.map.pk))
+        obj.project = obj.map.project
 
     def post_save(self, obj, created):
         '''After the SensorIngest object has been saved start a threaded
@@ -793,7 +808,7 @@ def _get_output_data(request, analysis):
 
         for output in models.AppOutput.objects.filter(analysis=analysis):
             data_model = sensorstore.get_data_model(output,
-                                                    output.analysis.dataset.map.project.id,
+                                                    output.analysis.project.id,
                                                     output.fields)
 
             outputs[output.name] = {
@@ -804,7 +819,7 @@ def _get_output_data(request, analysis):
 
     output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
     data_model = sensorstore.get_data_model(output,
-                                            output.analysis.dataset.map.project.id,
+                                            output.analysis.project.id,
                                             output.fields)
 
     start = max(start, 0)
@@ -831,13 +846,12 @@ class AnalysisViewSet(viewsets.ModelViewSet):
 
     def pre_save(self, obj):
         '''Check dataset ownership and application existence.'''
-        user = self.request.user
-        if not models.Project.objects.filter(
-                owner=user, pk=obj.dataset.map.project.pk).exists():
-            raise rest_exceptions.PermissionDenied(
-                    "Invalid project pk '{}' - "
-                    'permission denied.'.format(obj.dataset.map.project.pk))
-
+        if self.request.method == 'POST':
+            if obj.dataset.project.owner != self.request.user:
+                raise rest_exceptions.PermissionDenied(
+                        "Invalid project pk '{}' - "
+                        'permission denied.'.format(obj.project.pk))
+            obj.project = obj.dataset.project
         if not get_algorithm_class(obj.application):
             raise rest_exceptions.ParseError(
                 "Application '{}' not found.".format(obj.application))
@@ -854,15 +868,14 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         '''Only show user analyses associated with projects they own,
         optionally filtered by project ID.'''
-        user = self.request.user
-        queryset = models.Analysis.objects.filter(dataset__map__project__owner=user)
+        queryset = models.Analysis.objects.filter(project__owner=self.request.user)
         try:
             project = int(self.request.QUERY_PARAMS['project'])
         except KeyError:
             return queryset
         except ValueError:
             return []
-        return queryset.filter(dataset__map__project=project)
+        return queryset.filter(project=project)
 
     @link()
     def data(self, request, *args, **kw):
@@ -883,10 +896,9 @@ class SharedAnalysisPermission(permissions.BasePermission):
         return (request.method in permissions.SAFE_METHODS or
                 request.user.is_authenticated())
 
-    def has_object_permission(self, request, view, object):
+    def has_object_permission(self, request, view, obj):
         return (request.method in permissions.SAFE_METHODS or
-                models.Project.objects.filter(owner=request.user,
-                    pk=object.analysis.dataset.map.project.pk).exists())
+                obj.analysis.project.owner==request.user)
 
 
 class SharedAnalysisViewSet(mixins.CreateModelMixin,
@@ -911,9 +923,7 @@ class SharedAnalysisViewSet(mixins.CreateModelMixin,
 
     def pre_save(self, obj):
         '''Check analysis ownership.'''
-        user = self.request.user
-        if not models.Project.objects.filter(
-                owner=user, pk=obj.analysis.dataset.map.project.pk).exists():
+        if obj.analysis.project.owner != self.request.user:
             raise rest_exceptions.PermissionDenied(
                     "Invalid analysis pk '{}' - "
                     'permission denied.'.format(obj.analysis.pk))
