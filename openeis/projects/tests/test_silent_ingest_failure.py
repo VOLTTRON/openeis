@@ -78,8 +78,8 @@ BAD_GENERAL_DEF_TEXT = """
 class TestSilentIngest(TestCase):
     # This fixture contains the following attributes
     #    - a 'test' project
-    #    - an uploaded csv file test_alpha_nwmSyFS.csv with the timestamp configured.
-    #    - a datamap called 'ready-map' that has the following
+    #    - an uploaded csv file test_alpha.csv with the timestamp configured.
+    #    - a datamap called 'test-map' that has the following
     #         - an "other" object of type SupplyFanSpeed Sensor with the selected file
     #         - a Unit of DCIE    
     fixtures = ['silent_ingest_fixture.json']
@@ -110,15 +110,15 @@ class TestSilentIngest(TestCase):
 #         response = client.get(url)
 #         assert response.data[0]['id'] == 1
 #         assert response.data[0]['name'] == 'test'
-        url = '/api/sensormaps'
+        url = '/api/datamaps'
         response = self.client.get(url)
         assert response.data[0]['id'] == 1
-        assert response.data[0]['name'] == 'ready-map'
+        assert response.data[0]['name'] == 'test-map'
         assert response.data[0]['project'] == 1
         
         url = '/api/files'
         response = self.client.get(url)
-        assert response.data[0]['file'] == 'test_alpha_nwmSyFS.csv'
+        assert response.data[0]['name'] == 'test_alpha.csv'
         assert response.data[0]['time_zone'] == 'America/Los_Angeles'
         
     
