@@ -91,7 +91,7 @@ class Command(NoArgsCommand):
                         if verbosity >=2:
                             self.stdout.write('Leaving table: {}'.format(table))
                         continue
-                if verbosity >= 2:
+                if verbosity >= 1:
                     self.stdout.write('Dropping table: {}'.format(table))
                 if force:
                     options = '' if cursor.db.vendor == 'sqlite' else 'CASCADE'
