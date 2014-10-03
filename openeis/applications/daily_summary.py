@@ -287,11 +287,13 @@ class Application(DriverApplicationBaseClass):
             "value": "{:.2f}".format(load_variability),
             "description":"This metric is used to understand regularity of operations,\
                            and the likelihood of consistency in the building’s demand \
-                           responsiveness. It represents a coefficient of variation that\
+                           responsiveness. It gives a coefficient of variation that\
                            ranges from 0 to 1, which can be interpreted based on rule of thumb\
                            guidelines. For example, variability above 0.15 is generally \
                            considered high for commercial buildings."
             })
+        # TODO: Looks like peakLoadIntensity is exactly the same as the "load max intensity"
+        # reported above (only the text description differs).  Check, and remove if duplicate.
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Peak Load Benchmark [W/sf]",
             "value": "{:.2f}".format(peakLoadIntensity * 1000.),
