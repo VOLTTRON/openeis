@@ -298,6 +298,9 @@ class SensorIngestSerializer(serializers.ModelSerializer):
                 {'name': ['This field is required.']})
         return attrs
 
+    def transform_map(self, obj, value):
+        return obj.map.map
+
 
 class DataSetPreviewSerializer(serializers.Serializer):
     map = JSONField(required=True)
