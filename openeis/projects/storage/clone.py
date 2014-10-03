@@ -64,9 +64,9 @@ class CloneProject():
     
     def clone_project(self,project, new_project_name):
         ''' Clones project. Copies existing project and save with new name.
-            Copies sensor map, sensor ingest, sensors and analyses from existing project to cloned project.
+            Copies data map, sensor ingest, sensors and analyses from existing project to cloned project.
         '''
-        sensor_maps = models.SensorMapDefinition.objects.filter(project=project)
+        data_maps = models.DataMap.objects.filter(project=project)
         #data_files = models.DataFile.objects.filter(project=project)
         self.src_project_id = project.id
         project.id = None
@@ -74,7 +74,7 @@ class CloneProject():
         project.save()
     
         #clone_data_files(list(data_files), project)
-        self.clone_sensor_map_definition(list(sensor_maps), project)
+        self.clone_data_map_definition(list(data_maps), project)
     
         return project
     
@@ -83,34 +83,34 @@ class CloneProject():
             data_file.id = None
             data_file.save()
     
-    def clone_sensor_map_definition(self, sensor_maps_list,project):
-        for sensor_map in sensor_maps_list:
+    def clone_data_map_definition(self, data_maps_list,project):
+        for data_map in data_maps_list:
     
-            sensor_ingests = models.SensorIngest.objects.filter(map=sensor_map)
-            sensors = models.Sensor.objects.filter(map=sensor_map)
+            sensor_ingests = models.SensorIngest.objects.filter(map=data_map)
+            sensors = models.Sensor.objects.filter(map=data_map)
     
-            sensor_map.id = None
-            sensor_map.project = project
-            sensor_map.save()
+            data_map.id = None
+            data_map.project = project
+            data_map.save()
     
-            self.clone_sensor_ingest(list(sensor_ingests),sensor_map)
-            self.clone_sensors(list(sensors), sensor_map)
+            self.clone_sensor_ingest(list(sensor_ingests),data_map)
+            self.clone_sensors(list(sensors), data_map)
     
-    def clone_sensor_ingest(self, sensor_ingests_list, sensor_map_definition):
+    def clone_sensor_ingest(self, sensor_ingests_list, data_map_definition):
         for sensor_ingest in sensor_ingests_list:
     
             analyses = models.Analysis.objects.filter(dataset=sensor_ingest)
     
             sensor_ingest.id = None
-            sensor_ingest.map = sensor_map_definition
+            sensor_ingest.map = data_map_definition
             sensor_ingest.save()
     
             self.clone_analysis(list(analyses), sensor_ingest)
     
-    def clone_sensors(self, sensors_list, sensor_map):
+    def clone_sensors(self, sensors_list, data_map):
         for sensor in sensors_list:
             sensor.id= None
-            sensor.map = sensor_map
+            sensor.map = data_map
             sensor.save()
     
     def clone_analysis(self, analyses_list, sensor_ingest):

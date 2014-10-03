@@ -67,7 +67,7 @@ _stable_tables = ['accountverification', 'membership', 'organization']
 
 
 class Command(NoArgsCommand):
-    help = 'Remove orphaned dynamic application output tables.'
+    help = 'Drop project tables to prepare for database update.'
     option_list = NoArgsCommand.option_list + (
         make_option('-f', '--force', action='store_true', default=False,
                     help='Tables will not be dropped without this flag.'),

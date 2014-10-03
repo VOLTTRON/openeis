@@ -102,9 +102,9 @@
     "model": "contenttypes.contenttype", 
     "pk": 12, 
     "fields": {
-        "model": "sensormapdefinition", 
+        "model": "datamap", 
         "app_label": "projects", 
-        "name": "sensor map definition"
+        "name": "data map"
     }
 },
 {
@@ -488,27 +488,27 @@
     "model": "auth.permission", 
     "pk": 34, 
     "fields": {
-        "codename": "add_sensormapdefinition", 
+        "codename": "add_datamap", 
         "content_type": 12, 
-        "name": "Can add sensor map definition"
+        "name": "Can add data map"
     }
 },
 {
     "model": "auth.permission", 
     "pk": 35, 
     "fields": {
-        "codename": "change_sensormapdefinition", 
+        "codename": "change_datamap", 
         "content_type": 12, 
-        "name": "Can change sensor map definition"
+        "name": "Can change data map"
     }
 },
 {
     "model": "auth.permission", 
     "pk": 36, 
     "fields": {
-        "codename": "delete_sensormapdefinition", 
+        "codename": "delete_datamap", 
         "content_type": 12, 
-        "name": "Can delete sensor map definition"
+        "name": "Can delete data map"
     }
 },
 {

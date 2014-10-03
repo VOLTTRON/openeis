@@ -85,6 +85,8 @@ class CreateFileSerializer(serializers.ModelSerializer):
 
     It ensures the file is associated with the appropriate project.
     '''
+
+    name = serializers.CharField(required=False)
     timestamp = JSONField(required=False)
 
     class Meta:
@@ -102,13 +104,14 @@ class CreateFileSerializer(serializers.ModelSerializer):
         file = attrs[source].file
         try:
             csv_file = CSVFile(file)
-            cols = len(next(csv_file))
-            for row in csv_file:
-                if len(row) != cols:
-                    raise csv.Error('Inconsistent number of columns')
         except csv.Error as e:
             raise serializers.ValidationError(str(e))
         file.seek(0)
+        return attrs
+
+    def validate_name(self, attrs, source):
+        if not attrs.get(source):
+            attrs[source] = getattr(attrs.get('file'), 'name', '')
         return attrs
 
     def restore_object(self, attrs, instance=None):
@@ -133,10 +136,8 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.DataFile
-        read_only_fields = ('project', 'file')
-
-    def transform_file(self, obj, value):
-        return posixpath.basename(value)
+        read_only_fields = ('project',)
+        exclude = ('file',)
 
     def transform_download_url(self, obj, value):
         return reverse('datafile-download', kwargs={'pk': value},
@@ -227,10 +228,10 @@ class LoginSerializer(serializers.Serializer):
                 attrs.get('password', instance and instance[1]))
 
 
-class SensorMapDefSerializer(serializers.ModelSerializer):
+class DataMapSerializer(serializers.ModelSerializer):
     map = JSONField()
     class Meta:
-        model = models.SensorMapDefinition
+        model = models.DataMap
 
 
 class SensorIngestFileSerializer(serializers.ModelSerializer):
@@ -247,7 +248,8 @@ class SensorIngestLogSerializer(serializers.ModelSerializer):
         fields = ('file', 'message', 'level', 'column', 'row' )
 
 
-class SensorIngestSerializer(serializers.ModelSerializer):
+class SensorIngestCreateSerializer(serializers.ModelSerializer):
+
     files = SensorIngestFileSerializer(many=True, required=True)
 
     class Meta:
@@ -269,6 +271,22 @@ class SensorIngestSerializer(serializers.ModelSerializer):
         # XXX: check that file signatures match
         if errors:
             raise serializers.ValidationError({'files': errors})
+        return attrs
+
+
+class SensorIngestSerializer(serializers.ModelSerializer):
+
+    files = SensorIngestFileSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = models.SensorIngest
+        read_only_fields = ('start', 'end', 'map')
+
+    def validate(self, attrs):
+        # Empty names slipped by with PATCH, so catch them here.
+        if not attrs['name']:
+            raise serializers.ValidationError(
+                {'name': ['This field is required.']})
         return attrs
 
 

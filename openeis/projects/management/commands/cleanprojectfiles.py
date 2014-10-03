@@ -94,24 +94,14 @@ class Command(NoArgsCommand):
 
         storage = ProtectedFileSystemStorage()
         try:
-            dirs, _ = storage.listdir('projects')
+            _, files = storage.listdir(posixpath.join('projects', 'datafiles'))
         except FileNotFoundError:
             return
-        for dirname in dirs:
-            path = posixpath.join('projects', dirname)
-            if not dirname.isdigit():
-                log('Skipping directory: {}'.format(path))
-            elif not Project.objects.filter(pk=dirname).exists():
-                log('Removing directory: {}'.format(path), 2)
-                if not dry_run:
-                    shutil.rmtree(storage.path(path), onerror=failure)
+        for name in files:
+            name = posixpath.join('projects', 'datafiles', name)
+            if DataFile.objects.filter(file=name).exists():
+                log('Keeping file: {}'.format(name), 3)
             else:
-                _, files = storage.listdir(posixpath.join('projects', dirname))
-                for name in files:
-                    name = posixpath.join(path, name)
-                    if DataFile.objects.filter(file=name).exists():
-                        log('Keeping file: {}'.format(name), 3)
-                    else:
-                        log('Removing file: {}'.format(name), 2)
-                        if not dry_run:
-                            storage.delete(name)
+                log('Removing file: {}'.format(name), 2)
+                if not dry_run:
+                    storage.delete(name)
