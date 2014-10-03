@@ -173,5 +173,5 @@ class Application(DriverApplicationBaseClass):
         ctr = 1
         for x in load_query[0]:
             self.out.insert_row("Load_Duration", { "sorted load": x[1]*load_convertfactor,
-                                                   "percent time": ctr / len(load_query[0]) } )
+                                                   "percent time": (len(load_query[0])-ctr) / len(load_query[0]) } )
             ctr += 1

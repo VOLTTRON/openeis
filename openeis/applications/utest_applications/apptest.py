@@ -2,24 +2,25 @@
 Module for testing applications.
 """
 
-from django.test import TestCase
-from django.utils.timezone import utc
-from subprocess import call
-from configparser import ConfigParser
 import datetime
 import csv
 import os
 import math
+import tempfile
+
+from django.test import TestCase
+from django.utils.timezone import utc
+from subprocess import call
+from configparser import ConfigParser
 
 from openeis.applications import get_algorithm_class
 from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
 from openeis.projects import models
 
-
 class AppTestBase(TestCase):
     # Taken directly from runapplication command.
-    def run_application(self, config_file):
+    def run_application(self, config_file, output_dir):
         """
         Runs the application with a given configuration file.
         Parameters:
@@ -65,8 +66,15 @@ class AppTestBase(TestCase):
         # Execute the application
         app.run_application()
 
+        #Retrieve the map of tables to output csvs from the application
+        result_dict = {}        
+        for table in app.out.file_table_map.keys():
+            result_dict[table] = app.out.file_table_map[table].name
+        
+        return result_dict
 
-    def _call_runapplication(self, tables, config_file):
+
+    def _call_runapplication(self, tables, config_file, output_dir):
         """
         Runs the application, checks if a file was outputted from the
         application.  It can tolerate more than one output file for an
@@ -79,33 +87,11 @@ class AppTestBase(TestCase):
             - newest: The file made from the running the application.
         Throws: Assertion error if no new file was created.
         """
-        # Get all files
-        all_files_before = os.listdir()
-        # Dictionary to hold app files before running application.
-        app_dict_before = {}
-        # Filter for csv files with app name in it.
-        for table in tables:
-            app_dict_before[table] = [k for k in all_files_before \
-                                            if (table in k and '.csv' in k)]
         # Call runapplication on the configuration file.
-        self.run_application(config_file)
-        # List all files
-        all_files_after = os.listdir()
-        # Dictionary to hold app files after running application
-        app_dict_after = {}
-        # Filter
-        for table in tables:
-            app_dict_after[table] = [k for k in all_files_after \
-                                           if (table in k and '.csv' in k)]
-        # Make sure a new file was made
-        newest = {}
-        for table in tables:
-            self.assertTrue(\
-                (len(app_dict_after[table]) > len(app_dict_before[table])),\
-                "Error:  No new file was created for " + table + ".")
-            # Grab the newest one that is made from the application.
-            newest[table] = max(app_dict_after[table], key=os.path.getctime)
-        return newest
+        result_file_dict = self.run_application(config_file, output_dir)
+        
+        
+        return result_file_dict
 
     def _list_outputs(self, test_output, expected_output):
         """
@@ -263,9 +249,11 @@ class AppTestBase(TestCase):
         config.read(ini_file)
         # grab application name
         application = config['global_settings']['application']
+        #create temp dir pass to function
+        stmp = tempfile.mkdtemp()
         # run application
         test_output = self._call_runapplication(expected_outputs.keys(), \
-                                               ini_file)
+                                               ini_file, stmp)
         for table in expected_outputs:
             # get outputs
             test_list, expected_list = \
