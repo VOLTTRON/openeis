@@ -317,12 +317,6 @@ class DataSetPreviewSerializer(serializers.Serializer):
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
-    def transform_debug(self, obj, value):
-        if value and obj.status == 'complete':
-            return reverse('analysis-download', kwargs={'pk': obj.id},
-                           request=self.context['request'])
-        return value
-
     class Meta:
         model = models.Analysis
         read_only_fields = ('added', 'started', 'ended', 'progress_percent',
