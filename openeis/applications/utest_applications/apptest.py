@@ -49,8 +49,9 @@ class AppTestBase(TestCase):
             topic_map[group] = topics.split()
 
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
-        analysis = models.Analysis(added=now, started=now, status="running",
-                    dataset=dataset, application=application,
+        project = models.Project.objects.get(pk=1)
+        analysis = models.Analysis(project=project, added=now, started=now,
+                    status="running", dataset=dataset, application=application,
                     configuration={
                      'parameters': kwargs,
                      'inputs': topic_map},
