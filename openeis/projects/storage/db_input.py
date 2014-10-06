@@ -136,7 +136,8 @@ class DatabaseInput:
         base = sensor_topic.split('/')[0]
         
         #TODO: better warnings
-        if ('attributes' in self.map_defintion['sensors'][base].keys() and
+        if (base in self.map_defintion['sensors'] and 
+            'attributes' in self.map_defintion['sensors'][base].keys() and
             'timezone' in self.map_defintion['sensors'][base]['attributes'].keys()):
             tz = pytz.timezone(self.map_defintion['sensors'][base]['attributes']['timezone'])
         else:
