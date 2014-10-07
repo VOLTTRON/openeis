@@ -141,7 +141,7 @@ class TestSilentIngest(TestCase):
         assert response.data[0]['name'] == 'test_alpha.csv'
         assert response.data[0]['time_zone'] == 'America/Los_Angeles'
     
-    @pytest.mark.skipif(True)    
+    @pytest.mark.skipif(True, reason='multi-threading issue possibly.  Looking into a better fixture builder.')    
     def test_create_silent_state(self):
         project_id = create_project('test')
         upload_file_id = upload_temp_file_data(project_id, VALID_CSV_DATA)
