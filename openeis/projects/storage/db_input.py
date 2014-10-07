@@ -145,6 +145,15 @@ class DatabaseInput:
             tz = pytz.UTC
             
         return tz
+    
+    def localize_sensor_time(self, group, sensor_topic, timestamp):
+        #Set utc is time is naive
+        if timestamp.tzinfo == None:
+            timestamp = timestamp.replace(tzinfo=pytz.UTC)
+            
+        tz = self.get_tz_for_sensor(group, sensor_topic)
+        timestamp = timestamp.astimezone(tz)
+        return timestamp
 
     def get_topics_meta(self):
         '''Returns topics with their meta data'''

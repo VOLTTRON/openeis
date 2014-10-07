@@ -167,7 +167,7 @@ class Application(DriverApplicationBaseClass):
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
-        load_tz = meta_topics['load'][base_topic['load'][0]]['timezone']
+#        load_tz = meta_topics['load'][base_topic['load'][0]]['timezone']
 
         load_convertfactor = cu.conversiontoKWH(load_unit)
         print (load_convertfactor)
@@ -189,10 +189,7 @@ class Application(DriverApplicationBaseClass):
             print(x)
 
             datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
-            
-            #TODO: make a utility for this
-            datevalue = datevalue.replace(tzinfo=pytz.UTC)
-            datevalue = datevalue.astimezone(load_tz)
+            datevalue = self.inp.localize_sensor_time('load', base_topic['load'][0], datevalue)
             
             print(datevalue)
 #            tz.localize(datevalue)
