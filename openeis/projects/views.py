@@ -82,6 +82,7 @@ from rest_framework.reverse import reverse
 from rest_framework import exceptions as rest_exceptions
 
 from . import models
+from .models import INFO, WARNING, ERROR, CRITICAL
 from .protectedmedia import protected_media, ProtectedMediaResponse
 from . import serializers
 from .conf import settings as proj_settings
@@ -573,10 +574,12 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
     class type and inserted using bulk_create. Progress information
     is updated every report_interval objects.
     '''
+    beforeIteration = True
     try:
         last_file_id, next_pos = None, 0
         keyfunc = lambda obj: obj.__class__.__name__
         it = iter_ingest(ingest)
+        beforeIteration = False
         while True:
             batch = []
             for objects, *args in it:
@@ -597,7 +600,12 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
                 objects = list(group)
                 cls = objects[0].__class__
                 cls.objects.bulk_create(objects)
-    except Exception:
+    except Exception as e:
+        if beforeIteration:
+            models.SensorIngestLog(level=CRITICAL, dataset=ingest, message='an unhandled exception occurred during sensor '
+                          'ingestion ({}) the message was: {}'.format(ingest.id, e), row=-1).save()
+        else:
+            models.SensorIngestLog(level=CRITICAL, dataset=ingest, message=e, row=-1).save()
         logging.exception('an unhandled exception occurred during sensor '
                           'ingestion ({})'.format(ingest.id))
     finally:
