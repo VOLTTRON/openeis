@@ -294,11 +294,12 @@ class SensorIngestFile(models.Model):
         unique_together = ('ingest', 'name')
 
 
+INFO = 20
+WARNING = 30
+ERROR = 40
+CRITICAL = 50
 class SensorIngestLog(models.Model):
-    INFO = 20
-    WARNING = 30
-    ERROR = 40
-    CRITICAL = 50
+    
     LOG_LEVEL_CHOICES = ((INFO, 'Info'), (WARNING, 'Warning'),
                          (ERROR, 'Error'), (CRITICAL, 'Critical'))
 
