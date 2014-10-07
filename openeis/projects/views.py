@@ -94,7 +94,6 @@ from .storage.db_input import DatabaseInput
 from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
-from openeis.server.settings import DATA_DIR
 
 _logger = logging.getLogger(__name__)
 
@@ -893,8 +892,9 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     @link()
     def download(self, request, *args, **kwargs):
         '''Retrieve the debug zip file.'''
-        analysis_dir = posixpath.join(DATA_DIR, 'files', 'analysis', '{}.zip')
-        response = ProtectedMediaResponse(analysis_dir.format(self.get_object().pk))
+        analysis = self.get_object()
+        path = posixpath.join('analysis', '{}.zip'.format(analysis.pk))
+        response = ProtectedMediaResponse(path)
         response['Content-Type'] = 'application/zip; name="analysis-debug.zip"'
         response['Content-Disposition'] = 'filename="analysis-debug.zip"'
         return response

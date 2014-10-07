@@ -183,7 +183,9 @@ class Application(DriverApplicationBaseClass):
             # end = len(loads[0])
         
         for x in loads[0]:
-            datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
+            datevalue = x[0]
+            if not isinstance(datevalue, dt.datetime):
+                datevalue = dt.datetime.strptime(datevalue, '%Y-%m-%d %H')
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),
                 'hour': datevalue.hour,
