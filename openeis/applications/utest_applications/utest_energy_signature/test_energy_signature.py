@@ -1,5 +1,5 @@
 """
-Unit test `day_time_temperature_model.py`.
+Unit tests for Energy Signature application.
 
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
@@ -46,43 +46,35 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
+
 from openeis.applications.utest_applications.apptest import AppTestBase
-from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
-
-import datetime
-import numpy
-import day_time_temperature_model as dtt
 import os
-import copy
 
-class TestDayTimeTemperature(AppTestBase):
-    fixtures = [os.path.join('applications',
-                     'utest_applications',
-                     'utest_day_time_temperature_app',
-                     'day_time_temperature_data.json')]
+class TestEnergySignature(AppTestBase):
+    fixtures = [os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                    'energy_signature_fixture.json')]
 
-    def test_findDateIndex(self):
-        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
-        b = datetime.datetime(2014, 1, 2, 0, 0, 0, 0)
-        datetime_list = numpy.array(set_up_datetimes(a, b, 3600)).flatten()
-        
-        # Testing index finder for specific dates.
-        testDateIndex = dtt.findDateIndex(datetime_list, 
-                                          datetime.datetime(2014, 1, 1, 7, 0, 0, 0))
-        self.assertTrue(str.isdigit(str(testDateIndex)))
+    def setUp(self):
+        self.basedir = os.path.abspath(os.path.dirname(__file__))
 
-        testDateIndex = dtt.findDateIndex(datetime_list, 
-                                          datetime.datetime(2014, 2, 1, 0, 0, 0, 0))
-        self.assertIs(str.isdigit(str(testDateIndex)), False)
-        
-    def test_daytimetemperature_model(self):
-        dtt_model_exp = {}
-        dtt_model_ini = os.path.join('applications',
-                                     'utest_applications',
-                                     'utest_day_time_temperature_app',
-                                     'daytimetemperature_config.ini')
-        dtt_model_exp['DayTimeTemperatureModel'] = os.path.join('applications',
-                                     'utest_applications',
-                                     'utest_day_time_temperature_app',
-                                     'day_time_temperature_app_data.ref.csv')
-        self.run_it(dtt_model_ini, dtt_model_exp, clean_up=True)
+    def test_energy_signature_basic(self):
+        es_basic_exp = {}
+        es_basic_ini = os.path.join(self.basedir,
+                                    'energy_signature_negone.ini')
+        es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
+                                    'energy_signature_negone_SP.ref.csv')
+        es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
+                                    'energy_signature_negone_WS.ref.csv')
+        self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
+
+    def test_energy_signature_missing(self):
+        es_missing_exp = {}
+        es_missing_ini = os.path.join(self.basedir,
+                                   'energy_signature_missing.ini')
+        es_missing_exp['Scatterplot'] = os.path.join(self.basedir,
+                                   'energy_signature_missing_SP.ref.csv')
+        es_missing_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
+                                   'energy_signature_missing_WS.ref.csv')
+        self.run_it(es_missing_ini, es_missing_exp, clean_up=True)
+
+
