@@ -292,6 +292,7 @@ class SensorIngestCreateSerializer(serializers.ModelSerializer):
 class SensorIngestSerializer(serializers.ModelSerializer):
 
     files = SensorIngestFileSerializer(many=True, read_only=True)
+    download_url = serializers.CharField(source='pk', read_only=True)
 
     class Meta:
         model = models.SensorIngest
@@ -308,6 +309,10 @@ class SensorIngestSerializer(serializers.ModelSerializer):
         result = super().to_native(obj)
         result['datamap'] = obj and obj.map.map
         return result
+
+    def transform_download_url(self, obj, value):
+        return reverse('sensoringest-download', kwargs={'pk': value},
+                       request=getattr(self, 'request', None))
 
 
 class DataSetPreviewSerializer(serializers.Serializer):
