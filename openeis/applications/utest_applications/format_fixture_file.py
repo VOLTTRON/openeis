@@ -57,6 +57,83 @@ import json
 import sys
 
 
+#--- Utility fcns.
+
+def pythonObjAsJson(theObj, toFile):
+    """
+    Write out a Python object to a file, formatted as JSON.
+    """
+    theType = type(theObj)
+    if( theType == dict ):
+        pythonDictAsJson(theObj, toFile)
+    elif( theType == list ):
+        pythonListAsJson(theObj, toFile)
+    else:
+        toFile.write(json.dumps(theObj, separators=(', ', ':')))
+
+
+def pythonListAsJson(theList, toFile):
+    """
+    Write out a Python list to a file, formatted as JSON.
+    """
+    assert( type(theList) == list )
+    toFile.write('[')
+    endPrevItem = False
+    for item in theList:
+        if( endPrevItem ):
+            toFile.write(', ')
+        else:
+            endPrevItem = True
+        pythonObjAsJson(item, toFile)
+    toFile.write(']')
+
+
+def pythonDictAsJson(theDict, toFile):
+    """
+    Write out a Python dictionary to a file, formatted as JSON.
+    Assume keys are always strings.
+    """
+    assert( type(theDict) == dict )
+
+    # Start writing dictionary.
+    toFile.write('{')
+    endPrevItem = False
+
+    # Get dictionary keys, as a list.
+    #   Method keys() returns list in Python 2, iterable view in Python 3.
+    theKeys = theDict.keys()
+    if( type(theKeys) != list ):
+        theKeys = list(theKeys)
+
+    # Run through keys for which have preferred order.
+    for prefKey in ['model', 'pk', 'codename', 'name']:
+        if prefKey in theKeys:
+            theKeys.remove(prefKey)
+            if( endPrevItem ):
+                toFile.write(', ')
+            else:
+                endPrevItem = True
+            toFile.write('"')
+            toFile.write(prefKey)
+            toFile.write('":')
+            pythonObjAsJson(theDict[prefKey], toFile)
+
+    # Run through remaining keys.
+    for otherKey in theKeys:
+        if( endPrevItem ):
+            toFile.write(', ')
+        else:
+            endPrevItem = True
+        assert( type(otherKey) == str )
+        toFile.write('"')
+        toFile.write(otherKey)
+        toFile.write('":')
+        pythonObjAsJson(theDict[otherKey], toFile)
+
+    # Finish writing dictionary.
+    toFile.write('}')
+
+
 #--- Read the fixture file into a Python data structure.
 #
 #   This maps:
@@ -78,37 +155,15 @@ assert( type(fixtureDat) == list )
 sys.stdout.write('[\n')
 
 # Write every Python dictionary as a JSON object, one per line.
-endPrevLine = False
+endPrevItem = False
 for item in fixtureDat:
-    assert( type(item) == dict )
-
-    jsonStr = json.dumps(item, separators=(', ', ':'))
-    assert( jsonStr[0] == '{' )
-
-    # Put "model" keyword first, if it occurs as a keyword in {item}.
-    #   Note "model" may appear as a keyword in a sub-dictionary of {item},
-    # so it's dangerous to just pull it out using a grep search of {jsonStr}.
-    if 'model' in item:
-        modelType = item['model']
-        modelStr = ', "model":"' + modelType + '"'
-        leftIdx = jsonStr.find(modelStr)
-        if( leftIdx>1  and  jsonStr.rfind(modelStr)==leftIdx ):
-            # Here, <<, "model":"{modelType}">> appears exactly once in {jsonStr}.
-            # Move the "model":"{modelType}" part to beginning of {jsonStr}.
-            parts = jsonStr[1:].split(modelStr)
-            jsonStr = ''.join([
-                '{"model":"',
-                modelType,
-                '", ',
-                ''.join(parts)
-                ])
-
-    # Write the JSON object.
-    if( endPrevLine ):
+    # Finish off the last item if necessary.
+    if( endPrevItem ):
         sys.stdout.write(',\n')
     else:
-        endPrevLine = True
-    sys.stdout.write(jsonStr)
+        endPrevItem = True
+    # Print this item.
+    pythonDictAsJson(item, sys.stdout)
 
 # End the JSON array.
 sys.stdout.write('\n]')
