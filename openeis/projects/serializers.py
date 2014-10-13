@@ -306,7 +306,7 @@ class SensorIngestSerializer(serializers.ModelSerializer):
 
     def to_native(self, obj):
         result = super().to_native(obj)
-        result['datamap'] = obj.map.map
+        result['datamap'] = obj and obj.map.map
         return result
 
 
