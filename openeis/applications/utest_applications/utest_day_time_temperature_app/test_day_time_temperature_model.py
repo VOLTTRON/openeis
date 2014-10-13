@@ -56,33 +56,33 @@ import os
 import copy
 
 class TestDayTimeTemperature(AppTestBase):
-    fixtures = [os.path.join('applications',
-                     'utest_applications',
-                     'utest_day_time_temperature_app',
-                     'day_time_temperature_data.json')]
+    fixtures = [
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'day_time_temperature_data.json')
+        ]
+
+    def setUp(self):
+        self.basedir = os.path.abspath(os.path.dirname(__file__))
 
     def test_findDateIndex(self):
         a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = datetime.datetime(2014, 1, 2, 0, 0, 0, 0)
         datetime_list = numpy.array(set_up_datetimes(a, b, 3600)).flatten()
-        
         # Testing index finder for specific dates.
-        testDateIndex = dtt.findDateIndex(datetime_list, 
-                                          datetime.datetime(2014, 1, 1, 7, 0, 0, 0))
+        testDateIndex = dtt.findDateIndex(
+            datetime_list,
+            datetime.datetime(2014, 1, 1, 7, 0, 0, 0)
+            )
         self.assertTrue(str.isdigit(str(testDateIndex)))
-
-        testDateIndex = dtt.findDateIndex(datetime_list, 
-                                          datetime.datetime(2014, 2, 1, 0, 0, 0, 0))
+        testDateIndex = dtt.findDateIndex(
+            datetime_list,
+            datetime.datetime(2014, 2, 1, 0, 0, 0, 0)
+            )
         self.assertIs(str.isdigit(str(testDateIndex)), False)
-        
+
     def test_daytimetemperature_model(self):
+        dtt_model_ini = os.path.join(self.basedir,
+            'daytimetemperature_config.ini')
         dtt_model_exp = {}
-        dtt_model_ini = os.path.join('applications',
-                                     'utest_applications',
-                                     'utest_day_time_temperature_app',
-                                     'daytimetemperature_config.ini')
-        dtt_model_exp['DayTimeTemperatureModel'] = os.path.join('applications',
-                                     'utest_applications',
-                                     'utest_day_time_temperature_app',
-                                     'day_time_temperature_app_data.ref.csv')
+        dtt_model_exp['DayTimeTemperatureModel'] = os.path.join(self.basedir,
+            'day_time_temperature_app_data.ref.csv')
         self.run_it(dtt_model_ini, dtt_model_exp, clean_up=True)

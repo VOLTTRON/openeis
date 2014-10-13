@@ -73,14 +73,14 @@ def excessive_nighttime(light_data, operational_hours, area, elec_cost):
         last_on = first_time
     else:
         lights_on = False
-        
+
     # Find the first index when lights are on.
-    # FIXME: Is this a valid substitution? 
+    # FIXME: Is this a valid substitution?
     for light_dpt in light_data:
         if light_dpt[1]:
             last_on = light_dpt[0]
             break
-            
+
     # iterate through the light data
     i = 1
     while (i < len(light_data)):

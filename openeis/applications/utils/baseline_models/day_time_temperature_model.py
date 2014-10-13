@@ -8,28 +8,28 @@ import numpy as np
 
 def findDateIndex(datelist, locatedate):
     """Given a list of date objects, return index of a specific date."""
-    
+
     ctr = 0
     dateIndex = None
     while ctr < len(datelist):
-        if (datelist[ctr].year == locatedate.year) & (datelist[ctr].month == locatedate.month) & (datelist[ctr].day == locatedate.day): 
-           dateIndex = ctr 
+        if (datelist[ctr].year == locatedate.year) & (datelist[ctr].month == locatedate.month) & (datelist[ctr].day == locatedate.day):
+           dateIndex = ctr
            break
         else:
            ctr += 1
-    if (dateIndex == None): 
+    if (dateIndex == None):
         newlocatedate = locatedate - dt.timedelta(days=1)
         dateIndex = findDateIndex(datelist, newlocatedate)
-         
+
     return dateIndex
-        
+
 
 def getBins(oat, binCt):
     """
     Determines boundary values for `binCt` bins
     - binCt, the number of bins desired
     - oat, outdoor air temperature vector for the period of interest
-    
+
     Outputs:
     - boundary values for bins (binCt-1)
     ***The functions using this don't work properly for 2 bins
@@ -42,9 +42,9 @@ def getBins(oat, binCt):
     else:
         B=list([np.median(oat)])
     return B
-    
+
 def getTc(oat,B):
-    """ 
+    """
     Returns Tc values
     oat = outdoor air temperature (as vector)
     B = vector of divisions between bins (use 'getBins')
@@ -55,7 +55,7 @@ def getTc(oat,B):
     B=np.array(B)
     #Tc=np.tile(oat*0,(1,len(B)+1))
     Tc=np.zeros((len(oat),(len(B)+1)))
-    
+
     # Writes Tc according to Mathieu, Price et al 2011
     oatt=np.reshape(oat,len(oat))
     Tc[:,0]=oatt
@@ -68,7 +68,7 @@ def getTc(oat,B):
     tempB=np.array(oatt>B[len(B)-1])
     Tc[:,len(B)]=(oatt-B[len(B)-1])*tempB
     return Tc
-    
+
 
 def findThresholdValue(datevec, e):
     """Find the threshold value for each time of day."""
@@ -93,11 +93,11 @@ def _getOccupiedTime(datevec, medianval, timeStepMinutes, thresholdvec):
     """
     dow = np.array([x.weekday() for x in datevec])  # day of week vector
     hod = np.array([x.hour for x in datevec])       # hour of day vector
-    moh = np.array([x.minute for x in datevec])     # minutes 
+    moh = np.array([x.minute for x in datevec])     # minutes
     timeDiv = int(round(60/timeStepMinutes))           # of timesteps per hour
-    
+
     OvU = np.ones([7,24,timeDiv], dtype=bool)
-    
+
     tint=round(timeStepMinutes/60)
     for i in range(0,7):
         threshold = thresholdvec[i] #threshold value for 'occupied'
@@ -154,7 +154,7 @@ def formModel(timesTrain, oatsTrain, valsTrain, timeStepMinutes, binCt):
     # TODO: Document what the information in the model means.
 
     # Check inputs.
-    
+
     timesTrain = np.array(timesTrain)
     assert( timesTrain.ndim == 1 )
     assert( type(timesTrain[0]) is dt.datetime )
@@ -174,11 +174,11 @@ def formModel(timesTrain, oatsTrain, valsTrain, timeStepMinutes, binCt):
 
     assert( type(binCt) is int )
     assert( binCt > 0 )
-    
+
     thresholdval = findThresholdValue(timesTrain, valsTrain)
-    OvU = _getOccupiedTime(timesTrain, valsTrain, timeStepMinutes, thresholdval)  
+    OvU = _getOccupiedTime(timesTrain, valsTrain, timeStepMinutes, thresholdval)
     # Specifies occ(1) or unoc(0) for each [dow,hod,increment of hour]
-    Ovec = sch2vec(OvU, timesTrain, timeStepMinutes)  
+    Ovec = sch2vec(OvU, timesTrain, timeStepMinutes)
     # Converts schedule to 0/1 for specific vector of dates
 
     # Occupied
@@ -205,8 +205,8 @@ def formModel(timesTrain, oatsTrain, valsTrain, timeStepMinutes, binCt):
         'OvU':OvU
         # TODO: Consider adding further information, like `binCt` and some stats on training data.
         })
-        
-        
+
+
 def applyModel(ttowModel, datevec, oat):
     """
     Calculates modeled energy based on parameters in ttowModel[`wN`], by forming matrix A
@@ -222,14 +222,14 @@ def applyModel(ttowModel, datevec, oat):
     oat = np.array(oat)
 
     Ovec=sch2vec(OvU,datevec,timeStepMinutes)
-    
+
     #Occupied
     sc = (np.isnan(oat)==False) & Ovec
     a = getA(datevec[sc],oat[sc],timeStepMinutes,B)
     em=np.dot(a,wN)
     Eall=np.nan*sc
     Eall[sc]=em
-    
+
     #Unoccupied
     scU = (np.isnan(oat)==False) & (Ovec==False)
     aU=getA(datevec[scU],oat[scU],timeStepMinutes,list([1]))

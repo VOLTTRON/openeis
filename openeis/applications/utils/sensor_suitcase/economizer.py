@@ -81,7 +81,7 @@ def economizer(DAT, OAT, HVACstat, elec_cost, area):
             if (HVACstat[i][1] != 0):
                 RTU_on += 1
         i += 1
-        
+
     # Percentage is when the economizer is on
     percentage = econ_on/RTU_on
     if (percentage < 0.7):

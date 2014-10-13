@@ -65,24 +65,24 @@ def conversiontoKWH(energyUnits):
 
     assert ( type(energyUnits) == str)
 
-    conversionFactor = 1 
+    conversionFactor = 1
     # Convert everything to BTU first then convert to kBTU.
     #- Prefix Finder
     if 'milli' in energyUnits:
         conversionFactor = 1.0E-3
     elif 'kilo' in energyUnits:
-        conversionFactor = 1.0E+3    
+        conversionFactor = 1.0E+3
     elif 'mega' in energyUnits:
-        conversionFactor = 1.0E+6    
+        conversionFactor = 1.0E+6
     elif 'giga' in energyUnits:
         conversionFactor = 1.0E+9
-        
+
     #- Base Finder, convert to watt-hour
     if 'joule' in energyUnits:
         conversionFactor = conversionFactor / 3.6E+3
     elif 'btus' in energyUnits:
         conversionFactor = conversionFactor / 3.412
-    
+
     return ( conversionFactor / 1000.)
 
 def conversiontoKBTU(energyUnits):
@@ -100,23 +100,23 @@ def conversiontoKBTU(energyUnits):
 
     assert ( type(energyUnits) == str)
 
-    conversionFactor = 1 
+    conversionFactor = 1
     # Convert everything to BTU first then convert to kBTU.
     #- Prefix Finder
     if 'milli' in energyUnits:
         conversionFactor = 1.0E-3
     elif 'kilo' in energyUnits:
-        conversionFactor = 1.0E+3    
+        conversionFactor = 1.0E+3
     elif 'mega' in energyUnits:
-        conversionFactor = 1.0E+6    
+        conversionFactor = 1.0E+6
     elif 'giga' in energyUnits:
         conversionFactor = 1.0E+9
-        
+
     #- Base Finder, convert to btus
     if 'joule' in energyUnits:
         conversionFactor = conversionFactor * (3.412 / 3.6E+3 )
     elif 'watt' in energyUnits:
         conversionFactor = conversionFactor * 3.412
-    
+
     return ( conversionFactor / 1000.)
-    
+

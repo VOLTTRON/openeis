@@ -110,15 +110,15 @@ class Application(DriverApplicationBaseClass):
                     'K-12 School',
                     'Medical Office',
                     'Non-Refrigerated Warehouse',
-                    'Office', 
+                    'Office',
                     'Refrigerated Warehouse',
-                    'Residence Hall/Dormitory',   
-                    'Retail Store', 
-                    'Senior Care Community', 
-                    'Supermarket/Grocery Store', 
-                    'Wholesale Club/Supercenter') 
-        
-        
+                    'Residence Hall/Dormitory',
+                    'Retail Store',
+                    'Senior Care Community',
+                    'Supermarket/Grocery Store',
+                    'Wholesale Club/Supercenter')
+
+
         return {
             "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=5000),
             "building_year_constructed": ConfigDescriptor(int, "Construction Year", value_min=1800, value_max=2014),
@@ -237,10 +237,10 @@ class Application(DriverApplicationBaseClass):
         meta_topics = self.inp.get_topics_meta()
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
         natgas_unit = meta_topics['natgas'][base_topic['natgas'][0]]['unit']
-        
+
         load_convertfactor = cu.conversiontoKWH(load_unit)
         natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
-        
+
         #TODO: Convert values to units that are PM Manager values.
         energyUseList = [['Electric','kWh (thousand Watt-hours)',int(recent_record[1]*load_convertfactor)],
                          ['Natural Gas','kBtu (thousand Btu)',int(recent_record[2]*natgas_convertfactor)]]

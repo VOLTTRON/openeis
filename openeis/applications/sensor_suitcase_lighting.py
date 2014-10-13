@@ -60,7 +60,7 @@ from openeis.applications.utils.sensor_suitcase import excessive_night_lighting 
 
 class Application(DriverApplicationBaseClass):
 
-    def __init__(self, *args, building_name=None, 
+    def __init__(self, *args, building_name=None,
                               building_area,
                               electricity_cost,
                               operation_hours,
@@ -79,7 +79,7 @@ class Application(DriverApplicationBaseClass):
             self.default_building_name_used = True
 
         self.building_name = building_name
-        
+
         self.building_area = building_area
         self.electricity_cost = electricity_cost
         self.operation_hours = operation_hours
@@ -114,8 +114,8 @@ class Application(DriverApplicationBaseClass):
         base_topic = topics['lightingstatus'][0]
         topic_parts = base_topic.split('/')
         output_topic_base = topic_parts[:-1]
-        
-        stat_analysis_topic = '/'.join(output_topic_base + ['sensorsuitcaseLight', 'analysis'])        
+
+        stat_analysis_topic = '/'.join(output_topic_base + ['sensorsuitcaseLight', 'analysis'])
         stat_problem_topic = '/'.join(output_topic_base + ['sensorsuitcaseLight', 'problem'])
         stat_diagnostic_topic = '/'.join(output_topic_base + ['sensorsuitcaseLight', 'diagnostic'])
         stat_recommendation_topic = '/'.join(output_topic_base + ['sensorsuitcaseLight', 'recommendation'])
@@ -148,7 +148,7 @@ class Application(DriverApplicationBaseClass):
         text_blurb = reports.TextBlurb(text="Sensor Suitcase analysis showing Lighting Diagnostics.")
         report.add_element(text_blurb)
 
-        column_info = (('problem', 'Problem'), 
+        column_info = (('problem', 'Problem'),
                        ('diagnostic', 'Diagnostic'),
                        ('recommendation','Recommendations'),
                        ('savings','Savings'))
@@ -167,41 +167,41 @@ class Application(DriverApplicationBaseClass):
     def execute(self):
         # Called after User hits GO
         """
-        Accepts lighting status and operational hours to determine if there 
-        is excessive lighting during daytime.        
+        Accepts lighting status and operational hours to determine if there
+        is excessive lighting during daytime.
         """
         self.out.log("Starting ExcessiveLighting Analysis", logging.INFO)
-        
+
         self.out.log('@building_area'+str(self.building_area), logging.INFO)
         self.out.log('@electricity_cost'+str(self.electricity_cost), logging.INFO)
         self.out.log('@operation_hours'+str(self.operation_hours), logging.INFO)
 
         # Get lighting status from database
-        lighting_query = self.inp.get_query_sets('lightingstatus', 
+        lighting_query = self.inp.get_query_sets('lightingstatus',
                                                  exclude={'value':None} )
         datetime_lightmode = []
         for x in lighting_query[0]:
             datetime_lightmode.append((x[0],x[1]))
-            
-        daylight_flag = edl.excessive_daylight(datetime_lightmode, 
-                                               self.operation_hours, 
-                                               self.building_area, 
+
+        daylight_flag = edl.excessive_daylight(datetime_lightmode,
+                                               self.operation_hours,
+                                               self.building_area,
                                                self.electricity_cost)
         if daylight_flag != {}:
-            self.out.insert_row('SensorSuitcaseLight', { 
+            self.out.insert_row('SensorSuitcaseLight', {
                                 'analysis': 'Excessive Daylighting',
                                 'problem': daylight_flag['Problem'],
                                 'diagnostic': daylight_flag['Diagnostic'],
                                 'recommendation': daylight_flag['Recommendation'],
                                 'savings': '${:.2f}'.format(daylight_flag['Savings'])
                                 })
-                            
-        nighttime_flag = enl.excessive_nighttime(datetime_lightmode, 
-                                                 self.operation_hours, 
-                                                 self.building_area, 
+
+        nighttime_flag = enl.excessive_nighttime(datetime_lightmode,
+                                                 self.operation_hours,
+                                                 self.building_area,
                                                  self.electricity_cost)
         if nighttime_flag != {}:
-            self.out.insert_row('SensorSuitcaseLight', { 
+            self.out.insert_row('SensorSuitcaseLight', {
                                 'analysis': 'Excessive Daylighting',
                                 'problem': nighttime_flag['Problem'],
                                 'diagnostic': nighttime_flag['Diagnostic'],

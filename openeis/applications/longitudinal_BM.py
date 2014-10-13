@@ -108,8 +108,7 @@ class Application(DriverApplicationBaseClass):
         year_topic = '/'.join(output_topic_base+['longitudinalbm', 'time'])
         load_topic = '/'.join(output_topic_base+['longitudinalbm', 'load'])
         gas_topic = '/'.join(output_topic_base+['longitudinalbm', 'natgas'])
-        
-        
+
         #stuff needed to put inside output, will output by row, each new item
         #is a new file, title must match title in execute when writing to out
         output_needs = {
@@ -133,7 +132,7 @@ class Application(DriverApplicationBaseClass):
         # topics = input_object.get_topics()
         # meta_topics = input_object.get_topics_meta()
         # load_units = meta_topics['load'][base_topic]['unit']
-        
+
         report = reports.Report('Longitudinal Benchmarking Report')
 
         text_blurb = reports.TextBlurb(text="The plots show total building energy consumption compared over time.")
@@ -149,7 +148,7 @@ class Application(DriverApplicationBaseClass):
 
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('Longitudinal_BM', 'year', 'natgas'))
-        natgas_bar_chart = reports.BarChart(xy_dataset_list, 
+        natgas_bar_chart = reports.BarChart(xy_dataset_list,
                                      title='Annual Building Consumption (Natural Gas)',
                                      x_label='Year',
                                      y_label='Natural Gas Energy [kBTU]')
@@ -162,11 +161,11 @@ class Application(DriverApplicationBaseClass):
                                               reflects growing annual energy use and possible\
                                               efficiency opportunities.")
         report.add_element(text_guide2)
-        
+
         text_guide3 = reports.TextBlurb(text="A significant efficiency improvement would result\
                                               in a downward trend of decreasing bar height.")
         report.add_element(text_guide3)
-        
+
         report_list = [report]
 
         return report_list
@@ -179,10 +178,10 @@ class Application(DriverApplicationBaseClass):
         and aggregated gas amounts.
         """
         self.out.log("Starting analysis", logging.INFO)
-        
-        #grabs data by year and reduces it. 
-        # Note: Assumes all of the energy data are in a per hour basis. 
-        # Valid calculation to sum the data by 'year'. 
+
+        #grabs data by year and reduces it.
+        # Note: Assumes all of the energy data are in a per hour basis.
+        # Valid calculation to sum the data by 'year'.
         load_by_year = self.inp.get_query_sets('load', group_by='year',
                                                group_by_aggregation=Sum,
                                                exclude={'value':None},

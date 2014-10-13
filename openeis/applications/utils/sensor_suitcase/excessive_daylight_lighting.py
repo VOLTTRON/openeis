@@ -78,12 +78,12 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
         lights_on = False
 
     # Find the first index when lights are on.
-    # FIXME: Is this a valid substitution? 
+    # FIXME: Is this a valid substitution?
     for light_dpt in light_data:
         if light_dpt[1]:
             last_on = light_dpt[0]
             break
-            
+
     # iterate through the light data
     i = 1
     # while (i < len(light_data)):
@@ -103,7 +103,7 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
                     ((time_on_hours / operational_hours) > 0.5)):
                 day_flag += 1
             day_count += 1
-            
+
         # check lights were turned off, if so, increment on_to_off, lights
         # are now off, add time on to timeOn
         if ((lights_on) and (light_data[i][1] == 0)):
@@ -115,7 +115,7 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
             on = True
             last_on = light_data[i][0]
         i += 1
-        
+
     # if more than half of the days are flagged, there's a problem.
     if (day_flag / day_count > 0.5):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \

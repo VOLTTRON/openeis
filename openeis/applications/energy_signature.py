@@ -112,7 +112,7 @@ class Application(DriverApplicationBaseClass):
         value_topic = '/'.join(output_topic_base + ['energysignature', 'weather sensitivity'])
         oat_topic = '/'.join(output_topic_base + ['energysignature', 'oat'])
         load_topic = '/'.join(output_topic_base + ['energysignature', 'load'])
-        
+
         output_needs = {
             'Weather_Sensitivity': {
                 'value':OutputDescriptor('string', value_topic)
@@ -163,19 +163,19 @@ class Application(DriverApplicationBaseClass):
                                            y_label='Energy [kWh]')
 
         report.add_element(scatter_plot)
-        
+
         text_guide2 = reports.TextBlurb(text="The lack of any pattern may indicate \
                                                your building is not sensitive to outdoor\
                                                temperature.")
-        report.add_element(text_guide2)        
-        
+        report.add_element(text_guide2)
+
         text_guide3 = reports.TextBlurb(text="A steep slope indicates high sensitivity to outdoor temperature.")
-        report.add_element(text_guide3)     
+        report.add_element(text_guide3)
 
         text_guide4 = reports.TextBlurb(text="The balance point is the temperature at which the \
                                               building does not require any heating or cooling.")
-        report.add_element(text_guide4)  
-        
+        report.add_element(text_guide4)
+
 
         report_list = [report]
 
@@ -204,9 +204,9 @@ class Application(DriverApplicationBaseClass):
         meta_topics = self.inp.get_topics_meta()
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
         temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
-        
+
         load_convertfactor = cu.conversiontoKWH(load_unit)
-        
+
         merged_load_oat = self.inp.merge(load_query, oat_query)
 
         load_values = []
@@ -219,9 +219,9 @@ class Application(DriverApplicationBaseClass):
             elif temperature_unit == 'kelvin':
                 convertedTemp = cu.convertKelvinToCelcius(
                                 cu.convertCelciusToFahrenheit(x['oat'][0]))
-            else: 
+            else:
                 convertedTemp = x['oat'][0]
-        
+
             load_values.append(x['load'][0]*load_convertfactor)
             oat_values.append(convertedTemp)
             self.out.insert_row("Scatterplot", {

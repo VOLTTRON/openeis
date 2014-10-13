@@ -23,10 +23,10 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
             op_hours[2])
     DAT_op, DAT_non_op = separate_hours(DAT, op_hours[0], op_hours[1],
             op_hours[2])
-    
-    # 
+
+    #
     if (HVACstat):
-        HVAC_op, HVAC_non_op = separate_hours(HVACstat, op_hours[0], 
+        HVAC_op, HVAC_non_op = separate_hours(HVACstat, op_hours[0],
                 op_hours[1], op_hours[2])
     else:
         HVAC_op = []
@@ -54,7 +54,7 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
     h_val = h_flag/non_op_data_len
     vent_val = non_hvac_dat/non_op_data_len
     percent_unocc = non_op_data_len/len(DAT)
-    
+
     non_cool_zat, non_heat_zat, non_hvac_zat = _grab_data(DAT_non_op, ZAT_non_op, ZAT_non_op,HVAC_non_op)
     #
     ZAT_cool_threshold = 80
@@ -62,13 +62,13 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
     #
     if non_cool_zat != []:
         min_ZAT_c_unocc = np.min(non_cool_zat)
-    else: 
-        min_ZAT_c_unocc = ZAT_cool_threshold 
-    
+    else:
+        min_ZAT_c_unocc = ZAT_cool_threshold
+
     if non_heat_zat != []:
         max_ZAT_h_unocc = np.max(non_heat_zat)
-    else: 
-        max_ZAT_h_unocc = ZAT_heat_threshold 
+    else:
+        max_ZAT_h_unocc = ZAT_heat_threshold
     #
     if ((c_val + h_val + vent_val) > 0.3):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
@@ -102,7 +102,7 @@ def _grab_data(DAT, ZAT, copyTemp, HVACstat=None):
                 # If there's HVAC, make sure it's actually cooling
                 if (HVACstat):
                     if (HVACstat[i][1] != 3):
-                        i += 1 
+                        i += 1
                         continue
                 cool_on.append(copyTemp[i][1])
             # if DAT greater than 110% ZAT, then it's heating
@@ -110,7 +110,7 @@ def _grab_data(DAT, ZAT, copyTemp, HVACstat=None):
                 # if there's HVAC status, make sure it's actually heating
                 if (HVACstat):
                     if (HVACstat[i][1] == 0):
-                        i += 1 
+                        i += 1
                         continue
                 heat_on.append(copyTemp[i][1])
             elif (HVACstat):

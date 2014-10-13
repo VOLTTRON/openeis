@@ -121,11 +121,11 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        
+
         report = reports.Report('Building Load Profile Report')
 
         text_blurb = reports.TextBlurb(text="A plot showing building energy consumption over a time period.")
-        report.add_element(text_blurb)        
+        report.add_element(text_blurb)
 
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('Load_Profiling', 'timestamp', 'load'))
@@ -136,19 +136,19 @@ class Application(DriverApplicationBaseClass):
                                            y_label='Energy [kWh]'
                                            )
         report.add_element(scatter_plot)
-        
+
         text_guide1 = reports.TextBlurb(text="Do loads decrease during lower occupancy periods\
                                               (e.g. weekends or overnight)?")
         report.add_element(text_guide1)
-        
+
         text_guide2 = reports.TextBlurb(text="Does the width of similar load profiles correspond\
                                               to occupancy schedule?")
         report.add_element(text_guide2)
-        
+
         text_guide3 = reports.TextBlurb(text="Minima should occur during unoccupied hours\
                                               and be as close to zero as possible.")
-        report.add_element(text_guide3)        
-        
+        report.add_element(text_guide3)
+
         text_guide4 = reports.TextBlurb(text="Does the weekly profile correspond to occupancy\
                                               and use for each day for a typical week?")
         report.add_element(text_guide4)
@@ -162,29 +162,29 @@ class Application(DriverApplicationBaseClass):
         "Outputs values for line graph."
         self.out.log("Starting analysis", logging.INFO)
 
-        # Get the units and the conversion factor. 
+        # Get the units and the conversion factor.
         self.out.log("Find the conversion factor.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
         #
         load_convertfactor = cu.conversiontoKWH(load_unit)
-        
-        load_by_hour = self.inp.get_query_sets('load', 
+
+        load_by_hour = self.inp.get_query_sets('load',
                                                 exclude={'value': None},
                                                 group_by='hour')[0]
-                                                
-        # Limit the number of datapoints, have 2 weeks worth of data. 
+
+        # Limit the number of datapoints, have 2 weeks worth of data.
         # 24 hours x 14 days = 336.
         if len(load_by_hour) > 336:
             start = len(load_by_hour) - 336
             end = len(load_by_hour) - 1
-        else: 
+        else:
             start = 0
             end = len(load_by_hour)
-            
+
         for x in load_by_hour[start:end]:
             self.out.insert_row("Load_Profiling", {
                 'timestamp': dt.datetime.strptime(x[0],'%Y-%m-%d %H'),
-                'load': x[1]*load_convertfactor 
+                'load': x[1]*load_convertfactor
                 })
