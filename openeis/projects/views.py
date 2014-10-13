@@ -736,7 +736,6 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
                                    status=status.HTTP_400_BAD_REQUEST)
 
             files = obj['files']
-            print(files)
             for file in files:
                 if file.file.project.owner != user:
                     raise rest_exceptions.PermissionDenied()
