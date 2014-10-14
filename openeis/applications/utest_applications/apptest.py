@@ -87,32 +87,37 @@ class AppTestBase(TestCase):
         return actual_outputs
 
 
-    def _list_outputs(self, test_output, expected_output):
+    def _list_outputs(self, outfileName_test, outfileName_expect):
         """
         Returns outputs from test outputs and expected outputs.
 
         Parameters:
-            - test_output: application's output name
-            - expected_output: file name of the expected output
+            - outfileName_test: file name of output from test run of application
+            - outfileName_expect: file name of the expected output
         Output:
             - test_list: the contents of the test output in a list
             - output_list: the contents of the expected output in a list
+        Throws:
+            - Assertion error if files do not exist.
         """
-        # Open the files
-        test_file = open(test_output, 'r')
-        expected_file = open(expected_output, 'r')
 
-        # Create respective reader and writers
-        test_reader = csv.reader(test_file)
-        expected_reader = csv.reader(expected_file)
+        # Get test results.
+        self.assertTrue(
+            os.path.isfile(outfileName_test),
+            msg='Cannot find application run results file {' +outfileName_test +'}'
+            )
+        with open(outfileName_test, 'r') as ff:
+            reader = csv.reader(ff)
+            test_list = list(reader)
 
-        # Listify
-        test_list = list(test_reader)
-        expected_list = list(expected_reader)
-
-        # Close the files
-        test_file.close()
-        expected_file.close()
+        # Get expected results.
+        self.assertTrue(
+            os.path.isfile(outfileName_expect),
+            msg='Cannot find expected results file {' +outfileName_expect +'}'
+            )
+        with open(outfileName_expect, 'r') as ff:
+            reader = csv.reader(ff)
+            expected_list = list(reader)
 
         return test_list, expected_list
 
