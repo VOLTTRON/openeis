@@ -54,6 +54,7 @@
 #}}}
 
 import contextlib
+import datetime
 import json
 import jsonschema
 import posixpath
@@ -274,6 +275,63 @@ class SensorIngest(models.Model):
     # time of ingest
     start = models.DateTimeField(auto_now_add=True)
     end = models.DateTimeField(null=True, default=None)
+
+    def merge(self, start=None, end=None, include_headers=True):
+        '''Return an iterator over the merged dataset.
+
+        If start is an integer, skip start rows. If start is a datetime
+        object, include only rows with times greater than or equal to the
+        start time. If end is an integer, return no more than that number
+        of rows. If end is a date, include only rows less than the end time.
+        If include_headers is True (the default), also add a header row at
+        the top.
+        '''
+        def _iter_data(data):
+            '''Helper generator to aid in merging columns. Expects to be
+            accessed twice per row. The first call yields the time of the
+            next item or None if none remain.  The second call should send
+            the time of the current row and will yield the item if the
+            time matches the current item and advance the iterator or
+            None otherwise.
+            '''
+            for i in data:
+                while True:
+                    time = (yield i.time)
+                    if i.time == time:
+                        yield i
+                        break
+                    yield None
+            while True:
+                yield None
+        sensors = list(self.map.sensors.order_by('name'))
+        data = [sensor.data.filter(ingest=self) for sensor in sensors]
+        # Filter by start and end times
+        if isinstance(start, datetime.datetime):
+            data = [d.filter(time__gte=start) for d in data]
+        if isinstance(end, datetime.datetime):
+            data = [d.filter(time__lt=end) for d in data]
+        def _merge():
+            iterators = [_iter_data(d) for d in data]
+            while True:
+                try:
+                    time = min(t for t in (next(i) for i in iterators) if t)
+                except ValueError:
+                    break
+                yield [time] + [d and d.value for d in [i.send(time) for i in iterators]]
+        generator = _merge()
+        # Filter by start row and end count
+        if isinstance(start, int):
+            iterator = iter(generator)
+            for i in range(start):
+                next(iterator)
+        if not isinstance(end, int):
+            end = None
+        if include_headers:
+            yield ['time'] + [sensor.name for sensor in sensors]
+        for i, row in enumerate(generator):
+            if end and i >= end:
+                break
+            yield row
 
 
 @dispatch.receiver(models.signals.post_delete, sender=SensorIngest)

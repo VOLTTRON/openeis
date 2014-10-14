@@ -80,11 +80,11 @@ from rest_framework.decorators import action, link
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from rest_framework import exceptions as rest_exceptions
+from rest_framework.settings import api_settings
 
-from . import models
+from . import models, renderers, serializers
 from .models import INFO, WARNING, ERROR, CRITICAL
 from .protectedmedia import protected_media, ProtectedMediaResponse
-from . import serializers
 from .conf import settings as proj_settings
 from .storage import sensorstore
 from .storage.clone import CloneProject
@@ -675,6 +675,43 @@ class DataSetViewSet(viewsets.ModelViewSet):
             return serializers.SensorIngestCreateSerializer
         return serializers.SensorIngestSerializer
 
+    def _parse_int_or_datetime(self, value):
+        if not value:
+            return None
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            try:
+                return dateutil.parser.parse(value)
+            except (ValueError, TypeError):
+                return None
+
+    @link(
+        renderer_classes=([renderers.CSVRenderer] +
+            api_settings.DEFAULT_RENDERER_CLASSES)
+    )
+    def download(self, request, *args, **kwargs):
+        '''Retrieve the data set.
+
+        start -- integer or datetime indicating the start row or time.
+        end -- integer or datetime indicating the end time or row count.
+        format -- string indicating download format: csv, json, etc.
+
+        The Accept HTTP request header can also be set to indicate the
+        desired response format (defaults to text/csv).
+        '''
+        dataset = self.get_object()
+        start = self._parse_int_or_datetime(request.QUERY_PARAMS.get('start'))
+        end = self._parse_int_or_datetime(request.QUERY_PARAMS.get('end'))
+        rows = dataset.merge(start=start, end=end)
+        if request.accepted_renderer.format == 'csv':
+            response = renderers.StreamingCSVResponse(rows)
+            response['Content-Type'] = 'text/csv; name="dataset.csv"'
+            response['Content-Disposition'] = 'attachment; filename="dataset.csv"'
+        else:
+            response = Response(rows)
+        return response
+
 
 def preview_ingestion(datamap, input_files, count=15):
     files = {f.name: {'file': f.file.file.file,
@@ -736,7 +773,6 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
                                    status=status.HTTP_400_BAD_REQUEST)
 
             files = obj['files']
-            print(files)
             for file in files:
                 if file.file.project.owner != user:
                     raise rest_exceptions.PermissionDenied()
