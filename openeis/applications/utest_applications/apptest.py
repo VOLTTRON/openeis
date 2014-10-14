@@ -6,11 +6,9 @@ import datetime
 import csv
 import os
 import math
-import tempfile
 
 from django.test import TestCase
 from django.utils.timezone import utc
-from subprocess import call
 from configparser import ConfigParser
 
 from openeis.applications import get_algorithm_class
@@ -86,44 +84,30 @@ class AppTestBase(TestCase):
         return actual_outputs
 
 
-    def _list_outputs(self, outfileName_test, outfileName_expect):
+    def _getCSV_asList(self, csvFileName):
         """
-        Returns outputs from test outputs and expected outputs.
+        Return contents of a CSV file as a list.
 
         Parameters:
-            - outfileName_test: file name of output from test run of application
-            - outfileName_expect: file name of the expected output
+            - csvFileName: name of CSV file
         Output:
-            - test_list: the contents of the test output in a list
-            - output_list: the contents of the expected output in a list
-        Throws:
-            - Assertion error if files do not exist.
+            - contents: list of file contents.
+              Each list element is itself a list, giving one row of the file.
+              Each row-list has one element per column.
         """
-
-        # Get test results.
         self.assertTrue(
-            os.path.isfile(outfileName_test),
-            msg='Cannot find application run results file {' +outfileName_test +'}'
+            os.path.isfile(csvFileName),
+            msg='Cannot find CSV file {' +csvFileName +'}'
             )
-        with open(outfileName_test, 'r') as ff:
+        with open(csvFileName, 'r') as ff:
             reader = csv.reader(ff)
-            test_list = list(reader)
-
-        # Get expected results.
-        self.assertTrue(
-            os.path.isfile(outfileName_expect),
-            msg='Cannot find expected results file {' +outfileName_expect +'}'
-            )
-        with open(outfileName_expect, 'r') as ff:
-            reader = csv.reader(ff)
-            expected_list = list(reader)
-
-        return test_list, expected_list
+            contents = list(reader)
+        return( contents )
 
 
     def _diff_checker(self, test_list, expected_list):
         """
-        Checks for differences between the new csv file and the expected csv
+        Check for differences between the new csv file and the expected csv
         file. If the values are strings, it's checked for exactness.  Numerical
         values are checked using the nearly_same function defined below.
 
@@ -256,8 +240,8 @@ class AppTestBase(TestCase):
 
         # Check results.
         for tableName in expected_outputs:
-            test_list, expected_list = \
-                self._list_outputs(actual_outputs[tableName], expected_outputs[tableName])
+            test_list = self._getCSV_asList(actual_outputs[tableName])
+            expected_list = self._getCSV_asList(expected_outputs[tableName])
             self._diff_checker(test_list, expected_list)
 
         if clean_up:
@@ -267,6 +251,8 @@ class AppTestBase(TestCase):
                 fileName for fileName in os.listdir()  \
                     if (appName in fileName and '.log' in fileName)
                 ]
+            # TODO: Since log file should now be in a temporary directory,
+            # consider just deleting all matching log files.
             if( len(logFiles) > 0 ):
                 newestLog = max(logFiles, key=os.path.getctime)
                 os.remove(newestLog)
