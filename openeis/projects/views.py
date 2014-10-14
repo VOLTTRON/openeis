@@ -192,15 +192,6 @@ class FileViewSet(mixins.ListModelMixin,
         user = self.request.user
         return models.DataFile.objects.filter(project__owner=user)
 
-    def get_serializer(self, *args, **kwargs):
-        '''Set the request member on the serializer.
-
-        This allows the serializer to generate absolute URIs to files.
-        '''
-        result = super().get_serializer(*args, **kwargs)
-        result.context['request'] = self.request
-        return result
-
     def pre_save(self, file):
         '''Check if email changed and that all user fields are valid.'''
         file.full_clean()
@@ -674,11 +665,6 @@ class DataSetViewSet(viewsets.ModelViewSet):
         if self.request.method == 'POST':
             return serializers.SensorIngestCreateSerializer
         return serializers.SensorIngestSerializer
-
-    def get_serializer(self, *args, **kwargs):
-        serializer = super().get_serializer(*args, **kwargs)
-        serializer.context['request'] = self.request
-        return serializer
 
     def _parse_int_or_datetime(self, value):
         if not value:
