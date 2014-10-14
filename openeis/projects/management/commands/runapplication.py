@@ -121,6 +121,7 @@ class Command(BaseCommand):
             analysis = models.Analysis(added=now, started=now, status="running",
                                        dataset=dataset, application=application,
                                        debug=debug,
+                                       project_id = dataset.project_id,
                                        configuration={'parameters': kwargs, 'inputs': topic_map},
                                        name='cli: {}, dataset {}'.format(application, dataset_id))
             analysis.save()

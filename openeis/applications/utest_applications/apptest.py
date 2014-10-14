@@ -18,44 +18,54 @@ from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
 from openeis.projects import models
 
+
 class AppTestBase(TestCase):
-    # Taken directly from runapplication command.
-    def run_application(self, config_file, output_dir):
+
+
+    def run_application(self, configFileName):
         """
         Runs the application with a given configuration file.
         Parameters:
-            - config_file: configuration files passed into runapplication
+            - configFileName: configuration file for application run
+        Returns:
+            - actual_outputs, dictionary, maps table name to file name of run results
         """
+
+        # Read the configuration file.
         config = ConfigParser()
-        # Read the file
-        config.read(config_file)
-        # Grab application name
-        application = config['global_settings']['application']
-        # Get which application we need
-        klass = get_algorithm_class(application)
+        config.read(configFileName)
+
+        # Get application.
+        appName = config['global_settings']['application']
+        klass = get_algorithm_class(appName)
+
         # Check which data set we're using
         dataset_id = int(config['global_settings']['dataset_id'])
         dataset = models.SensorIngest.objects.get(pk=dataset_id)
 
+        # Get application parameters.
         kwargs = {}
         if config.has_section('application_config'):
             for arg, str_val in config['application_config'].items():
                 kwargs[arg] = eval(str_val)
 
-        topic_map = {}
-        # Grab the inputs to be used with the application.
+        # Get application inputs.
         inputs = config['inputs']
+        topic_map = {}
         for group, topics in inputs.items():
             topic_map[group] = topics.split()
 
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
         project = models.Project.objects.get(pk=1)
-        analysis = models.Analysis(project=project, added=now, started=now,
-                    status="running", dataset=dataset, application=application,
-                    configuration={
-                     'parameters': kwargs,
-                     'inputs': topic_map},
-                     name='cli: {}, dataset {}'.format(application, dataset_id))
+        analysis = models.Analysis(project=project,
+            added=now, started=now, status="running",
+            dataset=dataset, application=appName,
+            configuration={
+                'parameters': kwargs,
+                'inputs': topic_map
+                },
+            name='cli: {}, dataset {}'.format(appName, dataset_id)
+            )
         analysis.save()
 
         db_input = DatabaseInput(dataset.map.id, topic_map, dataset_id)
@@ -64,65 +74,52 @@ class AppTestBase(TestCase):
         file_output = DatabaseOutputFile(analysis, output_format)
 
         app = klass(db_input, file_output, **kwargs)
+
         # Execute the application
         app.run_application()
 
-        #Retrieve the map of tables to output csvs from the application
-        result_dict = {}        
-        for table in app.out.file_table_map.keys():
-            result_dict[table] = app.out.file_table_map[table].name
-        
-        return result_dict
+        # Retrieve the map of tables to output CSVs from the application
+        actual_outputs = {}
+        for tableName in app.out.file_table_map.keys():
+            actual_outputs[tableName] = app.out.file_table_map[tableName].name
+
+        return actual_outputs
 
 
-    def _call_runapplication(self, tables, config_file, output_dir):
+    def _list_outputs(self, outfileName_test, outfileName_expect):
         """
-        Runs the application, checks if a file was outputted from the
-        application.  It can tolerate more than one output file for an
-        application run.
+        Returns outputs from test outputs and expected outputs.
 
         Parameters:
-            - tables: application names as a list
-            - config_file: configuration file to pass into runapplication
-        Returns:
-            - newest: The file made from the running the application.
-        Throws: Assertion error if no new file was created.
-        """
-        # Call runapplication on the configuration file.
-        result_file_dict = self.run_application(config_file, output_dir)
-        
-        
-        return result_file_dict
-
-    def _list_outputs(self, test_output, expected_output):
-        """
-        Returns outputs from test outputs and expected outputs.  To be compared
-        in the test.
-
-        Parameters:
-            - test_output: application's output name
-            - expected_output: file name of the expected output
+            - outfileName_test: file name of output from test run of application
+            - outfileName_expect: file name of the expected output
         Output:
             - test_list: the contents of the test output in a list
             - output_list: the contents of the expected output in a list
+        Throws:
+            - Assertion error if files do not exist.
         """
-        # Open the files
-        test_file = open(test_output, 'r')
-        expected_file = open(expected_output, 'r')
 
-        # Create respective reader and writers
-        test_reader = csv.reader(test_file)
-        expected_reader = csv.reader(expected_file)
+        # Get test results.
+        self.assertTrue(
+            os.path.isfile(outfileName_test),
+            msg='Cannot find application run results file {' +outfileName_test +'}'
+            )
+        with open(outfileName_test, 'r') as ff:
+            reader = csv.reader(ff)
+            test_list = list(reader)
 
-        # Listify
-        test_list = list(test_reader)
-        expected_list = list(expected_reader)
-
-        # Close the files
-        test_file.close()
-        expected_file.close()
+        # Get expected results.
+        self.assertTrue(
+            os.path.isfile(outfileName_expect),
+            msg='Cannot find expected results file {' +outfileName_expect +'}'
+            )
+        with open(outfileName_expect, 'r') as ff:
+            reader = csv.reader(ff)
+            expected_list = list(reader)
 
         return test_list, expected_list
+
 
     def _diff_checker(self, test_list, expected_list):
         """
@@ -134,7 +131,7 @@ class AppTestBase(TestCase):
             - test_list: test file contents in a list
             - expected_list: expected file contents as a list
         Throws:
-            -Assertion error if the numbers are not nearly same, or the file
+            - Assertion error if the numbers are not nearly same, or the file
                 does not match
         """
         test_dict = {}
@@ -198,7 +195,7 @@ class AppTestBase(TestCase):
         except ValueError:
             return False
 
-    # Taken directly from phase one reference code.
+
     def nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
         """
         Compare two numbers or arrays, checking all elements are nearly equal.
@@ -208,8 +205,7 @@ class AppTestBase(TestCase):
             - key: the key to the column we are comparing in output files
             - absTol: absolute tolerance
             - relTol: relative tolerance
-        Returns: True or false depending if the two lists are nearly the same
-            or not
+        Returns: True if the two lists are nearly the same; else False.  TODO: Actually, assertion error in that case, but this may change.
         Throws: Assertion error if xxs and yys not nearly the same.
         """
         #
@@ -232,40 +228,45 @@ class AppTestBase(TestCase):
                     + str(absDiff), ' relDiff: '+ str(absDiff/math.fabs(xx))))
                 nearlySame = False
             idx += 1
-        return( nearlySame)
+        return( nearlySame )
 
-    def run_it(self, ini_file, expected_outputs, clean_up=False):
+
+    def run_it(self, configFileName, expected_outputs, clean_up=False):
         """
         Runs the application and checks the output with the expected output.
             Will clean up output files if clean_up is set to true.
 
         Parameters:
-            - ini_file: configuration file to be passed into runapplication
-            - expected_outputs: a dictionary of expected outputs
+            - configFileName: configuration file for application run
+            - expected_outputs: dictionary, maps table name to file name of expected results
             - clean_up: if it should clean newly made files or not
         Throws: Assertion error if the files do not match.
         """
+
+        # Read the configuration file.
         config = ConfigParser()
-        # read the init file
-        config.read(ini_file)
-        # grab application name
-        application = config['global_settings']['application']
-        #create temp dir pass to function
-        stmp = tempfile.mkdtemp()
-        # run application
-        test_output = self._call_runapplication(expected_outputs.keys(), \
-                                               ini_file, stmp)
-        for table in expected_outputs:
-            # get outputs
+        config.read(configFileName)
+
+        # Get application name.
+        appName = config['global_settings']['application']
+        # TODO: This, and config above, is not needed unless {clean_up}.
+
+        # Run application.
+        actual_outputs = self.run_application(configFileName)
+
+        # Check results.
+        for tableName in expected_outputs:
             test_list, expected_list = \
-                self._list_outputs(test_output[table], expected_outputs[table])
-            # check for similarity
+                self._list_outputs(actual_outputs[tableName], expected_outputs[tableName])
             self._diff_checker(test_list, expected_list)
 
         if clean_up:
-            for output in test_output:
-                os.remove(test_output[output])
-            allFiles = [k for k in os.listdir() if \
-                    (application in k and '.log' in k)]
-            newestLog = max(allFiles, key=os.path.getctime)
-            os.remove(newestLog)
+            for tableName in actual_outputs:
+                os.remove(actual_outputs[tableName])
+            logFiles = [
+                fileName for fileName in os.listdir()  \
+                    if (appName in fileName and '.log' in fileName)
+                ]
+            if( len(logFiles) > 0 ):
+                newestLog = max(logFiles, key=os.path.getctime)
+                os.remove(newestLog)
