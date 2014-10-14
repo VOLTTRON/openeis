@@ -87,30 +87,6 @@ class AppTestBase(TestCase):
         return actual_outputs
 
 
-    def _call_runapplication(self, tables, configFileName, output_dir):
-        """
-        Runs the application, checks if a file was outputted from the
-        application.  It can tolerate more than one output file for an
-        application run.
-
-        Parameters:
-            - tables: application names as a list
-            - configFileName: configuration file for application run
-            - output_dir: directory for output files
-        Returns:
-            - actual_outputs, dictionary, maps table name to file name of run results
-        """
-        # TODO: This method doesn't require arg {tables}.  Eliminate.
-
-        # TODO: This method is a vestige of the former architecture of this class.
-        # Eliminate it.
-
-        # Call runapplication on the configuration file.
-        actual_outputs = self.run_application(configFileName, output_dir)
-
-        return actual_outputs
-
-
     def _list_outputs(self, test_output, expected_output):
         """
         Returns outputs from test outputs and expected outputs.
@@ -272,11 +248,10 @@ class AppTestBase(TestCase):
         # TODO: This, and config above, is not needed unless {clean_up}.
 
         # Create temp dir for output
-        stmp = tempfile.mkdtemp()
+        output_dir = tempfile.mkdtemp()
 
         # Run application.
-        actual_outputs = self._call_runapplication(expected_outputs.keys(), \
-                                               configFileName, stmp)
+        actual_outputs = self.run_application(configFileName, output_dir)
 
         # Check results.
         for tableName in expected_outputs:
