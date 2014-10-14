@@ -149,7 +149,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             obj = serializer.save(force_insert=True)
             serializer = serializers.FileSerializer(
-                    instance=obj, context={'request': 'request'})
+                    instance=obj, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

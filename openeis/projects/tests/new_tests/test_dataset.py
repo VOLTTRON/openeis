@@ -116,6 +116,18 @@ def test_dataset_merge(mixed_dataset):
     assert summary.last_row == rows[-1]
 
 
+def test_dataset_download_url(active_user, mixed_dataset):
+    '''Tests download_url transformation.'''
+
+    # Check that download URL is absolute
+    client = APIClient()
+    client.force_authenticate(user=active_user)
+    dataset = mixed_dataset
+    url = '/api/datasets/{}'.format(dataset.pk)
+    response = client.get(url)
+    assert response.data['download_url'] == 'http://testserver{}/download'.format(url)
+
+
 def test_dataset_download_viewset(active_user, mixed_dataset):
     '''Tests the download method of the DataSetViewSet.'''
 
