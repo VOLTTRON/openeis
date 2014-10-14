@@ -148,8 +148,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 project=project, data=request.DATA, files=request.FILES)
         if serializer.is_valid():
             obj = serializer.save(force_insert=True)
-            serializer = serializers.FileSerializer(instance=obj)
-            serializer.request = request
+            serializer = serializers.FileSerializer(
+                    instance=obj, context={'request': 'request'})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -198,7 +198,7 @@ class FileViewSet(mixins.ListModelMixin,
         This allows the serializer to generate absolute URIs to files.
         '''
         result = super().get_serializer(*args, **kwargs)
-        result.request = self.request
+        result.context['request'] = self.request
         return result
 
     def pre_save(self, file):
@@ -674,6 +674,11 @@ class DataSetViewSet(viewsets.ModelViewSet):
         if self.request.method == 'POST':
             return serializers.SensorIngestCreateSerializer
         return serializers.SensorIngestSerializer
+
+    def get_serializer(self, *args, **kwargs):
+        serializer = super().get_serializer(*args, **kwargs)
+        serializer.context['request'] = self.request
+        return serializer
 
     def _parse_int_or_datetime(self, value):
         if not value:

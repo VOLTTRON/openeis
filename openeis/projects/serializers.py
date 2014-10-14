@@ -140,8 +140,8 @@ class FileSerializer(serializers.ModelSerializer):
         exclude = ('file',)
 
     def transform_download_url(self, obj, value):
-        return reverse('datafile-download', kwargs={'pk': value},
-                       request=getattr(self, 'request', None))
+        request = self.context.get('request')
+        return reverse('datafile-download', kwargs={'pk': value}, request=request)
 
     def transform_size(self, obj, value):
         return obj.file.file.size
@@ -311,8 +311,8 @@ class SensorIngestSerializer(serializers.ModelSerializer):
         return result
 
     def transform_download_url(self, obj, value):
-        return reverse('sensoringest-download', kwargs={'pk': value},
-                       request=getattr(self, 'request', None))
+        request = self.context.get('request')
+        return reverse('sensoringest-download', kwargs={'pk': value}, request=request)
 
 
 class DataSetPreviewSerializer(serializers.Serializer):
