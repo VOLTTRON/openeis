@@ -22,11 +22,11 @@ from openeis.projects import models
 class AppTestBase(TestCase):
 
 
-    def run_application(self, config_file, output_dir):
+    def run_application(self, configFileName, output_dir):
         """
         Runs the application with a given configuration file.
         Parameters:
-            - config_file: configuration files passed into runapplication
+            - configFileName: configuration file for application run
             - output_dir: directory for output files
         Returns:
             - actual_outputs, dictionary, maps table name to file name of run results
@@ -34,11 +34,11 @@ class AppTestBase(TestCase):
 
         # Read the configuration file.
         config = ConfigParser()
-        config.read(config_file)
+        config.read(configFileName)
 
         # Get application.
-        application = config['global_settings']['application']
-        klass = get_algorithm_class(application)
+        appName = config['global_settings']['application']
+        klass = get_algorithm_class(appName)
 
         # Check which data set we're using
         dataset_id = int(config['global_settings']['dataset_id'])
@@ -60,12 +60,12 @@ class AppTestBase(TestCase):
         project = models.Project.objects.get(pk=1)
         analysis = models.Analysis(project=project,
             added=now, started=now, status="running",
-            dataset=dataset, application=application,
+            dataset=dataset, application=appName,
             configuration={
                 'parameters': kwargs,
                 'inputs': topic_map
                 },
-            name='cli: {}, dataset {}'.format(application, dataset_id)
+            name='cli: {}, dataset {}'.format(appName, dataset_id)
             )
         analysis.save()
 
@@ -87,7 +87,7 @@ class AppTestBase(TestCase):
         return actual_outputs
 
 
-    def _call_runapplication(self, tables, config_file, output_dir):
+    def _call_runapplication(self, tables, configFileName, output_dir):
         """
         Runs the application, checks if a file was outputted from the
         application.  It can tolerate more than one output file for an
@@ -95,7 +95,7 @@ class AppTestBase(TestCase):
 
         Parameters:
             - tables: application names as a list
-            - config_file: configuration file to pass into runapplication
+            - configFileName: configuration file for application run
             - output_dir: directory for output files
         Returns:
             - actual_outputs, dictionary, maps table name to file name of run results
@@ -106,7 +106,7 @@ class AppTestBase(TestCase):
         # Eliminate it.
 
         # Call runapplication on the configuration file.
-        actual_outputs = self.run_application(config_file, output_dir)
+        actual_outputs = self.run_application(configFileName, output_dir)
 
         return actual_outputs
 
@@ -251,24 +251,24 @@ class AppTestBase(TestCase):
         return( nearlySame )
 
 
-    def run_it(self, ini_file, expected_outputs, clean_up=False):
+    def run_it(self, configFileName, expected_outputs, clean_up=False):
         """
         Runs the application and checks the output with the expected output.
             Will clean up output files if clean_up is set to true.
 
         Parameters:
-            - ini_file: configuration file to be passed into runapplication
-            - expected_outputs: a dictionary of expected outputs
+            - configFileName: configuration file for application run
+            - expected_outputs: dictionary, maps table name to file name of expected results
             - clean_up: if it should clean newly made files or not
         Throws: Assertion error if the files do not match.
         """
 
         # Read the configuration file.
         config = ConfigParser()
-        config.read(ini_file)
+        config.read(configFileName)
 
         # Get application name.
-        application = config['global_settings']['application']
+        appName = config['global_settings']['application']
         # TODO: This, and config above, is not needed unless {clean_up}.
 
         # Create temp dir for output
@@ -276,7 +276,7 @@ class AppTestBase(TestCase):
 
         # Run application.
         actual_outputs = self._call_runapplication(expected_outputs.keys(), \
-                                               ini_file, stmp)
+                                               configFileName, stmp)
 
         # Check results.
         for tableName in expected_outputs:
@@ -287,9 +287,10 @@ class AppTestBase(TestCase):
         if clean_up:
             for tableName in actual_outputs:
                 os.remove(actual_outputs[tableName])
-            allFiles = [
+            logFiles = [
                 fileName for fileName in os.listdir()  \
-                    if (application in fileName and '.log' in fileName)
+                    if (appName in fileName and '.log' in fileName)
                 ]
-            newestLog = max(allFiles, key=os.path.getctime)
-            os.remove(newestLog)
+            if( len(logFiles) > 0 ):
+                newestLog = max(logFiles, key=os.path.getctime)
+                os.remove(newestLog)
