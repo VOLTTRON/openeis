@@ -106,7 +106,7 @@ def pythonDictAsJson(theDict, toFile):
         theKeys = list(theKeys)
 
     # Run through keys for which have preferred order.
-    for prefKey in ['model', 'pk', 'codename', 'name']:
+    for prefKey in ['model', 'pk', 'codename', 'name', 'time', 'value']:
         if prefKey in theKeys:
             theKeys.remove(prefKey)
             if( endPrevItem ):
