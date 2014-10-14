@@ -529,7 +529,7 @@ def iter_ingest(ingest):
                     obj = models.SensorIngestLog(
                             dataset=ingest, file=ingest_file,
                             row=row.line_num, column=time.column_num,
-                            level=models.SensorIngestLog.ERROR,
+                            level=models.ERROR,
                             message=str(time))
                     objects.append(obj)
                 else:
@@ -538,7 +538,7 @@ def iter_ingest(ingest):
                             obj = models.SensorIngestLog(
                                     dataset=ingest, file=ingest_file,
                                     row=row.line_num, column=column.column_num,
-                                    level=models.SensorIngestLog.ERROR,
+                                    level=models.ERROR,
                                     message=str(column))
                         else:
                             obj = cls(ingest=ingest, sensor=sensor, time=time,
@@ -548,9 +548,9 @@ def iter_ingest(ingest):
                        processed_bytes + row.position, total_bytes)
             processed_bytes += file.size
     except Exception:
-        models.SensorIngestLog.create(dataset=ingest, file=ingest_file,
+        models.SensorIngestLog.objects.create(dataset=ingest, file=ingest_file,
                                       row=0, column=0,
-                                      level=models.SensorIngestLog.CRITICAL,
+                                      level=models.CRITICAL,
                                       message='an unhandled server error '
                                               'occurred during ingestion')
         raise
