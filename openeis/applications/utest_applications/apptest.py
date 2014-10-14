@@ -18,13 +18,18 @@ from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
 from openeis.projects import models
 
+
 class AppTestBase(TestCase):
-    # Taken directly from runapplication command.
+
+
     def run_application(self, config_file, output_dir):
         """
         Runs the application with a given configuration file.
         Parameters:
             - config_file: configuration files passed into runapplication
+            - output_dir: directory for output files
+        Returns:
+            - actual_output, dictionary, maps table name to file name of run results
         """
         config = ConfigParser()
         # Read the file
@@ -50,12 +55,15 @@ class AppTestBase(TestCase):
 
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
         project = models.Project.objects.get(pk=1)
-        analysis = models.Analysis(project=project, added=now, started=now,
-                    status="running", dataset=dataset, application=application,
-                    configuration={
-                     'parameters': kwargs,
-                     'inputs': topic_map},
-                     name='cli: {}, dataset {}'.format(application, dataset_id))
+        analysis = models.Analysis(project=project,
+            added=now, started=now, status="running",
+            dataset=dataset, application=application,
+            configuration={
+                'parameters': kwargs,
+                'inputs': topic_map
+                },
+            name='cli: {}, dataset {}'.format(application, dataset_id)
+            )
         analysis.save()
 
         db_input = DatabaseInput(dataset.map.id, topic_map, dataset_id)
@@ -67,11 +75,11 @@ class AppTestBase(TestCase):
         # Execute the application
         app.run_application()
 
-        #Retrieve the map of tables to output csvs from the application
-        result_dict = {}        
+        # Retrieve the map of tables to output csvs from the application
+        result_dict = {}
         for table in app.out.file_table_map.keys():
             result_dict[table] = app.out.file_table_map[table].name
-        
+
         return result_dict
 
 
@@ -84,20 +92,24 @@ class AppTestBase(TestCase):
         Parameters:
             - tables: application names as a list
             - config_file: configuration file to pass into runapplication
+            - output_dir: directory for output files
         Returns:
-            - newest: The file made from the running the application.
-        Throws: Assertion error if no new file was created.
+            - result_file_dict, dictionary, maps table name to file name of run results
         """
+        # TODO: This method doesn't require arg {tables}.  Eliminate.
+
+        # TODO: This method is a vestige of the former architecture of this class.
+        # Eliminate it.
+
         # Call runapplication on the configuration file.
         result_file_dict = self.run_application(config_file, output_dir)
-        
-        
+
         return result_file_dict
+
 
     def _list_outputs(self, test_output, expected_output):
         """
-        Returns outputs from test outputs and expected outputs.  To be compared
-        in the test.
+        Returns outputs from test outputs and expected outputs.
 
         Parameters:
             - test_output: application's output name
@@ -124,6 +136,7 @@ class AppTestBase(TestCase):
 
         return test_list, expected_list
 
+
     def _diff_checker(self, test_list, expected_list):
         """
         Checks for differences between the new csv file and the expected csv
@@ -134,7 +147,7 @@ class AppTestBase(TestCase):
             - test_list: test file contents in a list
             - expected_list: expected file contents as a list
         Throws:
-            -Assertion error if the numbers are not nearly same, or the file
+            - Assertion error if the numbers are not nearly same, or the file
                 does not match
         """
         test_dict = {}
@@ -198,7 +211,7 @@ class AppTestBase(TestCase):
         except ValueError:
             return False
 
-    # Taken directly from phase one reference code.
+
     def nearly_same(self, xxs, yys, key='', absTol=1e-12, relTol=1e-6):
         """
         Compare two numbers or arrays, checking all elements are nearly equal.
@@ -208,8 +221,7 @@ class AppTestBase(TestCase):
             - key: the key to the column we are comparing in output files
             - absTol: absolute tolerance
             - relTol: relative tolerance
-        Returns: True or false depending if the two lists are nearly the same
-            or not
+        Returns: True if the two lists are nearly the same; else False.  TODO: Actually, assertion error in that case, but this may change.
         Throws: Assertion error if xxs and yys not nearly the same.
         """
         #
@@ -232,7 +244,8 @@ class AppTestBase(TestCase):
                     + str(absDiff), ' relDiff: '+ str(absDiff/math.fabs(xx))))
                 nearlySame = False
             idx += 1
-        return( nearlySame)
+        return( nearlySame )
+
 
     def run_it(self, ini_file, expected_outputs, clean_up=False):
         """
@@ -250,7 +263,7 @@ class AppTestBase(TestCase):
         config.read(ini_file)
         # grab application name
         application = config['global_settings']['application']
-        #create temp dir pass to function
+        # Create temp dir for output
         stmp = tempfile.mkdtemp()
         # run application
         test_output = self._call_runapplication(expected_outputs.keys(), \
