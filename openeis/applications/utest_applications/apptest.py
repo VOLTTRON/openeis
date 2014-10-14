@@ -29,27 +29,30 @@ class AppTestBase(TestCase):
             - config_file: configuration files passed into runapplication
             - output_dir: directory for output files
         Returns:
-            - actual_output, dictionary, maps table name to file name of run results
+            - actual_outputs, dictionary, maps table name to file name of run results
         """
+
+        # Read the configuration file.
         config = ConfigParser()
-        # Read the file
         config.read(config_file)
-        # Grab application name
+
+        # Get application.
         application = config['global_settings']['application']
-        # Get which application we need
         klass = get_algorithm_class(application)
+
         # Check which data set we're using
         dataset_id = int(config['global_settings']['dataset_id'])
         dataset = models.SensorIngest.objects.get(pk=dataset_id)
 
+        # Get application parameters.
         kwargs = {}
         if config.has_section('application_config'):
             for arg, str_val in config['application_config'].items():
                 kwargs[arg] = eval(str_val)
 
-        topic_map = {}
-        # Grab the inputs to be used with the application.
+        # Get application inputs.
         inputs = config['inputs']
+        topic_map = {}
         for group, topics in inputs.items():
             topic_map[group] = topics.split()
 
@@ -72,15 +75,16 @@ class AppTestBase(TestCase):
         file_output = DatabaseOutputFile(analysis, output_format)
 
         app = klass(db_input, file_output, **kwargs)
+
         # Execute the application
         app.run_application()
 
-        # Retrieve the map of tables to output csvs from the application
-        result_dict = {}
-        for table in app.out.file_table_map.keys():
-            result_dict[table] = app.out.file_table_map[table].name
+        # Retrieve the map of tables to output CSVs from the application
+        actual_outputs = {}
+        for tableName in app.out.file_table_map.keys():
+            actual_outputs[tableName] = app.out.file_table_map[tableName].name
 
-        return result_dict
+        return actual_outputs
 
 
     def _call_runapplication(self, tables, config_file, output_dir):
@@ -94,7 +98,7 @@ class AppTestBase(TestCase):
             - config_file: configuration file to pass into runapplication
             - output_dir: directory for output files
         Returns:
-            - result_file_dict, dictionary, maps table name to file name of run results
+            - actual_outputs, dictionary, maps table name to file name of run results
         """
         # TODO: This method doesn't require arg {tables}.  Eliminate.
 
@@ -102,9 +106,9 @@ class AppTestBase(TestCase):
         # Eliminate it.
 
         # Call runapplication on the configuration file.
-        result_file_dict = self.run_application(config_file, output_dir)
+        actual_outputs = self.run_application(config_file, output_dir)
 
-        return result_file_dict
+        return actual_outputs
 
 
     def _list_outputs(self, test_output, expected_output):
@@ -258,27 +262,34 @@ class AppTestBase(TestCase):
             - clean_up: if it should clean newly made files or not
         Throws: Assertion error if the files do not match.
         """
+
+        # Read the configuration file.
         config = ConfigParser()
-        # read the init file
         config.read(ini_file)
-        # grab application name
+
+        # Get application name.
         application = config['global_settings']['application']
+        # TODO: This, and config above, is not needed unless {clean_up}.
+
         # Create temp dir for output
         stmp = tempfile.mkdtemp()
-        # run application
-        test_output = self._call_runapplication(expected_outputs.keys(), \
+
+        # Run application.
+        actual_outputs = self._call_runapplication(expected_outputs.keys(), \
                                                ini_file, stmp)
-        for table in expected_outputs:
-            # get outputs
+
+        # Check results.
+        for tableName in expected_outputs:
             test_list, expected_list = \
-                self._list_outputs(test_output[table], expected_outputs[table])
-            # check for similarity
+                self._list_outputs(actual_outputs[tableName], expected_outputs[tableName])
             self._diff_checker(test_list, expected_list)
 
         if clean_up:
-            for output in test_output:
-                os.remove(test_output[output])
-            allFiles = [k for k in os.listdir() if \
-                    (application in k and '.log' in k)]
+            for tableName in actual_outputs:
+                os.remove(actual_outputs[tableName])
+            allFiles = [
+                fileName for fileName in os.listdir()  \
+                    if (application in fileName and '.log' in fileName)
+                ]
             newestLog = max(allFiles, key=os.path.getctime)
             os.remove(newestLog)
