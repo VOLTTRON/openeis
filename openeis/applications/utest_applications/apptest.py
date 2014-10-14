@@ -22,16 +22,14 @@ from openeis.projects import models
 class AppTestBase(TestCase):
 
 
-    def run_application(self, configFileName, outDirName):
+    def run_application(self, configFileName):
         """
         Runs the application with a given configuration file.
         Parameters:
-            - configFileName: configuration file
-            - outDirName: directory for output files
+            - configFileName: configuration file for application run
         Returns:
-            - actual_output, dictionary, maps table name to file name of run results
+            - actual_outputs, dictionary, maps table name to file name of run results
         """
-        # TODO: argument outDirName doesn't ever get used.
 
         # Read the configuration file.
         config = ConfigParser()
@@ -80,11 +78,11 @@ class AppTestBase(TestCase):
         app.run_application()
 
         # Retrieve the map of tables to output CSVs from the application
-        actual_output = {}
+        actual_outputs = {}
         for tableName in app.out.file_table_map.keys():
-            actual_output[tableName] = app.out.file_table_map[tableName].name
+            actual_outputs[tableName] = app.out.file_table_map[tableName].name
 
-        return actual_output
+        return actual_outputs
 
 
     def _list_outputs(self, outfileName_test, outfileName_expect):
@@ -104,7 +102,7 @@ class AppTestBase(TestCase):
         # Get test results.
         self.assertTrue(
             os.path.isfile(outfileName_test),
-            msg='Cannot find file {' +outfileName_test +'} of results from running application'
+            msg='Cannot find application run results file {' +outfileName_test +'}'
             )
         with open(outfileName_test, 'r') as ff:
             reader = csv.reader(ff)
@@ -113,9 +111,9 @@ class AppTestBase(TestCase):
         # Get expected results.
         self.assertTrue(
             os.path.isfile(outfileName_expect),
-            msg='Cannot find file {' +outfileName_expect +'} of expected results'
+            msg='Cannot find expected results file {' +outfileName_expect +'}'
             )
-        with open(outfileName_test, 'r') as ff:
+        with open(outfileName_expect, 'r') as ff:
             reader = csv.reader(ff)
             expected_list = list(reader)
 
@@ -232,43 +230,41 @@ class AppTestBase(TestCase):
         return( nearlySame )
 
 
-    def run_it(self, configFileName, expected_output, clean_up=False):
+    def run_it(self, configFileName, expected_outputs, clean_up=False):
         """
         Runs the application and checks the output with the expected output.
             Will clean up output files if clean_up is set to true.
 
         Parameters:
             - configFileName: configuration file for application run
-            - expected_output: dictionary, maps table name to file name of expected results
+            - expected_outputs: dictionary, maps table name to file name of expected results
             - clean_up: if it should clean newly made files or not
         Throws: Assertion error if the files do not match.
         """
-        config = ConfigParser()
-        # read the init file
-        config.read(configFileName)
-        # grab application name
-        application = config['global_settings']['application']
-        # Create temp dir for output
-        outDirName = tempfile.mkdtemp()
 
-        # Run application
-        actual_output = self.run_application(configFileName, outDirName)
+        # Read the configuration file.
+        config = ConfigParser()
+        config.read(configFileName)
+
+        # Get application name.
+        appName = config['global_settings']['application']
+        # TODO: This, and config above, is not needed unless {clean_up}.
+
+        # Run application.
+        actual_outputs = self.run_application(configFileName)
 
         # Check results.
-        for tableName in expected_output:
+        for tableName in expected_outputs:
             test_list, expected_list = \
-                self._list_outputs(actual_output[tableName], expected_output[tableName])
+                self._list_outputs(actual_outputs[tableName], expected_outputs[tableName])
             self._diff_checker(test_list, expected_list)
 
-        # TODO: Figure out how to view debugging messages written to stdout (or stderr).
-        #self.assertTrue(False,msg='hoho {' +outDirName +'}')
-
         if clean_up:
-            for tableName in actual_output:
-                os.remove(actual_output[tableName])
+            for tableName in actual_outputs:
+                os.remove(actual_outputs[tableName])
             logFiles = [
                 fileName for fileName in os.listdir()  \
-                    if (application in fileName and '.log' in fileName)
+                    if (appName in fileName and '.log' in fileName)
                 ]
             if( len(logFiles) > 0 ):
                 newestLog = max(logFiles, key=os.path.getctime)
