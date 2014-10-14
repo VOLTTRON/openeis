@@ -22,47 +22,50 @@ from openeis.projects import models
 class AppTestBase(TestCase):
 
 
-    # Taken directly from runapplication command.
-    def run_application(self, config_file, output_dir):
+    def run_application(self, configFileName, outDirName):
         """
         Runs the application with a given configuration file.
         Parameters:
-            - config_file: configuration files passed into runapplication
-            - output_dir: directory for output files
+            - configFileName: configuration file
+            - outDirName: directory for output files
         Returns:
             - actual_output, dictionary, maps table name to file name of run results
         """
+        # TODO: argument outDirName doesn't ever get used.
+
+        # Read the configuration file.
         config = ConfigParser()
-        # Read the file
-        config.read(config_file)
-        # Grab application name
-        application = config['global_settings']['application']
-        # Get which application we need
-        klass = get_algorithm_class(application)
+        config.read(configFileName)
+
+        # Get application.
+        appName = config['global_settings']['application']
+        klass = get_algorithm_class(appName)
+
         # Check which data set we're using
         dataset_id = int(config['global_settings']['dataset_id'])
         dataset = models.SensorIngest.objects.get(pk=dataset_id)
 
+        # Get application parameters.
         kwargs = {}
         if config.has_section('application_config'):
             for arg, str_val in config['application_config'].items():
                 kwargs[arg] = eval(str_val)
 
-        topic_map = {}
-        # Grab the inputs to be used with the application.
+        # Get application inputs.
         inputs = config['inputs']
+        topic_map = {}
         for group, topics in inputs.items():
             topic_map[group] = topics.split()
 
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
         analysis = models.Analysis(
             added=now, started=now, status="running",
-            dataset=dataset, application=application,
+            dataset=dataset, application=appName,
             configuration={
                 'parameters': kwargs,
                 'inputs': topic_map
                 },
-            name='cli: {}, dataset {}'.format(application, dataset_id)
+            name='cli: {}, dataset {}'.format(appName, dataset_id)
             )
         analysis.save()
 
@@ -72,37 +75,14 @@ class AppTestBase(TestCase):
         file_output = DatabaseOutputFile(analysis, output_format)
 
         app = klass(db_input, file_output, **kwargs)
+
         # Execute the application
         app.run_application()
 
-        # Retrieve the map of tables to output csvs from the application
+        # Retrieve the map of tables to output CSVs from the application
         actual_output = {}
         for tableName in app.out.file_table_map.keys():
             actual_output[tableName] = app.out.file_table_map[tableName].name
-
-        return actual_output
-
-
-    def _call_runapplication(self, tables, config_file, output_dir):
-        """
-        Runs the application, checks if a file was outputted from the
-        application.  It can tolerate more than one output file for an
-        application run.
-
-        Parameters:
-            - tables: application names as a list
-            - config_file: configuration file to pass into runapplication
-            - output_dir: directory for output files
-        Returns:
-            - actual_output, dictionary, maps table name to file name of run results
-        """
-        # TODO: This method doesn't require arg {tables}.  Eliminate.
-
-        # TODO: This method is a vestige of the former architecture of this class.
-        # Eliminate it.
-
-        # Call runapplication on the configuration file.
-        actual_output = self.run_application(config_file, output_dir)
 
         return actual_output
 
@@ -252,33 +232,36 @@ class AppTestBase(TestCase):
         return( nearlySame )
 
 
-    def run_it(self, ini_file, expected_output, clean_up=False):
+    def run_it(self, configFileName, expected_output, clean_up=False):
         """
         Runs the application and checks the output with the expected output.
             Will clean up output files if clean_up is set to true.
 
         Parameters:
-            - ini_file: configuration file to be passed into runapplication
+            - configFileName: configuration file for application run
             - expected_output: dictionary, maps table name to file name of expected results
             - clean_up: if it should clean newly made files or not
         Throws: Assertion error if the files do not match.
         """
         config = ConfigParser()
         # read the init file
-        config.read(ini_file)
+        config.read(configFileName)
         # grab application name
         application = config['global_settings']['application']
         # Create temp dir for output
-        stmp = tempfile.mkdtemp()
-        # run application
-        actual_output = self._call_runapplication(expected_output.keys(), \
-                                               ini_file, stmp)
+        outDirName = tempfile.mkdtemp()
+
+        # Run application
+        actual_output = self.run_application(configFileName, outDirName)
+
+        # Check results.
         for tableName in expected_output:
-            # get outputs
             test_list, expected_list = \
                 self._list_outputs(actual_output[tableName], expected_output[tableName])
-            # check for similarity
             self._diff_checker(test_list, expected_list)
+
+        # TODO: Figure out how to view debugging messages written to stdout (or stderr).
+        #self.assertTrue(False,msg='hoho {' +outDirName +'}')
 
         if clean_up:
             for tableName in actual_output:
