@@ -276,14 +276,14 @@ class SensorIngest(models.Model):
     start = models.DateTimeField(auto_now_add=True)
     end = models.DateTimeField(null=True, default=None)
 
-    def merge(self, start=None, end=None, include_headers=True):
+    def merge(self, start=None, end=None, include_header=True):
         '''Return an iterator over the merged dataset.
 
         If start is an integer, skip start rows. If start is a datetime
         object, include only rows with times greater than or equal to the
         start time. If end is an integer, return no more than that number
         of rows. If end is a date, include only rows less than the end time.
-        If include_headers is True (the default), also add a header row at
+        If include_header is True (the default), also add a header row at
         the top.
         '''
         def _iter_data(data):
@@ -326,7 +326,7 @@ class SensorIngest(models.Model):
                 next(iterator)
         if not isinstance(end, int):
             end = None
-        if include_headers:
+        if include_header:
             yield ['time'] + [sensor.name for sensor in sensors]
         for i, row in enumerate(generator):
             if end and i >= end:
