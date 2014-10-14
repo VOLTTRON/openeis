@@ -119,7 +119,7 @@ class Application(DriverApplicationBaseClass):
         metricname_topic = '/'.join(output_topic_base + ['dailySummary','metricname'])
         value_topic = '/'.join(output_topic_base + ['dailySummary', 'value'])
         description_topic = '/'.join(output_topic_base + ['dailySummary', 'description'])
-        
+
         output_needs = {
             'Daily_Summary_Table': {
                 'Metric':OutputDescriptor('string', metricname_topic),
@@ -194,7 +194,7 @@ class Application(DriverApplicationBaseClass):
         load_day_list_5 = []
 
         # find peak load benchmark
-        peakLoad = load_max 
+        peakLoad = load_max
         peakLoadIntensity = peakLoad / floorAreaSqft
 
         # gather values in the 95th and 5th percentile every day

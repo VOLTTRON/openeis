@@ -1,9 +1,9 @@
 Metric,value
-Load Max Intensity,0.0016666666666666668
-Load Min Intensity,0.0003333333333333333
-Daily Load 95th Percentile,4.96
-Daily Load 5th Percentile,1.0
+Load Max Intensity [W/sf],0.0016666666666666668
+Load Min Intensity [W/sf],0.0003333333333333333
+Daily Load 95th Percentile [kW],4.96
+Daily Load 5th Percentile [kW],1.0
 Daily Load Ratio,0.201818181818
-Daily Load Range,3.96
+Daily Load Range [kW],3.96
 Load Variability,0.484321084138
-Peak Load Benchmark,1.6666666666666667
+Peak Load Benchmark [W/sf],1.6666666666666667
