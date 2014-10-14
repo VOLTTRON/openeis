@@ -22,12 +22,11 @@ from openeis.projects import models
 class AppTestBase(TestCase):
 
 
-    def run_application(self, configFileName, output_dir):
+    def run_application(self, configFileName):
         """
         Runs the application with a given configuration file.
         Parameters:
             - configFileName: configuration file for application run
-            - output_dir: directory for output files
         Returns:
             - actual_outputs, dictionary, maps table name to file name of run results
         """
@@ -252,11 +251,8 @@ class AppTestBase(TestCase):
         appName = config['global_settings']['application']
         # TODO: This, and config above, is not needed unless {clean_up}.
 
-        # Create temp dir for output
-        output_dir = tempfile.mkdtemp()
-
         # Run application.
-        actual_outputs = self.run_application(configFileName, output_dir)
+        actual_outputs = self.run_application(configFileName)
 
         # Check results.
         for tableName in expected_outputs:
