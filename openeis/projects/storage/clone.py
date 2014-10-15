@@ -81,6 +81,7 @@ class CloneProject():
     def clone_data_files(self, data_files_list, project):
         for data_file in data_files_list:
             data_file.id = None
+            data_file.project = project
             data_file.save()
     
     def clone_data_map_definition(self, data_maps_list,project):
@@ -93,19 +94,20 @@ class CloneProject():
             data_map.project = project
             data_map.save()
     
-            self.clone_sensor_ingest(list(sensor_ingests),data_map)
+            self.clone_sensor_ingest(list(sensor_ingests),data_map, project)
             self.clone_sensors(list(sensors), data_map)
     
-    def clone_sensor_ingest(self, sensor_ingests_list, data_map_definition):
+    def clone_sensor_ingest(self, sensor_ingests_list, data_map_definition, project):
         for sensor_ingest in sensor_ingests_list:
     
             analyses = models.Analysis.objects.filter(dataset=sensor_ingest)
     
             sensor_ingest.id = None
+            sensor_ingest.project = project
             sensor_ingest.map = data_map_definition
             sensor_ingest.save()
     
-            self.clone_analysis(list(analyses), sensor_ingest)
+            self.clone_analysis(list(analyses), sensor_ingest, project)
     
     def clone_sensors(self, sensors_list, data_map):
         for sensor in sensors_list:
@@ -113,10 +115,11 @@ class CloneProject():
             sensor.map = data_map
             sensor.save()
     
-    def clone_analysis(self, analyses_list, sensor_ingest):
+    def clone_analysis(self, analyses_list, sensor_ingest, project):
         for analysis in analyses_list:
             app_output_list = models.AppOutput.objects.filter(analysis=analysis)
             analysis.id= None
+            analysis.project = project
             analysis.dataset = sensor_ingest
             analysis.save()
             self.clone_appOutput(app_output_list, analysis)

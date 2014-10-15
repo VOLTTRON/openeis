@@ -1,0 +1,996 @@
+[
+{
+    "fields": {
+        "name": "log entry", 
+        "app_label": "admin", 
+        "model": "logentry"
+    }, 
+    "pk": 1, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "permission", 
+        "app_label": "auth", 
+        "model": "permission"
+    }, 
+    "pk": 2, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "group", 
+        "app_label": "auth", 
+        "model": "group"
+    }, 
+    "pk": 3, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "user", 
+        "app_label": "auth", 
+        "model": "user"
+    }, 
+    "pk": 4, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "content type", 
+        "app_label": "contenttypes", 
+        "model": "contenttype"
+    }, 
+    "pk": 5, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "session", 
+        "app_label": "sessions", 
+        "model": "session"
+    }, 
+    "pk": 6, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "organization", 
+        "app_label": "projects", 
+        "model": "organization"
+    }, 
+    "pk": 7, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "membership", 
+        "app_label": "projects", 
+        "model": "membership"
+    }, 
+    "pk": 8, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "project", 
+        "app_label": "projects", 
+        "model": "project"
+    }, 
+    "pk": 9, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "data file", 
+        "app_label": "projects", 
+        "model": "datafile"
+    }, 
+    "pk": 10, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "account verification", 
+        "app_label": "projects", 
+        "model": "accountverification"
+    }, 
+    "pk": 11, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "data map", 
+        "app_label": "projects", 
+        "model": "datamap"
+    }, 
+    "pk": 12, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "sensor ingest", 
+        "app_label": "projects", 
+        "model": "sensoringest"
+    }, 
+    "pk": 13, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "sensor ingest file", 
+        "app_label": "projects", 
+        "model": "sensoringestfile"
+    }, 
+    "pk": 14, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "sensor ingest log", 
+        "app_label": "projects", 
+        "model": "sensoringestlog"
+    }, 
+    "pk": 15, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "sensor", 
+        "app_label": "projects", 
+        "model": "sensor"
+    }, 
+    "pk": 16, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "boolean sensor data", 
+        "app_label": "projects", 
+        "model": "booleansensordata"
+    }, 
+    "pk": 17, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "float sensor data", 
+        "app_label": "projects", 
+        "model": "floatsensordata"
+    }, 
+    "pk": 18, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "integer sensor data", 
+        "app_label": "projects", 
+        "model": "integersensordata"
+    }, 
+    "pk": 19, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "string sensor data", 
+        "app_label": "projects", 
+        "model": "stringsensordata"
+    }, 
+    "pk": 20, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "analysis", 
+        "app_label": "projects", 
+        "model": "analysis"
+    }, 
+    "pk": 21, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "shared analysis", 
+        "app_label": "projects", 
+        "model": "sharedanalysis"
+    }, 
+    "pk": 22, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "name": "app output", 
+        "app_label": "projects", 
+        "model": "appoutput"
+    }, 
+    "pk": 23, 
+    "model": "contenttypes.contenttype"
+},
+{
+    "fields": {
+        "session_data": "NTYxMjQ1NDUxMjk2Y2U1ZTc2OGJlNTFjOTQ0ZDQzMWNjM2NlNWM3Nzp7Il9hdXRoX3VzZXJfaWQiOjEsIl9hdXRoX3VzZXJfYmFja2VuZCI6ImRqYW5nby5jb250cmliLmF1dGguYmFja2VuZHMuTW9kZWxCYWNrZW5kIn0=", 
+        "expire_date": "2014-10-16T22:45:54.612Z"
+    }, 
+    "pk": "3l0l3jpvskbi2pbfc8hgi6ikynznnn6w", 
+    "model": "sessions.session"
+},
+{
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==", 
+        "expire_date": "2014-10-16T22:45:43.079Z"
+    }, 
+    "pk": "4trtr1kqr9r4m6veo0v2o7ckssb5hnsc", 
+    "model": "sessions.session"
+},
+{
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==", 
+        "expire_date": "2014-10-16T22:45:43.086Z"
+    }, 
+    "pk": "f8yjgrvk5be810wki1kd1g1if5t5zand", 
+    "model": "sessions.session"
+},
+{
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==", 
+        "expire_date": "2014-10-16T22:45:43.169Z"
+    }, 
+    "pk": "g67sxosiv637nlyy1kizu8tntwy4t1rd", 
+    "model": "sessions.session"
+},
+{
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==", 
+        "expire_date": "2014-10-16T22:45:43.119Z"
+    }, 
+    "pk": "lu1gj9cbb6cacwezgafw589vqhy7csb2", 
+    "model": "sessions.session"
+},
+{
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==", 
+        "expire_date": "2014-10-16T22:45:43.091Z"
+    }, 
+    "pk": "nok21e3m7om4y35psp9jgb1ybqqhe97g", 
+    "model": "sessions.session"
+},
+{
+    "fields": {
+        "session_data": "M2JlYWZkYTY1ZjA2Mzc4Yjk3YWZjYThjMzRlN2RmMzQ3OGZmMmUxMjp7fQ==", 
+        "expire_date": "2014-10-16T22:45:43.142Z"
+    }, 
+    "pk": "ylhbh0f7m6vsurgz7kul1esch44dsmq1", 
+    "model": "sessions.session"
+},
+{
+    "fields": {
+        "name": "test_alpha.csv", 
+        "file": "projects/datafiles/bxeb6NTuGtoGOlKumIIpinSesWHdDCCs", 
+        "project": 1, 
+        "time_zone": "America/Los_Angeles", 
+        "time_offset": 0.0, 
+        "comments": "", 
+        "timestamp": {
+            "columns": [
+                0
+            ]
+        }, 
+        "uploaded": "2014-10-02T22:46:13.943Z"
+    }, 
+    "pk": 1, 
+    "model": "projects.datafile"
+},
+{
+    "fields": {
+        "name": "test-map", 
+        "map": {
+            "files": {
+                "0": {
+                    "signature": {
+                        "headers": [
+                            "TIME_STAMP", 
+                            "SupplyFanStatus", 
+                            "SupplyAirTempStPt", 
+                            "SupplyAirTemp", 
+                            "ZoneReheat1", 
+                            "ZoneReheat2", 
+                            "ZoneDamperCommand1", 
+                            "ZoneDamperCommand2", 
+                            "SupplyFanCommand Priority", 
+                            "AHUCoolingCoil Priority", 
+                            "DuctStaticPressureStPt", 
+                            "SupplyFanSpeedCommand", 
+                            "HotWaterLoopDp", 
+                            "HotWaterLoopDpSetPoint", 
+                            "OutdoorAirTemperature", 
+                            "HotWaterSupplyTemperatureSetPoint", 
+                            "HotWaterPumpStatus1", 
+                            "BoilerStatus", 
+                            "HotWaterPumpStatus2", 
+                            "HotWaterPumpVFD1 Command", 
+                            "HotWaterPumpVFD2 Command", 
+                            "ReturnAirTemperature", 
+                            "MixedAirTemperature", 
+                            "CoolCall", 
+                            "DamperSignal", 
+                            "DuctStaticPressure", 
+                            "HotWaterSupplyTemperature1", 
+                            "HotWaterSupplyTemperature2", 
+                            "HotWaterReturnTemperature", 
+                            "CoolingCoilValvePosition", 
+                            "RTUCoolCall"
+                        ]
+                    }, 
+                    "timestamp": {
+                        "columns": [
+                            0
+                        ]
+                    }
+                }
+            }, 
+            "version": 1, 
+            "sensors": {
+                "abc/SupplyFanSpeed": {
+                    "type": "SupplyFanSpeed", 
+                    "unit": "data_center_infrastructure_efficiency", 
+                    "file": "0", 
+                    "column": "SupplyFanCommand Priority"
+                }, 
+                "abc": {
+                    "level": "other"
+                }
+            }
+        }, 
+        "project": 1
+    }, 
+    "pk": 1, 
+    "model": "projects.datamap"
+},
+{
+    "fields": {
+        "name": "Can add log entry", 
+        "content_type": 1, 
+        "codename": "add_logentry"
+    }, 
+    "pk": 1, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change log entry", 
+        "content_type": 1, 
+        "codename": "change_logentry"
+    }, 
+    "pk": 2, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete log entry", 
+        "content_type": 1, 
+        "codename": "delete_logentry"
+    }, 
+    "pk": 3, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add permission", 
+        "content_type": 2, 
+        "codename": "add_permission"
+    }, 
+    "pk": 4, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change permission", 
+        "content_type": 2, 
+        "codename": "change_permission"
+    }, 
+    "pk": 5, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete permission", 
+        "content_type": 2, 
+        "codename": "delete_permission"
+    }, 
+    "pk": 6, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add group", 
+        "content_type": 3, 
+        "codename": "add_group"
+    }, 
+    "pk": 7, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change group", 
+        "content_type": 3, 
+        "codename": "change_group"
+    }, 
+    "pk": 8, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete group", 
+        "content_type": 3, 
+        "codename": "delete_group"
+    }, 
+    "pk": 9, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add user", 
+        "content_type": 4, 
+        "codename": "add_user"
+    }, 
+    "pk": 10, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change user", 
+        "content_type": 4, 
+        "codename": "change_user"
+    }, 
+    "pk": 11, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete user", 
+        "content_type": 4, 
+        "codename": "delete_user"
+    }, 
+    "pk": 12, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add content type", 
+        "content_type": 5, 
+        "codename": "add_contenttype"
+    }, 
+    "pk": 13, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change content type", 
+        "content_type": 5, 
+        "codename": "change_contenttype"
+    }, 
+    "pk": 14, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete content type", 
+        "content_type": 5, 
+        "codename": "delete_contenttype"
+    }, 
+    "pk": 15, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add session", 
+        "content_type": 6, 
+        "codename": "add_session"
+    }, 
+    "pk": 16, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change session", 
+        "content_type": 6, 
+        "codename": "change_session"
+    }, 
+    "pk": 17, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete session", 
+        "content_type": 6, 
+        "codename": "delete_session"
+    }, 
+    "pk": 18, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add organization", 
+        "content_type": 7, 
+        "codename": "add_organization"
+    }, 
+    "pk": 19, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change organization", 
+        "content_type": 7, 
+        "codename": "change_organization"
+    }, 
+    "pk": 20, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete organization", 
+        "content_type": 7, 
+        "codename": "delete_organization"
+    }, 
+    "pk": 21, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add membership", 
+        "content_type": 8, 
+        "codename": "add_membership"
+    }, 
+    "pk": 22, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change membership", 
+        "content_type": 8, 
+        "codename": "change_membership"
+    }, 
+    "pk": 23, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete membership", 
+        "content_type": 8, 
+        "codename": "delete_membership"
+    }, 
+    "pk": 24, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add project", 
+        "content_type": 9, 
+        "codename": "add_project"
+    }, 
+    "pk": 25, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change project", 
+        "content_type": 9, 
+        "codename": "change_project"
+    }, 
+    "pk": 26, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete project", 
+        "content_type": 9, 
+        "codename": "delete_project"
+    }, 
+    "pk": 27, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add data file", 
+        "content_type": 10, 
+        "codename": "add_datafile"
+    }, 
+    "pk": 28, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change data file", 
+        "content_type": 10, 
+        "codename": "change_datafile"
+    }, 
+    "pk": 29, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete data file", 
+        "content_type": 10, 
+        "codename": "delete_datafile"
+    }, 
+    "pk": 30, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add account verification", 
+        "content_type": 11, 
+        "codename": "add_accountverification"
+    }, 
+    "pk": 31, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change account verification", 
+        "content_type": 11, 
+        "codename": "change_accountverification"
+    }, 
+    "pk": 32, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete account verification", 
+        "content_type": 11, 
+        "codename": "delete_accountverification"
+    }, 
+    "pk": 33, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add data map", 
+        "content_type": 12, 
+        "codename": "add_datamap"
+    }, 
+    "pk": 34, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change data map", 
+        "content_type": 12, 
+        "codename": "change_datamap"
+    }, 
+    "pk": 35, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete data map", 
+        "content_type": 12, 
+        "codename": "delete_datamap"
+    }, 
+    "pk": 36, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add sensor ingest", 
+        "content_type": 13, 
+        "codename": "add_sensoringest"
+    }, 
+    "pk": 37, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change sensor ingest", 
+        "content_type": 13, 
+        "codename": "change_sensoringest"
+    }, 
+    "pk": 38, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete sensor ingest", 
+        "content_type": 13, 
+        "codename": "delete_sensoringest"
+    }, 
+    "pk": 39, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add sensor ingest file", 
+        "content_type": 14, 
+        "codename": "add_sensoringestfile"
+    }, 
+    "pk": 40, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change sensor ingest file", 
+        "content_type": 14, 
+        "codename": "change_sensoringestfile"
+    }, 
+    "pk": 41, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete sensor ingest file", 
+        "content_type": 14, 
+        "codename": "delete_sensoringestfile"
+    }, 
+    "pk": 42, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add sensor ingest log", 
+        "content_type": 15, 
+        "codename": "add_sensoringestlog"
+    }, 
+    "pk": 43, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change sensor ingest log", 
+        "content_type": 15, 
+        "codename": "change_sensoringestlog"
+    }, 
+    "pk": 44, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete sensor ingest log", 
+        "content_type": 15, 
+        "codename": "delete_sensoringestlog"
+    }, 
+    "pk": 45, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add sensor", 
+        "content_type": 16, 
+        "codename": "add_sensor"
+    }, 
+    "pk": 46, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change sensor", 
+        "content_type": 16, 
+        "codename": "change_sensor"
+    }, 
+    "pk": 47, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete sensor", 
+        "content_type": 16, 
+        "codename": "delete_sensor"
+    }, 
+    "pk": 48, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add boolean sensor data", 
+        "content_type": 17, 
+        "codename": "add_booleansensordata"
+    }, 
+    "pk": 49, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change boolean sensor data", 
+        "content_type": 17, 
+        "codename": "change_booleansensordata"
+    }, 
+    "pk": 50, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete boolean sensor data", 
+        "content_type": 17, 
+        "codename": "delete_booleansensordata"
+    }, 
+    "pk": 51, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add float sensor data", 
+        "content_type": 18, 
+        "codename": "add_floatsensordata"
+    }, 
+    "pk": 52, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change float sensor data", 
+        "content_type": 18, 
+        "codename": "change_floatsensordata"
+    }, 
+    "pk": 53, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete float sensor data", 
+        "content_type": 18, 
+        "codename": "delete_floatsensordata"
+    }, 
+    "pk": 54, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add integer sensor data", 
+        "content_type": 19, 
+        "codename": "add_integersensordata"
+    }, 
+    "pk": 55, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change integer sensor data", 
+        "content_type": 19, 
+        "codename": "change_integersensordata"
+    }, 
+    "pk": 56, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete integer sensor data", 
+        "content_type": 19, 
+        "codename": "delete_integersensordata"
+    }, 
+    "pk": 57, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add string sensor data", 
+        "content_type": 20, 
+        "codename": "add_stringsensordata"
+    }, 
+    "pk": 58, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change string sensor data", 
+        "content_type": 20, 
+        "codename": "change_stringsensordata"
+    }, 
+    "pk": 59, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete string sensor data", 
+        "content_type": 20, 
+        "codename": "delete_stringsensordata"
+    }, 
+    "pk": 60, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add analysis", 
+        "content_type": 21, 
+        "codename": "add_analysis"
+    }, 
+    "pk": 61, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change analysis", 
+        "content_type": 21, 
+        "codename": "change_analysis"
+    }, 
+    "pk": 62, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete analysis", 
+        "content_type": 21, 
+        "codename": "delete_analysis"
+    }, 
+    "pk": 63, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add shared analysis", 
+        "content_type": 22, 
+        "codename": "add_sharedanalysis"
+    }, 
+    "pk": 64, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change shared analysis", 
+        "content_type": 22, 
+        "codename": "change_sharedanalysis"
+    }, 
+    "pk": 65, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete shared analysis", 
+        "content_type": 22, 
+        "codename": "delete_sharedanalysis"
+    }, 
+    "pk": 66, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can add app output", 
+        "content_type": 23, 
+        "codename": "add_appoutput"
+    }, 
+    "pk": 67, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can change app output", 
+        "content_type": 23, 
+        "codename": "change_appoutput"
+    }, 
+    "pk": 68, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "name": "Can delete app output", 
+        "content_type": 23, 
+        "codename": "delete_appoutput"
+    }, 
+    "pk": 69, 
+    "model": "auth.permission"
+},
+{
+    "fields": {
+        "username": "test_user", 
+        "last_name": "", 
+        "first_name": "", 
+        "is_active": true, 
+        "last_login": "2014-10-02T22:45:54.607Z", 
+        "groups": [], 
+        "is_superuser": true, 
+        "is_staff": true, 
+        "email": "test@test.com", 
+        "date_joined": "2014-10-02T22:44:54.749Z", 
+        "user_permissions": [], 
+        "password": "pbkdf2_sha256$12000$rVgM7XghtbUW$tSIqOyeiGAWgJoVPaPmmPBUuB1n/W9RuCBvspO4y8Uk="
+    }, 
+    "pk": 1, 
+    "model": "auth.user"
+},
+{
+    "fields": {
+        "name": "test", 
+        "owner": 1
+    }, 
+    "pk": 1, 
+    "model": "projects.project"
+}
+]

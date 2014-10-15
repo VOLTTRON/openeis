@@ -71,6 +71,7 @@
 {
     "model": "projects.sensoringest",
     "fields": {
+        "project": 1,
         "map": 1,
         "start": "2014-08-06T22:43:14.689Z",
         "end": "2014-08-06T22:43:16.429Z"
@@ -21022,6 +21023,7 @@
 {
     "model": "projects.analysis",
     "fields": {
+        "project": 1,
         "name": "TestAnalysis",
         "dataset": 1,
         "application": "daily_summary",

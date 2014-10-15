@@ -69,6 +69,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from openeis.projects.tests.openeistest import OpenEISTestBase
+from openeis.projects import models
 
 
 class TestAnalysesApi(OpenEISTestBase):
@@ -209,7 +210,7 @@ class TestAnalysesApi(OpenEISTestBase):
         self.assertEqual(status.HTTP_404_NOT_FOUND, response.status_code)
 
         # Can access shared analysis with key
-        response = anon_client.get('/api/shared-analyses/1?key=' + key)
+        response = anon_client.get('/api/shared-analyses/1', {'key': key})
         self.assertEqual(response.data['analysis'], 1)
         self.assertEqual(response.data['name'], 'TestAnalysis')
         self.assertEqual(response.data['reports'], ['test report'])

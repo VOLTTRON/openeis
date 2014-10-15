@@ -211,7 +211,7 @@ class DatabaseOutputFile(DatabaseOutput):
 
     def close(self):
         super().close()
-        print('Writing CSV files.')
+        self._logger.log(logging.INFO, 'Writing CSV files.')
         for table_name, fields in self.output_names.items():
             klass = self.table_map[table_name]
             dict_writer =  self.csv_table_map[table_name]
@@ -235,13 +235,22 @@ class DatabaseOutputZip(DatabaseOutputFile):
 
     def close(self):
         super().close()
-        print('Writing Debug zip file.')
+        self.writeToZip()
         
+    
+    def getZipFileName(self):
         analysis_folder = '/'.join((DATA_DIR, 'files','analysis'))
         if os.path.exists(analysis_folder) == False:
             os.mkdir(analysis_folder)
 
         zip_file = analysis_folder+'/'+str(self.analysis_id)+'.zip'
+        return zip_file
+        
+
+    def writeToZip(self):
+        print('Writing Debug zip file.')
+        
+        zip_file = self.getZipFileName()
         with ZipFile(zip_file, 'w') as myzip:
 
             
@@ -261,9 +270,12 @@ class DatabaseOutputZip(DatabaseOutputFile):
             jsonarray = json.dumps(d)
             config_file = self.file_prefix+'.json'
             myzip.writestr(config_file,jsonarray)
-
-            
-
+    
+    def appenFileToZip(self, filename, filecontents):
+        
+        zip_file = self.getZipFileName()
+        with ZipFile(zip_file, 'a') as myzip:
+             myzip.writestr(filename,filecontents)
 
 if __name__ == '__main__':
 

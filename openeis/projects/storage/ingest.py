@@ -153,7 +153,7 @@ class DateTimeColumn(BaseColumn):
     def _ensure_tz(self, dt):
         if not dt.tzinfo and self.tzinfo:
             dt = self.tzinfo.localize(dt)
-        if self.time_offset != 0:
+        if self.time_offset:
             dt += timedelta(seconds=self.time_offset)
         return dt.astimezone(pytz.utc)
 
@@ -324,7 +324,7 @@ def get_sensor_parsers(datamap, files):
         return column
 
     def get_tz(fileid):
-        return pytz.timezone(files[fileid]['time_zone'])
+        return pytz.timezone(files[fileid].get('time_zone') or 'UTC')
 
     def date_format(file):
         fmt = file['timestamp'].get('format')

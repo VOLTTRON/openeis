@@ -246,17 +246,16 @@ class Application(DriverApplicationBaseClass):
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Load Max Intensity [W/sf]",
             "value": "{:.2f}".format((load_max * 1000.) / floorAreaSqft),
-            "description": "The daily maximum usage could be dominated by a single large load, or\
-                            could be the sum of several smaller ones. Long periods of usage near\
-                            the maximum increase overall energy use."
+            "description": "The daily maximum usage could be dominated by a single large load, or "  \
+                "could be the sum of several smaller ones. "  \
+                "Long periods of usage near the maximum increase overall energy use."
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Load Min Intensity [W/sf]",
             "value": "{:.2f}".format((load_min * 1000.)/ floorAreaSqft),
-            "description": "Minimum usage is often dominated by loads that run 24 hours a day.\
-                            In homes, these include refrigerators and vampire loads.\
-                            In commercial buildings, these include ventilation, hallway lighting,\
-                            computers, and vampire loads."
+            "description": "Minimum usage is often dominated by loads that run 24 hours a day. "  \
+                "In homes, these include refrigerators and vampire loads. "  \
+                "In commercial buildings, these include ventilation, hallway lighting, computers, and vampire loads."
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Daily Load 95th Percentile [kW]",
@@ -271,35 +270,32 @@ class Application(DriverApplicationBaseClass):
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Daily Load Ratio",
             "value": "{:.2f}".format(load_day_ratio_mean),
-            "description": "Values over 0.33 indicate that significant loads are shut off\
-                            for parts of the day. To save energy, look to extend and deepen\
-                            shutoff periods, while also reducing peak energy use."
+            "description": "Values over 0.33 indicate that significant loads are shut off for parts of the day. "  \
+                "To save energy, look to extend and deepen shutoff periods, while also reducing peak energy use."
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Daily Load Range [kW]",
             "value": "{:.2f}".format(load_day_range_mean),
-            "description": "This is a rough estimate of the total load turned on and off\
-                            every day. Higher values may indicate good control, but could\
-                            also indicate excessive peak usage."
+            "description": "This is a rough estimate of the total load turned on and off every day. "  \
+                "Higher values may indicate good control, but could also indicate excessive peak usage."
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Load Variability",
             "value": "{:.2f}".format(load_variability),
-            "description":"This metric is used to understand regularity of operations,\
-                           and the likelihood of consistency in the building’s demand \
-                           responsiveness. It gives a coefficient of variation that\
-                           ranges from 0 to 1, which can be interpreted based on rule of thumb\
-                           guidelines. For example, variability above 0.15 is generally \
-                           considered high for commercial buildings."
+
+            "description":"This metric is used to understand regularity of operations, "  \
+                "and the likelihood of consistency in the building’s demand responsiveness. "  \
+                "It gives a coefficient of variation that ranges from 0 to 1. "  \
+                "This coefficient can be interpreted based on general guidelines. "  \
+                "For example, variability above 0.15 is generally considered high for commercial buildings."
+
             })
         # TODO: Looks like peakLoadIntensity is exactly the same as the "load max intensity"
         # reported above (only the text description differs).  Check, and remove if duplicate.
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Peak Load Benchmark [W/sf]",
             "value": "{:.2f}".format(peakLoadIntensity * 1000.),
-            "description": "This is the absolute maximum electric load based on all of your data.\
-                            The median for commercial buildings under 150,000 sf is 4.4 W/sf.\
-                            Values much higher than 4.4 therefore indicate an opportunity to\
-                            improve building performance."
+            "description": "This is the absolute maximum electric load based on all of your data. "  \
+                "The median for commercial buildings under 150,000 sf is 4.4 W/sf. "  \
+                "Values much higher than 4.4 therefore indicate an opportunity to improve building performance."
             })
-

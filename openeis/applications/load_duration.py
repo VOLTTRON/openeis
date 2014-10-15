@@ -134,13 +134,13 @@ class Application(DriverApplicationBaseClass):
                                            y_label='Energy [kWh]')
 
         report.add_element(scatter_plot)
-        text_guide1 = reports.TextBlurb(text="The highest loads should occur a small fraction of the \
-                                              the time ideally.")
+        text_guide1 = reports.TextBlurb(text="The highest loads ideally should occur a small fraction of\
+                                              the time.")
         report.add_element(text_guide1)
 
         text_guide2 = reports.TextBlurb(text="If the building is near its peak load for a significant\
                                               portion of the time, the HVAC equipment could be\
-                                              undersized or there could be systems that are\
+                                              undersized, or there could be systems that are\
                                               running more than necessary.")
         report.add_element(text_guide2)
 
@@ -173,5 +173,5 @@ class Application(DriverApplicationBaseClass):
         ctr = 1
         for x in load_query[0]:
             self.out.insert_row("Load_Duration", { "sorted load": x[1]*load_convertfactor,
-                                                   "percent time": ctr / len(load_query[0]) } )
+                                                   "percent time": (len(load_query[0])-ctr) / len(load_query[0]) } )
             ctr += 1

@@ -55,7 +55,7 @@ from openeis.applications import reports
 from .utils import conversion_utils as cu
 import datetime as dt
 import logging
-
+import pytz
 
 class Application(DriverApplicationBaseClass):
 
@@ -167,6 +167,7 @@ class Application(DriverApplicationBaseClass):
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+#        load_tz = meta_topics['load'][base_topic['load'][0]]['timezone']
 
         load_convertfactor = cu.conversiontoKWH(load_unit)
         print (load_convertfactor)
@@ -182,10 +183,16 @@ class Application(DriverApplicationBaseClass):
             # start = 0
             # end = len(loads[0])
 
+        
+
         for x in loads[0]:
-            datevalue = x[0]
-            if not isinstance(datevalue, dt.datetime):
-                datevalue = dt.datetime.strptime(datevalue, '%Y-%m-%d %H')
+            print(x)
+
+            datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
+            datevalue = self.inp.localize_sensor_time('load', base_topic['load'][0], datevalue)
+            
+            print(datevalue)
+#            tz.localize(datevalue)
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),
                 'hour': datevalue.hour,

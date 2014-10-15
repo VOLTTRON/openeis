@@ -100,8 +100,8 @@ class Command(NoArgsCommand):
         for name in files:
             name = posixpath.join('projects', 'datafiles', name)
             if DataFile.objects.filter(file=name).exists():
-                log('Keeping file: {}'.format(name), 3)
+                log('Keeping file: {}'.format(name), 2)
             else:
-                log('Removing file: {}'.format(name), 2)
+                log('Removing file: {}'.format(name), 1)
                 if not dry_run:
                     storage.delete(name)

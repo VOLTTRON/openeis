@@ -82,10 +82,10 @@ class Command(NoArgsCommand):
                     continue
                 if not all_tables:
                     cursor.execute('SELECT COUNT(*) FROM ' + table)
-                    count, = cursor.curser.fetchone()
+                    count, = cursor.cursor.fetchone()
                     if count:
                         continue
-                if verbosity >= 2:
+                if verbosity >= 1:
                     self.stdout.write('Dropping table: {}'.format(table))
                 if not dry_run:
                     cursor.execute('DROP TABLE ' + table)

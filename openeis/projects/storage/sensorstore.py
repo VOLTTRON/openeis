@@ -132,6 +132,10 @@ def put_sensors(datamap_id, topicstreams):
     '''
     pass
 
+def get_sensormap(datamap_id):
+    mapdef = models.DataMap.objects.get(pk=datamap_id)
+    sensormap = mapdef.map
+    return sensormap
 
 def get_sensors(datamap_id, topics):
     '''Get querysets for to given topics.

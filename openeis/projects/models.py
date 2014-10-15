@@ -54,6 +54,7 @@
 #}}}
 
 import contextlib
+import datetime
 import json
 import jsonschema
 import posixpath
@@ -64,6 +65,7 @@ from django.contrib.auth.models import User
 from django.db import connections, models
 from django.db.models.query import QuerySet
 from django.core.exceptions import ValidationError
+from django import dispatch
 
 import jsonschema.exceptions
 
@@ -240,6 +242,7 @@ class DataMap(models.Model):
     project = models.ForeignKey(Project, related_name='datamaps')
     name = models.CharField(max_length=100)
     map = JSONField()
+    removed = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('project', 'name')
@@ -266,34 +269,99 @@ class DataMap(models.Model):
 
 
 class SensorIngest(models.Model):
-    map = models.ForeignKey(DataMap, related_name='ingests')
+    project = models.ForeignKey(Project, related_name='datasets')
+    name = models.CharField(max_length=100)
+    map = models.ForeignKey(DataMap, related_name='datasets')
     # time of ingest
     start = models.DateTimeField(auto_now_add=True)
     end = models.DateTimeField(null=True, default=None)
 
-    @property
-    def logs(self):
-        return [log for file in self.files.all() for log in file.logs.all()]
+    def merge(self, start=None, end=None, include_header=True):
+        '''Return an iterator over the merged dataset.
+
+        If start is an integer, skip start rows. If start is a datetime
+        object, include only rows with times greater than or equal to the
+        start time. If end is an integer, return no more than that number
+        of rows. If end is a date, include only rows less than the end time.
+        If include_header is True (the default), also add a header row at
+        the top.
+        '''
+        def _iter_data(data):
+            '''Helper generator to aid in merging columns. Expects to be
+            accessed twice per row. The first call yields the time of the
+            next item or None if none remain.  The second call should send
+            the time of the current row and will yield the item if the
+            time matches the current item and advance the iterator or
+            None otherwise.
+            '''
+            for i in data:
+                while True:
+                    time = (yield i.time)
+                    if i.time == time:
+                        yield i
+                        break
+                    yield None
+            while True:
+                yield None
+        sensors = list(self.map.sensors.order_by('name'))
+        data = [sensor.data.filter(ingest=self) for sensor in sensors]
+        # Filter by start and end times
+        if isinstance(start, datetime.datetime):
+            data = [d.filter(time__gte=start) for d in data]
+        if isinstance(end, datetime.datetime):
+            data = [d.filter(time__lt=end) for d in data]
+        def _merge():
+            iterators = [_iter_data(d) for d in data]
+            while True:
+                try:
+                    time = min(t for t in (next(i) for i in iterators) if t)
+                except ValueError:
+                    break
+                yield [time] + [d and d.value for d in [i.send(time) for i in iterators]]
+        generator = _merge()
+        # Filter by start row and end count
+        if isinstance(start, int):
+            iterator = iter(generator)
+            for i in range(start):
+                next(iterator)
+        if not isinstance(end, int):
+            end = None
+        if include_header:
+            yield ['time'] + [sensor.name for sensor in sensors]
+        for i, row in enumerate(generator):
+            if end and i >= end:
+                break
+            yield row
+
+
+@dispatch.receiver(models.signals.post_delete, sender=SensorIngest)
+def handle_dataset_delete(sender, instance, using, **kwargs):
+    datamap = instance.map
+    if datamap and datamap.removed and not datamap.datasets.exists():
+        datamap.delete()
 
 
 class SensorIngestFile(models.Model):
     ingest = models.ForeignKey(SensorIngest, related_name='files')
     # name matches a file in the data map definition
     name = models.CharField(max_length=255)
-    file = models.ForeignKey(DataFile, related_name='ingests')
+    file = models.ForeignKey(DataFile, related_name='ingests',
+                             null=True, on_delete=models.SET_NULL)
 
     class Meta:
         unique_together = ('ingest', 'name')
 
 
+INFO = 20
+WARNING = 30
+ERROR = 40
+CRITICAL = 50
 class SensorIngestLog(models.Model):
-    INFO = 20
-    WARNING = 30
-    ERROR = 40
-    CRITICAL = 50
+    
     LOG_LEVEL_CHOICES = ((INFO, 'Info'), (WARNING, 'Warning'),
                          (ERROR, 'Error'), (CRITICAL, 'Critical'))
 
+    dataset = models.ForeignKey(SensorIngest, related_name='logs')
     file = models.ForeignKey(SensorIngestFile, related_name='logs', null=True)
     row = models.IntegerField()
     # Timestamps can include multiple columns
@@ -445,8 +513,10 @@ class StringSensorData(BaseSensorData):
 class Analysis(models.Model):
     '''A run of a single application against a single dataset.'''
 
+    project = models.ForeignKey(Project, related_name='analyses')
     name = models.CharField(max_length=100)
-    dataset = models.ForeignKey(SensorIngest, related_name='analysis')
+    dataset = models.ForeignKey(SensorIngest, related_name='analyses',
+        null=True, on_delete=models.SET_NULL)
     application = models.CharField(max_length=255)
     '''
     Expected configuration to be a json string like

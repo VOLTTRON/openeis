@@ -140,8 +140,8 @@ class FileSerializer(serializers.ModelSerializer):
         exclude = ('file',)
 
     def transform_download_url(self, obj, value):
-        return reverse('datafile-download', kwargs={'pk': value},
-                       request=getattr(self, 'request', None))
+        request = self.context.get('request')
+        return reverse('datafile-download', kwargs={'pk': value}, request=request)
 
     def transform_size(self, obj, value):
         return obj.file.file.size
@@ -228,10 +228,19 @@ class LoginSerializer(serializers.Serializer):
                 attrs.get('password', instance and instance[1]))
 
 
+class CreateDataMapSerializer(serializers.ModelSerializer):
+    map = JSONField()
+    class Meta:
+        model = models.DataMap
+
 class DataMapSerializer(serializers.ModelSerializer):
     map = JSONField()
     class Meta:
         model = models.DataMap
+        read_only_fields = ('project',)
+
+class ReadOnlyDataMapSerializer(DataMapSerializer):
+    map = JSONField(read_only=True)
 
 
 class SensorIngestFileSerializer(serializers.ModelSerializer):
@@ -248,12 +257,13 @@ class SensorIngestLogSerializer(serializers.ModelSerializer):
         fields = ('file', 'message', 'level', 'column', 'row' )
 
 
-class SensorIngestSerializer(serializers.ModelSerializer):
+class SensorIngestCreateSerializer(serializers.ModelSerializer):
+
     files = SensorIngestFileSerializer(many=True, required=True)
 
     class Meta:
         model = models.SensorIngest
-        read_only_fields = ('start', 'end')
+        read_only_fields = ('start', 'end', 'project')
 
     def validate(self, attrs):
         map = attrs['map'].map
@@ -272,6 +282,38 @@ class SensorIngestSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'files': errors})
         return attrs
 
+    def to_native(self, obj):
+        result = super().to_native(obj)
+        if obj and result:
+            result['datamap'] = obj.map.map
+        return result
+
+
+class SensorIngestSerializer(serializers.ModelSerializer):
+
+    files = SensorIngestFileSerializer(many=True, read_only=True)
+    download_url = serializers.CharField(source='pk', read_only=True)
+
+    class Meta:
+        model = models.SensorIngest
+        read_only_fields = ('start', 'end', 'project', 'map')
+
+    def validate(self, attrs):
+        # Empty names slipped by with PATCH, so catch them here.
+        if not attrs['name']:
+            raise serializers.ValidationError(
+                {'name': ['This field is required.']})
+        return attrs
+
+    def to_native(self, obj):
+        result = super().to_native(obj)
+        result['datamap'] = obj and obj.map.map
+        return result
+
+    def transform_download_url(self, obj, value):
+        request = self.context.get('request')
+        return reverse('sensoringest-download', kwargs={'pk': value}, request=request)
+
 
 class DataSetPreviewSerializer(serializers.Serializer):
     map = JSONField(required=True)
@@ -280,21 +322,16 @@ class DataSetPreviewSerializer(serializers.Serializer):
 
 
 class AnalysisSerializer(serializers.ModelSerializer):
-    def transform_debug(self, obj, value):
-        if value and obj.status == 'complete':
-            return reverse('analysis-download', kwargs={'pk': obj.id},
-                           request=self.context['request'])
-        return value
-
     class Meta:
         model = models.Analysis
         read_only_fields = ('added', 'started', 'ended', 'progress_percent',
-                            'reports', 'status')
+                            'reports', 'status', 'project')
 
 class AnalysisUpdateSerializer(AnalysisSerializer):
     class Meta:
         model = AnalysisSerializer.Meta.model
-        read_only_fields = ('dataset', 'application', 'configuration') + AnalysisSerializer.Meta.read_only_fields
+        read_only_fields = (('dataset', 'application', 'configuration') +
+                            AnalysisSerializer.Meta.read_only_fields)
 
 
 class SharedAnalysisSerializer(serializers.ModelSerializer):
