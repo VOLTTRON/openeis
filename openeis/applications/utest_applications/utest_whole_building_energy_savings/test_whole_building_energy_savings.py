@@ -1,5 +1,5 @@
 """
-Unit test `day_time_temperature_model.py`.
+Unit test `whole_building_energy_savings.py`.
 
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
@@ -47,42 +47,42 @@ and includes the following modification: Paragraph 3. has been added.
 """
 
 from openeis.applications.utest_applications.apptest import AppTestBase
-from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
+from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime  # TODO: remove append_data_to_datetime if possible
 
 import datetime
 import numpy
-import day_time_temperature_model as dtt
+from openeis.applications.utils.baseline_models import day_time_temperature_model as dtt
 import os
-import copy
+import copy  # TODO: Remove if possible
 
 class TestDayTimeTemperature(AppTestBase):
     fixtures = [
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'day_time_temperature_data.json')
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'whole_building_energy_savings_fixture.json')
         ]
 
     def setUp(self):
         self.basedir = os.path.abspath(os.path.dirname(__file__))
 
-    def test_findDateIndex(self):
+    def test_util_findDateIndex(self):
+        # Testing index finder for specific dates.
         a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = datetime.datetime(2014, 1, 2, 0, 0, 0, 0)
         datetime_list = numpy.array(set_up_datetimes(a, b, 3600)).flatten()
-        # Testing index finder for specific dates.
         testDateIndex = dtt.findDateIndex(
             datetime_list,
             datetime.datetime(2014, 1, 1, 7, 0, 0, 0)
             )
-        self.assertTrue(str.isdigit(str(testDateIndex)))
+        self.assertEqual(testDateIndex, 0)
         testDateIndex = dtt.findDateIndex(
             datetime_list,
             datetime.datetime(2014, 2, 1, 0, 0, 0, 0)
             )
-        self.assertIs(str.isdigit(str(testDateIndex)), False)
+        self.assertEqual(testDateIndex, 24)
 
-    def test_daytimetemperature_model(self):
-        dtt_model_ini = os.path.join(self.basedir,
-            'daytimetemperature_config.ini')
-        dtt_model_exp = {}
-        dtt_model_exp['DayTimeTemperatureModel'] = os.path.join(self.basedir,
-            'day_time_temperature_app_data.ref.csv')
-        self.run_it(dtt_model_ini, dtt_model_exp, clean_up=True)
+    def test_whole_building_energy_savings_base(self):
+        wbes_base_ini = os.path.join(self.basedir,
+            'whole_building_energy_savings_base.ini')
+        wbes_base_exp = {}
+        wbes_base_exp['DayTimeTemperatureModel'] = os.path.join(self.basedir,
+            'whole_building_energy_savings_base.ref.csv')
+        self.run_it(wbes_base_ini, wbes_base_exp, clean_up=True)

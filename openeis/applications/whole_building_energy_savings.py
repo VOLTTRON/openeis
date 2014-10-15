@@ -130,6 +130,8 @@ class Application(DriverApplicationBaseClass):
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
 
+        # TODO: Should names derived from "day time temperature model" be replaced, to
+        # reflect the new branding of this application as "whole building energy savings"?
         time_values = '/'.join(output_topic_base + ['daytimetemperature', 'datetime'])
         predicted_values = '/'.join(output_topic_base + ['daytimetemperature', 'predicted'])
         measured_values  = '/'.join(output_topic_base + ['daytimetemperature', 'measured'])

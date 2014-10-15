@@ -9,6 +9,9 @@ import numpy as np
 def findDateIndex(datelist, locatedate):
     """Given a list of date objects, return index of a specific date."""
 
+    # TODO: Need to document expectation that the dates are not sorted.  In
+    # general, would expect them to be sorted, and therefore would expect a
+    # binary search to be much better than this.
     ctr = 0
     dateIndex = None
     while ctr < len(datelist):
@@ -17,6 +20,13 @@ def findDateIndex(datelist, locatedate):
            break
         else:
            ctr += 1
+
+    # TODO: Need to document why the code below is executed (or else remove the code).
+    # - This says, "If you didn't find {locatedate}, look for one day earlier."
+    # - This potentially creates an infinite loop, since {locatedate} might start
+    #   out earlier than earliest date in {datelist}.
+    # - Even if it finds a solution, and somehow know it's sensible, need to document
+    #   in the method header that this is what happens.
     if (dateIndex == None):
         newlocatedate = locatedate - dt.timedelta(days=1)
         dateIndex = findDateIndex(datelist, newlocatedate)
