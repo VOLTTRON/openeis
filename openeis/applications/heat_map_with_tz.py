@@ -174,14 +174,7 @@ class Application(DriverApplicationBaseClass):
 
         self.out.log("@length of a month"+str(len(loads[0])), logging.INFO)
 
-        # Limit the number of datapoints, have 2 weeks worth of data.
-        # 24 hours x 14 days = 336.
-        # if len(loads[0]) > 336:
-            # start = len(loads[0]) - 336
-            # end = len(loads[0]) - 1
-        # else:
-            # start = 0
-            # end = len(loads[0])
+
 
         
 
