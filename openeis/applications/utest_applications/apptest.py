@@ -10,11 +10,6 @@ import tempfile
 
 from django.test import TestCase
 from django.utils.timezone import utc
-from subprocess import call
-from configparser import ConfigParser
-
-from django.test import TestCase
-from django.utils.timezone import utc
 from configparser import ConfigParser
 
 from openeis.applications import get_algorithm_class
