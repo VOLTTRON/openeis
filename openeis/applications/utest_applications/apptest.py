@@ -222,12 +222,13 @@ class AppTestBase(TestCase):
             del colNameToIdx_act[colName]
 
         # Here, done checking all columns of the expected results file.
-        self.assertEqual(
-            len(colNameToIdx_act), 0,
-            msg='The actual results file has unexpected column "{}"'.format(
-                list(colNameToIdx_act.keys())[0]
+        if( len(colNameToIdx_act) != 0 ):
+            self.assertTrue(
+                False,
+                msg='The actual results file has unexpected column "{}"'.format(
+                    list(colNameToIdx_act.keys())[0]
+                    )
                 )
-            )
 
 
     def _is_num(self, ss):
