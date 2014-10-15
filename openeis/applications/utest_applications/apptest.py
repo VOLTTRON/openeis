@@ -30,6 +30,10 @@ class AppTestBase(TestCase):
         """
 
         # Read the configuration file.
+        self.assertTrue(
+            os.path.isfile(configFileName),
+            msg='Cannot find configuration file "{}"'.format(configFileName)
+            )
         config = ConfigParser()
         config.read(configFileName)
 
@@ -277,6 +281,10 @@ class AppTestBase(TestCase):
         """
 
         # Read the configuration file.
+        self.assertTrue(
+            os.path.isfile(configFileName),
+            msg='Cannot find configuration file "{}"'.format(configFileName)
+            )
         config = ConfigParser()
         config.read(configFileName)
 
