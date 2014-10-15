@@ -51,8 +51,9 @@ from openeis.applications.utest_applications.apptest import AppTestBase
 import os
 
 class TestEnergySignature(AppTestBase):
-    fixtures = [os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                    'energy_signature_fixture.json')]
+    fixtures = [
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'energy_signature_fixture.json')
+        ]
 
     def setUp(self):
         self.basedir = os.path.abspath(os.path.dirname(__file__))
@@ -61,22 +62,18 @@ class TestEnergySignature(AppTestBase):
         es_basic_ini = os.path.join(self.basedir,
             'energy_signature_negone.ini')
         es_basic_exp = {}
-        es_basic_ini = os.path.join(self.basedir,
-                                    'energy_signature_negone.ini')
         es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
-                                    'energy_signature_negone_SP.ref.csv')
+            'energy_signature_negone_SP.ref.csv')
         es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
-                                    'energy_signature_negone_WS.ref.csv')
+            'energy_signature_negone_WS.ref.csv')
         self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
 
     def test_energy_signature_missing(self):
         es_missing_ini = os.path.join(self.basedir,
             'energy_signature_missing.ini')
         es_missing_exp = {}
-        es_missing_ini = os.path.join(self.basedir,
-                                   'energy_signature_missing.ini')
         es_missing_exp['Scatterplot'] = os.path.join(self.basedir,
-                                   'energy_signature_missing_SP.ref.csv')
+            'energy_signature_missing_SP.ref.csv')
         es_missing_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
-                                   'energy_signature_missing_WS.ref.csv')
+            'energy_signature_missing_WS.ref.csv')
         self.run_it(es_missing_ini, es_missing_exp, clean_up=True)
