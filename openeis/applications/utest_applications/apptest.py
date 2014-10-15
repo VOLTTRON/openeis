@@ -6,7 +6,6 @@ import datetime
 import csv
 import os
 import math
-import tempfile
 
 from django.test import TestCase
 from django.utils.timezone import utc
@@ -118,7 +117,7 @@ class AppTestBase(TestCase):
             - The count of rows should match.
             - The order of rows should match.
             - The first row contains column headers.
-        
+
         Interpreting columns:
             - The count of columns should match.
             - The order of columns does not have to match between the two
@@ -189,11 +188,11 @@ class AppTestBase(TestCase):
                 #   Note these are strings.
                 str_xpd = expected_rows[rowIdx][colIdx_xpd]
                 str_act = actual_rows[rowIdx][colIdx_act]
-                
+
                 # Coerce to numbers if possible.
                 num_xpd = self._is_num(str_xpd)
                 num_act = self._is_num(str_act)
-                
+
                 # Compare.
                 if( (num_xpd is not None) and (num_act is not None) ):
                     # Here, compare as numbers:
@@ -215,13 +214,13 @@ class AppTestBase(TestCase):
                             colName, rowIdx+1, str_act, str_xpd
                             )
                         )
-                
+
                 # Here, done checking entries for this row of this column.
-            
+
             # Remove this column from the actual results.
             #   To facilitate further checking later.
             del colNameToIdx_act[colName]
-        
+
         # Here, done checking all columns of the expected results file.
         self.assertEqual(
             len(colNameToIdx_act), 0,
@@ -255,29 +254,12 @@ class AppTestBase(TestCase):
             - xx, yy: two numbers to compare
             - absTol: absolute tolerance
             - relTol: relative tolerance
-        Returns: True if the two lists are nearly the same; else False.  TODO: Actually, assertion error in that case, but this may change.
-        Throws: Assertion error if xxs and yys not nearly the same.
+        Returns: True if the two numbers are nearly the same; else False.
         """
-        #
-        # Coerce scalar to array if necessary.
-        if( not hasattr(xxs, '__iter__') ):
-            xxs = [xxs]
-        if( not hasattr(yys, '__iter__') ):
-            yys = [yys]
-        lenXX = len(xxs)
-        nearlySame = (len(yys) == lenXX)
-        idx = 0
-        while( nearlySame and idx<lenXX ):
-            xx = xxs[idx]
-            absDiff = math.fabs(yys[idx]-xx)
-            if (absDiff>absTol and absDiff>relTol*math.fabs(xx)):
-                self.assertFalse((absDiff>absTol and \
-                        absDiff>relTol*math.fabs(xx)),
-                    (key + ' is not nearly same: ' + str(xx) + ' ' \
-                    + str(yys[idx]) + ' idx: ' + str(idx) + ' absDiff: ' \
-                    + str(absDiff), ' relDiff: '+ str(absDiff/math.fabs(xx))))
-                nearlySame = False
-            idx += 1
+        nearlySame = True
+        absDiff = math.fabs(yy - xx)
+        if( absDiff>absTol and absDiff>relTol*math.fabs(xx) ):
+            nearlySame = False
         return( nearlySame )
 
 
@@ -309,6 +291,7 @@ class AppTestBase(TestCase):
             expected_rows = self._getCSV_asList(expected_outputs[tableName])
             actual_rows = self._getCSV_asList(actual_outputs[tableName])
             self._diff_checker(expected_rows, actual_rows)
+
         if clean_up:
             for tableName in actual_outputs:
                 os.remove(actual_outputs[tableName])
