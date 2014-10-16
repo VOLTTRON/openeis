@@ -182,7 +182,7 @@ class Application(DriverApplicationBaseClass):
             print(x)
 
             datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
-            datevalue = self.inp.localize_sensor_time('load', base_topic['load'][0], datevalue)
+            datevalue = self.inp.localize_sensor_time(base_topic['load'][0], datevalue)
             
             print(datevalue)
 #            tz.localize(datevalue)

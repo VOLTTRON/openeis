@@ -123,7 +123,7 @@ class DatabaseInput:
             self.topic_meta[input_name] = {}
             for topic in topics:
                 self.topic_meta[input_name][topic] = get_sensors(datamap_id,topic)[0][0]
-                self.topic_meta[input_name][topic]['timezone'] = self.get_tz_for_sensor(input_name, topic)
+                self.topic_meta[input_name][topic]['timezone'] = self.get_tz_for_sensor(topic)
 
     def get_topics(self):
         return self.topic_map.copy()
@@ -131,7 +131,7 @@ class DatabaseInput:
     def get_sensormap(self):
         return self.map_defintion
 
-    def get_tz_for_sensor(self, group, sensor_topic):
+    def get_tz_for_sensor(self, sensor_topic):
         #pop off base of topic
         base = sensor_topic.split('/')[0]
         
@@ -146,12 +146,12 @@ class DatabaseInput:
             
         return tz
     
-    def localize_sensor_time(self, group, sensor_topic, timestamp):
-        #Set utc is time is naive
+    def localize_sensor_time(self, sensor_topic, timestamp):
+        #Set utc if time is naive
         if timestamp.tzinfo == None:
             timestamp = timestamp.replace(tzinfo=pytz.UTC)
             
-        tz = self.get_tz_for_sensor(group, sensor_topic)
+        tz = self.get_tz_for_sensor(sensor_topic)
         timestamp = timestamp.astimezone(tz)
         return timestamp
 
