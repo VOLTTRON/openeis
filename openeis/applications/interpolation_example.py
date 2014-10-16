@@ -53,7 +53,7 @@
 #
 #}}}
 
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.projects.storage.db_output import DatabaseOutputFile
 import logging
 import datetime
@@ -87,6 +87,12 @@ class Application(DriverApplicationBaseClass):
         return {
 
                 }
+    
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'interpolation_example'
+        desc = 'interpolation_example'
+        return ApplicationDescriptor(app_name=name, description=desc)
 
 
     @classmethod

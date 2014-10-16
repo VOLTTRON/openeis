@@ -55,7 +55,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor, 
                                   ConfigDescriptor,
                                   InputDescriptor,
-                                  Results)
+                                  Results,
+                                  ApplicationDescriptor)
 
 hot_water_dx = 'Hot Water Central Plant Diagnostics'
 hotwater_dx1 = 'High HW loop Differential Pressure Dx'
@@ -182,6 +183,12 @@ class Application(DrivenApplicationBaseClass):
             'delta_t_threshold': ConfigDescriptor(float, 'Band around desired delta-T where where delat-T is considered OK')
            }
 
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'central_plant_hotwater_dx'
+        desc = 'central_plant_hotwater_dx'
+        return ApplicationDescriptor(app_name=name, description=desc)
+    
     def data_check(self, point_dict, _name, opt_name='zyxwvutsrq'):
         data_check = False
         point_values = []

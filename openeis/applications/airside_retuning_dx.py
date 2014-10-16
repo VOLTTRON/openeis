@@ -56,7 +56,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor, 
                                   ConfigDescriptor,
                                   InputDescriptor,
-                                  Results)
+                                  Results,
+                                  ApplicationDescriptor)
 
 duct_stc_dx = 'Duct Static Pressure Diagnostics'
 duct_static1 = 'Low Duct Static Pressure Dx'
@@ -245,6 +246,12 @@ class Application(DrivenApplicationBaseClass):
                 'sunday_sch': ConfigDescriptor(float,  'Sunday AHU occupied schedule (6:30;18:30). Used to detect the time when fan should be operational.')
                 
                 }
+
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'airside_returning_dx'
+        desc = 'airside_returning_dx'
+        return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
     def required_input(cls):

@@ -49,7 +49,7 @@ and includes the following modification: Paragraph 3. has been added.
 """
 
 
-from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor
+from openeis.applications import DriverApplicationBaseClass, InputDescriptor, OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 import logging
 from django.db.models import Sum
@@ -83,7 +83,12 @@ class Application(DriverApplicationBaseClass):
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
-
+        
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'longitudinal_BM'
+        desc = 'longitudinal_BM'
+        return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
     def required_input(cls):

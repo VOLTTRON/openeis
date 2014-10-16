@@ -783,6 +783,10 @@ class ApplicationViewSet(viewsets.ViewSet):
         for app_name, app in apps.items():
             app_list.append(serializers.ApplicationSerializer(app).data)
             app_list[-1]['name'] = app_name
+            if app.get_app_descriptor() is None:
+                app_list[-1]['description'] = None
+            else:
+                app_list[-1]['description'] = app.get_app_descriptor().description
         return Response(app_list)
 
 

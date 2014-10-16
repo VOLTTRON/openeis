@@ -49,7 +49,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
-    OutputDescriptor, ConfigDescriptor
+    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 import logging
 import datetime as dt
@@ -94,7 +94,12 @@ class Application(DriverApplicationBaseClass):
             "operation_hours": ConfigDescriptor(float, "Number of hours buildings is operational")
             }
 
-
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'sensor_suitcase_lighting'
+        desc = 'sensor_suitcase_lighting'
+        return ApplicationDescriptor(app_name=name, description=desc)
+    
     @classmethod
     def required_input(cls):
         # Called by UI

@@ -54,7 +54,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor, 
                                   ConfigDescriptor,
                                   InputDescriptor,
-                                  Results)
+                                  Results,
+                                  ApplicationDescriptor)
 
 econ1 = 'Temperature Sensor Dx'
 econ2 = 'Economizer Correctly ON Dx'
@@ -185,7 +186,12 @@ class Application(DrivenApplicationBaseClass):
             'tonnage': ConfigDescriptor(float, 'AHU/RTU cooling capacity in tons'),
             'eer': ConfigDescriptor(float, 'AHU/RTU rated EER')
            }
-
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'economizer_dx'
+        desc = 'economizer_dx'
+        return ApplicationDescriptor(app_name=name, description=desc)
+    
     @classmethod
     def required_input(cls):
         '''
