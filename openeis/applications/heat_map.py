@@ -50,7 +50,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 from openeis.applications import reports
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
-    OutputDescriptor, ConfigDescriptor
+    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 from .utils import conversion_utils as cu
 import datetime as dt
@@ -83,6 +83,12 @@ class Application(DriverApplicationBaseClass):
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
 
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'heat_map'
+        desc = 'heat_map'
+        return ApplicationDescriptor(app_name=name, description=desc)
+    
     @classmethod
     def required_input(cls):
         #Called by UI
@@ -162,7 +168,7 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting analysis", logging.INFO)
 
         loads = self.inp.get_query_sets('load', group_by='hour', exclude={'value':None})
-        
+        print(loads)
         # Get conversion factor
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()

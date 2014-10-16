@@ -52,7 +52,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
-    OutputDescriptor, ConfigDescriptor
+    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 import logging
 from django.db.models import Avg
@@ -85,7 +85,12 @@ class Application(DriverApplicationBaseClass):
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
-
+    
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'energy_signature'
+        desc = 'Energy Signature'
+        return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
     def required_input(cls):
@@ -209,6 +214,7 @@ class Application(DriverApplicationBaseClass):
         
         merged_load_oat = self.inp.merge(load_query, oat_query)
 
+        #print('merge load', merged_load_oat)
         load_values = []
         oat_values = []
 
@@ -230,6 +236,8 @@ class Application(DriverApplicationBaseClass):
                 })
 
         # find the Spearman rank
+        #print(load_values)
+        #print(oat_values)
         weather_sensitivity = findSpearmanRank(load_values, oat_values)
         # TODO weather sensitivity as attribute for report generation
 

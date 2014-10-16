@@ -48,7 +48,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
-    OutputDescriptor, ConfigDescriptor
+    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 import logging
 from .utils import conversion_utils as cu
@@ -80,6 +80,11 @@ class Application(DriverApplicationBaseClass):
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
 
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'load_duration'
+        desc = 'load_duration'
+        return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
     def required_input(cls):

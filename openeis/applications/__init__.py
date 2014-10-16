@@ -124,7 +124,6 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         self.inp = inp
         self.out = out
 
-
     def _pre_execute(self):
         pass
 
@@ -207,7 +206,18 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
                 "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
         """
-
+    
+    @classmethod
+    @abstractmethod
+    def get_app_descriptor(cls):
+        """
+            Returns ApplicationDescriptor instance with application name and description.
+            e.g.:
+            name = 'This is application name'
+            desc = 'This is what applications does'
+            return ApplicationDescriptor(app_name=name, description=desc)
+        """
+        
     @abstractmethod
     def execute(self):
         """
@@ -358,11 +368,17 @@ for applicationName in _applicationList:
 
     if not issubclass(klass, DriverApplicationBaseClass):
         logging.warning('The implementation of {name} does not inherit from openeis.algorithm.DriverApplicationBaseClass.'.format(name=applicationName))
+    
+    
+    if klass.get_app_descriptor() is None:
+        _applicationDict[applicationName] = klass
+    else:
+        print(klass.get_app_descriptor().app_name)
+        _applicationDict[klass.get_app_descriptor().app_name] = klass
 
-    _applicationDict[applicationName] = klass
-
-# print(_applicationDict)
+#print(_applicationDict)
 
 
 def get_algorithm_class(name):
+    print(name)
     return _applicationDict.get(name)

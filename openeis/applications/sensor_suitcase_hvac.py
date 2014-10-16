@@ -49,7 +49,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
-    OutputDescriptor, ConfigDescriptor
+    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 import logging
 import datetime as dt
@@ -118,6 +118,11 @@ class Application(DriverApplicationBaseClass):
             "holidays": ConfigDescriptor(str, "List the holidays (YYYY-MM-DD) in the dataset, separated by commas.", optional=True),
             }
 
+    @classmethod
+    def get_app_descriptor(cls):
+        name = 'sensor_suitcase_hvac'
+        desc = 'sensor_suitcase_hvac'
+        return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
     def required_input(cls):

@@ -56,7 +56,7 @@
 from openeis.projects import models
 import json
 from openeis.projects.storage import sensorstore
-
+import copy
 class CloneProject():
     
     def __init__(self):
@@ -96,24 +96,40 @@ class CloneProject():
     
             self.clone_sensor_ingest(list(sensor_ingests),data_map, project)
             self.clone_sensors(list(sensors), data_map)
-    
+            
     def clone_sensor_ingest(self, sensor_ingests_list, data_map_definition, project):
+        self.sensor_ingest_dict = {}
         for sensor_ingest in sensor_ingests_list:
-    
+            orig_sensor_ingest = copy.copy(sensor_ingest)
+            print(orig_sensor_ingest.id)
             analyses = models.Analysis.objects.filter(dataset=sensor_ingest)
-    
+            orig_ingest = sensor_ingest
             sensor_ingest.id = None
             sensor_ingest.project = project
             sensor_ingest.map = data_map_definition
             sensor_ingest.save()
-    
+            self.sensor_ingest_dict[orig_sensor_ingest] = sensor_ingest
+        
             self.clone_analysis(list(analyses), sensor_ingest, project)
+        
     
     def clone_sensors(self, sensors_list, data_map):
         for sensor in sensors_list:
+            orig_sensor = copy.copy(sensor)
             sensor.id= None
             sensor.map = data_map
             sensor.save()
+            
+            cloned_sensor_data = []
+            for sensor_ingest in self.sensor_ingest_dict.keys():
+                sensor_data_list = orig_sensor.data_class.objects.filter(ingest=sensor_ingest)
+                for sensor_data in sensor_data_list:
+                    sensor_data.sensor = sensor
+                    sensor_data.ingest = self.sensor_ingest_dict[sensor_ingest]
+                    sensor_data.id = None
+                    cloned_sensor_data.append(sensor_data)
+                orig_sensor.data_class.objects.bulk_create(cloned_sensor_data)
+            
     
     def clone_analysis(self, analyses_list, sensor_ingest, project):
         for analysis in analyses_list:
