@@ -56,8 +56,8 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
 from openeis.applications import reports
 import logging
 from django.db.models import Avg
-from .utils.spearman import findSpearmanRank
-from .utils import conversion_utils as cu
+from openeis.applications.utils.spearman import findSpearmanRank
+from openeis.applications.utils import conversion_utils as cu
 
 
 class Application(DriverApplicationBaseClass):
@@ -182,14 +182,13 @@ class Application(DriverApplicationBaseClass):
         return report_list
 
     def execute(self):
-        # Called after User hits GO
         """
         Calculates weather sensitivity using Spearman rank.
         Also, outputs data points for energy signature scatter plot.
         """
-        self.out.log("Starting Spearman rank", logging.INFO)
+        self.out.log("Starting Spearman rank.", logging.INFO)
 
-        # gather loads and outside air temperatures. Reduced to an hourly average
+        self.out.log("Query the database and aggregate the data by hour by averaging.", logging.INFO)
         load_query = self.inp.get_query_sets('load', group_by='hour',
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
@@ -199,7 +198,7 @@ class Application(DriverApplicationBaseClass):
                                              exclude={'value':None},
                                              wrap_for_merge=True)
 
-        # Get conversion factor
+        self.out.log("Convert the electricity values to kWh and temperature values.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
@@ -212,7 +211,7 @@ class Application(DriverApplicationBaseClass):
         load_values = []
         oat_values = []
 
-        # Output for scatter plot
+        self.out.log("Compile the report table.", logging.INFO)
         for x in merged_load_oat:
             if temperature_unit == 'celcius':
                 convertedTemp = cu.convertCelciusToFahrenheit(x['oat'][0])
@@ -229,10 +228,10 @@ class Application(DriverApplicationBaseClass):
                 "load": x['load'][0]
                 })
 
-        # find the Spearman rank
+        self.out.log("Calculate the Spearman rank.", logging.INFO)
         weather_sensitivity = findSpearmanRank(load_values, oat_values)
-        # TODO weather sensitivity as attribute for report generation
 
+        self.out.log("Add weather sensitivity to table.", logging.INFO)
         self.out.insert_row("Weather_Sensitivity", {
             "value": "{:.2f}".format(weather_sensitivity)
             })

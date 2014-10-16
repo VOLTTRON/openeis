@@ -99,24 +99,28 @@ def retrieveScore(targetFinderData):
     request = urllib.request.Request(url, targetFinderData_bin, headers={'Content-Type': 'application/xml'})
     assert ( request.get_method() == 'POST' )
 
+    metrics = dict()
     try:
         response = opener.open(request)
         xmlRoot = ET.fromstring(response.read())
-        metrics = dict()
+        metrics['status'] = 'success'
         for val in xmlRoot.iter('metric'):
             metrics[val.get('name')] = (val.findtext('value'),val.get('uom'))
-        return (metrics)
     except urllib.request.HTTPError as err:
         print ('http error')
         print ('code is ', err.code)
         print ('reason is', err.reason)
         print (str(err))
         print (err.read())
+        metrics['status'] = 'HTTP Error'
+        metrics['reason'] = err.reason
     except urllib.request.URLError as err:
         print ('url error')
         print (err.args)
         print (err.reason)
-        return (None)
+        metrics['status'] = 'URL Error'
+        metrics['reason'] = err.reason
+    return (metrics)
 
     #
     # End :func:`retrieveEnergyStarScore_targetFinder`.

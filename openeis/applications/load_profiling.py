@@ -50,7 +50,7 @@ and includes the following modification: Paragraph 3. has been added.
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 from openeis.applications import reports
-from .utils import conversion_utils as cu
+from openeis.applications.utils import conversion_utils as cu
 import datetime as dt
 import logging
 
@@ -158,11 +158,9 @@ class Application(DriverApplicationBaseClass):
         return report_list
 
     def execute(self):
-        #Called after User hits GO
-        "Outputs values for line graph."
-        self.out.log("Starting analysis", logging.INFO)
+        """Outputs values for line graph."""
+        self.out.log("Starting load profile analysis", logging.INFO)
 
-        # Get the units and the conversion factor.
         self.out.log("Find the conversion factor.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
@@ -174,7 +172,8 @@ class Application(DriverApplicationBaseClass):
                                                 exclude={'value': None},
                                                 group_by='hour')[0]
 
-        # Limit the number of datapoints, have 2 weeks worth of data.
+        self.out.log("Reduce the records to two weeks.", logging.INFO)
+        # Note: Limit the number of datapoints, have 2 weeks worth of data.
         # 24 hours x 14 days = 336.
         if len(load_by_hour) > 336:
             start = len(load_by_hour) - 336
@@ -183,6 +182,7 @@ class Application(DriverApplicationBaseClass):
             start = 0
             end = len(load_by_hour)
 
+        self.out.log("Compile the report table.", logging.INFO)
         for x in load_by_hour[start:end]:
             self.out.insert_row("Load_Profiling", {
                 'timestamp': dt.datetime.strptime(x[0],'%Y-%m-%d %H'),

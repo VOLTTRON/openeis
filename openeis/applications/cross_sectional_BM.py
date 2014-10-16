@@ -54,9 +54,9 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
 from openeis.applications import reports
 import logging
 from django.db.models import Sum
-from .utils.gen_xml_tgtfndr import gen_xml_targetFinder
-from .utils.retrieveEnergyStarScore_tgtfndr import retrieveScore
-from .utils import conversion_utils as cu
+from openeis.applications.utils.gen_xml_tgtfndr import gen_xml_targetFinder
+from openeis.applications.utils.retrieveEnergyStarScore_tgtfndr import retrieveScore
+from openeis.applications.utils import conversion_utils as cu
 
 
 class Application(DriverApplicationBaseClass):
@@ -198,14 +198,12 @@ class Application(DriverApplicationBaseClass):
 
     def execute(self):
         #Called after User hits GO
-        """
-        Will output the following: year, aggregated load amounts,
-        and aggregated gas amounts.
-        """
+        """Outputs the ENERGY Star Score from Target Finder API"""
         #NOTE: Connection check happens after data is formatted into XML and
         # sent into the web service request.
-        self.out.log("Starting analysis", logging.INFO)
+        self.out.log("Starting cross-sectional benchmarking analysis.", logging.INFO)
 
+        self.out.log("Query the database for model parameters.", logging.INFO)
         bldgMetaData = dict()
         bldgMetaData['floor-area']  = self.sq_ft
         bldgMetaData['year-built']  = self.building_year
@@ -213,6 +211,7 @@ class Application(DriverApplicationBaseClass):
         bldgMetaData['function']    = self.building_function
         bldgMetaData['zipcode']     = self.building_zipcode
 
+        self.out.log("Query the database for most recent year of energy load.", logging.INFO)
         # NOTE: Hourly values are preferred to make calculations easier.
         load_by_year = self.inp.get_query_sets('load', group_by='year',
                                                group_by_aggregation=Sum,
@@ -232,6 +231,7 @@ class Application(DriverApplicationBaseClass):
 
         recent_record = merge_data_list[len(merge_data_list)-1]
 
+        self.out.log("Convert the electricity to kWh and natural gas to kBtu.", logging.INFO)
         # Get units from sensor maps.
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
@@ -241,21 +241,26 @@ class Application(DriverApplicationBaseClass):
         load_convertfactor = cu.conversiontoKWH(load_unit)
         natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
 
-        #TODO: Convert values to units that are PM Manager values.
+        #TODO: Convert values to units that are PM Manager valid values.
         energyUseList = [['Electric','kWh (thousand Watt-hours)',int(recent_record[1]*load_convertfactor)],
                          ['Natural Gas','kBtu (thousand Btu)',int(recent_record[2]*natgas_convertfactor)]]
 
-        # Generate XML-formatted data to pass data to the webservice.
+        self.out.log("Generate XML-formatted data to pass data to the webservice.", logging.INFO)
         targetFinder_xml = gen_xml_targetFinder(bldgMetaData,energyUseList,'z_targetFinder_xml')
-        # Function that does a URL Request with ENERGY STAR web server.
+
+        self.out.log("Function that sends a URL Request with ENERGY STAR web server.", logging.INFO)
         PMMetrics = retrieveScore(targetFinder_xml)
 
-        if PMMetrics == None:
-            errmessage = 'Network connection needed to run application.'
-            self.out.log(errmessage, logging.WARNING)
-        else:
+        self.out.log("Compile report table.", logging.INFO)
+        if PMMetrics['status'] == 'success':
             self.out.log('Analysis successful', logging.INFO)
             self.out.insert_row('CrossSectional_BM', {
                 'Metric Name': 'Target Finder Score',
                 'Value': str(PMMetrics['designScore'][0])
+                })
+        else:
+            self.out.log(str(PMMetrics['status'])+'\nReason:\t'+str(PMMetrics['reason']), logging.WARNING)
+            self.out.insert_row('CrossSectional_BM', {
+                'Metric Name': 'Target Finder Score',
+                'Value': 'Check log for error.'
                 })

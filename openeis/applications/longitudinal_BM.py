@@ -53,8 +53,7 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor, Ou
 from openeis.applications import reports
 import logging
 from django.db.models import Sum
-from .utils import conversion_utils as cu
-
+from openeis.applications.utils import conversion_utils as cu
 
 class Application(DriverApplicationBaseClass):
 
@@ -177,9 +176,9 @@ class Application(DriverApplicationBaseClass):
         Will output the following: year, aggregated load amounts,
         and aggregated gas amounts.
         """
-        self.out.log("Starting analysis", logging.INFO)
+        self.out.log("Starting longitudinal benchmarking analysis", logging.INFO)
 
-        #grabs data by year and reduces it.
+        self.out.log("Query database and aggregate energy values per year.", logging.INFO)
         # Note: Assumes all of the energy data are in a per hour basis.
         # Valid calculation to sum the data by 'year'.
         load_by_year = self.inp.get_query_sets('load', group_by='year',
@@ -194,7 +193,7 @@ class Application(DriverApplicationBaseClass):
 
         merge_load_gas = self.inp.merge(load_by_year, gas_by_year)
 
-        # Get conversion factor.
+        self.out.log("Convert electricity values to kWh and natural gas to kBtu.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
@@ -202,7 +201,8 @@ class Application(DriverApplicationBaseClass):
 
         load_convertfactor = cu.conversiontoKWH(load_unit)
         natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
-
+        
+        self.out.log("Compile the report table.", logging.INFO)
         for x in merge_load_gas:
             self.out.insert_row('Longitudinal_BM', {
                 'year': x['time'],

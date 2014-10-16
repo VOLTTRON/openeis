@@ -51,8 +51,7 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor
 from openeis.applications import reports
 import logging
-from .utils import conversion_utils as cu
-# import numpy
+from openeis.applications.utils import conversion_utils as cu
 
 class Application(DriverApplicationBaseClass):
 
@@ -155,14 +154,13 @@ class Application(DriverApplicationBaseClass):
 
 
     def execute(self):
-        #Called after User hits GO
-        """
-            Output is sorted loads values.
-        """
-        self.out.log("Starting load duration", logging.INFO)
+        """ Output is sorted loads values."""
+        
+        self.out.log("Starting load duration analysis.", logging.INFO)
 
         load_query = self.inp.get_query_sets('load', order_by='value', exclude={'value':None})
 
+        self.out.log("Convert the values to kWh.", logging.INFO)
         # Get conversion factor
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
@@ -170,6 +168,7 @@ class Application(DriverApplicationBaseClass):
 
         load_convertfactor = cu.conversiontoKWH(load_unit)
 
+        self.out.log("Compile the report table.", logging.INFO)
         ctr = 1
         for x in load_query[0]:
             self.out.insert_row("Load_Duration", { "sorted load": x[1]*load_convertfactor,
