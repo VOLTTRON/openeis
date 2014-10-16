@@ -155,34 +155,33 @@ class Application(DriverApplicationBaseClass):
         return report_list
 
     def execute(self):
-        #Called after User hits GO
-        """
-        Output values for Heat Map.
-        """
-        self.out.log("Starting analysis", logging.INFO)
+        """Output values for Heat Map."""
+        self.out.log("Starting heat map analysis", logging.INFO)
 
         loads = self.inp.get_query_sets('load', group_by='hour', exclude={'value':None})
 
+        self.out.log("Convert electricity to kWh.", logging.INFO)
         # Get conversion factor
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
 
         load_convertfactor = cu.conversiontoKWH(load_unit)
-        print (load_convertfactor)
+        load_tz = meta_topics['load'][base_topic['load'][0]]['timezone']
+        print (load_tz)
 
-        self.out.log("@length of a month"+str(len(loads[0])), logging.INFO)
-
-        # Limit the number of datapoints, have 2 weeks worth of data.
+        self.out.log("Limit the analysis to a month.", logging.INFO)
+        # Limit the number of datapoints, have 4 weeks worth of data.
         # 24 hours x 14 days = 336.
-        # if len(loads[0]) > 336:
-            # start = len(loads[0]) - 336
-            # end = len(loads[0]) - 1
-        # else:
-            # start = 0
-            # end = len(loads[0])
+        if len(loads[0]) > 336:
+            start = len(loads[0]) - 336
+            end = len(loads[0]) - 1
+        else:
+            start = 0
+            end = len(loads[0])
 
-        for x in loads[0]:
+        self.out.log("Compile the report table.", logging.INFO)
+        for x in loads[0][start:end]:
             datevalue = x[0]
             if not isinstance(datevalue, dt.datetime):
                 datevalue = dt.datetime.strptime(datevalue, '%Y-%m-%d %H')
