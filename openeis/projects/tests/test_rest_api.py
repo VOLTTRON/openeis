@@ -317,18 +317,31 @@ class TestRestApi(OpenEISTestBase):
     def test_applications_valid_params_and_inputs(self):
         from openeis.applications import (_applicationDict)
 
-        client = APIClient()
+        client = self.get_authenticated_client()
         response = client.get('/api/applications')
-        self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
+
+        for app in response.data:
+            self.assertTrue(app['id'] in _applicationDict)
+            dictApp = _applicationDict[app['id']]
+            self.assertEqual(len(app['parameters']),
+                             len(dictApp.get_config_parameters()),
+                             'Config parameters mismatch for application "{}"'.format(app['id']))
+            self.assertEqual(len(app['inputs']),
+                             len(dictApp.required_input()),
+                             'Required inputs mismatch for application "{}"'.format(app['id']))
+
+    def test_application_name_and_description(self):
+        from openeis.applications import (_applicationDict)
 
         client = self.get_authenticated_client()
         response = client.get('/api/applications')
-        self.assertEqual(status.HTTP_200_OK, response.status_code)
-        self.assertEqual(len(response.data), len(_applicationDict))
+
         for app in response.data:
-            self.assertTrue(app['name'] in _applicationDict)
-            dictApp = _applicationDict[app['name']]
-            self.assertEqual(len(app['parameters']),
-                             len(dictApp.get_config_parameters()), "Problem with config parameters for: "+app['name'])
-            self.assertEqual(len(app['inputs']),
-                             len(dictApp.required_input()), "Problem with required inputs: "+app['name'])
+            appDesc = _applicationDict[app['id']].get_app_descriptor()
+            if appDesc:
+                self.assertEqual(app['name'], appDesc.app_name,
+                                 'Name mismtach for application "{}"'.format(app['id']))
+                self.assertEqual(app['description'], appDesc.description,
+                                 'Description mismtach for application "{}"'.format(app['id']))
+
+
