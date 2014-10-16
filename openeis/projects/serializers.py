@@ -105,7 +105,8 @@ class CreateFileSerializer(serializers.ModelSerializer):
         try:
             
             #TODO: XML more structured so test that first
-#            attrs['format'] = 'greenbutton'
+            #TODO: This needs to be done more intelligently
+
             if attrs['file'].content_type == "text/xml":
                 attrs['format'] = 'greenbutton'
             else:
