@@ -368,13 +368,8 @@ for applicationName in _applicationList:
 
     if not issubclass(klass, DriverApplicationBaseClass):
         logging.warning('The implementation of {name} does not inherit from openeis.algorithm.DriverApplicationBaseClass.'.format(name=applicationName))
-    
-    
-    if klass.get_app_descriptor() is None:
-        _applicationDict[applicationName] = klass
-    else:
-        print(klass.get_app_descriptor().app_name)
-        _applicationDict[klass.get_app_descriptor().app_name] = klass
+
+    _applicationDict[applicationName] = klass
 
 #print(_applicationDict)
 
