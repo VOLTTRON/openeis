@@ -103,7 +103,14 @@ class CreateFileSerializer(serializers.ModelSerializer):
             return attrs
         file = attrs[source].file
         try:
-            csv_file = CSVFile(file)
+            
+            #TODO: XML more structured so test that first
+#            attrs['format'] = 'greenbutton'
+            if attrs['file'].content_type == "text/xml":
+                attrs['format'] = 'greenbutton'
+            else:
+                csv_file = CSVFile(file)
+                attrs['format'] = 'csv'
         except csv.Error as e:
             raise serializers.ValidationError(str(e))
         file.seek(0)
@@ -136,8 +143,9 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.DataFile
-        read_only_fields = ('project',)
+        read_only_fields = ('project','format')
         exclude = ('file',)
+        
 
     def transform_download_url(self, obj, value):
         request = self.context.get('request')

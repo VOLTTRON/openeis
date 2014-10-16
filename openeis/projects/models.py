@@ -180,8 +180,12 @@ class DataFile(models.Model):
         "additionalProperties": False
     }
 
+    FORMAT_CHOICES = (('csv', 'CSV'), ('greenbutton', 'GreenButton'))
+
+
     project = models.ForeignKey(Project, related_name='files')
     name = models.CharField(max_length=100)
+    format = models.CharField(max_length=32, choices=FORMAT_CHOICES,default='csv')
     file = models.FileField(
             upload_to=_data_file_path, storage=ProtectedFileSystemStorage())
     uploaded = models.DateTimeField(
