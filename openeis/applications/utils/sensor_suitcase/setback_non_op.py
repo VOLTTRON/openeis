@@ -78,15 +78,16 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
         h_savings = (max_ZAT_h_unocc-ZAT_heat_threshold) * 0.03 * h_val * percent_h * elec_cost \
                 * percent_unocc
         ven_savings = 0.06* vent_val * elec_cost * percent_unocc
-        return {'Problem': "Nighttime thermostat setbacks are not enabled.",
-            'Diagnostic': "More than 30 percent of the data indicates that the \
-                    building is being conditioned or ventilated normally \
-                    during unoccupied hours.",
-            'Recommendation': "Program your thermostats to decrease the \
-                    heating setpoint, or increase the cooling setpoint during \
-                    unoccuppied times.  Additionally, you may have a \
-                    contractor configure the RTU to reduce ventilation.",
-            'Savings': c_savings + h_savings + ven_savings}
+        return {
+            'Problem': "Nighttime thermostat setbacks are not enabled.",
+            'Diagnostic': "More than 30 percent of the data indicates that the " + \
+                    "building is being conditioned or ventilated normally " + \
+                    "during unoccupied hours.",
+            'Recommendation': "Program your thermostats to decrease the " + \
+                    "heating setpoint, or increase the cooling setpoint during " + \
+                    "unoccuppied times.  Additionally, you may have a " + \
+                    "contractor configure the RTU to reduce ventilation.",
+            'Savings': round(c_savings + h_savings + ven_savings, 2)}
     else:
         return {}
 

@@ -88,14 +88,15 @@ def short_cycling(HVAC_stat, elec_cost):
     if (fault_count > 10):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
                  percent_HVe = get_CBECS(area)
-        return {'Problem': "RTU cycling on and off too frequently, potentially \
-                    leading to equipment failure.",
-            'Diagnostic': "For more than 10 consecutive cycles during the \
-                    monitoring period the RTU switched from on to off in under \
-                    5 minutes.",
-            'Recommendation': "Ask HVAC service providers to check refrigerant \
-                    levels, thermostat location, and control sequences.",
-            'Savings': (percent_h + percent_c) * 10 * elec_cost}
+        return {
+            'Problem': "RTU cycling on and off too frequently, potentially " + \
+                    "leading to equipment failure.",
+            'Diagnostic': "For more than 10 consecutive cycles during the " + \
+                    "monitoring period the RTU switched from on to off in under " + \
+                    "5 minutes.",
+            'Recommendation': "Ask HVAC service providers to check refrigerant " + \
+                    "levels, thermostat location, and control sequences.",
+            'Savings': round((percent_h + percent_c) * 10 * elec_cost, 2)}
     else:
         return {}
 
