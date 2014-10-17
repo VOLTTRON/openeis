@@ -288,7 +288,7 @@ class Application(DriverApplicationBaseClass):
             "Metric": "Load Variability",
             "value": "{:.2f}".format(load_variability),
             "description":"This metric is used to understand regularity of operations, "  \
-                "and the likelihood of consistency in the building’s demand responsiveness. "  \
+                "and the likelihood of consistency in the building's demand responsiveness. "  \
                 "It gives a coefficient of variation that ranges from 0 to 1. "  \
                 "This coefficient can be interpreted based on general guidelines. "  \
                 "For example, variability above 0.15 is generally considered high for commercial buildings."
