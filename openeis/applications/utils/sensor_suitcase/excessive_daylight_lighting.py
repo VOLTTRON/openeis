@@ -46,6 +46,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
+<<<<<<< HEAD
 from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
 #---
 #TODO: Delete this. Set up for the tests.
@@ -66,6 +67,9 @@ append_data_to_datetime(base,temp)
 
 
 
+=======
+from utils import get_CBECS
+>>>>>>> b6fe0f07e2cbbeb6f4463bd7322c47f1aac29160
 
 def excessive_daylight(light_data, operational_hours, area, elec_cost):
     """

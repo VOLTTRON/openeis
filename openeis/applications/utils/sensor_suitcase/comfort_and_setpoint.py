@@ -45,7 +45,7 @@ and includes the following modification: Paragraph 3. has been added.
 """
 from numpy import mean
 from datetime import datetime
-from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
+from openeis.applications.utils.sensor_suitcase.utils import get_CBECS, separate_hours
 
 def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
     """
@@ -149,13 +149,13 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
 
     if ((heating_setpt > heating_threshold) and (cooling_setpt < cooling_threshold)):
         setpoint_flag = {
-        'Problem': "Overly narrow separation between heating \
-            and cooling setpoints.",
-        'Diagnostic': "During occupied hours, the cooling setpoint was lower \
-                than 76F and the heating setpoint was greater than 72F.",
-        'Recommendation': "Adjust the heating and cooling setpoints so that \
-                they differ by more than four degrees.",
-        'Savings': cooling_savings + heating_savings
+        'Problem': "Overly narrow separation between heating " + \
+                "and cooling setpoints.",
+        'Diagnostic': "During occupied hours, the cooling setpoint was lower " + \
+                "than 76F and the heating setpoint was greater than 72F.",
+        'Recommendation': "Adjust the heating and cooling setpoints so that " + \
+                "they differ by more than four degrees.",
+        'Savings': round(cooling_savings + heating_savings, 2)
         }
     else:
         setpoint_flag = {}
@@ -163,71 +163,44 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
     if (over_cooling_perc > 0.3):
         comfort_flag = {
         'Problem': "Over-conditioning, thermostat cooling setpoint is low",
-        'Diagnostic': "More than 30 percent of the time, the cooling setpoint \
-                during occupied hours was lower than 75F, a temperature that \
-                is comfortable to most occupants",
-        'Recommendation': "Program your thermostats to increase the cooling \
-                setpoint during occupied hours.",
-        'Savings': cooling_savings
+        'Diagnostic': "More than 30 percent of the time, the cooling setpoint " + \
+                "during occupied hours was lower than 75F, a temperature that " + \
+                "is comfortable to most occupants",
+        'Recommendation': "Program your thermostats to increase the cooling " + \
+                "setpoint during occupied hours.",
+        'Savings': round(cooling_savings, 2)
         }
     elif (under_cool/len(DAT_op) > 0.3):
         comfort_flag =  {
-        'Problem': "Under-conditioning, thermostat cooling \
-                setpoint is high.",
-        'Diagnostic':  "More than 30 percent of the time, the cooling setpoint \
-                during occupied hours was greater than 80F.",
-        'Recommendation': "Program your thermostats to decrease the cooling \
-                setpoint to improve building comfort during occupied hours."
+        'Problem': "Under-conditioning, thermostat cooling " + \
+                "setpoint is high.",
+        'Diagnostic':  "More than 30 percent of the time, the cooling setpoint " + \
+                "during occupied hours was greater than 80F.",
+        'Recommendation': "Program your thermostats to decrease the cooling " + \
+                "setpoint to improve building comfort during occupied hours."
         }
     elif (over_heating_perc > 0.3):
         comfort_flag = {
-        'Problem': "Over-conditioning, thermostat heating \
-                setpoint is high.",
-        'Diagnostic': "More than 30 percent of the time, the heating setpoint \
-                during occupied hours was greater than 72F, a temperature that \
-                is comfortable to most occupants.",
-        'Recommendation': "Program your thermostats to decrease the heating \
-            setpoint during occupied hours.",
-        'Savings': heating_savings
+        'Problem': "Over-conditioning, thermostat heating " + \
+                "setpoint is high.",
+        'Diagnostic': "More than 30 percent of the time, the heating setpoint " + \
+                "during occupied hours was greater than 72F, a temperature that " + \
+                "is comfortable to most occupants.",
+        'Recommendation': "Program your thermostats to decrease the heating " + \
+                "setpoint during occupied hours.",
+        'Savings': round(heating_savings, 2)
         }
     elif (under_heat/len(DAT_op) > 0.3):
         comfort_flag = {
-        'Problem': "Under-conditioning - thermostat heating \
-                setpoint is low.",
-        'Diagnostic': "For more than 30% of the time, the cooling setpoint \
-                during occupied hours was less than 69 degrees F.",
-        'Recommendation': "Program thermostats to increase the heating \
-                setpoint to improve building comfort during occupied hours."
+        'Problem': "Under-conditioning - thermostat heating " + \
+                "setpoint is low.",
+        'Diagnostic': "For more than 30% of the time, the cooling setpoint " + \
+                "during occupied hours was less than 69 degrees F.",
+        'Recommendation': "Program thermostats to increase the heating " + \
+                "setpoint to improve building comfort during occupied hours."
         }
     else:
         comfort_flag = {}
 
     return comfort_flag, setpoint_flag
-
-def separate_hours(data, op_hours, days_op, holidays=[]):
-    """
-    Given a dataset and a building's operational hours, this function will
-    separate data from operational hours and non-operational hours.
-
-    Parameters:
-        - data: array of arrays that have [datetime, data]
-        - op_hours: operational hour for the building in military time
-            - i.e. [9, 17]
-        - days_op: days of the week it is operational as a list
-            - Monday = 1, Tuesday = 2 ... Sunday = 7
-            - i.e. [1, 2, 3, 4, 5] is Monday through Friday
-        - holidays: a list of datetime.date that are holidays.
-            - data with these dates will be put into non-operational hours
-    """
-    operational = []
-    non_op = []
-    for point in data:
-        if (point[0].date() in holidays) or \
-            (point[0].isoweekday() not in days_op):
-            non_op.append(point)
-        elif ((point[0].hour >= op_hours[0]) and (point[0].hour < op_hours[1])):
-            operational.append(point)
-        else:
-            non_op.append(point)
-    return operational, non_op
 

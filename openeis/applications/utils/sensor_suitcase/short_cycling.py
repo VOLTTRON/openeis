@@ -46,7 +46,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from datetime import datetime, timedelta
-from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
+from utils import get_CBECS
 
 def short_cycling(HVAC_stat, elec_cost):
     """
