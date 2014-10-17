@@ -46,6 +46,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
+from openeis.applications.utils.sensor_suitcase.utils import get_CBECS
 
 def economizer(DAT, OAT, HVACstat, elec_cost, area):
     """
@@ -83,12 +84,21 @@ def economizer(DAT, OAT, HVACstat, elec_cost, area):
         i += 1
 
     # Percentage is when the economizer is on
+    # if the RTU was never on, economizer was being used
+    if (RTU_on == 0):
+        return {}
     percentage = econ_on/RTU_on
     if (percentage < 0.7):
-        return {'Problem': "Under use of 'free cooling', i.e.,under-economizing.",
-                'Diagnostic': "More than 30 percent of the time, the economizer is not taking advantage of 'free cooling' when it is possible to do so.",
-                'Recommendation': "Ask an HVAC service contractor to check the economizer control sequence, unless the RTU does not have an economizer.",
-                'Savings': get_CBECS(area)[5] * 0.1 * elec_cost}
+        return {
+            'Problem': "Under use of 'free cooling', i.e.,under-economizing.",
+            'Diagnostic': "More than 30 percent of the time, the " + \
+                    "economizer is not taking advantage of 'free cooling' " + \
+                    "when it is possible to do so.",
+            'Recommendation': "Ask an HVAC service contractor to check " + \
+                    "the economizer control sequence, unless the RTU does" + \
+                    "not have an economizer.",
+            'Savings': get_CBECS(area)[5] * 0.1 * elec_cost
+            }
     else:
         return {}
 

@@ -51,10 +51,9 @@ from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
 
 import datetime
-from economizer import economizer
+from openeis.applications.utils.sensor_suitcase.economizer import economizer
 import copy
 
-#TODO: more extensive tests.
 class TestEconomizer(AppTestBase):
 
     def test_economizer_basic(self):
@@ -75,6 +74,40 @@ class TestEconomizer(AppTestBase):
         HVAC_data = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]
         append_data_to_datetime(HVACstat, HVAC_data)
 
-        result = economizer(DAT, OAT, HVACstat)
-        self.assertIsNotNone(result,
-                "Should return a dictionary of suggestions, but does not.")
+        result = economizer(DAT, OAT, HVACstat, 10000, 5000)
+        expected = {
+            'Problem': "Under use of 'free cooling', i.e.,under-economizing.",
+            'Diagnostic': "More than 30 percent of the time, the " + \
+                    "economizer is not taking advantage of 'free cooling' " + \
+                    "when it is possible to do so.",
+            'Recommendation': "Ask an HVAC service contractor to check " + \
+                    "the economizer control sequence, unless the RTU does" + \
+                    "not have an economizer.",
+            'Savings': 0.16 * 10000 * 0.1
+            }
+
+        self.assertEqual(expected, result)
+
+
+    def test_economizer_no_flag(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 4, 0, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69, 69]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        OAT = copy.deepcopy(base)
+        OAT_temp = [65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65]
+        append_data_to_datetime(OAT, OAT_temp)
+
+        HVACstat = copy.deepcopy(base)
+        HVAC_data = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(HVACstat, HVAC_data)
+
+        result = economizer(DAT, OAT, HVACstat, 10000, 5000)
+        expected = {}
+
+        self.assertEqual(expected, result)
