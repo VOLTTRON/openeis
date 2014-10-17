@@ -1,6 +1,6 @@
 from datetime import datetime
 import numpy as np
-from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
+from utils import get_CBECS
 
 def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
     """

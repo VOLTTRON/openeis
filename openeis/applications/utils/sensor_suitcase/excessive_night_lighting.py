@@ -46,7 +46,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
-from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
+from utils import get_CBECS
 
 def excessive_nighttime(light_data, operational_hours, area, elec_cost):
     """

@@ -44,59 +44,63 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
-
-from datetime import datetime, timedelta
-from utils import get_CBECS
-
-def short_cycling(HVAC_stat, elec_cost):
+def get_CBECS(area):
     """
-    Checks to see if the HVAC is short cycling.
-
-    Parameter:
-        - HVAC_stat: HVAC status
-            - 2d array with [datetime, data]
-            - data is 0 - off, 1 - fan is on, 2 - compressor on
-        - elec_cost: The electricity cost used to calculate savings.
-    Return:
-        - True if the problem should be flagged
+    Grab CBECS data used to calculate savings in Sensor Suitcase algorithms.
     """
-    compressor_on = []
-    for point in HVAC_stat:
-        if (point[1] == 3):
-            compressor_on.append(1)
-        else:
-            compressor_on.append(0)
-
-    change_status = []
-    cycle_start = []
-
-    i = 0
-    while (i < (len(compressor_on) - 1)):
-        status = compressor_on[i+1] - compressor_on[i]
-        if (status == 1):
-            cycle_start.append(HVAC_stat[i+1])
-        change_status.append(status)
-        i += 1
-
-    fault_count = 0
-    i = 0
-    while (i < (len(cycle_start) - 1)):
-        delta = (cycle_start[i+1][0] - cycle_start[i][0])
-        if (delta.seconds < 300):
-            fault_count += 1
-        i += 1
-    if (fault_count > 10):
-        percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
-                 percent_HVe = get_CBECS(area)
-        return {'Problem': "RTU cycling on and off too frequently, potentially \
-                    leading to equipment failure.",
-            'Diagnostic': "For more than 10 consecutive cycles during the \
-                    monitoring period the RTU switched from on to off in under \
-                    5 minutes.",
-            'Recommendation': "Ask HVAC service providers to check refrigerant \
-                    levels, thermostat location, and control sequences.",
-            'Savings': (percent_h + percent_c) * 10 * elec_cost}
+    if (area <= 5000):
+        percentLe = 0.24
+        percentH = 0.31
+        percentC = 0.07
+        medNumOpHrs = 48
+        perHeaCoo = 0.38
+        percentHV = 0.16
+    elif ((area > 5001) and (area <= 10000)):
+        percentLe = 0.31
+        percentH = 0.38
+        percentC = 0.07
+        medNumOpHrs = 50
+        perHeaCoo = 0.45
+        percentHV = 0.18
+    elif ((area > 10001) and (area <= 25000)):
+        percentLe = 0.37
+        percentH = 0.42
+        percentC = 0.06
+        medNumOpHrs = 55
+        perHeaCoo = 0.48
+        percentHV = 0.16
     else:
-        return {}
+        percentLe = 0.34
+        percentH = 0.39
+        percentC = 0.08
+        medNumOpHrs = 60
+        perHeaCoo = 0.47
+        percentHV = 0.2
+    return percentLe, percentH, percentC, medNumOpHrs, perHeaCoo, percentHV
 
+def separate_hours(data, op_hours, days_op, holidays=[]):
+    """
+    Given a dataset and a building's operational hours, this function will
+    separate data from operational hours and non-operational hours.
 
+    Parameters:
+        - data: array of arrays that have [datetime, data]
+        - op_hours: operational hour for the building in military time
+            - i.e. [9, 17]
+        - days_op: days of the week it is operational as a list
+            - Monday = 1, Tuesday = 2 ... Sunday = 7
+            - i.e. [1, 2, 3, 4, 5] is Monday through Friday
+        - holidays: a list of datetime.date that are holidays.
+            - data with these dates will be put into non-operational hours
+    """
+    operational = []
+    non_op = []
+    for point in data:
+        if (point[0].date() in holidays) or \
+            (point[0].isoweekday() not in days_op):
+            non_op.append(point)
+        elif ((point[0].hour >= op_hours[0]) and (point[0].hour < op_hours[1])):
+            operational.append(point)
+        else:
+            non_op.append(point)
+    return operational, non_op
