@@ -46,7 +46,30 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
+<<<<<<< HEAD
+from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
+#---
+#TODO: Delete this. Set up for the tests.
+import numpy as np
+import pprint
+import os
+from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
+
+a=datetime.datetime(2014,1,1,0,0,0,0)
+b=datetime.datetime(2014,1,3,0,0,0,0)
+base = set_up_datetimes(a,b,3600)
+
+temp = np.zeros(len(base),bool)
+temp[7:17] = 1
+temp[31:41] = 1
+append_data_to_datetime(base,temp)
+#---
+
+
+
+=======
 from utils import get_CBECS
+>>>>>>> b6fe0f07e2cbbeb6f4463bd7322c47f1aac29160
 
 def excessive_daylight(light_data, operational_hours, area, elec_cost):
     """
@@ -60,6 +83,7 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
     Returns: True or False (true meaning that this sensor should be flagged)
     """
     # Grabs the first time it starts logging so we know when the next day is
+    # FIXME: Check for the actual start of the day. Hour = 0 or ask for the operation start and end.
     first_time = light_data[0][0]
     # counts times when lights go from on to off
     on_to_off = 0
@@ -78,7 +102,7 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
         lights_on = False
 
     # Find the first index when lights are on.
-    # FIXME: Is this a valid substitution?
+    # FIXME: Is this a valid substitution? 
     for light_dpt in light_data:
         if light_dpt[1]:
             last_on = light_dpt[0]
@@ -86,8 +110,7 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
 
     # iterate through the light data
     i = 1
-    # while (i < len(light_data)):
-    while (i < 323):
+    while (i < len(light_data)):
         # check if it's a new day
         if (light_data[i][0].time() == first_time.time()):
             # check if it should be flagged, time delta is in seconds so / 3600
@@ -99,24 +122,30 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
                 time_on_hours = (24 * time_on.days) + time_on.seconds/3600
             else:
                 time_on_hours = time_on.seconds/3600
-            if ((on_to_off < 2) and \
-                    ((time_on_hours / operational_hours) > 0.5)):
+            #
+            if ((on_to_off < 2) and ((time_on_hours / operational_hours) > 0.5)):
+                import pdb; pdb.set_trace()
                 day_flag += 1
             day_count += 1
+            #FIXME: The counter on_to_off and time_on_hours should reset each day. The light control
+            # diagnostic is concerned with checking whether the light turns off each
+            # day. 
 
-        # check lights were turned off, if so, increment on_to_off, lights
+        # Check lights were turned off, if so, increment on_to_off, lights
         # are now off, add time on to timeOn
         if ((lights_on) and (light_data[i][1] == 0)):
             on_to_off += 1
             lights_on = False
             time_on += (light_data[i][0] - last_on)
-        # check if lights were turned on, set last_on to the current time
+        # Check if lights were turned on, set last_on to the current time
         elif ((not lights_on) and (light_data[i][1] == 1)):
+            #FIXME: 'on' is not used. Change to 'lights_on', status for when the
+            # lights are on.
             on = True
             last_on = light_data[i][0]
         i += 1
-
-    # if more than half of the days are flagged, there's a problem.
+        
+    # If more than half of the days are flagged, there's a problem.
     if (day_flag / day_count > 0.5):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
                  percent_HV = get_CBECS(area)
