@@ -125,8 +125,8 @@ def excessive_nighttime(light_data, operational_hours, area, elec_cost):
                     is not necessary or intended for the lights to be on all \
                     night, or encourage occupants to turn the lights off upon \
                     exit.",
-            'Savings': (0.4 * 0.1 * elec_cost * percent_l * \
-                    (avg_week/(24*7-med_num_op_hrs)))
+            'Savings': round((0.4 * 0.1 * elec_cost * percent_l * \
+                    (avg_week/(24*7-med_num_op_hrs))),2)
         }
     else:
         return {}

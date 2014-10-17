@@ -95,7 +95,7 @@ def short_cycling(HVAC_stat, elec_cost):
                     5 minutes.",
             'Recommendation': "Ask HVAC service providers to check refrigerant \
                     levels, thermostat location, and control sequences.",
-            'Savings': (percent_h + percent_c) * 10 * elec_cost}
+            'Savings': round((percent_h + percent_c) * 10 * elec_cost, 2)}
     else:
         return {}
 

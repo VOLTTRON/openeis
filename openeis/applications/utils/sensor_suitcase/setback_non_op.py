@@ -86,7 +86,7 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
                     heating setpoint, or increase the cooling setpoint during \
                     unoccuppied times.  Additionally, you may have a \
                     contractor configure the RTU to reduce ventilation.",
-            'Savings': c_savings + h_savings + ven_savings}
+            'Savings': round(c_savings + h_savings + ven_savings, 2)}
     else:
         return {}
 

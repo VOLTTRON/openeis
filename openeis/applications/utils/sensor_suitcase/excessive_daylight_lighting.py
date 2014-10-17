@@ -133,8 +133,8 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
             'Recommendation': "Install occupancy sensors in locations with \
                     intermittent occupancy, or engage occupants to turn the \
                     lights off when they leave the area.",
-            'Savings': elec_cost * percent_l * 0.6 * 0.1 * \
-                            (avg_week/med_num_op_hrs)
+            'Savings': round(elec_cost * percent_l * 0.6 * 0.1 * \
+                            (avg_week/med_num_op_hrs), 2)
         }
     else:
         return {}
