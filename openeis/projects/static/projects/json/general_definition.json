@@ -28,12 +28,12 @@
         "child_list": [
             "RTU",
             "AHU",
-            "HotWaterCentralPlant",
-            "ChilledWaterCentralPlant",
+            "Hot Water Distribution System",
+            "Chilled Water Distribution System",
             "other"
         ]
     },
-    "HotWaterCentralPlant": {
+    "Hot Water Distribution System": {
         "attribute_list": [
             "timezone"
         ],
@@ -84,7 +84,7 @@
             "TerminalBoxReheatValvePosition"
         ]
     },
-    "ChilledWaterCentralPlant": {
+    "Chilled Water Distribution System": {
         "attribute_list": [
             "timezone"
         ],

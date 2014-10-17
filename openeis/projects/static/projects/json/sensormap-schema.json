@@ -242,6 +242,7 @@
                                 "HotWaterValvePosition",
                                 "PreHeatValvePosition",
                                 "TerminalBoxDamperCommand",
+                                "TerminalBoxReheatValvePosition",
                                 "ChilledWaterValvePosition",
                                 "PumpVFDCommand",
                                 "SupplyFanSpeed"
