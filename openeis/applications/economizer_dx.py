@@ -79,22 +79,22 @@ class Application(DrivenApplicationBaseClass):
     damper_signal_name = 'damper_signal'
     cool_call_name = 'cool_call'
 
-    def __init__(self, *args, economizer_type=None, econ_hl_temp=None,
-                 device_type=None, temp_deadband=None,
-                 data_window=None, no_required_data=None,
-                 open_damper_time=None,
-                 mat_low_threshold=None, mat_high_threshold=None,
-                 oat_low_threshold=None, oat_high_threshold=None,
-                 rat_low_threshold=None, rat_high_threshold=None,
-                 temp_difference_threshold=None, oat_mat_check=None,
-                 open_damper_threshold=None, oaf_economizing_threshold=None,
-                 oaf_temperature_threshold=None,
-                 cooling_enabled_threshold=None,
-                 minimum_damper_setpoint=None, excess_damper_threshold=None,
-                 excess_oaf_threshold=None, desired_oaf=None,
-                 ventilation_oaf_threshold=None,
-                 insufficient_damper_threshold=None,
-                 temp_damper_threshold=None, tonnage=None, eer=None,
+    def __init__(self, *args, economizer_type='DDB', econ_hl_temp=60.0,
+                 device_type='AHU', temp_deadband=1.0,
+                 data_window=15, no_required_data=10,
+                 open_damper_time=5,
+                 mat_low_threshold=50.0, mat_high_threshold=90.0,
+                 oat_low_threshold=30.0, oat_high_threshold=100.0,
+                 rat_low_threshold=50.0, rat_high_threshold=90.0,
+                 temp_difference_threshold=4.0, oat_mat_check=5.0,
+                 open_damper_threshold=90.0, oaf_economizing_threshold=25.0,
+                 oaf_temperature_threshold=4.0,
+                 cooling_enabled_threshold=5.0,
+                 minimum_damper_setpoint=20, excess_damper_threshold=15.0,
+                 excess_oaf_threshold=30.0, desired_oaf=5.0,
+                 ventilation_oaf_threshold=5.0,
+                 insufficient_damper_threshold=15.0,
+                 temp_damper_threshold=90.0, tonnage=None, eer=10.0,
                  data_sample_rate=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -200,62 +200,78 @@ class Application(DrivenApplicationBaseClass):
         parameters with description for user
         '''
         return {
-            'data_window': ConfigDescriptor(float, 'Minimum Elapsed time for '
-                                            'analysis (15) minutes'),
-            'open_damper_time': ConfigDescriptor(float, 'Delay time for '
-                                                 'steady-state conditions '
-                                                 '(5) minutes'),
+
             'data_sample_rate': ConfigDescriptor(int, 'Data Sampling interval '
                                                  '(minutes/sample)'),
+            'tonnage': ConfigDescriptor(float,
+                                        'AHU/RTU cooling capacity in tons'),
+
+            'data_window': ConfigDescriptor(int, 'Minimum Elapsed time for '
+                                            'analysis (default=15 minutes)',
+                                            optional=True),
+            'open_damper_time': ConfigDescriptor(float, 'Delay time for '
+                                                 'steady-state conditions '
+                                                 '(default=5 minutes)',
+                                                 optional=True),
             'no_required_data': ConfigDescriptor(int,
                                                  'Number of required '
                                                  'data measurements to '
-                                                 'perform diagnostic (10)'),
+                                                 'perform diagnostic (10)',
+                                                 optional=True),
             'mat_low_threshold': ConfigDescriptor(float,
                                                   'Mixed-air sensor '
-                                                  'low limit (50)F'),
+                                                  'low limit (default=50F)',
+                                                  optional=True),
             'mat_high_threshold': ConfigDescriptor(float,
                                                    'Mixed-air sensor '
-                                                   'high limit (90)F'),
+                                                   'high limit (default=90F)',
+                                                   optional=True),
             'rat_low_threshold': ConfigDescriptor(float,
                                                   'Return-air sensor '
-                                                  'low limit (50)F'),
+                                                  'low limit (default=50F)',
+                                                  optional=True),
             'rat_high_threshold': ConfigDescriptor(float,
                                                    'Return-air sensor '
-                                                   'high limit (90)F'),
+                                                   'high limit (default=90F)',
+                                                   optional=True),
             'oat_low_threshold': ConfigDescriptor(float,
                                                   'Outdoor-air sensor '
-                                                  'low limit (30)F'),
+                                                  'low limit (default=30F)',
+                                                  optional=True),
             'oat_high_threshold': ConfigDescriptor(float,
                                                    'Outdoor-air sensor '
-                                                   'high limit (100)F'),
+                                                   'high limit (default=100F)',
+                                                   optional=True),
             'temp_deadband': ConfigDescriptor(float,
                                               'Economizer control '
-                                              'temperature dead-band (1)F'),
+                                              'temperature dead-band '
+                                              '(default=1F)',
+                                              optional=True),
             'minimum_damper_setpoint': ConfigDescriptor(float,
                                                         'Minimum outdoor-air '
                                                         'damper set point '
-                                                        '(20)%'),
+                                                        '(default=20%)',
+                                                        optional=True),
             'excess_damper_threshold': ConfigDescriptor(float,
                                                         'Value above the '
                                                         'minimum damper '
                                                         'set point at which '
                                                         'a fault will be '
-                                                        'called (15)%'),
+                                                        'called (default=15%)',
+                                                        optional=True),
             'econ_hl_temp': ConfigDescriptor(float,
                                              'High limit (HL) temperature '
-                                             'for HL type economizer (60)F '
-                                             '(enter 0 if unit is '
-                                             'DDB economizer)'),
+                                             'for HL type economizer '
+                                             '(default=60F)',
+                                             optional=True),
             'cooling_enabled_threshold': ConfigDescriptor(float,
                                                           'Amount AHU chilled '
                                                           'water valve '
                                                           'must be '
                                                           'open to consider '
                                                           'unit in cooling '
-                                                          'mode (5)% '
-                                                          '(enter 0 if '
-                                                          'unit is RTU)'),
+                                                          'mode (default=5%)',
+                                                          optional=True),
             'insufficient_damper_threshold': ConfigDescriptor(float,
                                                               'Value below '
                                                               'the minimum '
@@ -264,69 +280,86 @@ class Application(DrivenApplicationBaseClass):
                                                               'point at which '
                                                               'a fault will '
                                                               'be identified '
-                                                              '(15)%'),
+                                                              '(default=15%)',
+                                                              optional=True),
             'ventilation_oaf_threshold':  ConfigDescriptor(float,
                                                            'The value below '
                                                            'the desired '
                                                            'minimum OA '
                                                            '% where '
                                                            'a fault will be '
-                                                           'indicated (5)%'),
+                                                           'indicated '
+                                                           '(default=5%)',
+                                                           optional=True),
             'desired_oaf':  ConfigDescriptor(float,
                                              'The desired minimum OA percent '
-                                             '(10)%'),
+                                             '(default=10%)', optional=True),
             'excess_oaf_threshold':  ConfigDescriptor(float,
                                                       'The value above the '
                                                       'desired OA % where a '
                                                       'fault will be '
-                                                      'indicated (30)%'),
+                                                      'indicated '
+                                                      '(default=30%)',
+                                                      optional=True),
             'economizer_type': ConfigDescriptor(str,
-                                                'Economizer type:  DDB - '
-                                                'differential dry bulb HL - '
-                                                'High limit'),
+                                                'Economizer type:  <DDB> - '
+                                                'differential dry bulb <HL> - '
+                                                'High limit (default=DDB)',
+                                                optional=True),
             'open_damper_threshold': ConfigDescriptor(float,
                                                       'Threshold '
                                                       'in which damper is '
                                                       'considered open for '
-                                                      'economizing (80)%'),
+                                                      'economizing '
+                                                      '(default=80%)',
+                                                      optional=True),
             'oaf_economizing_threshold': ConfigDescriptor(float,
                                                           'Value below 100% '
                                                           'in which the OA '
                                                           'is considered '
                                                           'insufficient for '
                                                           'economizing '
-                                                          '(25)%'),
+                                                          '(default=25%)',
+                                                          optional=True),
             'oaf_temperature_threshold': ConfigDescriptor(float,
                                                           'Required difference'
                                                           ' between OAT and '
                                                           'RAT for accurate '
-                                                          'diagnostic (5)F'),
+                                                          'diagnostic '
+                                                          '(default=5F)',
+                                                          optional=True),
             'device_type': ConfigDescriptor(str,
-                                            'Device type <RTU> or <AHU>'),
+                                            'Device type <RTU> or <AHU> '
+                                            '(default=AHU)',
+                                            optional=True),
             'temp_difference_threshold': ConfigDescriptor(float,
                                                           'Threshold for '
                                                           'detecting '
                                                           'temperature sensor '
-                                                          'problems (4)F'),
+                                                          'problems '
+                                                          '(default=4F)',
+                                                          optional=True),
             'oat_mat_check': ConfigDescriptor(float,
                                               'Temperature threshold for '
                                               'OAT and MAT '
                                               'consistency check for times '
                                               'when the damper is near 100% '
-                                              'open (5) F'),
+                                              'open (default=5F)',
+                                              optional=True),
             'temp_damper_threshold': ConfigDescriptor(float,
                                                       'Damper position to '
                                                       'check for OAT/MAT '
-                                                      'consistency (90)%'),
-            'tonnage': ConfigDescriptor(float,
-                                        'AHU/RTU cooling capacity in tons'),
-            'eer': ConfigDescriptor(float, 'AHU/RTU rated EER')
+                                                      'consistency '
+                                                      '(default=90%)',
+                                                      optional=True),
+            'eer': ConfigDescriptor(float, 'AHU/RTU rated EER (default=10)',
+                                           optional=True),
             }
 
     @classmethod
     def get_app_descriptor(cls):
-        name = 'Econmizer Auto-detection RCx'
-        desc = 'HVAC Economizer Diagnostician'
+        name = 'economizer_dx'
+        desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
         return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
