@@ -219,7 +219,6 @@
                                 "SecondStageHeating",
                                 "BoilerStatus",
                                 "PumpStatus",
-                                "CoolingCall", 
                                 "HeatingCall",
                                 "SupplyFanStatus",
                                 "LightingStatus",
@@ -234,6 +233,7 @@
                     "properties": {
                         "type": {
                             "enum": [
+                                "CoolingCall",
                                 "DischargeAirRelativeHumidity",
                                 "MixedAirRelativeHumidity",
                                 "OutdoorAirRelativeHumidity",

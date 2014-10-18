@@ -639,10 +639,10 @@
             "unit_type": "unitless"
         },
         "CoolingCall": {
-            "data_type": "boolean",
+            "data_type": "float",
             "sensor_type": "CoolingCall",
             "sensor_name": "CoolingCall",
-            "unit_type": "unitless"
+            "unit_type": "dimensionless"
         },
         "SupplyFanPower": {
             "unit_type": "energy",
