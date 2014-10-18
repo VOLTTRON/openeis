@@ -117,7 +117,7 @@ class DatabaseInput:
 
         self.topic_meta = {}
 
-        self.map_defintion = get_sensormap(dataset_id)
+        self.map_defintion = get_sensormap(datamap_id)
 
         for input_name, topics in self.topic_map.items():
             self.topic_meta[input_name] = {}
