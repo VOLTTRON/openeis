@@ -92,32 +92,33 @@ class Application(DrivenApplicationBaseClass):
     time_format = '%m/%d/%Y %H:%M'
 
     def __init__(self, *args,
-                 override_state=None, no_required_data=None,
-                 data_window=None, number_of_zones=None, auto_correctflag=None,
-                 data_sample_rate=None, warm_up_time=None,
-                 duct_stc_retuning=None, max_duct_stp_stpt=None,
-                 high_supply_fan_threshold=None,
-                 zone_high_damper_threshold=None,
-                 zone_low_damper_threshold=None,
-                 min_duct_stp_stpt=None, hdzone_damper_threshold=None,
-                 low_supply_fan_threshold=None,
-                 setpoint_allowable_deviation=None,
+                 no_required_data=10,
+                 data_window=15, number_of_zones=None,
+                 data_sample_rate=None, warm_up_time=20,
+                 duct_stc_retuning=0.1, max_duct_stp_stpt=3.0,
+                 high_supply_fan_threshold=100,
+                 zone_high_damper_threshold=90,
+                 zone_low_damper_threshold=10,
+                 min_duct_stp_stpt=0.25, hdzone_damper_threshold=30,
+                 low_supply_fan_threshold=20,
+                 setpoint_allowable_deviation=10,
 
-                 stpr_diff_threshold=None,
+                 stpr_diff_threshold=0.2,
 
-                 percent_reheat_threshold=None, rht_on_threshold=None,
-                 satemp_diff_threshold=None,
+                 percent_reheat_threshold=25, rht_on_threshold=10,
+                 satemp_diff_threshold=5,
 
-                 sat_high_damper_threshold=None, percent_damper_threshold=None,
-                 minimum_sat_stpt=None, sat_reduction=None,
+                 sat_high_damper_threshold=80, percent_damper_threshold=50,
+                 minimum_sat_stpt=50, sat_reduction=1,
 
-                 reheat_valve_threshold=None,
-                 maximum_sat_stpt=None, sat_increase=None,
+                 reheat_valve_threshold=50,
+                 maximum_sat_stpt=75, sat_increase=1,
 
-                 unocc_time_threshold=None, unocc_stp_threshold=None,
-                 monday_sch=None, tuesday_sch=None, wednesday_sch=None,
-                 thursday_sch=None, friday_sch=None, saturday_sch=None,
-                 sunday_sch=None,
+                 unocc_time_threshold=80, unocc_stp_threshold=0.2,
+                 monday_sch='6:30;18:30', tuesday_sch='6:30;18:30',
+                 wednesday_sch='6:30;18:30', thursday_sch='6:30;18:30',
+                 friday_sch='6:30;18:30', saturday_sch='0:00;0:00',
+                 sunday_sch='0:00;0:00',
                  **kwargs):
         super().__init__(*args, **kwargs)
         Application.pre_requiste_messages = []
@@ -155,7 +156,7 @@ class Application(DrivenApplicationBaseClass):
         Application.duct_stp_stpt_cname = Application.duct_stp_stpt_name
 
         '''optional points'''
-        self.override_state = override_state
+        self.override_state = False
         if Application.fan_speedcmd_name is not None:
             Application.fan_speedcmd_name = \
                 Application.fan_speedcmd_name.lower()
@@ -180,6 +181,7 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_flag = None
         self.warm_up_time = int(warm_up_time)
         self.warm_up_start = None
+        auto_correctflag = True
 
         self.static_dx = duct_static_dx(max_duct_stp_stpt, duct_stc_retuning,
                                         data_window, no_required_data,
@@ -220,230 +222,230 @@ class Application(DrivenApplicationBaseClass):
         parameters with description for user
         '''
         return {
-            'data_window': ConfigDescriptor(float, 'Minimum Elapsed time for '
-                                            'analysis (15) minutes'),
-
-            'no_required_data': ConfigDescriptor(int,
-                                                 'Number of required '
-                                                 'data measurements to '
-                                                 'perform diagnostic (10)'),
 
             'data_sample_rate':
             ConfigDescriptor(float,
                              'Data sampling rate (minutes/sample)'),
-
-            'warm_up_time':
-            ConfigDescriptor(float,
-                             'When the system starts this much '
-                             'time will be allowed to elapse before adding '
-                             'using data for analysis (10) minutes'),
-
-            'auto_correctflag':
-            ConfigDescriptor(bool,
-                             'Takes an appropriate diagnostic '
-                             'action to address the faults, such as '
-                             'adjusting the set-points (True)'),
-
             'number_of_zones':
             ConfigDescriptor(float,
                              'Number of zones served by AHU'),
 
+            'data_window': ConfigDescriptor(int, 'Minimum Elapsed time for '
+                                            'analysis (default=15 minutes)',
+                                            optional=True),
+
+            'no_required_data': ConfigDescriptor(int,
+                                                 'Number of required '
+                                                 'data measurements to '
+                                                 'perform diagnostic '
+                                                 '(default=10)',
+                                                 optional=True),
+            'warm_up_time':
+            ConfigDescriptor(int,
+                             'When the system starts this much '
+                             'time will be allowed to elapse before adding '
+                             'using data for analysis (default=20 minutes)',
+                             optional=True),
             'zone_high_damper_threshold':
             ConfigDescriptor(float,
-                             'Number of zones served by AHU'),
-
+                             ('Zone high damper threshold '
+                              'used for detection of duct static '
+                              'pressure problems (default=90%)'),
+                             optional=True),
             'zone_low_damper_threshold':
             ConfigDescriptor(float,
-                             'Number of zones served by AHU'),
-
-            'override_state':
-            ConfigDescriptor(bool,
-                             'Override state (only for implementation '
-                             'with live devices)'),
-
+                             ('Zone low damper threshold '
+                              'used for detection of duct static '
+                              'pressure problems (default=10%)'),
+                             optional=True),
             'max_duct_stp_stpt':
             ConfigDescriptor(float,
-                             'Maximum duct static set point (in. w.c.) '
-                             'allowed, when auto-correction diagnostic is '
-                             'active, i.e., the set point chosen by the '
-                             'diagnostic will never exceed this value'),
+                             'Maximum duct static pressure set point '
+                             'allowed, when auto-correction is '
+                             'enabled, i.e., the set point chosen by the '
+                             'diagnostic will never exceed this value '
+                             '(default=3.0 inch w.g.)', optional=True),
 
             'high_supply_fan_threshold':
             ConfigDescriptor(float,
-                             'Value (%) above which the supply fan will '
-                             'be considered running at its maximum speed. '
-                             'If fan is running at its maximum speed, no '
-                             'static pressure retuning application '
-                             'will be active'),
+                             ('Value (%) above which the supply fan will '
+                              'be considered running at its maximum speed. '
+                              'If fan is running at its '
+                              'maximum speed (default=100%)'),
+                             optional=True),
 
             'duct_stc_retuning':
             ConfigDescriptor(float,
-                             'Increment/decrement of static pressure '
-                             'set-point (in. w.c.) in one time step. '
-                             'This is used while taking an appropriate '
-                             'diagnostic action to clear the static '
-                             'pressure faults.'),
-
+                             ('Increment/decrement of static pressure '
+                              'set point during auto-correction '
+                              '(default=0.1 inch w.g.)'),
+                             optional=True),
             'min_duct_stp_stpt':
-            ConfigDescriptor(float, 'Minimum static set point allowed '
-                             'when auto-correction diagnostic is active, '
-                             'i.e., the set point chosen by the diagnostic'
-                             ' will always be greater than this value'),
-
+            ConfigDescriptor(float,
+                             'Minimum duct static pressure set point '
+                             'allowed, when auto-correction is '
+                             'enabled, i.e., the set point chosen by the '
+                             'diagnostic will never exceed this value '
+                             '(default=0.25 inch w.g.)', optional=True),
             'hdzone_damper_threshold':
             ConfigDescriptor(float,
-                             'Threshold for zone damper (30  (%)). If the '
-                             'averaged value of the zone dampers is less '
+                             'Threshold for zone damper. If the '
+                             'average value of the zone dampers is less '
                              'than this threshold the fan is '
-                             'supplying too much air.'),
-
+                             'supplying too much air (default=30%)',
+                             optional=True),
             'low_supply_fan_threshold':
             ConfigDescriptor(float,
                              'Value above which the supply fan will be '
-                             'considered at its minimum speed (20  (%))'),
+                             'considered at its minimum speed (default=20%)',
+                             optional=True),
 
             'setpoint_allowable_deviation':
             ConfigDescriptor(float,
                              '% allowable deviation from set points '
-                             '(10 (%)). A message will be generated if '
-                             'the different between the set point and '
-                             'actual value of a variable exceeds '
-                             'this value.'),
-
+                             'before a fault message is generated '
+                             '(default=10%)', optional=True),
             'stpr_diff_threshold':
-            ConfigDescriptor(float,
-                             'Required difference between minimum and '
-                             'maximum duct-static pressure for static '
-                             'pressure reset diagnostic (0.1 in. w.c.). '
-                             'This is used to detect whether there is a '
-                             'reset for the duct static pressure '
-                             'set-point'),
-
+            ConfigDescriptor(float, ('Required difference between minimum and '
+                                     'maximum duct static pressure set point '
+                                     'detecting a duct static pressure '
+                                     'set point reset (default=0.2 inch w.g.)'),
+                             optional=True),
             'reheat_valve_threshold':
             ConfigDescriptor(float,
                              'Zone reheat valve threshold for SAT '
-                             'Dx (50 (%))'),
-
+                             'Dx, compared to average zone '
+                             'reheat valve (default=50%)',
+                             optional=True),
             'percent_reheat_threshold':
             ConfigDescriptor(float,
-                             'SAT Dx threshold for % of zone with '
-                             'reheat ON (25 (%))'),
-
+                             ('Threshold for average percent of zones '
+                              'where terminal box reheat is ON (default=25%)'),
+                             optional=True),
             'maximum_sat_stpt':
             ConfigDescriptor(float,
                              'Maximum SAT set point allowed when '
-                             'auto-correction diagnostic is active, '
+                             'auto-correction  is enabled, '
                              'i.e., the set point chosen by the '
-                             'diagnostic will never exceed this value'),
+                             'diagnostic will never exceed '
+                             'this value (default=75F)',
+                             optional=True),
 
             'rht_on_threshold':
             ConfigDescriptor(float,
                              'Value above which zone reheat is '
-                             'considered ON (10 (%))'),
-
+                             'considered ON (default=10%)',
+                             optional=True),
             'sat_reduction':
             ConfigDescriptor(float,
-                             'Decrement of  SA temperature '
-                             'set-point (in. w.c.) in one time step. '
-                             'This is used while taking an appropriate '
-                             'diagnostic action to address SA temperature '
-                             'related  faults.(0.5 F)'),
+                             ('Decrement of supply-air '
+                              'temperature set point during '
+                              'auto-correction (1) F'),
+                             optional=True),
             'sat_increase':
             ConfigDescriptor(float,
-                             'Increment of SA temperature '
-                             'set-point (in. w.c.) in one time step. '
-                             'This is used while taking an appropriate '
-                             'diagnostic action to address SA temperature '
-                             'related  faults.(0.5 F)'),
-
+                             ('increment of supply-air '
+                              'temperature set point during '
+                              'auto-correction (default=1F)'),
+                             optional=True),
             'sat_high_damper_threshold':
             ConfigDescriptor(float,
-                             'High zone damper threshold for SAT '
-                             'Dx (80  (%))'),
+                             'High zone damper threshold for '
+                             'high supply-air temperature '
+                             'auto-correct RCx (default=80%)',
+                             optional=True),
 
             'percent_damper_threshold':
             ConfigDescriptor(float,
-                             'SAT Dx threshold for % of zone dampers '
-                             'above high damper threshold (50  (%))'),
-
+                             'Threshold for the average % of zone '
+                             'dampers above high damper threshold '
+                             '(default=50%)',
+                             optional=True),
             'minimum_sat_stpt':
             ConfigDescriptor(float,
-                             'Minimum SAT set point allowed when '
-                             'auto-correction diagnostic is active, '
-                             'I.E., the set point chosen by the '
-                             'diagnostic will always be greaten than '
-                             'this value'),
-
+                             'Maximum supply-air temperature '
+                             'set point allowed, when auto-correction '
+                             'is enabled, i.e., '
+                             'the set point chosen by the '
+                             'diagnostic will never exceed this value '
+                             '(default=50F)',
+                             optional=True),
             'satemp_diff_threshold':
             ConfigDescriptor(float,
-                             'Threshold for supply-air temperature '
-                             'difference for SAT Reset Dx (3.0 (F)). '
-                             'Used in No reset of SA temperature '
-                             'set-point application. Detects if there '
-                             'is sufficient variation in the SA '
-                             'temperature.'),
+                             'Threshold difference required '
+                             'to detect a supply-air temperature '
+                             'set point reset (default=3F)',
+                             optional=True),
 
             'unocc_time_threshold':
             ConfigDescriptor(float,
-                             'Time threshold used for AHU schedule Dx '
-                             '(80 (%)). Used by the 24-hr fan operation '
-                             'diagnostic. Used to detect whether the '
-                             'fan is on during unoccupied time period.'),
-
+                             'Time threshold used for AHU schedule Dx. '
+                             '(default=80%)', optional=True),
             'unocc_stp_threshold':
             ConfigDescriptor(float,
                              'AHU off static pressure deadband '
-                             '(0.2 (in w.c.)). Used by the 24-hr '
-                             'fan operation diagnostic. Detects whether '
-                             'the duct static pressure exceeds this '
-                             'value during non-working scheduled hours.'),
-
+                             'Detects whether the duct static '
+                             'pressure exceeds this '
+                             'value during non-working scheduled '
+                             'hours (default=0.2 inch w.g.)',
+                             optional=True),
             'monday_sch':
             ConfigDescriptor(str,
-                             'Monday AHU occupied schedule (6:30;18:30). '
-                             'Used to detect the time when fan should be '
-                             'operational.'),
-
+                             'Thursday AHU occupied schedule, '
+                             'Used to detect the '
+                             'time when the supply fan should '
+                             'be operational (default=6:30;18:30)',
+                             optional=True),
             'tuesday_sch':
             ConfigDescriptor(str,
-                             'Tuesday AHU occupied schedule (6:30;18:30). '
-                             'Used to detect the time when fan should be '
-                             'operational.'),
-
+                             'Tuesday AHU occupied schedule, '
+                             'Used to detect the '
+                             'time when the supply fan should '
+                             'be operational (default=6:30;18:30)',
+                             optional=True),
             'wednesday_sch':
             ConfigDescriptor(str,
-                             'Wednesday AHU occupied schedule '
-                             '(6:30;18:30). Used to detect the '
-                             'time when fan should be operational.'),
-
+                             'Wednesday AHU occupied schedule, '
+                             'Used to detect the '
+                             'time when the supply fan should '
+                             'be operational (default=6:30;18:30)',
+                             optional=True),
             'thursday_sch':
-            ConfigDescriptor(float,
-                             'Thursday AHU occupied schedule '
-                             '(6:30;18:30). Used to detect the time '
-                             'when fan should be operational.'),
+            ConfigDescriptor(str,
+                             'Thursday AHU occupied schedule, '
+                             'Used to detect the '
+                             'time when the supply fan should '
+                             'be operational (default=6:30;18:30)',
+                             optional=True),
             'friday_sch':
             ConfigDescriptor(str,
-                             'Friday AHU occupied schedule '
-                             '(6:30;18:30). Used to detect the '
-                             'time when fan should be operational.'),
-
+                             'Friday AHU occupied schedule, '
+                             'Used to detect the '
+                             'time when the supply fan should '
+                             'be operational '
+                             '(default=0:00;0:00 - (unoccupied))',
+                             optional=True),
             'saturday_sch':
             ConfigDescriptor(str,
-                             'Saturday AHU occupied schedule '
-                             '(6:30;18:30). Used to detect the '
-                             'time when fan should be operational.'),
-
+                             'Saturday AHU occupied schedule, '
+                             'Used to detect the '
+                             'time when the supply fan should '
+                             'be operational '
+                             '(default=0:00;0:00 - (unoccupied))',
+                             optional=True),
             'sunday_sch':
             ConfigDescriptor(str,
-                             'Sunday AHU occupied schedule '
-                             '(6:30;18:30). Used to detect the '
-                             'time when fan should be operational.')
+                             'Sunday AHU occupied schedule, '
+                             'Used to detect the '
+                             'time when the supply fan should '
+                             'be operational (default=6:30;18:30)',
+                             optional=True)
                 }
 
     @classmethod
     def get_app_descriptor(cls):
-        name = 'airside_returning_dx'
-        desc = 'airside_returning_dx'
+        name = 'airside_retuning_dx'
+        desc = 'Automated Retro-commisioning for AHUs'
         return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
@@ -459,30 +461,32 @@ class Application(DrivenApplicationBaseClass):
 
             cls.fan_speedcmd_name:
             InputDescriptor('SupplyFanSpeed',
-                            'AHU supply fan speed', count_min=1),
+                            'AHU supply fan speed', count_min=0),
 
             cls.zone_reheat_name:
-            InputDescriptor('TeminalBoxReheat', 'All terminal-box '
-                            'reheat valve commands', count_min=1),
+            InputDescriptor('TerminalBoxReheatValvePosition',
+                            'All terminal-box reheat valve commands',
+                            count_min=1),
 
             cls.zone_damper_name:
-            InputDescriptor('TerminalBoxDamper',
+            InputDescriptor('TerminalBoxDamperCommand',
                             'All terminal-box damper commands', count_min=1),
 
             cls.duct_stp_name:
-            InputDescriptor('DuctStaticSp', 'AHU duct static pressure',
+            InputDescriptor('DuctStaticPressure', 'AHU duct static pressure',
                             count_min=1),
 
             cls.duct_stp_stpt_name:
-            InputDescriptor('DuctStaticPrSp', 'Duct static pressure set point',
+            InputDescriptor('DuctStaticPressureSetPoint',
+                            'Duct static pressure set point',
                             count_min=1),
 
             cls.sa_temp_name:
-            InputDescriptor('SupplyAirTemp', 'AHU supply-air '
+            InputDescriptor('DischargeAirTemperature', 'AHU supply-air '
                             '(discharge-air) temperature', count_min=1),
 
             cls.sat_stpt_name:
-            InputDescriptor('SupplyAirTempSp',
+            InputDescriptor('DischargeAirTemperatureSetPoint',
                             'Supply-air temperature set-point', count_min=1)
             }
 
@@ -519,12 +523,11 @@ class Application(DrivenApplicationBaseClass):
         color_code = '/'.join(output_topic_base+['airside_dx', 'color_code'])
 
         output_needs = {
-            'Airside_dx': {
+            'Airside_Dx': {
                 'datetime': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
 
-                'diagnostic_message':
-                OutputDescriptor('string', message_topic),
+                'diagnostic_message': OutputDescriptor('string', message_topic),
 
                 'energy_impact': OutputDescriptor('float', energy_impact),
                 'color_code': OutputDescriptor('string', color_code)
@@ -540,7 +543,7 @@ class Application(DrivenApplicationBaseClass):
         device_dict = {}
         diagnostic_result = Results()
 
-        for key, value in points.iteritems():
+        for key, value in points.items():
             device_dict[key.lower()] = value
 
         Application.pre_msg_time.append(current_time)
@@ -569,7 +572,7 @@ class Application(DrivenApplicationBaseClass):
                     return diagnostic_result
 
         if not fan_stat_check and self.fan_speedcmd_name is not None:
-            for key, value in device_dict.iteritems():
+            for key, value in device_dict.items():
                 if key.startswith(self.fan_speedcmd_name):
                     fan_stat_check = True
                     if value < self.low_supply_fan_threshold:
@@ -779,8 +782,8 @@ class duct_static_dx(object):
                         'energy_impact': energy_impact,
                         'color_code': color_code
                     }
-                diagnostic_result.insert_table_row('Airside_Dx', dx_table)
-                diagnostic_result.log(diagnostic_message, logging.INFO)
+                    diagnostic_result.insert_table_row('Airside_Dx', dx_table)
+                    diagnostic_result.log(diagnostic_message, logging.INFO)
 
             diagnostic_result = self.low_ductstatic_pr(diagnostic_result,
                                                        static_override_check)
@@ -788,7 +791,7 @@ class duct_static_dx(object):
                                                         static_override_check)
         return diagnostic_result
 
-    def low_ductstatic_sp(self, result, static_override_check):
+    def low_ductstatic_pr(self, result, static_override_check):
         '''
         Diagnostic to identify and correct low duct static pressure
         (correction by modifying duct static pressure set point)
@@ -953,7 +956,6 @@ class duct_static_dx(object):
         self.duct_stp_values = []
         self.zone_damper_values = []
         self.timestamp = []
-        return result
         return result
 
 
@@ -1140,7 +1142,7 @@ class supply_air_temp_dx(object):
         result.log(diagnostic_message, logging.INFO)
         return result
 
-    def high_sat_sp(self, result, avg_sat_stpt, sat_override_check):
+    def high_sat(self, result, avg_sat_stpt, sat_override_check):
         '''
         Diagnostic to identify and correct high supply-air temperature
         (correction by modifying SAT set point)
@@ -1243,7 +1245,9 @@ class supply_air_temp_dx(object):
 
 
 class schedule_reset_dx(object):
-
+    '''
+    Schedule and reset diagnostics
+    '''
     def __init__(self, unocc_time_threshold, unocc_stp_threshold,
                  monday_sch, tuesday_sch, wednesday_sch, thursday_sch,
                  friday_sch, saturday_sch, sunday_sch, data_window,
