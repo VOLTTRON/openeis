@@ -6,6 +6,7 @@ import datetime
 import csv
 import os
 import math
+import sys
 
 from django.test import TestCase
 from django.utils.timezone import utc
@@ -285,18 +286,18 @@ class AppTestBase(TestCase):
             os.path.isfile(configFileName),
             msg='Cannot find configuration file "{}"'.format(configFileName)
             )
-        config = ConfigParser()
-        config.read(configFileName)
-
-        # Get application name.
-        appName = config['global_settings']['application']
-        # TODO: This, and config above, is not needed unless {clean_up}.
 
         # Run application.
         actual_outputs = self.run_application(configFileName)
 
         # Check results.
         for tableName in expected_outputs:
+            # Provide file names to facilitate debugging.
+            #   Note by default {py.test} only shows output to {stdout} and {stderr}
+            # if a test fails.  To force the line below to show, run with flag "-s".
+            sys.stderr.write('Comparing expected output in "{}" to actual output in "{}"'.format(
+                expected_outputs[tableName], actual_outputs[tableName]
+                ))
             expected_rows = self._getCSV_asList(expected_outputs[tableName])
             actual_rows = self._getCSV_asList(actual_outputs[tableName])
             self._diff_checker(expected_rows, actual_rows)
@@ -304,6 +305,11 @@ class AppTestBase(TestCase):
         if clean_up:
             for tableName in actual_outputs:
                 os.remove(actual_outputs[tableName])
+            # Get application name.
+            config = ConfigParser()
+            config.read(configFileName)
+            appName = config['global_settings']['application']
+            # Remove log file.
             logFiles = [
                 fileName for fileName in os.listdir()  \
                     if (appName in fileName and '.log' in fileName)
