@@ -87,7 +87,7 @@ from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
 
 import datetime
-from short_cycling import short_cycling
+from openeis.applications.utils.sensor_suitcase.short_cycling import short_cycling
 import copy
 
 #TODO: more extensive tests.

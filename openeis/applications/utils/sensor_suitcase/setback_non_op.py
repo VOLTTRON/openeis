@@ -84,7 +84,8 @@ and includes the following modification: Paragraph 3. has been added.
 
 from datetime import datetime
 import numpy as np
-from utils import get_CBECS
+from openeis.applications.utils.sensor_suitcase.utils import get_CBECS
+
 
 def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
     """

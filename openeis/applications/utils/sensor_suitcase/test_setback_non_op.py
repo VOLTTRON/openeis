@@ -1,5 +1,5 @@
 """
-Part of the `Sensor Suitcase` suite of applications.
+Unit test `setback_non_op.py`.
 
 
 Copyright
@@ -82,10 +82,11 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
+
 from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
 
-from setback_non_op import setback_non_op
+from openeis.applications.utils.sensor_suitcase.setback_non_op import setback_non_op
 import datetime
 import copy
 

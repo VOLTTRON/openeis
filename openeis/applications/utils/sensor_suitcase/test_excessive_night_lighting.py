@@ -87,7 +87,7 @@ from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
 
 import datetime
-from excessive_night_lighting import excessive_nighttime
+from openeis.applications.utils.sensor_suitcase.excessive_night_lighting import excessive_nighttime
 
 class TestExcessiveNighttimeLighting(AppTestBase):
 

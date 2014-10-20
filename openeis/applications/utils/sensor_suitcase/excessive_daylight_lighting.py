@@ -84,30 +84,8 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
-<<<<<<< HEAD
-from openeis.applications.utils.sensor_suitcase.CBECS import get_CBECS
-#---
-#TODO: Delete this. Set up for the tests.
-import numpy as np
-import pprint
-import os
-from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
+from openeis.applications.utils.sensor_suitcase.utils import get_CBECS
 
-a=datetime.datetime(2014,1,1,0,0,0,0)
-b=datetime.datetime(2014,1,3,0,0,0,0)
-base = set_up_datetimes(a,b,3600)
-
-temp = np.zeros(len(base),bool)
-temp[7:17] = 1
-temp[31:41] = 1
-append_data_to_datetime(base,temp)
-#---
-
-
-
-=======
-from utils import get_CBECS
->>>>>>> b6fe0f07e2cbbeb6f4463bd7322c47f1aac29160
 
 def excessive_daylight(light_data, operational_hours, area, elec_cost):
     """
