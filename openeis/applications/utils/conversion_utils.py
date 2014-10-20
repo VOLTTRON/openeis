@@ -134,7 +134,7 @@ def convertKelvinToCelcius(temperature):
 
 def conversiontoKWH(energyUnits):
     """
-    Convert fuel *energyValues* to kBTU.
+    Convert fuel *energyValues* to kWh.
 
     **Args:**
 

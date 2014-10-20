@@ -98,7 +98,7 @@ class TestEnergySignature(AppTestBase):
         es_basic_ini = os.path.join(self.basedir,
             'energy_signature_negone.ini')
         es_basic_exp = {}
-        es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
+        es_basic_exp['Load_vs_Oat'] = os.path.join(self.basedir,
             'energy_signature_negone_SP.ref.csv')
         es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
             'energy_signature_negone_WS.ref.csv')
@@ -108,7 +108,7 @@ class TestEnergySignature(AppTestBase):
         es_missing_ini = os.path.join(self.basedir,
             'energy_signature_missing.ini')
         es_missing_exp = {}
-        es_missing_exp['Scatterplot'] = os.path.join(self.basedir,
+        es_missing_exp['Load_vs_Oat'] = os.path.join(self.basedir,
             'energy_signature_missing_SP.ref.csv')
         es_missing_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
             'energy_signature_missing_WS.ref.csv')
