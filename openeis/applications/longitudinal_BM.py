@@ -251,7 +251,7 @@ class Application(DriverApplicationBaseClass):
             "Convert natgas from [{}] to [kBtu/hr]; integration will take to [kBtu].".format(natgas_unit),
             logging.INFO
             )
-        natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
+        natgas_convertfactor = cu.getFactor_powertoKBtu_hr(natgas_unit)
 
         self.out.log("Compiling the report table.", logging.INFO)
         for x in merge_load_gas:

@@ -289,7 +289,7 @@ class Application(DriverApplicationBaseClass):
             "Convert natgas from [{}] to [kBtu/hr]; integration will take to [kBtu].".format(natgas_unit),
             logging.INFO
             )
-        natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
+        natgas_convertfactor = cu.getFactor_powertoKBtu_hr(natgas_unit)
 
         #TODO: Convert values to units that are PM Manager valid values.
         energyUseList = [['Electric','kWh (thousand Watt-hours)',int(recent_record[1]*load_convertfactor)],

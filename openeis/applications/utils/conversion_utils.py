@@ -158,7 +158,7 @@ def getFactor_powertoKW(powerUnit):
     # Here, {conversionFactor} * {powerUnit} --> {kilo-baseUnit}.
     # Continue converting {baseUnit} to [W].
     if( 'btus_per_hour' == baseUnit ):
-        conversionFactor *= 0.29307107  # 1 BTU/hr [=] 0.29307107 W
+        conversionFactor *= 0.29307107  # 1 Btu/hr [=] 0.29307107 W
     elif( 'foot_pounds_per_second' == baseUnit ):
         conversionFactor *= 1.35581795  # 1 ft-lb/s [=] 1.35581795 W
     elif( 'horsepower' == baseUnit ):
@@ -173,34 +173,51 @@ def getFactor_powertoKW(powerUnit):
     return ( conversionFactor )
 
 
-def conversiontoKBTU(energyUnits):
+def getFactor_powertoKBtu_hr(powerUnit):
     """
-    Find factor to convert energy to kBTU.
+    Find factor to convert power to kBtu/hr.
 
     Parameters:
-        - `energyUnits`, current unit of measure of energy (string).
+        - `powerUnit`, current unit of measure of power (string).
     Returns:
-        - `conversionFactor`, multiplier to convert to [kBTU].
+        - `conversionFactor`, multiplier to convert to [kBtu/hr].
+    Throws:
+        - ValueError if `powerUnit` not recognized.
     """
-    # TODO: Need to tighten this up, to match fcn getFactor_powertoKW().
-    assert ( type(energyUnits) == str)
+    assert( type(powerUnit) == str )
 
-    conversionFactor = 1
-    # Convert everything to BTU first then convert to kBTU.
-    #- Prefix Finder
-    if 'milli' in energyUnits:
-        conversionFactor = 1.0E-3
-    elif 'kilo' in energyUnits:
-        conversionFactor = 1.0E+3
-    elif 'mega' in energyUnits:
-        conversionFactor = 1.0E+6
-    elif 'giga' in energyUnits:
-        conversionFactor = 1.0E+9
+    # Find conversion factor associated with prefix of {powerUnit}.
+    #   Convert to {kilo-baseUnit}.  For example:
+    # - 'kilowatt' --> 1*'kilo-watt'
+    # - 'horsepower' --> 1e-3*'kilo-horsepower'
+    baseUnit = powerUnit
+    conversionFactor = 1e-3
+    if( powerUnit.startswith('milli') ):
+        baseUnit = powerUnit[5:]
+        conversionFactor = 1e-6  # 1e-3 / 1e3
+    elif( powerUnit.startswith('kilo') ):
+        baseUnit = powerUnit[4:]
+        conversionFactor = 1
+    elif( powerUnit.startswith('mega') ):
+        baseUnit = powerUnit[4:]
+        conversionFactor = 1e3  # 1e6 / 1e3
+    elif( powerUnit.startswith('giga') ):
+        baseUnit = powerUnit[4:]
+        conversionFactor = 1e6  # 1e9 / 1e3
 
-    #- Base Finder, convert to btus
-    if 'joule' in energyUnits:
-        conversionFactor = conversionFactor * (3.412 / 3.6E+3 )
-    elif 'watt' in energyUnits:
-        conversionFactor = conversionFactor * 3.412
+    # Here, {conversionFactor} * {powerUnit} --> {kilo-baseUnit}.
+    # Continue converting {baseUnit} to [Btu/hr].
+    if( 'watt' == baseUnit ):
+        conversionFactor *= 3.41214163  # 1 W [=] 3.41214163 Btu/hr
+    elif( 'foot_pounds_per_second' == baseUnit ):
+        conversionFactor *= 4.62624287  # 1 ft-lb/s [=] 4.62624287 Btu/hr
+    elif( 'horsepower' == baseUnit ):
+        conversionFactor *= 2544.43358  # 1 hp [=] 2544.43358 Btu/hr
+    elif( 'joules_per_hour' == baseUnit ):
+        conversionFactor *= (3.41214163 / 3600)  # (1 J/s)*(60 s/min)*(60 min/hr) [=] 1 W [=] 3.41214163 Btu/hr
+    elif( 'tons_refrigeration' == baseUnit ):
+        conversionFactor *= 12000  # 1 RT [=] 12000 Btu/hr
+    elif( 'btus_per_hour' != baseUnit ):
+        raise ValueError( 'Unknown unit for power: [{}]'.format(powerUnit) )
 
-    return ( conversionFactor / 1000.)
+    return ( conversionFactor )
