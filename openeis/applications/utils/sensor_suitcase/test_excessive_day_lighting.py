@@ -98,9 +98,9 @@ class TestExcessiveDaytimeLighting(AppTestBase):
         b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 21600)
 
-        light_all_ones = np.ones(len(base),bool)
+        light_stat = np.ones(len(base),bool)
 
-        append_data_to_datetime(base, light_all_ones)
+        append_data_to_datetime(base, light_stat)
 
         result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
         self.assertTrue('Problem' in result.keys())
@@ -111,9 +111,9 @@ class TestExcessiveDaytimeLighting(AppTestBase):
         b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 21600)
 
-        light_all_ones = np.zeros(len(base),bool)
+        light_stat = np.zeros(len(base),bool)
 
-        append_data_to_datetime(base, light_all_ones)
+        append_data_to_datetime(base, light_stat)
 
         result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
         self.assertTrue(result == {})
