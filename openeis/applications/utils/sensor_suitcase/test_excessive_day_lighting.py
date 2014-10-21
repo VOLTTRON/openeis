@@ -85,7 +85,6 @@ and includes the following modification: Paragraph 3. has been added.
 
 from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
-from openeis.applications.utils.sensor_suitcase.utils import separate_hours
 
 import datetime as dt
 import numpy as np
@@ -94,11 +93,12 @@ from openeis.applications.utils.sensor_suitcase.excessive_daylight_lighting impo
 class TestExcessiveDaytimeLighting(AppTestBase):
 
     def test_excessive_day_light_ones(self):
+        """Test: Lights are on for the whole time period."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 21600)
 
-        light_all_ones = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+        light_all_ones = np.ones(len(base),bool)
 
         append_data_to_datetime(base, light_all_ones)
 
@@ -106,11 +106,12 @@ class TestExcessiveDaytimeLighting(AppTestBase):
         self.assertTrue('Problem' in result.keys())    
         
     def test_excessive_day_light_zeroes(self):
+        """Test: Lights are off for the whole time period."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 21600)
 
-        light_all_ones = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        light_all_ones = np.zeros(len(base),bool)
 
         append_data_to_datetime(base, light_all_ones)
 
@@ -118,7 +119,7 @@ class TestExcessiveDaytimeLighting(AppTestBase):
         self.assertTrue(result == {})
 
     def test_excessive_day_light_expect_fail(self):
-        """Test: The lights are on throughout the whole occupied period.""" 
+        """Test: Lights are on throughout the whole occupied period.""" 
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = dt.datetime(2014, 1, 3, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 3600)
@@ -132,7 +133,7 @@ class TestExcessiveDaytimeLighting(AppTestBase):
         self.assertTrue('Problem' in result.keys())
         
     def test_excessive_day_light_expect_success_on_off(self):
-        """Test: The lights turn on and off twice during the occupied period."""
+        """Test: Lights turn on and off twice during the occupied period."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = dt.datetime(2014, 1, 2, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 3600)
@@ -147,7 +148,7 @@ class TestExcessiveDaytimeLighting(AppTestBase):
         self.assertTrue(result == {})
 
     def test_excessive_day_light_expect_success_unoccupied_time(self):
-        """Test: The lights not on during half of the whole occupied period."""
+        """Test: Lights not on during half of the whole occupied period."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = dt.datetime(2014, 1, 2, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 3600)

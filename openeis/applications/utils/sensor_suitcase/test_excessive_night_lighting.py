@@ -85,21 +85,70 @@ and includes the following modification: Paragraph 3. has been added.
 
 from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
+from openeis.applications.utils.sensor_suitcase.utils import separate_hours
 
-import datetime
+import datetime as dt
+import numpy as np
+import pprint
 from openeis.applications.utils.sensor_suitcase.excessive_night_lighting import excessive_nighttime
 
 class TestExcessiveNighttimeLighting(AppTestBase):
 
     def test_excessive_night_light_ones(self):
-        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
-        b = datetime.datetime(2014, 1, 4, 0, 0, 0, 0)
-        # delta = 6 hours
+        """Test: Lights are on the whole time period."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 21600)
 
         light_all_ones = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
         append_data_to_datetime(base, light_all_ones)
+        
+        result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        pprint.pprint(result)
+        self.assertTrue('Problem' in result.keys())
+        
+    def test_excessive_night_light_zeros(self):
+        """Test: Lights are on the whole time period."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 21600)
 
-        result = excessive_nighttime(base, 8)
-        self.assertTrue(result)
+        light_all_ones = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        append_data_to_datetime(base, light_all_ones)
+        
+        result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue(result == {})        
+        
+    def test_excessive_night_expect_fail(self):
+        """Test: Lights are on for 4 hours every day during unoccupied hours."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 3, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 3600)
+
+        light_stat = np.zeros(len(base), bool)
+        light_stat[15:23] = True
+        light_stat[27:35] = True
+        
+        append_data_to_datetime(base, light_stat)
+        result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue('Problem' in result.keys())
+        
+    # def test_excessive_night_expect_fail(self):
+        # """Test: Lights are on for 4 hours every day during unoccupied hours."""
+        # a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        # b = dt.datetime(2014, 1, 2, 0, 0, 0, 0)
+        # base = set_up_datetimes(a, b, 3600)
+
+        # light_stat = np.zeros(len(base), bool)
+        # light_stat[15:23] = True
+        
+        # append_data_to_datetime(base, light_stat)
+        # result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        # self.assertTrue(result == {})
+
+
+        # pprint.pprint (result)
+        # pprint.pprint (nonop)
+        # op, nonop = separate_hours(base, [7,17], [1,2,3,4,5], [])

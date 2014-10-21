@@ -84,72 +84,74 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
-from openeis.applications.utils.sensor_suitcase.utils import get_CBECS
+from openeis.applications.utils.sensor_suitcase.utils import get_CBECS, separate_hours
 
+import pprint 
 
-def excessive_nighttime(light_data, operational_hours, area, elec_cost):
+def excessive_nighttime(light_data, op_sched, area, elec_cost):
     """
     Excessive Nighttime Lightingchecks to see a single sensor should be flagged.
     Parameters:
         - light_data: a 2d array with datetime and data
-            - lights are on (1) or off (0)
+            - lights are on (1, True) or off (0, False)
             - assumes light_data is only for non-operational hours
-        - operational_hours: building's operational in hours a day
+        - op_sched: 2d array of operating schedule
+            -[[operational hours], [days operating], [holidays]]
         - elec_cost: The electricity cost used to calculate savings.
     Returns: True or False (true meaning that this sensor should be flagged)
     """
+    occupied_data, nonoccupied_data = separate_hours(light_data, op_sched[0], op_sched[1], op_sched[2])
+    pprint.pprint(nonoccupied_data)
     # Grabs the first time it starts logging so we know when the next day is
-    first_time = light_data[0][0]
-    # counts the seconds when the lights are on
+    day_marker = nonoccupied_data[0][0]
+    # Counts the seconds when the lights are on
     time_on = datetime.timedelta(0)
-    # counts the total number of days
+    # Counts the total number of days
     day_count = 0
 
-    # accounts for the first point, checks if the lights are on, sets when
+    # Accounts for the first point, checks if the lights are on, sets when
     # lights were last set to on to the first time
-    if (light_data[0][1] == 1):
+    if (nonoccupied_data[0][1] == 1):
         lights_on = True
-        last_on = first_time
     else:
         lights_on = False
 
-    # Find the first index when lights are on.
-    # FIXME: Is this a valid substitution?
-    for light_dpt in light_data:
-        if light_dpt[1]:
-            last_on = light_dpt[0]
-            break
-
-    # iterate through the light data
+    # Iterate through the light data
+    # FIXME: Since we are only looking at unoccupied hours and doing an average calc. 
+    # It should be ok to check for the duration of when lights are on. Also light switching 
+    # is not as important as day_lighting.
     i = 1
-    while (i < len(light_data)):
-        # check if it's a new day
-        if (light_data[i][0].time() == first_time.time()):
-            # check if lights were left on yesterday
-            # take the last point form yesterday and add the time to time_on
-            if (light_data[i-1][1] == 1):
-                time_on += (light_data[i-1][0] - last_on)
+    while (i < len(nonoccupied_data)):
+        # Check if it's a new day
+        if (nonoccupied_data[i][0].date() != day_marker.date() or i == len(nonoccupied_data)-1):
+            if (nonoccupied_data[i-1][1] == 1):
+                time_on += (nonoccupied_data[i-1][0] - last_on)
+            print (nonoccupied_data[i], time_on)
             day_count += 1
-        # check lights were turned off, if so, increment on_to_off, lights
-        # are now off, add time on to timeOn
-        if ((lights_on) and (light_data[i][1] == 0)):
+            day_marker = nonoccupied_data[i][0]
+        # Check lights were turned off, if so, lights
+        # are now off, add time on to time_on
+        if ((lights_on) and (nonoccupied_data[i][1] == 0)):
             lights_on = False
-            time_on += (light_data[i][0] - last_on)
-        # check if lights were turned on, set last_on to the current time
-        elif ((not lights_on) and (light_data[i][1] == 1)):
-            on = True
-            last_on = light_data[i][0]
+            time_on += (nonoccupied_data[i][0] - last_on)
+            print (nonoccupied_data[i], time_on)
+        # Check if lights were turned on, set last_on to the current time
+        elif ((not lights_on) and (nonoccupied_data[i][1] == 1)):
+            lights_on = True
+            last_on = nonoccupied_data[i][0]
         i += 1
 
     if (time_on.days != 0):
-        total_time = (time_on.days * 24) + (time_on.seconds / 60)
+        total_time = (time_on.days * 24) + (time_on.seconds / 3600)
     else:
-        total_time = (time_on.seconds / 60)
-
+        total_time = (time_on.seconds / 3600)
+    
+    print ('Total time:\t'+str(total_time))
+    print ('Day count:\t'+str(day_count))
     if ((total_time / day_count) > 3):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
                  percent_HV = get_CBECS(area)
-        total_time = light_data[-1][0] - first_time
+        total_time = nonoccupied_data[-1][0] - nonoccupied_data[0][0]
         total_weeks = ((total_time.days * 24) + (total_time.seconds / 3600)) \
                 / 168
         avg_week = ((total_time.days * 24) + (total_time.seconds / 3600)) \
@@ -169,4 +171,3 @@ def excessive_nighttime(light_data, operational_hours, area, elec_cost):
         }
     else:
         return {}
-
