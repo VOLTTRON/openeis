@@ -88,7 +88,7 @@ from .protectedmedia import protected_media, ProtectedMediaResponse
 from .conf import settings as proj_settings
 from .storage import sensorstore
 from .storage.clone import CloneProject
-from .storage.ingest import ingest_files, IngestError, BooleanColumn, DateTimeColumn, FloatColumn, StringColumn, IntegerColumn
+from .storage.ingest import ingest_files, iter_rows, IngestError
 from .storage.sensormap import Schema as Schema
 from .storage.db_input import DatabaseInput
 from .storage.db_output import DatabaseOutput, DatabaseOutputZip
@@ -705,30 +705,56 @@ class DataSetViewSet(viewsets.ModelViewSet):
 
 
 def preview_ingestion(datamap, input_files, count=15):
-    files = {f.name: {'file': f.file.file.file,
-                      'time_zone': f.file.time_zone,
-                      'time_offset': f.file.time_offset}
-             for f in input_files}
-    result = {}
-    for file in ingest_files(datamap, files):
-        rows = []
-        errors = []
-        for row in file.rows:
-            columns = []
-            for column in row.columns:
-                if isinstance(column, IngestError):
-                    errors.append({
-                        'file': file.name,
-                        'row': row.line_num,
-                        'column': column.column_num,
-                        'message': str(column)
-                    })
-                    column = None
-                columns.append(column)
-            rows.append(columns)
-            if len(rows) >= count:
+    def _iter_rows(file):
+        empty = [None] * (len(file.sensors) - 1)
+        for timestamp, *values in iter_rows(file):
+            while True:
+                time = (yield timestamp)
+                if timestamp == time:
+                    yield values
+                    break
+                yield empty
+        while True:
+            yield None
+            yield empty
+    def _merge(iterators):
+        while True:
+            try:
+                time = min(t for t in (next(i) for i in iterators) if t)
+            except ValueError:
                 break
-        result[file.name] = {'data': rows, 'errors': errors}
+            row = [time]
+            for line in [i.send(time) for i in iterators]:
+                row.extend(line)
+            yield row
+    inputs = {f.name: {'file': f.file.file.file,
+                       'time_zone': f.file.time_zone,
+                       'time_offset': f.file.time_offset}
+              for f in input_files}
+    headers, iterators, rows, extras = ['time'], [], [], []
+    for file in ingest_files(datamap, inputs):
+        headers.extend(file.sensors[1:])
+        iterators.append(_iter_rows(file))
+    generator = _merge(iterators)
+    for _ in range(count):
+        try:
+            row = next(generator)
+        except StopIteration:
+            break
+        rows.append(row)
+    missing = [i for i, col in enumerate(zip(*rows))
+               if all(val is None for val in col)]
+    while missing:
+        try:
+            row = next(generator)
+        except StopIteration:
+            break
+        if any(row[i] for i in missing):
+            extras.append(row)
+            missing = [i for i in missing if row[i] is None]
+    result = {'cols': headers, 'rows': rows}
+    if extras:
+        result['extra_rows'] = extras
     return result
 
 
@@ -751,7 +777,10 @@ class DataSetPreviewViewSet(viewsets.GenericViewSet):
             user = self.request.user
             obj = serializer.object
             datamap = obj['map']
-            if 'id' in datamap:
+            if isinstance(datamap, int):
+                datamap = get_object_or_404(models.DataMap,
+                                  pk=datamap, project__owner=user).map
+            elif 'id' in datamap:
                 datamap = get_object_or_404(models.DataMap,
                                   pk=datamap['id'], project__owner=user).map
             else:
