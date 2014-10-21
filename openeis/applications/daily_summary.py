@@ -216,12 +216,9 @@ class Application(DriverApplicationBaseClass):
 
         self.out.log("Starting daily summary analysis", logging.INFO)
 
-        self.out.log("Query database.", logging.INFO)
-        floorAreaSqft = self.sq_ft
-        load_max = self.inp.get_query_sets('load', group_by='all',
+        self.out.log("Querying database.", logging.INFO)
+        peakLoad = self.inp.get_query_sets('load', group_by='all',
                                            group_by_aggregation=Max)[0]
-        load_min = self.inp.get_query_sets('load', group_by='all',
-                                           group_by_aggregation=Min)[0]
         load_query = self.inp.get_query_sets('load', exclude={'value':None})[0]
 
         load_startDay = load_query.earliest()[0].date()
@@ -237,11 +234,11 @@ class Application(DriverApplicationBaseClass):
 
         load_convertfactor = cu.conversiontoKWH(load_unit)
 
-        self.out.log("Calculate peak benchmark metric.", logging.INFO)
-        peakLoad = load_max
+        self.out.log("Calculating peak benchmark metric.", logging.INFO)
+        floorAreaSqft = self.sq_ft
         peakLoadIntensity = peakLoad / floorAreaSqft
 
-        self.out.log("Calculate daily top and bottom percentile.", logging.INFO)
+        self.out.log("Calculating daily top and bottom percentile.", logging.INFO)
         while current_Day <= load_endDay:
             load_day_query = load_query.filter(time__year=current_Day.year,
                                             time__month=current_Day.month,
