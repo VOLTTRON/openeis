@@ -103,8 +103,8 @@ class TestExcessiveDaytimeLighting(AppTestBase):
         append_data_to_datetime(base, light_all_ones)
 
         result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
-        self.assertTrue('Problem' in result.keys())    
-        
+        self.assertTrue('Problem' in result.keys())
+
     def test_excessive_day_light_zeroes(self):
         """Test: Lights are off for the whole time period."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
@@ -128,10 +128,10 @@ class TestExcessiveDaytimeLighting(AppTestBase):
         light_stat[7:17] = True
         light_stat[31:41] = True
         append_data_to_datetime(base, light_stat)
-        
+
         result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
         self.assertTrue('Problem' in result.keys())
-        
+
     def test_excessive_day_light_expect_success_on_off(self):
         """Test: Lights turn on and off twice during the occupied period."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
