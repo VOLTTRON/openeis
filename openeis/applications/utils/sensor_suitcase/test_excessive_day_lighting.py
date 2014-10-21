@@ -85,22 +85,76 @@ and includes the following modification: Paragraph 3. has been added.
 
 from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
+from openeis.applications.utils.sensor_suitcase.utils import separate_hours
 
-import datetime
+import datetime as dt
+import numpy as np
 from openeis.applications.utils.sensor_suitcase.excessive_daylight_lighting import excessive_daylight
 
 class TestExcessiveDaytimeLighting(AppTestBase):
 
     def test_excessive_day_light_ones(self):
-        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
-        b = datetime.datetime(2014, 1, 4, 0, 0, 0, 0)
-        # delta = 6 hours
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
         base = set_up_datetimes(a, b, 21600)
 
         light_all_ones = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
         append_data_to_datetime(base, light_all_ones)
 
-        result = excessive_daylight(base, 8)
-        self.assertTrue(result)
+        result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue('Problem' in result.keys())    
+        
+    def test_excessive_day_light_zeroes(self):
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 21600)
 
+        light_all_ones = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        append_data_to_datetime(base, light_all_ones)
+
+        result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue(result == {})
+
+    def test_excessive_day_light_expect_fail(self):
+        """Test: The lights are on throughout the whole occupied period.""" 
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 3, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 3600)
+
+        light_stat = np.zeros(len(base), bool)
+        light_stat[7:17] = True
+        light_stat[31:41] = True
+        append_data_to_datetime(base, light_stat)
+        
+        result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue('Problem' in result.keys())
+        
+    def test_excessive_day_light_expect_success_on_off(self):
+        """Test: The lights turn on and off twice during the occupied period."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 2, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 3600)
+
+        light_stat = np.zeros(len(base), bool)
+        light_stat[7:11] = True
+        light_stat[13:14] = True
+        light_stat[16] = True
+        append_data_to_datetime(base, light_stat)
+
+        result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue(result == {})
+
+    def test_excessive_day_light_expect_success_unoccupied_time(self):
+        """Test: The lights not on during half of the whole occupied period."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 2, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 3600)
+
+        light_stat = np.zeros(len(base), bool)
+        light_stat[15:23] = True
+        append_data_to_datetime(base, light_stat)
+        result = excessive_daylight(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+
+        self.assertTrue(result == {})

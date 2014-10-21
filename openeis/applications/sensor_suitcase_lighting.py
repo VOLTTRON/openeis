@@ -123,6 +123,7 @@ class Application(DriverApplicationBaseClass):
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
+        #FIXME: Change the operating hours param to match the HVAC system, operating schedule. 
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True),
             "building_area": ConfigDescriptor(float, "Building Area"),
@@ -208,6 +209,7 @@ class Application(DriverApplicationBaseClass):
         """
         self.out.log("Starting ExcessiveLighting Analysis", logging.INFO)
 
+        # FIXME: Modify logging message. 
         self.out.log('@building_area'+str(self.building_area), logging.INFO)
         self.out.log('@electricity_cost'+str(self.electricity_cost), logging.INFO)
         self.out.log('@operation_hours'+str(self.operation_hours), logging.INFO)

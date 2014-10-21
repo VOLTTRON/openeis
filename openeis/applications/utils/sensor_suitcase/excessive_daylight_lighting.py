@@ -84,23 +84,23 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 import datetime
-from openeis.applications.utils.sensor_suitcase.utils import get_CBECS
+from openeis.applications.utils.sensor_suitcase.utils import get_CBECS, separate_hours
 
-
-def excessive_daylight(light_data, operational_hours, area, elec_cost):
+def excessive_daylight(light_data, op_sched, area, elec_cost):
     """
     Excessive Daylight checks to see a single sensor should be flagged.
     Parameters:
-        - light_data: a 2d array with datetime and data
-            - lights are on (1) or off (0)
-            - assumes light_data is only for operational hours
-        - operational_hours: building's operational in hours a day
+        - light_data: a 2d array with datetime and light status
+            - lights are on (1, True) or off (0, False)
+            - separate the data for operating hours and non-operating hours
+        - op_sched: 2d array of operating schedule
+            -[[operational hours], [days operating], [holidays]]
         - elec_cost: The electricity cost used to calculate savings.
     Returns: True or False (true meaning that this sensor should be flagged)
     """
+    occupied_data, nonoccupied_data = separate_hours(light_data, op_sched[0], op_sched[1], op_sched[2])
     # Grabs the first time it starts logging so we know when the next day is
-    # FIXME: Check for the actual start of the day. Hour = 0 or ask for the operation start and end.
-    first_time = light_data[0][0]
+    day_marker = occupied_data[0][0]
     # counts times when lights go from on to off
     on_to_off = 0
     # counts the seconds when the lights are on
@@ -109,63 +109,66 @@ def excessive_daylight(light_data, operational_hours, area, elec_cost):
     day_flag = 0
     # counts the total number of days
     day_count = 0
-
+    # total operation hours 
+    operational_hours = op_sched[0][1] - op_sched[0][0]  
+    
     # accounts for the first point, checks if the lights are on, sets when
     # lights were last set to on to the first time
-    if (light_data[0][1] == 1):
+    if (occupied_data[0][1] == 1):
         lights_on = True
     else:
         lights_on = False
 
     # Find the first index when lights are on.
     # FIXME: Is this a valid substitution?
-    for light_dpt in light_data:
+    for light_dpt in occupied_data:
         if light_dpt[1]:
             last_on = light_dpt[0]
             break
 
+    # FIXME: Separate the data during operational hours vs non-operational hours.
     # iterate through the light data
     i = 1
-    while (i < len(light_data)):
-        # check if it's a new day
-        if (light_data[i][0].time() == first_time.time()):
-            # check if it should be flagged, time delta is in seconds so / 3600
-            # to get hours
-            if (light_data[i][1] == 1):
-                time_on += (light_data[i][0] - last_on)
-            # turn days into hours to be compared to operational hours per day
+    while (i < len(occupied_data)):
+        # NOTE: Variable 'day_count' is incremented when the current date changes 
+        # from the previous date and at the end of the record. 
+        if (occupied_data[i][0].date() != day_marker.date() or i == len(occupied_data)-1):
+            # Check if day should be flagged, time delta is in days and seconds
+            if (occupied_data[i][1] == 1):
+                time_on += (occupied_data[i][0] - last_on)
+            # 
             if (time_on.days != 0):
                 time_on_hours = (24 * time_on.days) + time_on.seconds/3600
             else:
                 time_on_hours = time_on.seconds/3600
             #
             if ((on_to_off < 2) and ((time_on_hours / operational_hours) > 0.5)):
-                import pdb; pdb.set_trace()
                 day_flag += 1
-            day_count += 1
-            #FIXME: The counter on_to_off and time_on_hours should reset each day. The light control
+            # NOTE: Reset flags each day and reinitialize day markers. The light control
             # diagnostic is concerned with checking whether the light turns off each
             # day.
+            day_count += 1
+            day_marker = occupied_data[i][0]
+            on_to_off = 0
+            time_on = datetime.timedelta(0)
 
         # Check lights were turned off, if so, increment on_to_off, lights
         # are now off, add time on to timeOn
-        if ((lights_on) and (light_data[i][1] == 0)):
+        if ((lights_on) and (occupied_data[i][1] == 0)):
             on_to_off += 1
             lights_on = False
-            time_on += (light_data[i][0] - last_on)
+            time_on += (occupied_data[i][0] - last_on)
         # Check if lights were turned on, set last_on to the current time
-        elif ((not lights_on) and (light_data[i][1] == 1)):
-            #FIXME: 'on' is not used. Change to 'lights_on', status for when the
-            # lights are on.
-            on = True
-            last_on = light_data[i][0]
+        elif ((not lights_on) and (occupied_data[i][1] == 1)):
+            lights_on = True
+            last_on = occupied_data[i][0]
         i += 1
 
     # If more than half of the days are flagged, there's a problem.
     if (day_flag / day_count > 0.5):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
                  percent_HV = get_CBECS(area)
-        total_time = light_data[-1][0] - first_time
+        total_time = occupied_data[-1][0] - occupied_data[0][0]
         total_weeks = ((total_time.days * 24) + (total_time.seconds / 3600)) \
                 / 168
         avg_week = ((total_time.days * 24) + (total_time.seconds / 3600)) \
