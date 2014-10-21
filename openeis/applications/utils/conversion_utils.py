@@ -89,62 +89,49 @@ import numpy as np
 
 def convertCelciusToFahrenheit(temperature):
     """
-    Convert *temperature* in Celcius to Fahrenheit.
+    Convert `temperature` from Celcius to Fahrenheit.
 
-    **Args:**
-
-    - *temperature*, array-like sequence of temperatures [C] (float).
-
-    **Returns:**
-
-    - *temperature*, array-like sequence of temperatures in [F] (float).
+    Parameters:
+        - `temperature`, array-like sequence of temperatures [C] (float).
+    Returns:
+        - `temperature`, array-like sequence of temperatures in [F] (float).
     """
-
     return ( np.add(np.multiply(temperature,1.8),32.))
+
 
 def convertFahrenheitToCelcius(temperature):
     """
-    Convert *temperature* in Fahrenheit to Celcius.
+    Convert `temperature` from Fahrenheit to Celcius.
 
-    **Args:**
-
-    - *temperature*, array-like sequence of temperatures [C] (float).
-
-    **Returns:**
-
-    - *temperature*, array-like sequence of temperatures in [F] (float).
+    Parameters:
+        - `temperature`, array-like sequence of temperatures [C] (float).
+    Returns:
+        - `temperature`, array-like sequence of temperatures in [F] (float).
     """
-
     return ( np.divide(np.subtract(temperature,32.),1.8) )
+
 
 def convertKelvinToCelcius(temperature):
     """
-    Convert *temperature* in Celcius to Kelvin.
+    Convert `temperature` in Celcius to Kelvin.
 
-    **Args:**
-
-    - *temperature*, array-like sequence of temperatures [C] (float).
-
-    **Returns:**
-
-    - *temperature*, array-like sequence of temperatures in [F] (float).
+    Parameters:
+        - `temperature`, array-like sequence of temperatures [C] (float).
+    Returns:
+        - `temperature`, array-like sequence of temperatures in [F] (float).
     """
+    return ( np.subtract(temperature,273.15) )
 
-    return ( np.subtract(temperature,273.2) )
 
 def conversiontoKWH(energyUnits):
     """
-    Convert fuel *energyValues* to kWh.
+    Find factor to convert energy to kWh.
 
-    **Args:**
-
-    - *energyUnits*, string that defines the current unit of measure of *energyValues*.
-
-    **Returns:**
-
-    - *conversionFactor*, multiplier for the .
+    Parameters:
+        - `energyUnits`, current unit of measure of energy (string).
+    Returns:
+        - `conversionFactor`, multiplier to convert to [kWh].
     """
-
     assert ( type(energyUnits) == str)
 
     conversionFactor = 1
@@ -167,19 +154,16 @@ def conversiontoKWH(energyUnits):
 
     return ( conversionFactor / 1000.)
 
+
 def conversiontoKBTU(energyUnits):
     """
-    Convert fuel *energyValues* to kBTU.
+    Find factor to convert energy to kBTU.
 
-    **Args:**
-
-    - *energyUnits*, string that defines the current unit of measure of *energyValues*.
-
-    **Returns:**
-
-    - *conversionFactor*, multiplier for the .
+    Parameters:
+        - `energyUnits`, current unit of measure of energy (string).
+    Returns:
+        - `conversionFactor`, multiplier to convert to [kBTU].
     """
-
     assert ( type(energyUnits) == str)
 
     conversionFactor = 1
@@ -201,4 +185,3 @@ def conversiontoKBTU(energyUnits):
         conversionFactor = conversionFactor * 3.412
 
     return ( conversionFactor / 1000.)
-
