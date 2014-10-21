@@ -233,17 +233,10 @@ class Application(DriverApplicationBaseClass):
 
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
         self.out.log(
-            "Convert loads from [{}] to [kWh].".format(load_unit),
+            "Convert loads from [{}] to [kW].".format(load_unit),
             logging.INFO
             )
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-        # TODO: There's something fundamentally broken about code above.
-        # Can't convert from power in [W] or [kW] to energy in [kWh] without
-        # doing some kind of integration.  The only reason this works currently
-        # is that method cu.conversiontoKWH() does not check that the input
-        # units are compatible, so it can convert from [W] to [kW] without
-        # flagging an error.  Need to tighten up the conversion methods, and
-        # add any methods that are needed.  Here and elsewhere.
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
 
         self.out.log("Calculating peak benchmark metric.", logging.INFO)
         floorAreaSqft = self.sq_ft

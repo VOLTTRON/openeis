@@ -123,6 +123,43 @@ def convertKelvinToCelcius(temperature):
     return ( np.subtract(temperature,273.15) )
 
 
+def getFactor_powertoKW(powerUnit):
+    """
+    Find factor to convert power to kW.
+
+    Parameters:
+        - `powerUnit`, current unit of measure of power (string).
+    Returns:
+        - `conversionFactor`, multiplier to convert to [kW].
+    Throws:
+        - ValueError if `powerUnit` not recognized.
+    """
+    assert( type(powerUnit) == str )
+
+    # Find conversion factor associated with prefix.
+    #   Convert to kW, so that, for example, 'kilowatt' should give `1`.
+    baseUnit = powerUnit
+    conversionFactor = 1e-3
+    if( powerUnit.startswith('milli') ):
+        baseUnit = powerUnit[5:]
+        conversionFactor = 1e-6  # 1e-3 / 1e3
+    elif( powerUnit.startswith('kilo') ):
+        baseUnit = powerUnit[4:]
+        conversionFactor = 1
+    elif( powerUnit.startswith('mega') ):
+        baseUnit = powerUnit[4:]
+        conversionFactor = 1e3  # 1e6 / 1e3
+    elif( powerUnit.startswith('giga') ):
+        baseUnit = powerUnit[4:]
+        conversionFactor = 1e6  # 1e9 / 1e3
+
+    # Find conversion associated with {baseUnit}.
+    if( 'watt' != baseUnit ):
+        raise ValueError( 'Unknown unit for power: [{}]'.format(powerUnit) )
+
+    return ( conversionFactor )
+
+
 def conversiontoKWH(energyUnits):
     """
     Find factor to convert energy to kWh.
