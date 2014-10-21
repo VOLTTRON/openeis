@@ -227,12 +227,23 @@ class Application(DriverApplicationBaseClass):
         load_day_list_95 = []
         load_day_list_5 = []
 
-        self.out.log("Convert the electricity values to kWh.", logging.INFO)
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
-        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
 
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kWh].".format(load_unit),
+            logging.INFO
+            )
         load_convertfactor = cu.conversiontoKWH(load_unit)
+        # TODO: There's something fundamentally broken about code above.
+        # Can't convert from power in [W] or [kW] to energy in [kWh] without
+        # doing some kind of integration.  The only reason this works currently
+        # is that method cu.conversiontoKWH() does not check that the input
+        # units are compatible, so it can convert from [W] to [kW] without
+        # flagging an error.  Need to tighten up the conversion methods, and
+        # add any methods that are needed.  Here and elsewhere.
 
         self.out.log("Calculating peak benchmark metric.", logging.INFO)
         floorAreaSqft = self.sq_ft
@@ -260,7 +271,7 @@ class Application(DriverApplicationBaseClass):
         load_day_range_mean = numpy.mean(numpy.subtract(load_day_list_95,
                                                         load_day_list_5))
 
-        self.out.log("Calculate load variability.", logging.INFO)
+        self.out.log("Calculating load variability.", logging.INFO)
         # TODO: Generate error if there are not 24 hours worth of data for
         # every day and less than two days of data.
         hourly_variability = []
@@ -283,7 +294,7 @@ class Application(DriverApplicationBaseClass):
 
         load_variability = numpy.mean(hourly_variability)
 
-        self.out.log("Compile the report table.", logging.INFO)
+        self.out.log("Compiling the report table.", logging.INFO)
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Peak Load Benchmark [W/sf]",
             "value": "{:.2f}".format(peakLoadIntensity * load_convertfactor * 1000.),
