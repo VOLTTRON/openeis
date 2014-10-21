@@ -136,8 +136,10 @@ def getFactor_powertoKW(powerUnit):
     """
     assert( type(powerUnit) == str )
 
-    # Find conversion factor associated with prefix.
-    #   Convert to kW, so that, for example, 'kilowatt' should give `1`.
+    # Find conversion factor associated with prefix of {powerUnit}.
+    #   Convert to {kilo-baseUnit}.  For example:
+    # - 'kilowatt' --> 1*'kilo-watt'
+    # - 'horsepower' --> 1e-3*'kilo-horsepower'
     baseUnit = powerUnit
     conversionFactor = 1e-3
     if( powerUnit.startswith('milli') ):
@@ -153,7 +155,9 @@ def getFactor_powertoKW(powerUnit):
         baseUnit = powerUnit[4:]
         conversionFactor = 1e6  # 1e9 / 1e3
 
-    # Find conversion associated with {baseUnit}.
+    # Here, {conversionFactor} * {powerUnit} --> {kilo-baseUnit}.
+    # Continue converting {baseUnit} to [W].
+    # TODO: Fill in other possible units, if any.
     if( 'watt' != baseUnit ):
         raise ValueError( 'Unknown unit for power: [{}]'.format(powerUnit) )
 
@@ -169,6 +173,7 @@ def conversiontoKWH(energyUnits):
     Returns:
         - `conversionFactor`, multiplier to convert to [kWh].
     """
+    # TODO: This fcn should go away if not used or tested.
     assert ( type(energyUnits) == str)
 
     conversionFactor = 1
@@ -201,6 +206,7 @@ def conversiontoKBTU(energyUnits):
     Returns:
         - `conversionFactor`, multiplier to convert to [kBTU].
     """
+    # TODO: Need to tighten this up, to match fcn getFactor_powertoKW().
     assert ( type(energyUnits) == str)
 
     conversionFactor = 1

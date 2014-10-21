@@ -234,9 +234,9 @@ class Application(DriverApplicationBaseClass):
         Also, outputs data points for energy signature scatter plot.
         """
 
-        self.out.log("Starting Energy Signature application.", logging.INFO)
+        self.out.log("Starting application: energy signature.", logging.INFO)
 
-        self.out.log("Query the database and aggregate the data by hour by averaging.", logging.INFO)
+        self.out.log("Querying database.", logging.INFO)
         load_query = self.inp.get_query_sets('load', group_by='hour',
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
@@ -252,10 +252,10 @@ class Application(DriverApplicationBaseClass):
 
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
         self.out.log(
-            "Convert loads from [{}] to [kWh].".format(load_unit),
+            "Convert loads from [{}] to [kW].".format(load_unit),
             logging.INFO
             )
-        load_convertfactor = cu.conversiontoKWH(load_unit)
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
 
         temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
         self.out.log(

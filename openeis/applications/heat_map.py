@@ -192,21 +192,26 @@ class Application(DriverApplicationBaseClass):
 
     def execute(self):
         """Output values for Heat Map."""
-        self.out.log("Starting heat map analysis", logging.INFO)
+        self.out.log("Starting application: heat map.", logging.INFO)
 
+        self.out.log("Querying database.", logging.INFO)
         loads = self.inp.get_query_sets('load', group_by='hour', exclude={'value':None})
 
-        self.out.log("Convert electricity to kWh.", logging.INFO)
-        # Get conversion factor
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
-        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
 
-        load_convertfactor = cu.conversiontoKWH(load_unit)
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
         load_tz = meta_topics['load'][base_topic['load'][0]]['timezone']
         print (load_tz)
 
-        self.out.log("Limit the analysis to a month.", logging.INFO)
+        self.out.log("Limiting the analysis to a month.", logging.INFO)
         # Limit the number of datapoints, have 4 weeks worth of data.
         # 24 hours x 14 days = 336.
         if len(loads[0]) > 336:
@@ -216,7 +221,7 @@ class Application(DriverApplicationBaseClass):
             start = 0
             end = len(loads[0])
 
-        self.out.log("Compile the report table.", logging.INFO)
+        self.out.log("Compiling the report table.", logging.INFO)
         for x in loads[0][start:end]:
             datevalue = x[0]
             if not isinstance(datevalue, dt.datetime):

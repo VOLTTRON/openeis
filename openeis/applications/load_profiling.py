@@ -195,20 +195,25 @@ class Application(DriverApplicationBaseClass):
 
     def execute(self):
         """Outputs values for line graph."""
-        self.out.log("Starting load profile analysis", logging.INFO)
+        self.out.log("Starting application: load profile.", logging.INFO)
 
-        self.out.log("Find the conversion factor.", logging.INFO)
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
-        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
-        #
-        load_convertfactor = cu.conversiontoKWH(load_unit)
 
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
+        self.out.log("Querying database.", logging.INFO)
         load_by_hour = self.inp.get_query_sets('load',
                                                 exclude={'value': None},
                                                 group_by='hour')[0]
 
-        self.out.log("Reduce the records to two weeks.", logging.INFO)
+        self.out.log("Reducing the records to two weeks.", logging.INFO)
         # Note: Limit the number of datapoints, have 2 weeks worth of data.
         # 24 hours x 14 days = 336.
         if len(load_by_hour) > 336:
@@ -218,7 +223,7 @@ class Application(DriverApplicationBaseClass):
             start = 0
             end = len(load_by_hour)
 
-        self.out.log("Compile the report table.", logging.INFO)
+        self.out.log("Compiling the report table.", logging.INFO)
         for x in load_by_hour[start:end]:
             self.out.insert_row("Load_Profiling", {
                 'timestamp': dt.datetime.strptime(x[0],'%Y-%m-%d %H'),

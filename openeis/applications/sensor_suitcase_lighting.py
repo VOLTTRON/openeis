@@ -206,7 +206,7 @@ class Application(DriverApplicationBaseClass):
         Accepts lighting status and operational hours to determine if there
         is excessive lighting during daytime.
         """
-        self.out.log("Starting ExcessiveLighting Analysis", logging.INFO)
+        self.out.log("Starting application: Sensor Suitcase excessive lighting.", logging.INFO)
 
         self.out.log('@building_area'+str(self.building_area), logging.INFO)
         self.out.log('@electricity_cost'+str(self.electricity_cost), logging.INFO)

@@ -212,10 +212,16 @@ class Application(DriverApplicationBaseClass):
         Will output the following: year, aggregated load amounts,
         and aggregated gas amounts.
         """
-        self.out.log("Starting longitudinal benchmarking analysis", logging.INFO)
+        self.out.log("Starting application: longitudinal benchmarking.", logging.INFO)
 
-        self.out.log("Query database and aggregate energy values per year.", logging.INFO)
+        self.out.log("Querying database.", logging.INFO)
         # Note: Assumes all of the energy data are in a per hour basis.
+        # TODO: The caveat above must be made stronger.  Aggregating by summing
+        #   only converts, e.g., [kW] to [kWh] for hourly observations.
+        #   Similar problem for gas data.
+        # TODO: The query here presumably groups by calendar year.  Need to check
+        #   whether application actually wants a year's worth of data, looking
+        #   backward from most recent observation.
         # Valid calculation to sum the data by 'year'.
         load_by_year = self.inp.get_query_sets('load', group_by='year',
                                                group_by_aggregation=Sum,
@@ -229,16 +235,25 @@ class Application(DriverApplicationBaseClass):
 
         merge_load_gas = self.inp.merge(load_by_year, gas_by_year)
 
-        self.out.log("Convert electricity values to kWh and natural gas to kBtu.", logging.INFO)
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
-        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
-        natgas_unit = meta_topics['natgas'][base_topic['natgas'][0]]['unit']
 
-        load_convertfactor = cu.conversiontoKWH(load_unit)
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW]; integration will take to [kWh].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
+        natgas_unit = meta_topics['natgas'][base_topic['natgas'][0]]['unit']
+        self.out.log(
+            "Convert natgas from [{}] to [kBtu/hr]; integration will take to [kBtu].".format(natgas_unit),
+            logging.INFO
+            )
         natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
 
-        self.out.log("Compile the report table.", logging.INFO)
+        self.out.log("Compiling the report table.", logging.INFO)
         for x in merge_load_gas:
             self.out.insert_row('Longitudinal_BM', {
                 'year': x['time'],

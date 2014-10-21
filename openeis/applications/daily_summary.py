@@ -214,7 +214,7 @@ class Application(DriverApplicationBaseClass):
             -Peak Load Benchmark
         """
 
-        self.out.log("Starting daily summary analysis", logging.INFO)
+        self.out.log("Starting application: daily summary.", logging.INFO)
 
         self.out.log("Querying database.", logging.INFO)
         peakLoad = self.inp.get_query_sets('load', group_by='all',
