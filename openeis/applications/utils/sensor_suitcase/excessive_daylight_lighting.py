@@ -109,9 +109,9 @@ def excessive_daylight(light_data, op_sched, area, elec_cost):
     day_flag = 0
     # counts the total number of days
     day_count = 0
-    # total operation hours 
-    operational_hours = op_sched[0][1] - op_sched[0][0]  
-    
+    # total operation hours
+    operational_hours = op_sched[0][1] - op_sched[0][0]
+
     # accounts for the first point, checks if the lights are on, sets when
     # lights were last set to on to the first time
     if (occupied_data[0][1] == 1):
@@ -130,13 +130,13 @@ def excessive_daylight(light_data, op_sched, area, elec_cost):
     # iterate through the light data
     i = 1
     while (i < len(occupied_data)):
-        # NOTE: Variable 'day_count' is incremented when the current date changes 
-        # from the previous date and at the end of the record. 
+        # NOTE: Variable 'day_count' is incremented when the current date changes
+        # from the previous date and at the end of the record.
         if (occupied_data[i][0].date() != day_marker.date() or i == len(occupied_data)-1):
             # Check if day should be flagged, time delta is in days and seconds
             if (occupied_data[i][1] == 1):
                 time_on += (occupied_data[i][0] - last_on)
-            # 
+            #
             if (time_on.days != 0):
                 time_on_hours = (24 * time_on.days) + time_on.seconds/3600
             else:

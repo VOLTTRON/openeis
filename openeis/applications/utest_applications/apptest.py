@@ -110,6 +110,9 @@ class AppTestBase(TestCase):
             - actual_outputs, dictionary, maps table name to file name of run results
         """
 
+        # Note the overall process here follows that of method
+        # openeis/projects/management/commands/runapplication.handle().
+
         # Read the configuration file.
         self.assertTrue(
             os.path.isfile(configFileName),
@@ -140,9 +143,11 @@ class AppTestBase(TestCase):
 
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
         project = models.Project.objects.get(pk=1)
-        analysis = models.Analysis(project=project,
+        analysis = models.Analysis(
             added=now, started=now, status="running",
             dataset=dataset, application=appName,
+            debug=True,
+            project_id = dataset.project_id,
             configuration={
                 'parameters': kwargs,
                 'inputs': topic_map
@@ -156,10 +161,20 @@ class AppTestBase(TestCase):
         output_format = klass.output_format(db_input)
         file_output = DatabaseOutputFile(analysis, output_format)
 
+        # Execute the application.
         app = klass(db_input, file_output, **kwargs)
-
-        # Execute the application
-        app.run_application()
+        try:
+            app.run_application()
+        except Exception as ee:
+            analysis.status = 'error'
+            # Re-raise the exception, since testing may include checking for expected exceptions.
+            raise( ee )
+        finally:
+            if( analysis.status != 'error' ):
+                analysis.status = 'complete'
+                analysis.progress_percent = 100
+            analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
+            analysis.save()
 
         # Retrieve the map of tables to output CSVs from the application
         actual_outputs = {}
@@ -361,12 +376,6 @@ class AppTestBase(TestCase):
         Throws: Assertion error if the files do not match.
         """
 
-        # Read the configuration file.
-        self.assertTrue(
-            os.path.isfile(configFileName),
-            msg='Cannot find configuration file "{}"'.format(configFileName)
-            )
-
         # Run application.
         actual_outputs = self.run_application(configFileName)
 
@@ -385,7 +394,11 @@ class AppTestBase(TestCase):
         if clean_up:
             for tableName in actual_outputs:
                 os.remove(actual_outputs[tableName])
-            # Get application name.
+            # Get application name from config file.
+            self.assertTrue(
+                os.path.isfile(configFileName),
+                msg='Cannot find configuration file "{}"'.format(configFileName)
+                )
             config = ConfigParser()
             config.read(configFileName)
             appName = config['global_settings']['application']
