@@ -192,19 +192,23 @@ class Application(DriverApplicationBaseClass):
     def execute(self):
         """ Output is sorted loads values."""
 
-        self.out.log("Starting load duration analysis.", logging.INFO)
+        self.out.log("Starting application: load duration.", logging.INFO)
 
+        self.out.log("Querying database.", logging.INFO)
         load_query = self.inp.get_query_sets('load', order_by='value', exclude={'value':None})
 
-        self.out.log("Convert the values to kWh.", logging.INFO)
-        # Get conversion factor
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
+
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
 
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-
-        self.out.log("Compile the report table.", logging.INFO)
+        self.out.log("Compiling the report table.", logging.INFO)
         ctr = 1
         for x in load_query[0]:
             self.out.insert_row("Load_Duration", { "sorted load": x[1]*load_convertfactor,

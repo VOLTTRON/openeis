@@ -233,7 +233,7 @@ class Application(DriverApplicationBaseClass):
         Calculates weather sensitivity using Spearman rank.
         Also, outputs data points for energy signature scatter plot.
         """
-        self.out.log("Starting Day Time Temperature Analysis", logging.INFO)
+        self.out.log("Starting application: Sensor Suitcase HVAC.", logging.INFO)
 
         self.out.log('@operating_sched'+str(self.operating_sched), logging.INFO)
         self.out.log('@building_area'+str(self.building_area), logging.INFO)
@@ -258,12 +258,27 @@ class Application(DriverApplicationBaseClass):
         # Merge temperatures and the HVACStatus
         merged_temperatures_status = self.inp.merge(zat_query, oat_query, dat_query,status_query)
 
-        # Get conversion factor
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
+
         zat_unit = meta_topics['zat'][base_topic['zat'][0]]['unit']
+        self.out.log(
+            "Convert zone air temperatures from [{}] to [F].".format(zat_unit),
+            logging.INFO
+            )
+
         dat_unit = meta_topics['dat'][base_topic['dat'][0]]['unit']
+        self.out.log(
+            "Convert discharge air temperatures from [{}] to [F].".format(dat_unit),
+            logging.INFO
+            )
+
         oat_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
+        self.out.log(
+            "Convert outside air temperatures from [{}] to [F].".format(oat_unit),
+            logging.INFO
+            )
 
         #From the merged values make the arrays for the models
         datetime_ZAT = []

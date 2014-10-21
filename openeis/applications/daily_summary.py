@@ -214,14 +214,11 @@ class Application(DriverApplicationBaseClass):
             -Peak Load Benchmark
         """
 
-        self.out.log("Starting daily summary analysis", logging.INFO)
+        self.out.log("Starting application: daily summary.", logging.INFO)
 
-        self.out.log("Query database.", logging.INFO)
-        floorAreaSqft = self.sq_ft
-        load_max = self.inp.get_query_sets('load', group_by='all',
+        self.out.log("Querying database.", logging.INFO)
+        peakLoad = self.inp.get_query_sets('load', group_by='all',
                                            group_by_aggregation=Max)[0]
-        load_min = self.inp.get_query_sets('load', group_by='all',
-                                           group_by_aggregation=Min)[0]
         load_query = self.inp.get_query_sets('load', exclude={'value':None})[0]
 
         load_startDay = load_query.earliest()[0].date()
@@ -230,18 +227,22 @@ class Application(DriverApplicationBaseClass):
         load_day_list_95 = []
         load_day_list_5 = []
 
-        self.out.log("Convert the electricity values to kWh.", logging.INFO)
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
+
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
 
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-
-        self.out.log("Calculate peak benchmark metric.", logging.INFO)
-        peakLoad = load_max
+        self.out.log("Calculating peak benchmark metric.", logging.INFO)
+        floorAreaSqft = self.sq_ft
         peakLoadIntensity = peakLoad / floorAreaSqft
 
-        self.out.log("Calculate daily top and bottom percentile.", logging.INFO)
+        self.out.log("Calculating daily top and bottom percentile.", logging.INFO)
         while current_Day <= load_endDay:
             load_day_query = load_query.filter(time__year=current_Day.year,
                                             time__month=current_Day.month,
@@ -263,7 +264,7 @@ class Application(DriverApplicationBaseClass):
         load_day_range_mean = numpy.mean(numpy.subtract(load_day_list_95,
                                                         load_day_list_5))
 
-        self.out.log("Calculate load variability.", logging.INFO)
+        self.out.log("Calculating load variability.", logging.INFO)
         # TODO: Generate error if there are not 24 hours worth of data for
         # every day and less than two days of data.
         hourly_variability = []
@@ -286,7 +287,7 @@ class Application(DriverApplicationBaseClass):
 
         load_variability = numpy.mean(hourly_variability)
 
-        self.out.log("Compile the report table.", logging.INFO)
+        self.out.log("Compiling the report table.", logging.INFO)
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Peak Load Benchmark [W/sf]",
             "value": "{:.2f}".format(peakLoadIntensity * load_convertfactor * 1000.),

@@ -195,20 +195,25 @@ class Application(DriverApplicationBaseClass):
         """
         Output values for Heat Map.
         """
-        self.out.log("Starting analysis", logging.INFO)
+        self.out.log("Starting application: heat map.", logging.INFO)
 
+        self.out.log("Querying database.", logging.INFO)
         loads = self.inp.get_query_sets('load', group_by='hour', exclude={'value':None})
 
-        # Get conversion factor
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
-        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
-#        load_tz = meta_topics['load'][base_topic['load'][0]]['timezone']
 
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-        print (load_convertfactor)
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
 
         self.out.log("@length of a month"+str(len(loads[0])), logging.INFO)
+
+        # load_tz = meta_topics['load'][base_topic['load'][0]]['timezone']
 
         # Limit the number of datapoints, have 2 weeks worth of data.
         # 24 hours x 14 days = 336.
@@ -218,8 +223,6 @@ class Application(DriverApplicationBaseClass):
         # else:
             # start = 0
             # end = len(loads[0])
-
-
 
         for x in loads[0]:
             print(x)

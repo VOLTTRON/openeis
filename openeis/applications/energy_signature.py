@@ -96,7 +96,12 @@ from openeis.applications.utils.spearman import findSpearmanRank
 from openeis.applications.utils import conversion_utils as cu
 
 
+WEATHER_SENSITIVITY_TABLE_NAME = 'Weather_Sensitivity'
+LOAD_VS_OAT_TABLE_NAME = 'Load_vs_Oat'
+
+
 class Application(DriverApplicationBaseClass):
+
 
     def __init__(self, *args, building_name=None, **kwargs):
         # Called after app has been staged
@@ -132,6 +137,7 @@ class Application(DriverApplicationBaseClass):
             'load':InputDescriptor('WholeBuildingElectricity', 'Building Load')
             }
 
+
     @classmethod
     def output_format(cls, input_object):
         # Called when app is staged
@@ -145,15 +151,15 @@ class Application(DriverApplicationBaseClass):
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
-        value_topic = '/'.join(output_topic_base + ['energysignature', 'weather sensitivity'])
+        weather_topic = '/'.join(output_topic_base + ['energysignature', 'weather sensitivity'])
         oat_topic = '/'.join(output_topic_base + ['energysignature', 'oat'])
         load_topic = '/'.join(output_topic_base + ['energysignature', 'load'])
 
         output_needs = {
-            'Weather_Sensitivity': {
-                'value':OutputDescriptor('string', value_topic)
+            WEATHER_SENSITIVITY_TABLE_NAME: {
+                'value':OutputDescriptor('string', weather_topic)
                 },
-            'Scatterplot': {
+            LOAD_VS_OAT_TABLE_NAME: {
                 'oat':OutputDescriptor('float', oat_topic),
                 'load':OutputDescriptor('float', load_topic)
                 }
@@ -171,60 +177,66 @@ class Application(DriverApplicationBaseClass):
         for that viz
         """
 
-        report = reports.Report('Energy Signature and Weather Sensitivity Report')
-
-        column_info = (('value', 'Sensitivity'),)
+        reportName = 'Energy Signature and Weather Sensitivity Report'
+        report = reports.Report(reportName)
 
         text_blurb = reports.TextBlurb("Analysis of the relationship of power intensity to outdoor temperature.")
         report.add_element(text_blurb)
-        summary_table = reports.Table('Weather_Sensitivity',
-                                      column_info,
-                                      title='Weather Sensitivity',
-                                      description='A description of the sensitivity')
 
+        column_info = (('value', 'Sensitivity'),)  # TODO: Does that stray comma need to be there?
+        summary_table = reports.Table(
+            WEATHER_SENSITIVITY_TABLE_NAME,
+            column_info,
+            title='Weather Sensitivity',
+            description='A description of the sensitivity'
+            )
         report.add_element(summary_table)
 
-        text_guide1 = reports.TextBlurb(text="If weather sensitivity > 0.7 the building energy use\
-                                            is \"highly\" sensitive to outside air temperature. \
-                                            There may be opportunities to improve building insulation \
-                                            and ventilation.")
+        text_guide1 = reports.TextBlurb(
+            text="If weather sensitivity > 0.7 the building energy use is \"highly\" sensitive "  \
+                "to outside air temperature. There may be opportunities to improve building insulation and ventilation."
+            )
         report.add_element(text_guide1)
 
         xy_dataset_list = []
-        xy_dataset_list.append(reports.XYDataSet('Scatterplot', 'oat', 'load'))
-
-        scatter_plot = reports.ScatterPlot(xy_dataset_list,
-                                           title='Energy Signature',
-                                           x_label='Outside Air Temperature [F]',
-                                           y_label='Energy [kWh]')
-
+        xy_dataset_list.append(
+            reports.XYDataSet(LOAD_VS_OAT_TABLE_NAME, 'oat', 'load')
+            )
+        scatter_plot = reports.ScatterPlot(
+            xy_dataset_list,
+            title='Energy Signature',
+            x_label='Outside Air Temperature [F]',
+            y_label='Energy [kWh]'
+            )
         report.add_element(scatter_plot)
 
-        text_guide2 = reports.TextBlurb(text="The lack of any pattern may indicate \
-                                               your building is not sensitive to outdoor\
-                                               temperature.")
+        text_guide2 = reports.TextBlurb(
+            text="The lack of any pattern may indicate your building is not sensitive to outdoor temperature."
+            )
         report.add_element(text_guide2)
 
         text_guide3 = reports.TextBlurb(text="A steep slope indicates high sensitivity to outdoor temperature.")
         report.add_element(text_guide3)
 
-        text_guide4 = reports.TextBlurb(text="The balance point is the temperature at which the \
-                                              building does not require any heating or cooling.")
+        text_guide4 = reports.TextBlurb(
+            text="The balance point is the temperature at which the building does not require any heating or cooling."
+            )
         report.add_element(text_guide4)
-
 
         report_list = [report]
 
         return report_list
+
 
     def execute(self):
         """
         Calculates weather sensitivity using Spearman rank.
         Also, outputs data points for energy signature scatter plot.
         """
-        self.out.log("Starting Spearman rank.", logging.INFO)
 
-        self.out.log("Query the database and aggregate the data by hour by averaging.", logging.INFO)
+        self.out.log("Starting application: energy signature.", logging.INFO)
+
+        self.out.log("Querying database.", logging.INFO)
         load_query = self.inp.get_query_sets('load', group_by='hour',
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
@@ -234,20 +246,28 @@ class Application(DriverApplicationBaseClass):
                                              exclude={'value':None},
                                              wrap_for_merge=True)
 
-        self.out.log("Convert the electricity values to kWh and temperature values.", logging.INFO)
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
+
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
         temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
-
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-
-        merged_load_oat = self.inp.merge(load_query, oat_query)
+        self.out.log(
+            "Convert temperatures from [{}] to [F].".format(temperature_unit),
+            logging.INFO
+            )
 
         load_values = []
         oat_values = []
 
-        self.out.log("Compile the report table.", logging.INFO)
+        self.out.log("Pulling data from database.", logging.INFO)
+        merged_load_oat = self.inp.merge(load_query, oat_query)
         for x in merged_load_oat:
             if temperature_unit == 'celcius':
                 convertedTemp = cu.convertCelciusToFahrenheit(x['oat'][0])
@@ -259,15 +279,15 @@ class Application(DriverApplicationBaseClass):
 
             load_values.append(x['load'][0]*load_convertfactor)
             oat_values.append(convertedTemp)
-            self.out.insert_row("Scatterplot", {
+            self.out.insert_row(LOAD_VS_OAT_TABLE_NAME, {
                 "oat": x['oat'][0],
                 "load": x['load'][0]
                 })
 
-        self.out.log("Calculate the Spearman rank.", logging.INFO)
+        self.out.log("Calculating the Spearman rank.", logging.INFO)
         weather_sensitivity = findSpearmanRank(load_values, oat_values)
 
-        self.out.log("Add weather sensitivity to table.", logging.INFO)
-        self.out.insert_row("Weather_Sensitivity", {
+        self.out.log("Adding weather sensitivity to table.", logging.INFO)
+        self.out.insert_row(WEATHER_SENSITIVITY_TABLE_NAME, {
             "value": "{:.2f}".format(weather_sensitivity)
             })

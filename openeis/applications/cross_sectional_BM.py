@@ -237,9 +237,9 @@ class Application(DriverApplicationBaseClass):
         """Outputs the ENERGY Star Score from Target Finder API"""
         #NOTE: Connection check happens after data is formatted into XML and
         # sent into the web service request.
-        self.out.log("Starting cross-sectional benchmarking analysis.", logging.INFO)
+        self.out.log("Starting application: cross-sectional benchmarking.", logging.INFO)
 
-        self.out.log("Query the database for model parameters.", logging.INFO)
+        self.out.log("Querying the database for model parameters.", logging.INFO)
         bldgMetaData = dict()
         bldgMetaData['floor-area']  = self.sq_ft
         bldgMetaData['year-built']  = self.building_year
@@ -247,8 +247,14 @@ class Application(DriverApplicationBaseClass):
         bldgMetaData['function']    = self.building_function
         bldgMetaData['zipcode']     = self.building_zipcode
 
-        self.out.log("Query the database for most recent year of energy load.", logging.INFO)
+        self.out.log("Querying the database for most recent year of energy load.", logging.INFO)
         # NOTE: Hourly values are preferred to make calculations easier.
+        # TODO: The caveat above must be made stronger.  Aggregating by summing
+        #   only converts, e.g., [kW] to [kWh] for hourly observations.
+        #   Similar problem for gas data.
+        # TODO: The query here presumably groups by calendar year.  Need to check
+        #   whether application actually wants a year's worth of data, looking
+        #   backward from most recent observation.
         load_by_year = self.inp.get_query_sets('load', group_by='year',
                                                group_by_aggregation=Sum,
                                                exclude={'value':None},
@@ -267,15 +273,23 @@ class Application(DriverApplicationBaseClass):
 
         recent_record = merge_data_list[len(merge_data_list)-1]
 
-        self.out.log("Convert the electricity to kWh and natural gas to kBtu.", logging.INFO)
-        # Get units from sensor maps.
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
-        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
-        natgas_unit = meta_topics['natgas'][base_topic['natgas'][0]]['unit']
 
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-        natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW]; integration will take to [kWh].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
+        natgas_unit = meta_topics['natgas'][base_topic['natgas'][0]]['unit']
+        self.out.log(
+            "Convert natgas from [{}] to [kBtu/hr]; integration will take to [kBtu].".format(natgas_unit),
+            logging.INFO
+            )
+        natgas_convertfactor = cu.getFactor_powertoKBtu_hr(natgas_unit)
 
         #TODO: Convert values to units that are PM Manager valid values.
         energyUseList = [['Electric','kWh (thousand Watt-hours)',int(recent_record[1]*load_convertfactor)],

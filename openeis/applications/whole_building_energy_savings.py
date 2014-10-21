@@ -225,10 +225,10 @@ class Application(DriverApplicationBaseClass):
         Calculates weather sensitivity using Spearman rank.
         Also, outputs data points for energy signature scatter plot.
         """
-        self.out.log("Starting Day Time Temperature Analysis", logging.INFO)
+        self.out.log("Starting application: whole building energy savings.", logging.INFO)
 
         # Gather loads and outside air temperatures. Reduced to an hourly average
-
+        self.out.log("Querying database.", logging.INFO)
         load_query = self.inp.get_query_sets('load', group_by='hour',
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
@@ -238,13 +238,22 @@ class Application(DriverApplicationBaseClass):
                                              exclude={'value':None},
                                              wrap_for_merge=True)
 
-        # Get conversion factor
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
-        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
-        temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
 
-        load_convertfactor = cu.conversiontoKWH(load_unit)
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
+        temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
+        self.out.log(
+            "Convert temperatures from [{}] to [F].".format(temperature_unit),
+            logging.INFO
+            )
 
         # Match the values by timestamp
         merged_load_oat = self.inp.merge(load_query, oat_query)
@@ -296,7 +305,7 @@ class Application(DriverApplicationBaseClass):
         binCt = 6  # TODO: Allow caller to pass this in as an argument.
 
         # Form the temperature-time-of-week model.
-        self.out.log("Starting baseline model", logging.INFO)
+        self.out.log("Finding baseline model", logging.INFO)
         ttowModel = ttow.formModel(timesTrain,
                                    oatsTrain,
                                    valsTrain,
