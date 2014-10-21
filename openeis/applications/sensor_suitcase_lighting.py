@@ -99,7 +99,9 @@ class Application(DriverApplicationBaseClass):
     def __init__(self, *args, building_name=None,
                               building_area,
                               electricity_cost,
-                              operation_hours,
+                              operating_hours,
+                              operating_days,
+                              holidays=[],
                               **kwargs):
         # Called after app has been staged
         """
@@ -116,9 +118,25 @@ class Application(DriverApplicationBaseClass):
 
         self.building_name = building_name
 
+        operating_days_list = []
+        for daysint in operating_days.split(','):
+            operating_days_list.append(int(daysint))
+
+        holiday_list = []
+        if holidays != []:
+            for dates in holidays.split(','):
+                holiday_list.append(dt.datetime.strptime(dates.strip(),'%Y-%m-%d').date())
+        hour_int = []
+        for hour in operating_hours.split(','):
+            hour_int.append(int(hour))
+
+        self.operating_sched = [hour_int,
+                                operating_days_list,
+                                holiday_list]
+        
         self.building_area = building_area
         self.electricity_cost = electricity_cost
-        self.operation_hours = operation_hours
+        
 
     @classmethod
     def get_config_parameters(cls):
@@ -128,7 +146,9 @@ class Application(DriverApplicationBaseClass):
             "building_name": ConfigDescriptor(str, "Building Name", optional=True),
             "building_area": ConfigDescriptor(float, "Building Area"),
             "electricity_cost": ConfigDescriptor(float, "Electricity Cost"),
-            "operation_hours": ConfigDescriptor(float, "Number of hours buildings is operational")
+            "operating_hours": ConfigDescriptor(str, "Operating Schedule: 'begin, end' (e.g. 8,17)'"),
+            "operating_days": ConfigDescriptor(str, "List the weekdays when building is operated: \n (1 = Monday, 7 = Sunday), separated by commas"),
+            "holidays": ConfigDescriptor(str, "List the holidays (YYYY-MM-DD) in the dataset, separated by commas.", optional=True),
             }
 
 
@@ -212,7 +232,7 @@ class Application(DriverApplicationBaseClass):
         # FIXME: Modify logging message.
         self.out.log('@building_area'+str(self.building_area), logging.INFO)
         self.out.log('@electricity_cost'+str(self.electricity_cost), logging.INFO)
-        self.out.log('@operation_hours'+str(self.operation_hours), logging.INFO)
+        self.out.log('@operating_sched'+str(self.operating_sched), logging.INFO)
 
         # Get lighting status from database
         lighting_query = self.inp.get_query_sets('lightingstatus',
@@ -222,7 +242,7 @@ class Application(DriverApplicationBaseClass):
             datetime_lightmode.append((x[0],x[1]))
 
         daylight_flag = edl.excessive_daylight(datetime_lightmode,
-                                               self.operation_hours,
+                                               self.operating_sched,
                                                self.building_area,
                                                self.electricity_cost)
         if daylight_flag != {}:
@@ -235,7 +255,7 @@ class Application(DriverApplicationBaseClass):
                                 })
 
         nighttime_flag = enl.excessive_nighttime(datetime_lightmode,
-                                                 self.operation_hours,
+                                                 self.operating_sched,
                                                  self.building_area,
                                                  self.electricity_cost)
         if nighttime_flag != {}:
