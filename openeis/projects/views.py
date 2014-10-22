@@ -703,6 +703,33 @@ class DataSetViewSet(viewsets.ModelViewSet):
             response = Response(rows)
         return response
 
+    @link()
+    def head(self, request, *args, **kwargs):
+        try:
+            count = int(request.QUERY_PARAMS['rows'])
+        except (KeyError, ValueError):
+            count = proj_settings.FILE_HEAD_ROWS_DEFAULT
+        count = min(count, proj_settings.FILE_HEAD_ROWS_MAX)
+        dataset = self.get_object()
+        rows = dataset.merge()
+        result = {'cols': [], 'rows': [], 'first_values': []}
+        result['cols'] = rows.__next__()
+        d = {}
+        for col_index, col_value in enumerate(result['cols']):
+            d[col_index] = False
+        for row in rows:
+            if len(result['rows']) < count:
+                   result['rows'].append(row)
+                   for col_index,col_value in  enumerate(row):
+                       if d[col_index] == False and col_value is not None:
+                           d[col_index] = True
+            else:
+                for col_index in d.keys():
+                    if d[col_index] == False and row[col_index] is not None:
+                        result['first_values'].append(row)
+                        d[col_index] = True
+        return Response(result)
+
 
 def preview_ingestion(datamap, input_files, count=15):
     '''Given a datamap instance and input_file mapping, generate a preview
