@@ -86,8 +86,8 @@ and includes the following modification: Paragraph 3. has been added.
 from datetime import datetime, timedelta
 from openeis.applications.utils.sensor_suitcase.utils import get_CBECS
 
-
-def short_cycling(HVAC_stat, elec_cost):
+import pprint
+def short_cycling(HVAC_stat, elec_cost, area):
     """
     Checks to see if the HVAC is short cycling.
 
@@ -101,11 +101,10 @@ def short_cycling(HVAC_stat, elec_cost):
     """
     compressor_on = []
     for point in HVAC_stat:
-        if (point[1] == 3):
+        if (point[1] == 2):
             compressor_on.append(1)
         else:
             compressor_on.append(0)
-
     change_status = []
     cycle_start = []
 
@@ -116,7 +115,7 @@ def short_cycling(HVAC_stat, elec_cost):
             cycle_start.append(HVAC_stat[i+1])
         change_status.append(status)
         i += 1
-
+        
     fault_count = 0
     i = 0
     while (i < (len(cycle_start) - 1)):
@@ -124,6 +123,7 @@ def short_cycling(HVAC_stat, elec_cost):
         if (delta.seconds < 300):
             fault_count += 1
         i += 1
+    
     if (fault_count > 10):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
                  percent_HVe = get_CBECS(area)
@@ -135,7 +135,7 @@ def short_cycling(HVAC_stat, elec_cost):
                     "5 minutes.",
             'Recommendation': "Ask HVAC service providers to check refrigerant " + \
                     "levels, thermostat location, and control sequences.",
-            'Savings': round((percent_h + percent_c) * 10 * elec_cost, 2)}
+            'Savings': round((percent_h + percent_c) * 0.10 * elec_cost, 2)}
     else:
         return {}
 

@@ -381,7 +381,8 @@ class Application(DriverApplicationBaseClass):
 
         # Apply the short_cycling model.
         shortcycling_flag = shc.short_cycling(datetime_HVACStatus,
-                                              self.electricity_cost)
+                                              self.electricity_cost,
+                                              self.building_area)
         if shortcycling_flag != {}:
             self.out.insert_row('SensorSuitcaseHVAC', {
                                 'analysis': 'Shortcycling',

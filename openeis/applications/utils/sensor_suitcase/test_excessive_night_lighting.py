@@ -85,11 +85,9 @@ and includes the following modification: Paragraph 3. has been added.
 
 from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
-from openeis.applications.utils.sensor_suitcase.utils import separate_hours
 
 import datetime as dt
 import numpy as np
-import pprint
 from openeis.applications.utils.sensor_suitcase.excessive_night_lighting import excessive_nighttime
 
 class TestExcessiveNighttimeLighting(AppTestBase):

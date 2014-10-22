@@ -85,23 +85,46 @@ and includes the following modification: Paragraph 3. has been added.
 
 from openeis.applications.utest_applications.apptest import AppTestBase
 from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
+from openeis.applications.utils.sensor_suitcase.utils import separate_hours
 
-import datetime
+import pprint
+import datetime as dt
 from openeis.applications.utils.sensor_suitcase.short_cycling import short_cycling
 import copy
 
-#TODO: more extensive tests.
 class TestShortCycling(AppTestBase):
 
     def test_short_cycling_basic(self):
-        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
-        b = datetime.datetime(2014, 1, 1, 0, 29, 0, 0)
-        #delta = 1 minute
+        """Test: Compressor is switched on/off (HVACstat = 2) every minute."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 1, 0, 29, 0, 0)
         HVACstat = set_up_datetimes(a, b, 60)
-        print("hehe: ", len(HVACstat))
-        HVAC_data = [0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3, 0, 3,
-                0, 3, 0, 3, 0, 3, 0, 3, 0, 3]
+        HVAC_data = [0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2,
+                0, 2, 0, 2, 0, 2, 0, 2, 0, 2]
         append_data_to_datetime(HVACstat, HVAC_data)
 
-        result = short_cycling(HVACstat)
-        self.assertTrue(result)
+        result = short_cycling(HVACstat, 100, 100)
+        self.assertTrue('Problem' in result.keys())
+       
+    def test_short_cycling_expect_success(self):
+        """Test: Compressor is switched on/off (HVACstat = 2) every 10 mins."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 1, 1, 0, 0, 0)
+        HVACstat = set_up_datetimes(a, b, 360)
+        HVAC_data = [0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0]
+        append_data_to_datetime(HVACstat, HVAC_data)
+
+        result = short_cycling(HVACstat, 100, 100)
+        # self.assertTrue(result == {})
+        
+    def test_short_cycling_mixed_status(self):
+        """Test: Compressor is switched on/off (HVACstat = 2) mixed in different statuses."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 1, 0, 29, 0, 0)
+        HVAC_data = [0, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 0, 2,
+                0, 2, 0, 2, 0, 2, 0, 2, 0, 2]
+        HVACstat = set_up_datetimes(a, b, 60)
+        append_data_to_datetime(HVACstat, HVAC_data)
+        
+        result = short_cycling(HVACstat, 100, 100)
+        self.assertTrue('Problem' in result.keys())
