@@ -395,6 +395,21 @@ def ingest_files(datamap, files):
         yield IngestFile(file_id, size, names, types, rows, time_zone, time_offset)
 
 
+def iter_rows(file):
+    for row in file.rows:
+        columns = []
+        for column in row.columns:
+            if isinstance(column, IngestError):
+                column = {
+                    'file': file.name,
+                    'row': row.line_num,
+                    'column': column.column_num,
+                    'error': str(column)
+                }
+            columns.append(column)
+        yield columns
+
+
 def main(argv=sys.argv):
     '''Parse input files according to a given sensor map definition.
 
