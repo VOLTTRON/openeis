@@ -272,6 +272,22 @@ class SensorIngestFileSerializer(serializers.ModelSerializer):
         model = models.SensorIngestFile
         fields = ('name', 'file')
 
+    def field_from_native(self, data, *args):
+        # Override method which expects data['files'] to be like
+        #    [{"name": "0", "file": 1}, {"name": "1", "file": 2}]
+        # to also accept files like
+        #    {"0": 1, "1": 2}
+        try:
+            files = data['files']
+        except KeyError:
+            pass
+        else:
+            if hasattr(files, 'items'):
+                files = [{'name': name, 'file': value}
+                          for name, value in files.items()]
+                data['files'] = files
+        super().field_from_native(data, *args)
+
 
 class SensorIngestLogSerializer(serializers.ModelSerializer):
     file = serializers.CharField(source='file.name', read_only=True)
