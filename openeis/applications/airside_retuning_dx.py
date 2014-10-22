@@ -1063,7 +1063,7 @@ class supply_air_temp_dx(object):
         (correction by modifying SAT set point)
         '''
         time_d = self.timestamp[-1] - self.timestamp[0]
-        time_d = int(time_d.total_seconds() / 60) + 1
+        time_d = int(time_d.total_seconds() / 60) + int(self.data_sample_rate)
 
         avg_zones_reheat = (self.total_reheat /
                             (time_d/self.data_sample_rate
@@ -1148,7 +1148,7 @@ class supply_air_temp_dx(object):
         (correction by modifying SAT set point)
         '''
         time_d = self.timestamp[-1] - self.timestamp[0]
-        time_d = int(time_d.total_seconds() / 60)
+        time_d = int(time_d.total_seconds() / 60) + int(self.data_sample_rate)
 
         avg_zones_reheat = (self.total_reheat /
                             (time_d/self.data_sample_rate
