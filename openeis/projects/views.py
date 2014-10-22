@@ -712,7 +712,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
         count = min(count, proj_settings.FILE_HEAD_ROWS_MAX)
         dataset = self.get_object()
         rows = dataset.merge()
-        result = {'cols': [], 'rows': [], 'first_values': []}
+        result = {'cols': [], 'rows': [], 'extra_rows': []}
         result['cols'] = rows.__next__()
         d = {}
         for col_index, col_value in enumerate(result['cols']):
@@ -726,7 +726,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
             else:
                 for col_index in d.keys():
                     if d[col_index] == False and row[col_index] is not None:
-                        result['first_values'].append(row)
+                        result['extra_rows'].append(row)
                         d[col_index] = True
         return Response(result)
 
