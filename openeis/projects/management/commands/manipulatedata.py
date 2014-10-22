@@ -114,6 +114,7 @@ class Command(BaseCommand):
             datamap.name = datamap.name+' version - '+str(datetime.now())
             datamap.save()
             
+            sensoringest.name = str(sensoringest.id) + ' - '+str(datetime.now())
             sensoringest.id = None
             sensoringest.map = datamap
             sensoringest.save()
