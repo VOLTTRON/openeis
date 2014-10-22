@@ -705,7 +705,14 @@ class DataSetViewSet(viewsets.ModelViewSet):
 
 
 def preview_ingestion(datamap, input_files, count=15):
+    '''Given a datamap instance and input_file mapping, generate a preview
+    of the dataset. Up to count rows will be included.'''
+
     def _iter_rows(file):
+        '''Alternate between returning the time of the current row and
+        the row values, if the times match, or a row of Nones otherwise.
+        Works with _merge() below to merge multiple files into one stream.
+        '''
         empty = [None] * (len(file.sensors) - 1)
         for timestamp, *values in iter_rows(file):
             while True:
@@ -718,6 +725,29 @@ def preview_ingestion(datamap, input_files, count=15):
             yield None
             yield empty
     def _merge(iterators):
+        '''Given a list of _iter_rows() generators, iteratively collect
+        the next lowest timestamp and use it to merge matching rows from
+        each file. Basically turns two streams like this:
+        
+                      STREAM 1                          STREAM 2
+                  time          c1.1  c1.2          time          c2.1  c2.2
+          ====================  ====  ====  ====================  ====  ====
+          2014-02-01T18:00:00Z  43.1  5     2014-02-01T18:00:30Z  58.2  1
+          2014-02-01T18:01:00Z  41.2  4     2014-02-01T18:01:00Z  58.3  2
+          2014-02-01T18:02:00Z  50.6  3     2014-02-01T18:01:30Z  58.8  3
+          2014-02-01T18:03:00Z  43.4  2     2014-02-01T18:02:00Z  58.1  4
+
+        into a single stream like this:
+
+                  time          c1.1  c1.2  c2.1  c2.2
+          ====================  ====  ====  ====  ====
+          2014-02-01T18:00:00Z  43.1     5  None  None
+          2014-02-01T18:00:30Z  None  None  58.2     1
+          2014-02-01T18:01:00Z  41.2     4  58.3     2
+          2014-02-01T18:01:30Z  None  None  58.8     3
+          2014-02-01T18:02:00Z  50.6     3  58.1     4
+          2014-02-01T18:03:00Z  43.4     2  None  None
+        '''
         while True:
             try:
                 time = min(t for t in (next(i) for i in iterators) if t)
@@ -736,6 +766,7 @@ def preview_ingestion(datamap, input_files, count=15):
         headers.extend(file.sensors[1:])
         iterators.append(_iter_rows(file))
     generator = _merge(iterators)
+    # Get the requested number of rows
     for _ in range(count):
         try:
             row = next(generator)
@@ -766,11 +797,11 @@ def preview_ingestion(datamap, input_files, count=15):
 class DataSetPreviewViewSet(viewsets.GenericViewSet):
     '''Return sample rows from DataSet ingestion.
 
-    If map has a property of 'id', then the map with the given ID is
-    retreived from the database and used (if owned by the current user).
-    Otherwise, map should be a valid data map definition and will be
-    validated before processing continues. Set rows to change the number
-    of rows returned for each file.
+    If map has a property of 'id' or map is an integer, then the map with
+    the given ID is retreived from the database and used (if owned by the
+    current user).  Otherwise, map should be a valid data map definition and
+    will be validated before processing continues. Set rows to change the
+    number of rows returned for each file.
     '''
 
     serializer_class = serializers.DataSetPreviewSerializer
