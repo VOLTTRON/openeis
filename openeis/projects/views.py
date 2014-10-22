@@ -742,8 +742,13 @@ def preview_ingestion(datamap, input_files, count=15):
         except StopIteration:
             break
         rows.append(row)
-    missing = [i for i, col in enumerate(zip(*rows))
-               if all(val is None for val in col)]
+    if not rows:
+        # All rows are missing
+        missing = list(range(len(headers)))
+    else:
+        missing = [i for i, col in enumerate(zip(*rows))
+                   if all(val is None for val in col)]
+    # Get at least one value for each column, if possible
     while missing:
         try:
             row = next(generator)
