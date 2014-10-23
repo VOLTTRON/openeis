@@ -13,6 +13,7 @@ from .conftest import detail_view
 pytestmark = pytest.mark.django_db
 
 
+@pytest.mark.skipif(True, reason='Skipping until GreenButton APIs are complete.')
 def test_greenbutton_file(active_user, project):
     '''Tests the content negotiation of the dataset download API.'''
     rf = APIRequestFactory()

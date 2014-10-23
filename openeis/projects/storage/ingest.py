@@ -381,7 +381,7 @@ def ingest_files(datamap, files):
     '''
     columnmap = get_sensor_parsers(datamap, files)
     if hasattr(files, 'items'):
-        files = files.items()
+        files = sorted(files.items())
     for file_id, file_dict in files:
         file = file_dict['file']
         time_zone = file_dict['time_zone']

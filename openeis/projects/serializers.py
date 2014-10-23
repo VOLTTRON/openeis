@@ -54,8 +54,11 @@
 #}}}
 
 import csv
+import io
 import posixpath
+import re
 
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
@@ -97,23 +100,36 @@ class CreateFileSerializer(serializers.ModelSerializer):
         self.project = kwargs.pop('project', None)
         super().__init__(*args, **kwargs)
 
+    def _convert(self, src, dst):
+        writer = csv.writer(dst)
+        writer.writerow(['a', 'b', 'c'])
+        writer.writerow([1, 2, 3])
+
     def validate_file(self, attrs, source):
         # Only perform this validation when called from our add_file view.
         if self.project is None:
             return attrs
-        file = attrs[source].file
-        try:
-            
-            #TODO: XML more structured so test that first
-            #TODO: This needs to be done more intelligently
-
-            if attrs['file'].content_type == "text/xml":
-                attrs['format'] = 'greenbutton'
-            else:
+        file = attrs[source]
+        head = file.read(1024).decode('utf-8')
+        if re.search(r'<\?xml-stylesheet\s+.*href="GreenButtonDataStyleSheet.xslt".*\?>', head):
+            attrs['format'] = 'greenbutton'
+            dst = io.StringIO()
+            self._convert(file, dst)
+            dst = io.BytesIO(dst.getvalue().encode('utf-8'))
+            name = file.name
+            if name[-4:].lower() == '.xml':
+                name = name[:-3] + 'csv'
+            file = InMemoryUploadedFile(dst, field_name=file.field_name,
+                name=name, content_type='text/csv', size=len(dst.getvalue()),
+                charset=None)
+            attrs[source] = file
+            attrs['name'] = name
+        else:
+            attrs['format'] = 'csv'
+            try:
                 csv_file = CSVFile(file)
-                attrs['format'] = 'csv'
-        except csv.Error as e:
-            raise serializers.ValidationError(str(e))
+            except csv.Error as e:
+                raise serializers.ValidationError(str(e))
         file.seek(0)
         return attrs
 
@@ -146,7 +162,6 @@ class FileSerializer(serializers.ModelSerializer):
         model = models.DataFile
         read_only_fields = ('project','format')
         exclude = ('file',)
-        
 
     def transform_download_url(self, obj, value):
         request = self.context.get('request')
@@ -256,6 +271,22 @@ class SensorIngestFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.SensorIngestFile
         fields = ('name', 'file')
+
+    def field_from_native(self, data, *args):
+        # Override method which expects data['files'] to be like
+        #    [{"name": "0", "file": 1}, {"name": "1", "file": 2}]
+        # to also accept files like
+        #    {"0": 1, "1": 2}
+        try:
+            files = data['files']
+        except KeyError:
+            pass
+        else:
+            if hasattr(files, 'items'):
+                files = [{'name': name, 'file': value}
+                          for name, value in files.items()]
+                data['files'] = files
+        super().field_from_native(data, *args)
 
 
 class SensorIngestLogSerializer(serializers.ModelSerializer):

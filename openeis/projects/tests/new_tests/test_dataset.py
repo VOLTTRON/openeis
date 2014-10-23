@@ -5,8 +5,9 @@ from collections import namedtuple
 from django.utils.timezone import utc
 import pytest
 from rest_framework.test import force_authenticate, APIRequestFactory, APIClient
+from rest_framework import status
 
-from openeis.projects import views
+from openeis.projects import views, conf
 
 from .conftest import detail_view
 
@@ -227,3 +228,175 @@ def test_dataset_download_api(active_user, mixed_dataset):
     assert isinstance(response, views.renderers.StreamingCSVResponse)
     response = client.get(url, {'format': 'json'})
     assert isinstance(response, views.Response)
+
+
+def test_dataset_preview(active_user, mixed_datamap,
+        datafile_1month, datafile_1month_offset):
+    '''Tests previewing dataset creation without saving the data.'''
+
+    rf = APIRequestFactory()
+    post = lambda data: rf.post('/api/datasets/preview', data, format='json')
+    expected_response = {
+        'cols': [
+            'time',
+            'Test/WholeBuildingElectricity',
+            'Test/OutdoorAirTemperature'
+        ],
+        'rows': [
+            [datetime.datetime(2012, 2, 1, 0, 0, tzinfo=utc), 108.52, None],
+            [datetime.datetime(2012, 2, 1, 0, 30, tzinfo=utc), None, 45.67],
+            [datetime.datetime(2012, 2, 1, 1, 0, tzinfo=utc), 111.86, None],
+            [datetime.datetime(2012, 2, 1, 1, 30, tzinfo=utc), None, 46.18],
+            [datetime.datetime(2012, 2, 1, 2, 0, tzinfo=utc), 113.87, None],
+            [datetime.datetime(2012, 2, 1, 2, 30, tzinfo=utc), None, 47.08],
+            [datetime.datetime(2012, 2, 1, 3, 0, tzinfo=utc), 114.24, None],
+            [datetime.datetime(2012, 2, 1, 3, 30, tzinfo=utc), None, 47.08],
+            [datetime.datetime(2012, 2, 1, 4, 0, tzinfo=utc), 139.99, None],
+            [datetime.datetime(2012, 2, 1, 4, 30, tzinfo=utc), None, 47.61],
+            [datetime.datetime(2012, 2, 1, 5, 0, tzinfo=utc), 145.86, None],
+            [datetime.datetime(2012, 2, 1, 5, 30, tzinfo=utc), None, 47.91],
+            [datetime.datetime(2012, 2, 1, 6, 0, tzinfo=utc), 153.62, None],
+            [datetime.datetime(2012, 2, 1, 6, 30, tzinfo=utc), None, 48.23],
+            [datetime.datetime(2012, 2, 1, 7, 0, tzinfo=utc), 167.61, None],
+            [datetime.datetime(2012, 2, 1, 7, 30, tzinfo=utc), None, 48.45],
+            [datetime.datetime(2012, 2, 1, 8, 0, tzinfo=utc), 187.12, None],
+            [datetime.datetime(2012, 2, 1, 8, 30, tzinfo=utc), None, 49.47],
+            [datetime.datetime(2012, 2, 1, 9, 0, tzinfo=utc), 204.19, None],
+            [datetime.datetime(2012, 2, 1, 9, 30, tzinfo=utc), None, 50.78]
+        ]
+    }
+    
+    # Check using numeric map value of existing map
+    request = post({'map': mixed_datamap.pk, 'rows': 20,
+            'files': [{'name': '0', 'file': datafile_1month.pk},
+                      {'name': '1', 'file': datafile_1month_offset.pk}]})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == expected_response
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == 20
+    
+    # Check using short map with id of existing map
+    request = post({'map': {'id': mixed_datamap.pk}, 'rows': 20,
+            'files': [{'name': '0', 'file': datafile_1month.pk},
+                      {'name': '1', 'file': datafile_1month_offset.pk}]})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == expected_response
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == 20
+    assert 'extra_rows' not in response.data
+    
+    # Check using full map to preview unsaved datamap
+    request = post({'map': mixed_datamap.map, 'rows': 20,
+            'files': [{'name': '0', 'file': datafile_1month.pk},
+                      {'name': '1', 'file': datafile_1month_offset.pk}]})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == expected_response
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == 20
+    assert 'extra_rows' not in response.data
+    
+    # Check alternate file specification using map instead of list
+    request = post({'map': mixed_datamap.map, 'rows': 20,
+            'files': {'0': datafile_1month.pk, '1': datafile_1month_offset.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data == expected_response
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == 20
+    assert 'extra_rows' not in response.data
+    
+    # Check requesting fewer rows
+    request = post({'map': mixed_datamap.pk, 'rows': 10,
+            'files': {'0': datafile_1month.pk, '1': datafile_1month_offset.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data['rows'] == expected_response['rows'][:10]
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == 10
+    assert 'extra_rows' not in response.data
+    
+    # Check requesting zero rows
+    request = post({'map': mixed_datamap.pk, 'rows': 0,
+            'files': {'0': datafile_1month.pk, '1': datafile_1month_offset.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == 0
+    assert 'extra_rows' in response.data
+    assert response.data['extra_rows'] == expected_response['rows'][:2]
+    
+    # Check requesting one row
+    request = post({'map': mixed_datamap.pk, 'rows': 1,
+            'files': {'0': datafile_1month.pk, '1': datafile_1month_offset.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == 1
+    assert 'extra_rows' in response.data
+    assert response.data['rows'] == expected_response['rows'][:1]
+    assert response.data['extra_rows'] == expected_response['rows'][1:2]
+    
+    # Check requesting default rows
+    request = post({'map': mixed_datamap.pk,
+            'files': {'0': datafile_1month.pk, '1': datafile_1month_offset.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == conf.settings.FILE_HEAD_ROWS_DEFAULT
+    assert 'extra_rows' not in response.data
+    
+    # Check requesting too many rows
+    request = post({'map': mixed_datamap.pk, 'rows': 80000,
+            'files': {'0': datafile_1month.pk, '1': datafile_1month_offset.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data['cols']) == 3
+    assert len(response.data['rows']) == conf.settings.FILE_HEAD_ROWS_MAX
+     
+    # Check invalid datamap ID
+    request = post({'map': 2000, 'files': {'0': datafile_1month.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.data == {'detail': 'Not found'}
+     
+    # Check invalid datamap
+    request = post({'map': {'extra': {'bad': 'robot'}},
+        'files': {'0': datafile_1month.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.data == {'map': ["'version' is a required property"]}
+    
+    # Check request with invalid file id
+    request = post({'map': mixed_datamap.pk,
+            'files': {'0': 2000, '1': datafile_1month_offset.pk}})
+    force_authenticate(request, active_user)
+    view = views.DataSetPreviewViewSet.as_view({'post': 'preview'})
+    response = view(request)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    response.data['files'].sort(key=lambda x: x.keys())
+    assert response.data == {'files': [{}, {'file': ["Invalid pk '2000' - object does not exist."]}]}
