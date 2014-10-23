@@ -92,29 +92,29 @@ class Application(DrivenApplicationBaseClass):
     time_format = '%m/%d/%Y %H:%M'
 
     def __init__(self, *args,
-                 no_required_data=10,
+                 no_required_data=5,
                  data_window=15, number_of_zones=None,
-                 data_sample_rate=None, warm_up_time=20,
+                 data_sample_rate=None, warm_up_time=5,
                  duct_stc_retuning=0.1, max_duct_stp_stpt=3.0,
-                 high_supply_fan_threshold=100,
-                 zone_high_damper_threshold=90,
-                 zone_low_damper_threshold=10,
-                 min_duct_stp_stpt=0.25, hdzone_damper_threshold=30,
-                 low_supply_fan_threshold=20,
-                 setpoint_allowable_deviation=10,
+                 high_supply_fan_threshold=100.0,
+                 zone_high_damper_threshold=90.0,
+                 zone_low_damper_threshold=10.0,
+                 min_duct_stp_stpt=0.25, hdzone_damper_threshold=30.0,
+                 low_supply_fan_threshold=20.0,
+                 setpoint_allowable_deviation=10.0,
 
-                 stpr_diff_threshold=0.2,
+                 stpr_reset_threshold=0.2,
 
-                 percent_reheat_threshold=25, rht_on_threshold=10,
-                 satemp_diff_threshold=5,
+                 percent_reheat_threshold=25.0, rht_on_threshold=10.0,
+                 sat_reset_threshold=5.0,
 
-                 sat_high_damper_threshold=80, percent_damper_threshold=50,
-                 minimum_sat_stpt=50, sat_reduction=1,
+                 sat_high_damper_threshold=80.0, percent_damper_threshold=50.0,
+                 minimum_sat_stpt=50.0, sat_reduction=1.0,
 
-                 reheat_valve_threshold=50,
-                 maximum_sat_stpt=75, sat_increase=1,
+                 reheat_valve_threshold=50.0,
+                 maximum_sat_stpt=75.0, sat_increase=1.0,
 
-                 unocc_time_threshold=80, unocc_stp_threshold=0.2,
+                 unocc_time_threshold=30.0, unocc_stp_threshold=0.2,
                  monday_sch='6:30;18:30', tuesday_sch='6:30;18:30',
                  wednesday_sch='6:30;18:30', thursday_sch='6:30;18:30',
                  friday_sch='6:30;18:30', saturday_sch='0:00;0:00',
@@ -183,37 +183,37 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_start = None
         auto_correctflag = True
 
-        self.static_dx = duct_static_dx(max_duct_stp_stpt, duct_stc_retuning,
-                                        data_window, no_required_data,
-                                        number_of_zones,
-                                        zone_high_damper_threshold,
-                                        zone_low_damper_threshold,
-                                        setpoint_allowable_deviation,
-                                        auto_correctflag,
-                                        hdzone_damper_threshold,
-                                        min_duct_stp_stpt)
-
-        self.sat_dx = supply_air_temp_dx(data_window, no_required_data,
-                                         data_sample_rate,
+        self.static_dx = duct_static_rcx(max_duct_stp_stpt, duct_stc_retuning,
+                                         data_window, no_required_data,
                                          number_of_zones,
-                                         auto_correctflag, rht_on_threshold,
-                                         sat_high_damper_threshold,
-                                         percent_damper_threshold,
-                                         percent_reheat_threshold,
+                                         zone_high_damper_threshold,
+                                         zone_low_damper_threshold,
                                          setpoint_allowable_deviation,
-                                         minimum_sat_stpt, sat_reduction,
-                                         reheat_valve_threshold,
-                                         maximum_sat_stpt, sat_increase)
+                                         auto_correctflag,
+                                         hdzone_damper_threshold,
+                                         min_duct_stp_stpt, data_sample_rate)
 
-        self.sched_occ_dx = schedule_reset_dx(unocc_time_threshold,
-                                              unocc_stp_threshold,
-                                              monday_sch, tuesday_sch,
-                                              wednesday_sch, thursday_sch,
-                                              friday_sch, saturday_sch,
-                                              sunday_sch, data_window,
-                                              no_required_data,
-                                              stpr_diff_threshold,
-                                              satemp_diff_threshold)
+        self.sat_dx = supply_air_temp_rcx(data_window, no_required_data,
+                                          data_sample_rate,
+                                          number_of_zones,
+                                          auto_correctflag, rht_on_threshold,
+                                          sat_high_damper_threshold,
+                                          percent_damper_threshold,
+                                          percent_reheat_threshold,
+                                          setpoint_allowable_deviation,
+                                          minimum_sat_stpt, sat_reduction,
+                                          reheat_valve_threshold,
+                                          maximum_sat_stpt, sat_increase)
+
+        self.sched_occ_dx = schedule_reset_rcx(unocc_time_threshold,
+                                               unocc_stp_threshold,
+                                               monday_sch, tuesday_sch,
+                                               wednesday_sch, thursday_sch,
+                                               friday_sch, saturday_sch,
+                                               sunday_sch, data_window,
+                                               no_required_data,
+                                               stpr_reset_threshold,
+                                               sat_reset_threshold)
 
     @classmethod
     def get_config_parameters(cls):
@@ -305,11 +305,12 @@ class Application(DrivenApplicationBaseClass):
                              '% allowable deviation from set points '
                              'before a fault message is generated '
                              '(default=10%)', optional=True),
-            'stpr_diff_threshold':
-            ConfigDescriptor(float, ('Required difference between minimum and '
-                                     'maximum duct static pressure set point '
-                                     'detecting a duct static pressure '
-                                     'set point reset (default=0.2 inch w.g.)'),
+            'stpr_reset_threshold':
+            ConfigDescriptor(float,
+                             ('Required difference between minimum and '
+                              'maximum duct static pressure set point '
+                              'detecting a duct static pressure '
+                              'set point reset (default=0.2 inch w.g.)'),
                              optional=True),
             'reheat_valve_threshold':
             ConfigDescriptor(float,
@@ -370,7 +371,7 @@ class Application(DrivenApplicationBaseClass):
                              'diagnostic will never exceed this value '
                              '(default=50F)',
                              optional=True),
-            'satemp_diff_threshold':
+            'sat_reset_threshold':
             ConfigDescriptor(float,
                              'Threshold difference required '
                              'to detect a supply-air temperature '
@@ -527,7 +528,8 @@ class Application(DrivenApplicationBaseClass):
                 'datetime': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
 
-                'diagnostic_message': OutputDescriptor('string', message_topic),
+                'diagnostic_message': OutputDescriptor('string',
+                                                       message_topic),
 
                 'energy_impact': OutputDescriptor('float', energy_impact),
                 'color_code': OutputDescriptor('string', color_code)
@@ -594,7 +596,7 @@ class Application(DrivenApplicationBaseClass):
             self.warm_up_start = current_time
             return diagnostic_result
 
-        time_check = datetime.timedelta(minutes=self.warm_up_time - 1)
+        time_check = datetime.timedelta(minutes=self.warm_up_time)
         if (self.warm_up_start is not None and
            (current_time - self.warm_up_start) < time_check):
             return diagnostic_result
@@ -675,19 +677,19 @@ class Application(DrivenApplicationBaseClass):
             static_override_check, low_dx_condition,
             high_dx_condition, diagnostic_result)
 
-        diagnostic_result = self.sat_dx.sat_diagnostics(
+        diagnostic_result = self.sat_dx.sat_rcx(
             current_time, satemp_data, sat_stpt_data, rht_data,
             zone_damper_data,
             diagnostic_result, sat_override_check)
 
-        diagnostic_result = self.sched_occ_dx.sched_dx_alg(
+        diagnostic_result = self.sched_occ_dx.sched_rcx_alg(
             current_time, stc_pr_data, stc_pr_sp_data,
             sat_stpt_data, fan_stat_data, diagnostic_result)
 
         return diagnostic_result
 
 
-class duct_static_dx(object):
+class duct_static_rcx(object):
 
     '''
     Air-side HVAC Auto-Retuning diagnostic to check if the
@@ -697,7 +699,8 @@ class duct_static_dx(object):
     def __init__(self, max_duct_stp_stpt, duct_stc_retuning, data_window,
                  no_required_data, number_of_zones, zone_high_damper_threshold,
                  zone_low_damper_threshold, setpoint_allowable_deviation,
-                 auto_correctflag, hdzone_damper_threshold, min_duct_stp_stpt):
+                 auto_correctflag, hdzone_damper_threshold, min_duct_stp_stpt,
+                 data_sample_rate):
         self.zone_damper_values = []
         self.duct_stp_stpt_values = []
         self.duct_stp_values = []
@@ -715,7 +718,7 @@ class duct_static_dx(object):
         self.zone_low_damper_threshold = float(zone_low_damper_threshold)
         self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
         self.auto_correctflag = bool(auto_correctflag)
-
+        self.data_sample_rate = int(data_sample_rate)
         self.min_duct_stp_stpt = float(min_duct_stp_stpt)
         self.hdzone_damper_threshold = float(hdzone_damper_threshold)
 
@@ -753,9 +756,11 @@ class duct_static_dx(object):
             sum(stc_pr_sp_data) / len(stc_pr_sp_data))
 
         time_check = datetime.timedelta(minutes=self.data_window)
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
 
             avg_duct_stpr_stpt = sum(
                 self.duct_stp_stpt_values) / len(self.duct_stp_stpt_values)
@@ -959,7 +964,7 @@ class duct_static_dx(object):
         return result
 
 
-class supply_air_temp_dx(object):
+class supply_air_temp_rcx(object):
     def __init__(self, data_window, no_required_data,
                  data_sample_rate, number_of_zones,
                  auto_correctflag, rht_on_threshold, high_damper_threshold,
@@ -999,9 +1004,9 @@ class supply_air_temp_dx(object):
         self.minimum_sat_stpt = float(minimum_sat_stpt)
         self.sat_reduction = float(sat_reduction)
 
-    def sat_diagnostics(self, current_time, satemp_data, sat_stpt_data,
-                        rht_data, zone_damper_data,
-                        diagnostic_result, sat_override_check):
+    def sat_rcx(self, current_time, satemp_data, sat_stpt_data,
+                rht_data, zone_damper_data,
+                diagnostic_result, sat_override_check):
         '''
         Check supply-air temperature dx
         pre-requisites and assemble analysis data set
@@ -1018,11 +1023,12 @@ class supply_air_temp_dx(object):
                 self.total_damper += 1
 
         self.timestamp.append(current_time)
-        time_check = datetime.timedelta(minutes=self.data_window - 1)
+        time_check = datetime.timedelta(minutes=self.data_window)
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.sat_stpt_values) >= self.no_required_data):
-
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             avg_sat_stpt = (sum(self.sat_stpt_values) /
                             len(self.sat_stpt_values))
 
@@ -1244,14 +1250,14 @@ class supply_air_temp_dx(object):
         return result
 
 
-class schedule_reset_dx(object):
+class schedule_reset_rcx(object):
     '''
     Schedule and reset diagnostics
     '''
     def __init__(self, unocc_time_threshold, unocc_stp_threshold,
                  monday_sch, tuesday_sch, wednesday_sch, thursday_sch,
                  friday_sch, saturday_sch, sunday_sch, data_window,
-                 no_required_data, stpr_diff_threshold, satemp_diff_threshold):
+                 no_required_data, stpr_reset_threshold, sat_reset_threshold):
 
         self.active_sch = []
         self.fan_status_values = []
@@ -1308,12 +1314,12 @@ class schedule_reset_dx(object):
         self.no_required_data = no_required_data
         self.unocc_time_threshold = float(unocc_time_threshold)
         self.unocc_stp_threshold = float(unocc_stp_threshold)
-        self.stpr_diff_threshold = float(stpr_diff_threshold)
-        self.satemp_diff_threshold = float(satemp_diff_threshold)
+        self.stpr_reset_threshold = float(stpr_reset_threshold)
+        self.sat_reset_threshold = float(sat_reset_threshold)
 
-    def sched_dx_alg(self, current_time, stc_pr_data, stc_pr_sp_data,
-                     sat_stpt_data,
-                     fan_stat_data, diagnostic_result):
+    def sched_rcx_alg(self, current_time, stc_pr_data, stc_pr_sp_data,
+                      sat_stpt_data,
+                      fan_stat_data, diagnostic_result):
         '''
         Check schedule status and unit operational status
         '''
@@ -1423,11 +1429,12 @@ class schedule_reset_dx(object):
         Auto-RCx  to detect whether a static pressure set point
         reset is implemented
         '''
-        stp_diff = max(self.duct_stp_stpt_values) - min(self.duct_stp_stpt_values)
+        stp_diff = (max(self.duct_stp_stpt_values) -
+                    min(self.duct_stp_stpt_values))
 
         energy_impact = None
 
-        if stp_diff < self.stpr_diff_threshold:
+        if stp_diff < self.stpr_reset_threshold:
 
                     diagnostic_message = ('{name}: No duct static pressure '
                                           'reset detected. A duct static '
@@ -1461,7 +1468,7 @@ class schedule_reset_dx(object):
         satemp_diff = max(self.sat_stpt_values) - min(self.sat_stpt_values)
         energy_impact = None
 
-        if satemp_diff <= self.satemp_diff_threshold:
+        if satemp_diff <= self.sat_reset_threshold:
             diagnostic_message = ('{name}: A supply-air temperature '
                                   'reset was not detected. This can '
                                   'result in excess energy '
