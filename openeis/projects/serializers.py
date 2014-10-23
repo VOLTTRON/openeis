@@ -108,7 +108,8 @@ class CreateFileSerializer(serializers.ModelSerializer):
         file = attrs[source]
         head = file.read(1024).decode('utf-8')
         file.seek(0)
-        if re.search(r'<\?xml-stylesheet\s+.*href="GreenButtonDataStyleSheet.xslt".*\?>', head):
+        #if re.search(r'<\?xml-stylesheet\s+.*href="GreenButtonDataStyleSheet.xslt".*\?>', head):
+        if re.match(r'\ufeff?\s*<\?xml(?:\s+\w+="[^"]*")*\s*\?>', head):
             attrs['format'] = 'greenbutton'
             dst = io.StringIO()
             converter.Convert(file, dst)
