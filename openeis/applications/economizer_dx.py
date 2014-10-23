@@ -166,7 +166,8 @@ class Application(DrivenApplicationBaseClass):
                                            temp_difference_threshold,
                                            open_damper_time,
                                            oat_mat_check,
-                                           temp_damper_threshold)
+                                           temp_damper_threshold,
+                                           data_sample_rate)
         self.econ2 = econ_correctly_on(oaf_economizing_threshold,
                                        open_damper_threshold,
                                        self.economizer_type, data_window,
@@ -201,7 +202,7 @@ class Application(DrivenApplicationBaseClass):
         '''
         return {
 
-            'data_sample_rate': ConfigDescriptor(int, 'Data Sampling interval '
+            'data_sample_rate': ConfigDescriptor(float, 'Data Sampling interval '
                                                  '(minutes/sample)'),
             'tonnage': ConfigDescriptor(float,
                                         'AHU/RTU cooling capacity in tons'),
@@ -621,7 +622,8 @@ class temperature_sensor_dx(object):
 
     def __init__(self, data_window, no_required_data,
                  temp_difference_threshold, open_damper_time,
-                 oat_mat_check, temp_damper_threshold):
+                 oat_mat_check, temp_damper_threshold,
+                 data_sample_rate):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -630,6 +632,7 @@ class temperature_sensor_dx(object):
         self.open_damper_mat = []
         self.econ_check = False
         self.steady_state_start = None
+        self.data_sample_rate = float(data_sample_rate)
         self.open_damper_time = int(open_damper_time)
         self.econ_time_check = datetime.timedelta(
             minutes=self.open_damper_time - 1)
@@ -665,7 +668,10 @@ class temperature_sensor_dx(object):
 
         time_check = datetime.timedelta(minutes=(self.data_window))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
+
+        if (elapsed_time >= time_check and
                 len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.temperature_sensor_dx(
                 diagnostic_result, current_time)
@@ -871,8 +877,11 @@ class econ_correctly_on(object):
 
         time_check = datetime.timedelta(minutes=(self.data_window))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
+
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.not_economizing_when_needed(
                 diagnostic_result, current_time)
         return diagnostic_result
@@ -1004,10 +1013,11 @@ class econ_correctly_off(object):
             self.timestamp.append(current_time)
 
             time_check = datetime.timedelta(minutes=(self.data_window))
-            self.timestamp.append(current_time)
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.economizing_when_not_needed(
                 diagnostic_result, current_time)
         return diagnostic_result
@@ -1126,8 +1136,11 @@ class excess_oa_intake(object):
 
         time_check = datetime.timedelta(minutes=(self.data_window))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
+
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.excess_oa(diagnostic_result, current_time)
         return diagnostic_result
 
@@ -1249,7 +1262,7 @@ class insufficient_oa_intake(object):
     def __init__(self, device_type, economizer_type, data_window,
                  no_required_data, ventilation_oaf_threshold,
                  minimum_damper_setpoint, insufficient_damper_threshold,
-                 desired_oaf):
+                 desired_oaf, data_sample_rate):
 
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -1261,6 +1274,7 @@ class insufficient_oa_intake(object):
         '''Application thresholds (Configurable)'''
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
+        self.data_sample_rate = float(data_sample_rate)
         self.ventilation_oaf_threshold = float(ventilation_oaf_threshold)
         self.insufficient_damper_threshold = float(
             insufficient_damper_threshold)
@@ -1289,8 +1303,11 @@ class insufficient_oa_intake(object):
 
         time_check = datetime.timedelta(minutes=(self.data_window))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
+
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.insufficient_oa(
                 diagnostic_result, current_time)
         return diagnostic_result
