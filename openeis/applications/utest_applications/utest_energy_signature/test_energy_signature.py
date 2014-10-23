@@ -1,42 +1,7 @@
 """
 Unit tests for Energy Signature application.
 
-
-Copyright
-=========
-
-OpenEIS Algorithms Phase 2 Copyright (c) 2014,
-The Regents of the University of California, through Lawrence Berkeley National
-Laboratory (subject to receipt of any required approvals from the U.S.
-Department of Energy). All rights reserved.
-
-If you have questions about your rights to use or distribute this software,
-please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
-referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
-
-NOTICE:  This software was produced by The Regents of the University of
-California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
-For 5 years from November 1, 2012, the Government is granted for itself and
-others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
-license in this data to reproduce, prepare derivative works, and perform
-publicly and display publicly, by or on behalf of the Government. There is
-provision for the possible extension of the term of this license. Subsequent to
-that period or any extension granted, the Government is granted for itself and
-others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
-license in this data to reproduce, prepare derivative works, distribute copies
-to the public, perform publicly and display publicly, and to permit others to
-do so. The specific term of the license can be identified by inquiry made to
-Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
-United States Department of Energy, nor any of their employees, makes any
-warranty, express or implied, or assumes any legal liability or responsibility
-for the accuracy, completeness, or usefulness of any data, apparatus, product,
-or process disclosed, or represents that its use would not infringe privately
-owned rights.
-
-
-License
 =======
-
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -85,31 +50,46 @@ and includes the following modification: Paragraph 3. has been added.
 
 from openeis.applications.utest_applications.apptest import AppTestBase
 import os
+import pytest
 
+@pytest.mark.usesfixtures('daily_summary_datafile')
 class TestEnergySignature(AppTestBase):
-    fixtures = [
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'energy_signature_fixture.json')
-        ]
-
-    def setUp(self):
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
-
     def test_energy_signature_basic(self):
-        es_basic_ini = os.path.join(self.basedir,
-            'energy_signature_negone.ini')
+        print("I am here!")
+        
+    def test_energy_signature_basic(self):
         es_basic_exp = {}
-        es_basic_exp['Load_vs_Oat'] = os.path.join(self.basedir,
-            'energy_signature_negone_SP.ref.csv')
+        es_basic_ini = os.path.join(self.basedir,
+                                    'energy_signature_negone.ini')
+        es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
+                                    'energy_signature_negone_SP.ref.csv')
         es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
-            'energy_signature_negone_WS.ref.csv')
+                                    'energy_signature_negone_WS.ref.csv')
         self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
+#     fixtures = [os.path.join(os.path.abspath(os.path.dirname(__file__)),
+#                                     'energy_signature_fixture.json')]
+# 
+#     def setUp(self):
+#         self.basedir = os.path.abspath(os.path.dirname(__file__))
+# 
+#     def test_energy_signature_basic(self):
+#         es_basic_exp = {}
+#         es_basic_ini = os.path.join(self.basedir,
+#                                     'energy_signature_negone.ini')
+#         es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
+#                                     'energy_signature_negone_SP.ref.csv')
+#         es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
+#                                     'energy_signature_negone_WS.ref.csv')
+#         self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
+# 
+#     def test_energy_signature_missing(self):
+#         es_missing_exp = {}
+#         es_missing_ini = os.path.join(self.basedir,
+#                                    'energy_signature_missing.ini')
+#         es_missing_exp['Scatterplot'] = os.path.join(self.basedir,
+#                                    'energy_signature_missing_SP.ref.csv')
+#         es_missing_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
+#                                    'energy_signature_missing_WS.ref.csv')
+#         self.run_it(es_missing_ini, es_missing_exp, clean_up=True)
 
-    def test_energy_signature_missing(self):
-        es_missing_ini = os.path.join(self.basedir,
-            'energy_signature_missing.ini')
-        es_missing_exp = {}
-        es_missing_exp['Load_vs_Oat'] = os.path.join(self.basedir,
-            'energy_signature_missing_SP.ref.csv')
-        es_missing_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
-            'energy_signature_missing_WS.ref.csv')
-        self.run_it(es_missing_ini, es_missing_exp, clean_up=True)
+
