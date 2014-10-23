@@ -12,21 +12,25 @@ detail_view = {'get': 'retrieve', 'post': 'update', 'put': 'update',
 
 @pytest.fixture
 def admin_user():
+    '''Creates an administrator user.'''
     return models.User.objects.create(username='admin', password='password',
             is_superuser=True, is_staff=True, email='admin@example.com')
 
 @pytest.fixture
 def staff_user():
+    '''Creates a usernamed staff with the password 'password'''
     return models.User.objects.create(username='staff', password='password',
             is_superuser=False, is_staff=True, email='staff@example.com')
 
 @pytest.fixture
 def active_user():
+    '''Creates an active user in the database and returns it.'''
     return models.User.objects.create(username='active', password='password',
             is_superuser=False, is_staff=False, email='active@example.com')
 
 @pytest.fixture
 def inactive_user():
+    '''Creates an inactive user and returns it.'''
     return models.User.objects.create(username='inactive', password='password',
             is_active=False, is_superuser=False, is_staff=False,
             email='inactive@example.com')
@@ -34,11 +38,13 @@ def inactive_user():
 
 @pytest.fixture
 def organization(staff_user, active_user):
+    '''Creates an organization 'Test Organization' and adds the staff user and active user to it'''
     return models.Organization.objects.create(
             name='Test Organization', members=[staff_user, active_user])
 
 @pytest.fixture
 def project(active_user):
+    '''Uses the injected active use and recreates a 'Test Project' in the database, returns it'''
     return models.Project.objects.create(owner=active_user, name='Test Project')
 
 
