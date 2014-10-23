@@ -64,6 +64,7 @@ from rest_framework.reverse import reverse
 
 from .storage.csvfile import CSVFile
 from . import models
+from openeis.server.parser.converter import Convert
 
 
 class JSONField(serializers.CharField):
@@ -114,7 +115,8 @@ class CreateFileSerializer(serializers.ModelSerializer):
         if re.search(r'<\?xml-stylesheet\s+.*href="GreenButtonDataStyleSheet.xslt".*\?>', head):
             attrs['format'] = 'greenbutton'
             dst = io.StringIO()
-            self._convert(file, dst)
+            # self._convert(file, dst)
+            Convert(file, dst)
             dst = io.BytesIO(dst.getvalue().encode('utf-8'))
             name = file.name
             if name[-4:].lower() == '.xml':
