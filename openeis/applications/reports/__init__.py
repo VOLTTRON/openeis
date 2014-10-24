@@ -159,6 +159,18 @@ class HeatMap(ReportElement):
         self.z_label = z_label
 
 
+class RetroCommissioningOAED(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+
+
+class RetroCommissioningAFDD(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+
+
 if __name__ == '__main__':
 
     report = Report("This is a report description")

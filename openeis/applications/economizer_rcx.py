@@ -56,7 +56,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   ConfigDescriptor,
                                   InputDescriptor,
                                   Results,
-                                  ApplicationDescriptor)
+                                  ApplicationDescriptor,
+                                  reports)
 
 econ1 = 'Temperature Sensor Dx'
 econ2 = 'Economizer Correctly ON Dx'
@@ -395,13 +396,13 @@ class Application(DrivenApplicationBaseClass):
         '''
         Called by UI to create Viz.
         Describe how to present output to user
-        Display this viz with these columns from this table
-
-        display_elements is a list of display
-        objects specifying viz and columns
-        for that viz
         '''
-        return []
+        report = reports.Report('Retuning Report')
+
+        report.add_element(reports.RetroCommissioningOAED(table_name='Economizer_RCx'))
+        report.add_element(reports.RetroCommissioningAFDD(table_name='Economizer_RCx'))
+
+        return [report]
 
     @classmethod
     def output_format(cls, input_object):

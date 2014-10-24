@@ -57,7 +57,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   ConfigDescriptor,
                                   InputDescriptor,
                                   Results,
-                                  ApplicationDescriptor)
+                                  ApplicationDescriptor,
+                                  reports)
 
 duct_stc_dx = 'Duct Static Pressure Diagnostics'
 duct_static1 = 'Low Duct Static Pressure Dx'
@@ -495,13 +496,13 @@ class Application(DrivenApplicationBaseClass):
         '''
         Called by UI to create Viz.
         Describe how to present output to user
-        Display this viz with these columns from this table
-
-        display_elements is a list of display
-        objects specifying viz and columns
-        for that viz
         '''
-        return []
+        report = reports.Report('Retuning Report')
+
+        report.add_element(reports.RetroCommissioningOAED(table_name='Airside_RCx'))
+        report.add_element(reports.RetroCommissioningAFDD(table_name='Airside_RCx'))
+
+        return [report]
 
     @classmethod
     def output_format(cls, input_object):

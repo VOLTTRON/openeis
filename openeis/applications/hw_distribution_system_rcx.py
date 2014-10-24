@@ -58,7 +58,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   ConfigDescriptor,
                                   InputDescriptor,
                                   Results,
-                                  ApplicationDescriptor)
+                                  ApplicationDescriptor,
+                                  reports)
 
 Hot_water_RCx = 'Hot Water Central Plant Diagnostics'
 hotwater_dx1 = 'High HW loop Differential Pressure Dx'
@@ -330,12 +331,13 @@ class Application(DrivenApplicationBaseClass):
         '''
         Called by UI to create Viz.
         Describe how to present output to user
-        Display this viz with these columns from this table
-        display_elements is a list of display
-        objects specifying viz and columns
-        for that viz
         '''
-        return []
+        report = reports.Report('Retuning Report')
+
+        report.add_element(reports.RetroCommissioningOAED(table_name='Hot_water_RCx'))
+        report.add_element(reports.RetroCommissioningAFDD(table_name='Hot_water_RCx'))
+
+        return [report]
 
     @classmethod
     def output_format(cls, input_object):
