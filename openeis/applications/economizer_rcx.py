@@ -192,7 +192,7 @@ class Application(DrivenApplicationBaseClass):
                                             ventilation_oaf_threshold,
                                             minimum_damper_setpoint,
                                             insufficient_damper_threshold,
-                                            desired_oaf)
+                                            desired_oaf, data_sample_rate)
 
     @classmethod
     def get_config_parameters(cls):
@@ -359,7 +359,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_app_descriptor(cls):
-        name = 'economizer_dx'
+        name = 'Economizer_RCx'
         desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
         return ApplicationDescriptor(app_name=name, description=desc)
 
@@ -416,18 +416,18 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
         datetime_topic = '/'.join(output_topic_base +
-                                  ['economizer_dx', 'date'])
+                                  ['Economizer_RCx', 'date'])
         message_topic = '/'.join(output_topic_base +
-                                 ['economizer_dx', 'message'])
+                                 ['Economizer_RCx', 'message'])
         diagnostic_name = '/'.join(output_topic_base +
-                                   ['economizer_dx', 'diagnostic_name'])
+                                   ['Economizer_RCx', 'diagnostic_name'])
         energy_impact = '/'.join(output_topic_base +
-                                 ['economizer_dx', 'energy_impact'])
+                                 ['Economizer_RCx', 'energy_impact'])
         color_code = '/'.join(output_topic_base +
-                              ['economizer_dx', 'color_code'])
+                              ['Economizer_RCx', 'color_code'])
 
         output_needs = {
-            'Economizer_dx': {
+            'Economizer_RCx': {
                 'datetime': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
@@ -720,7 +720,7 @@ class temperature_sensor_dx(object):
                     'color_code': color_code
                 }
                 result.log(diagnostic_message, logging.INFO)
-                result.insert_table_row('Economizer_dx', dx_table)
+                result.insert_table_row('Economizer_RCx', dx_table)
             self.open_damper_oat = []
             self.open_damper_mat = []
 
@@ -782,7 +782,7 @@ class temperature_sensor_dx(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         result = self.clear_data(result)
         return result
@@ -928,7 +928,7 @@ class econ_correctly_on(object):
             'energy_impact': energy_impact,
             'color_code': color_code
         }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         result = self.clear_data(result)
         return result
@@ -1065,7 +1065,7 @@ class econ_correctly_off(object):
                     'color_code': color_code
                     }
 
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         result = self.clear_data(result)
         return result
@@ -1185,7 +1185,7 @@ class excess_oa_intake(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-            result.insert_table_row('Economizer_dx', dx_table)
+            result.insert_table_row('Economizer_RCx', dx_table)
             result = self.clear_data(result)
             return result
 
@@ -1234,7 +1234,7 @@ class excess_oa_intake(object):
             'energy_impact': energy_impact,
             'color_code': color_code
         }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
 
         result = self.clear_data(result)
@@ -1338,7 +1338,7 @@ class insufficient_oa_intake(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-            result.insert_table_row('Economizer_dx', dx_table)
+            result.insert_table_row('Economizer_RCx', dx_table)
             result = self.clear_data(result)
             return result
 
@@ -1359,7 +1359,7 @@ class insufficient_oa_intake(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-            result.insert_table_row('Economizer_dx', dx_table)
+            result.insert_table_row('Economizer_RCx', dx_table)
             result = self.clear_data(result)
             return result
 
@@ -1388,7 +1388,7 @@ class insufficient_oa_intake(object):
                 'color_code': color_code
             }
 
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         Application.pre_msg_time = []
         Application.pre_requiste_messages = []

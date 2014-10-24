@@ -515,16 +515,16 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_topic = topics[cls.fan_status_name][0]
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
-        datetime_topic = '/'.join(output_topic_base+['airside_dx', 'date'])
-        message_topic = '/'.join(output_topic_base+['airside_dx', 'message'])
-        diagnostic_name = '/'.join(output_topic_base+['airside_dx',
+        datetime_topic = '/'.join(output_topic_base+['Airside_RCx', 'date'])
+        message_topic = '/'.join(output_topic_base+['Airside_RCx', 'message'])
+        diagnostic_name = '/'.join(output_topic_base+['Airside_RCx',
                                                       'diagnostic_name'])
-        energy_impact = '/'.join(output_topic_base+['airside_dx',
+        energy_impact = '/'.join(output_topic_base+['Airside_RCx',
                                                     'energy_impact'])
-        color_code = '/'.join(output_topic_base+['airside_dx', 'color_code'])
+        color_code = '/'.join(output_topic_base+['Airside_RCx', 'color_code'])
 
         output_needs = {
-            'Airside_Dx': {
+            'Airside_RCx': {
                 'datetime': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
 
@@ -787,7 +787,7 @@ class duct_static_rcx(object):
                         'energy_impact': energy_impact,
                         'color_code': color_code
                     }
-                    diagnostic_result.insert_table_row('Airside_Dx', dx_table)
+                    diagnostic_result.insert_table_row('Airside_RCx', dx_table)
                     diagnostic_result.log(diagnostic_message, logging.INFO)
 
             diagnostic_result = self.low_ductstatic_pr(diagnostic_result,
@@ -878,7 +878,7 @@ class duct_static_rcx(object):
             'color_code': color_code
         }
 
-        result.insert_table_row('Airside_Dx', dx_table)
+        result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
 
@@ -955,7 +955,7 @@ class duct_static_rcx(object):
             'color_code': color_code
         }
 
-        result.insert_table_row('Airside_Dx', dx_table)
+        result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         self.duct_stp_stpt_values = []
         self.duct_stp_values = []
@@ -1053,7 +1053,7 @@ class supply_air_temp_rcx(object):
                     'energy_impact': energy_impact,
                     'color_code': color_code
                 }
-                diagnostic_result.insert_table_row('Airside_Dx', dx_table)
+                diagnostic_result.insert_table_row('Airside_RCx', dx_table)
                 diagnostic_result.log(diagnostic_message, logging.INFO)
             diagnostic_result = self.low_sat(diagnostic_result,
                                              avg_sat_stpt,
@@ -1144,7 +1144,7 @@ class supply_air_temp_rcx(object):
             'color_code': color_code
         }
 
-        result.insert_table_row('Airside_Dx', dx_table)
+        result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
 
@@ -1228,7 +1228,7 @@ class supply_air_temp_rcx(object):
             'energy_impact': energy_impact,
             'color_code': color_code
         }
-        result.insert_table_row('Airside_Dx', dx_table)
+        result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         self.sat_stpt_values = []
         self.sa_temp_values = []
@@ -1416,7 +1416,7 @@ class schedule_reset_rcx(object):
             'energy_impact': energy_impact,
             'color_code': color_code
         }
-        result.insert_table_row('Airside_Dx', dx_table)
+        result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         self.duct_stp_values = []
         self.fan_status_values = []
@@ -1455,7 +1455,7 @@ class schedule_reset_rcx(object):
             'color_code': color_code
             }
 
-        result.insert_table_row('Airside_Dx', dx_table)
+        result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         self.duct_stp_stpt_values = []
         return result
@@ -1487,6 +1487,6 @@ class schedule_reset_rcx(object):
             'energy_impact': energy_impact,
             'color_code': color_code
         }
-        result.insert_table_row('Airside_Dx', dx_table)
+        result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result

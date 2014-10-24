@@ -60,7 +60,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Results,
                                   ApplicationDescriptor)
 
-hot_water_dx = 'Hot Water Central Plant Diagnostics'
+Hot_water_RCx = 'Hot Water Central Plant Diagnostics'
 hotwater_dx1 = 'High HW loop Differential Pressure Dx'
 hotwater_dx2 = 'HW loop Differential Pressure Reset Dx'
 hotwater_dx3 = 'HW loop High Supply Temperature Dx'
@@ -359,7 +359,7 @@ class Application(DrivenApplicationBaseClass):
                                                  'color_code'])
 
         output_needs = {
-            'Hot_water_Dx': {
+            'Hot_water_RCx': {
                 'datetime': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
@@ -545,17 +545,17 @@ class HW_loopdp_RCx(object):
                                           'differential pressure is '
                                           'deviating significantly from '
                                           'the set point.'
-                                          .format(name=hot_water_dx))
+                                          .format(name=Hot_water_RCx))
                     color_code = 'RED'
                     energy_impact = None
                     dx_table = {
                         'datetime': str(self.timestamp[-1]),
-                        'diagnostic_name': hot_water_dx,
+                        'diagnostic_name': Hot_water_RCx,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
                         'color_code': color_code
                         }
-                    diagnostic_result.insert_table_row('Hot_water_Dx',
+                    diagnostic_result.insert_table_row('Hot_water_RCx',
                                                        dx_table)
                     diagnostic_result.log(diagnostic_message, logging.INFO)
             diagnostic_result = self.high_dp_rcx(diagnostic_result)
@@ -602,7 +602,7 @@ class HW_loopdp_RCx(object):
                 'color_code': 'GREY'
                 }
         self.hw_pump_vfd_values = []
-        result.insert_table_row('Hot_water_Dx', dx_table)
+        result.insert_table_row('Hot_water_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
 
@@ -686,17 +686,17 @@ class HW_temp_RCx(object):
                                           'significantly from the hot '
                                           'water supply temperature '
                                           'set point.'
-                                          .format(name=hot_water_dx))
+                                          .format(name=Hot_water_RCx))
                     color_code = 'RED'
                     energy_impact = None
                     dx_table = {
                         'datetime': str(self.timestamp[-1]),
-                        'diagnostic_name': hot_water_dx,
+                        'diagnostic_name': Hot_water_RCx,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
                         'color_code': color_code
                         }
-                    diagnostic_result.insert_table_row('Hot_water_Dx',
+                    diagnostic_result.insert_table_row('Hot_water_RCx',
                                                        dx_table)
                     diagnostic_result.log(diagnostic_message, logging.INFO)
             diagnostic_result = self.high_hwst_rcx(diagnostic_result)
@@ -749,7 +749,7 @@ class HW_temp_RCx(object):
                 'color_code': 'GREY'
                 }
         self.hw_pump_vfd_values = []
-        result.insert_table_row('Hot_water_Dx', dx_table)
+        result.insert_table_row('Hot_water_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
 
@@ -785,7 +785,7 @@ class HW_temp_RCx(object):
             'color_code': color_code
             }
 
-        result.insert_table_row('Hot_water_Dx', dx_table)
+        result.insert_table_row('Hot_water_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         self.hw_stsp_values = []
         self.hws_temp_values = []
@@ -869,7 +869,7 @@ class HW_reset_RCx(object):
             'color_code': color_code
             }
 
-        result.insert_table_row('Hot_water_Dx', dx_table)
+        result.insert_table_row('Hot_water_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
 
@@ -903,7 +903,7 @@ class HW_reset_RCx(object):
             'energy_impact': energy_impact,
             'color_code': color_code
             }
-        result.insert_table_row('Hot_water_Dx', dx_table)
+        result.insert_table_row('Hot_water_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         self.timestamp = []
         self.loop_dp_stpt_values = []
