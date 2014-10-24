@@ -92,7 +92,7 @@ class Application(DrivenApplicationBaseClass):
                  oaf_temperature_threshold=4.0,
                  cooling_enabled_threshold=5.0,
                  minimum_damper_setpoint=20, excess_damper_threshold=15.0,
-                 excess_oaf_threshold=30.0, desired_oaf=5.0,
+                 excess_oaf_threshold=30.0, desired_oaf=10.0,
                  ventilation_oaf_threshold=5.0,
                  insufficient_damper_threshold=15.0,
                  temp_damper_threshold=90.0, tonnage=None, eer=10.0,
@@ -1031,7 +1031,7 @@ class econ_correctly_off(object):
         fault message(s).
         '''
         desired_oaf = self.desired_oaf / 100.0
-
+        energy_impact = None
         energy_calc = [(1.08 * self.cfm * (ma - (oa * desired_oaf +
                                                  (ra * (1.0 - desired_oaf))))
                         / (1000.0 * self.eer)) for ma, oa, ra in
