@@ -468,10 +468,11 @@ class Application(DrivenApplicationBaseClass):
         fan_stat_check = False
         for key, value in device_dict.items():
             if key.startswith(self.fan_status_name):
-                fan_stat_check = True
-                if not int(value):
+                if value is not None and not int(value):
                     self.pre_requiste_messages.append(self.pre_msg1)
                     return diagnostic_result
+                elif value is not None:
+                    fan_stat_check = True
         if not fan_stat_check:
             Application.pre_requiste_messages.append(self.pre_msg2)
             return diagnostic_result
