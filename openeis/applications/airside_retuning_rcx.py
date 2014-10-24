@@ -445,7 +445,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_app_descriptor(cls):
-        name = 'airside_retuning_dx'
+        name = 'airside_retuning_rcx'
         desc = 'Automated Retro-commisioning for AHUs'
         return ApplicationDescriptor(app_name=name, description=desc)
 

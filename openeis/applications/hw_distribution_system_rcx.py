@@ -262,7 +262,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_app_descriptor(cls):
-        name = 'central_plant_hotwater_dx'
+        name = 'hw_distribution_system_rcx'
         desc = ('Automated Retro-commissioning for '
                 'hot-water distribution system')
         return ApplicationDescriptor(app_name=name, description=desc)

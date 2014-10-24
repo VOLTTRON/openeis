@@ -359,7 +359,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_app_descriptor(cls):
-        name = 'Economizer_RCx'
+        name = 'economizer_rcx'
         desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
         return ApplicationDescriptor(app_name=name, description=desc)
 
@@ -469,7 +469,7 @@ class Application(DrivenApplicationBaseClass):
         for key, value in device_dict.items():
             if key.startswith(self.fan_status_name):
                 if value is not None and not int(value):
-                    self.pre_requiste_messages.append(self.pre_msg1)
+                    Application.pre_requiste_messages.append(self.pre_msg1)
                     return diagnostic_result
                 elif value is not None:
                     fan_stat_check = True
