@@ -70,6 +70,12 @@ from configparser import ConfigParser, NoOptionError
 
 import traceback
 
+from pprint import pprint
+from openeis.filters import apply_filters
+import openeis.filters.common
+import json
+import sys
+
 
 class Command(BaseCommand):
     help = 'Run an application from the command-line.'
@@ -109,6 +115,19 @@ class Command(BaseCommand):
                 value = {"gen":_iter_data(qs),
                          "type":None}
                 generators[name] = value
+                
+            config_string = config['global_settings']['config']
+            print("Config String: ", config_string)
+            config = json.loads(config_string)
+            
+            pprint(config)
+            
+            generators, errors = apply_filters(generators, config)
+            
+            if errors:
+                print('Errors:')
+                pprint(errors)
+                sys.exit(1)
             
             datamap.id = None 
             datamap.name = datamap.name+' version - '+str(datetime.now())
