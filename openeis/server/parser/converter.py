@@ -211,6 +211,12 @@ def process_row(node, writer, ns):
         endDate = datetime.utcfromtimestamp(intervalAdjusted + int(intervalDuration))
     
     intervalCost = get_child_node_text(node, ns, "cost")
+    
+    # An examination of the espi schema shows IntervalCost is in hundred-thousandths of the given currency type.
+    # Ex: Assuming USD, if IntervalCost == 2585 this actually means 0.02585 USD, because 2585/100000 = 0.02585
+    if intervalCost != None and int(intervalCost) != 0:
+        intervalCost = int(intervalCost) / 100000   
+    
     intervalReadingQuality = get_child_node_text(node, ns, "ReadingQuality")
     
     # intervalValue = node.find('./{http://naesb.org/espi}value').text  # the url way
