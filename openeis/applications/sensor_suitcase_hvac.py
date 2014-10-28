@@ -142,6 +142,21 @@ class Application(DriverApplicationBaseClass):
         self.electricity_cost = electricity_cost
 
     @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Sensor Suitcase: HVAC'
+        desc = 'RCx sensor suitcase diagnostics is used to identify problems in\
+                the operation and performance of packaged HVAC roof-top units (RTUs)\
+                in small commercial buildings. The diagnostic suite targets problems\
+                that are common to this class of buildings, specifically:\
+                over heating and over cooling;\
+                overly narrow separation between heating and cooling setpoints;\
+                absence of nighttime HVAC setbacks;\
+                RTU short-cycling;\
+                and non-use of the RTU economizer when outdoor conditions\
+                allow for ‘free cooling’. '
+        return ApplicationDescriptor(app_name=name, description=desc)
+        
+    @classmethod
     def get_config_parameters(cls):
         # Called by UI
 

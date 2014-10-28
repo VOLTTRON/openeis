@@ -107,7 +107,14 @@ class Application(DriverApplicationBaseClass):
 
         self.building_name = building_name
 
-
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Load Duration Curves'
+        desc = 'Load duration curves are used to understand\
+                the number of hours or percentage of time during which\
+                the building load is at or below a certain value. '
+        return ApplicationDescriptor(app_name=name, description=desc)
+        
     @classmethod
     def get_config_parameters(cls):
         #Called by UI
