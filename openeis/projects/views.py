@@ -647,6 +647,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
         if created:
             _update_ingest_progress(obj.id, None, 0, 0, 0, 0)
             thread = threading.Thread(target=perform_ingestion, args=(obj,))
+            thread.daemon = True
             thread.start()
 
     def get_queryset(self):
@@ -993,6 +994,7 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         '''Start application run after Analysis object has been saved.'''
         if created:
             thread = threading.Thread(target=_perform_analysis, args=(obj,))
+            thread.daemon = True
             thread.start()
 
     def get_queryset(self):
