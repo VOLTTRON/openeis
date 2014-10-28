@@ -109,21 +109,25 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
     DAT_op, DAT_non_op = separate_hours(DAT, op_hours[0], op_hours[1],
             op_hours[2])
 
-    #
+    # if HVAC status exists, separate that too
     if (HVACstat):
         HVAC_op, HVAC_non_op = separate_hours(HVACstat, op_hours[0],
                 op_hours[1], op_hours[2])
     else:
         HVAC_op = []
         HVAC_non_op = []
-    #
-    op_cool_dat, op_heat_dat, op_hvac_dat = _grab_data(DAT_op, ZAT_op, DAT_op, HVAC_op)
-    non_cool_dat, non_heat_dat, non_hvac_dat = _grab_data(DAT_non_op, ZAT_non_op, DAT_non_op,
-            HVAC_non_op)
-    #
+
+    # separate data into cooling, heating, and hvac
+    op_cool_dat, op_heat_dat, op_hvac_dat = _grab_data(DAT_op, ZAT_op, DAT_op, \
+            HVAC_op)
+    non_cool_dat, non_heat_dat, non_hvac_dat = _grab_data(DAT_non_op, \
+            ZAT_non_op, DAT_non_op, HVAC_non_op)
+
+    # find the average cooling diffuser set temp
     avg_DAT_c_occ = np.mean(op_cool_dat)
     avg_DAT_h_occ = np.mean(op_heat_dat)
-    #
+
+    # count to see if cooling is on
     c_flag = 0
     for pt in non_cool_dat:
         if ((pt < avg_DAT_c_occ) or (abs(pt - avg_DAT_h_occ) < 0.1)):
@@ -158,10 +162,10 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
     if ((c_val + h_val + vent_val) > 0.3):
         percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
                  percent_HV = get_CBECS(area)
-        c_savings = (ZAT_cool_threshold-min_ZAT_c_unocc) * 0.03 * c_val * percent_c * elec_cost \
-                * percent_unocc
-        h_savings = (max_ZAT_h_unocc-ZAT_heat_threshold) * 0.03 * h_val * percent_h * elec_cost \
-                * percent_unocc
+        c_savings = (ZAT_cool_threshold-min_ZAT_c_unocc) * 0.03 * c_val * \
+                percent_c * elec_cost * percent_unocc
+        h_savings = (max_ZAT_h_unocc-ZAT_heat_threshold) * 0.03 * h_val * \
+                percent_h * elec_cost * percent_unocc
         ven_savings = 0.06* vent_val * elec_cost * percent_unocc
         return {
             'Problem': "Nighttime thermostat setbacks are not enabled.",
@@ -177,6 +181,17 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
         return {}
 
 def _grab_data(DAT, ZAT, copyTemp, HVACstat=None):
+    """
+    Separates data out into when it is cooling, heating, or venting.
+
+    Parameters
+        DAT - array of diffuser air temperatures
+        ZAT - array of zone air temperatures
+        copyTemp - 
+        HVACstat - array of HVAC statuses
+
+    Returns:
+        cool_on - z
     cool_on = []
     heat_on = []
     vent_on = 0
@@ -187,7 +202,7 @@ def _grab_data(DAT, ZAT, copyTemp, HVACstat=None):
             if (DAT[i][1] < (0.9 * ZAT[i][1])):
                 # If there's HVAC, make sure it's actually cooling
                 if (HVACstat):
-                    if (HVACstat[i][1] != 3):
+                    if (HVACstat[i][1] != 2):
                         i += 1
                         continue
                 cool_on.append(copyTemp[i][1])
