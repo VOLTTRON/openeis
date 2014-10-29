@@ -646,9 +646,8 @@ class DataSetViewSet(viewsets.ModelViewSet):
         '''
         if created:
             _update_ingest_progress(obj.id, None, 0, 0, 0, 0)
-            thread = threading.Thread(target=perform_ingestion, args=(obj,))
-            thread.daemon = True
-            thread.start()
+            threading.Thread(
+                    target=perform_ingestion, args=(obj,), daemon=True).start()
 
     def get_queryset(self):
         '''Only allow users to see ingests they own.'''
@@ -993,9 +992,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def post_save(self, obj, created):
         '''Start application run after Analysis object has been saved.'''
         if created:
-            thread = threading.Thread(target=_perform_analysis, args=(obj,))
-            thread.daemon = True
-            thread.start()
+            threading.Thread(
+                    target=_perform_analysis, args=(obj,), daemon=True).start()
 
     def get_queryset(self):
         '''Only show user analyses associated with projects they own,
