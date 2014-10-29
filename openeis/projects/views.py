@@ -618,7 +618,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
             return Response(process)
         return Response({
             'id': ingest.id,
-            'status': 'complete',
+            'status': 'complete' if ingest.end else 'incomplete',
             'percent': 100.0,
             'current_file_percent': 0.0,
             'current_file': None
@@ -628,8 +628,15 @@ class DataSetViewSet(viewsets.ModelViewSet):
     def errors(self, request, *args, **kwargs):
         '''Retrieves all errors that occured during an ingestion.'''
         ingest = self.get_object()
-        serializer = serializers.SensorIngestLogSerializer(
-                ingest.logs.all(), many=True)
+        errors = ingest.logs.all()
+        if not ingest.end and ingest.id not in _processes:
+            error = models.SensorIngestLog(dataset=ingest, level=models.CRITICAL,
+               message='Processing ended prematurely. Not all files and/or '
+                       'records were read. Please delete this dataset and '
+                       'retry. If you continue to have problems, please '
+                       'contact technical support.')
+            errors = itertools.chain((error,), errors)
+        serializer = serializers.SensorIngestLogSerializer(errors, many=True)
         return Response(serializer.data)
 
     def pre_save(self, obj):
