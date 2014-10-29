@@ -595,7 +595,7 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
             models.SensorIngestLog(level=CRITICAL, dataset=ingest, message='an unhandled exception occurred during sensor '
                           'ingestion ({}) the message was: {}'.format(ingest.id, e), row=-1).save()
         else:
-            models.SensorIngestLog(level=CRITICAL, dataset=ingest, message=e, row=-1).save()
+            models.SensorIngestLog(level=CRITICAL, dataset=ingest, message=str(e), row=-1).save()
         logging.exception('an unhandled exception occurred during sensor '
                           'ingestion ({})'.format(ingest.id))
     finally:
