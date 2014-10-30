@@ -49,23 +49,38 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications.utest_applications.apptest import AppTestBase
+from openeis.projects.models import (SensorIngestFile, DataFile)
 import os
 import pytest
 
-@pytest.mark.usesfixtures('daily_summary_datafile')
+# @pytest.fixture
+# def energy_signature_datafile(project):
+#     return create_data_file(os.path.join(abs_file_dir, 'energy_signature_data.csv'), 
+#                             project=project,
+#                             comments='Energy signature test data data.')
+# content of test_setenv.py
+import os
+import pytest
+
+pytestmark = pytest.mark.django_db
+    
+@pytest.mark.usesfixtures('energy_signature_datafile')
 class TestEnergySignature(AppTestBase):
     def test_energy_signature_basic(self):
         print("I am here!")
+        assert DataFile.objects.count() > 0
         
-    def test_energy_signature_basic(self):
+    def test_energy_signature_basic(self, energy_signature_datafile):
         es_basic_exp = {}
-        es_basic_ini = os.path.join(self.basedir,
-                                    'energy_signature_negone.ini')
-        es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
-                                    'energy_signature_negone_SP.ref.csv')
-        es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
-                                    'energy_signature_negone_WS.ref.csv')
-        self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
+        assert DataFile.objects.count() > 0
+        #assert SensorIngestFile.objects.count() > 0
+#         es_basic_ini = os.path.join(self.basedir,
+#                                     'energy_signature_negone.ini')
+#         es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
+#                                     'energy_signature_negone_SP.ref.csv')
+#         es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
+#                                     'energy_signature_negone_WS.ref.csv')
+#         self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
 #     fixtures = [os.path.join(os.path.abspath(os.path.dirname(__file__)),
 #                                     'energy_signature_fixture.json')]
 # 

@@ -82,10 +82,14 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
+import os
+import pytest
 
 from openeis.applications.utest_applications.apptest import AppTestBase
-import os
 
+pytestmark = pytest.mark.django_db
+
+@pytest.mark.usesfixtures('daily_summary_datafile')
 class TestDailySummary(AppTestBase):
     fixtures = [
         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'daily_summary_fixture.json')
