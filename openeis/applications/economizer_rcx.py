@@ -56,7 +56,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   ConfigDescriptor,
                                   InputDescriptor,
                                   Results,
-                                  ApplicationDescriptor)
+                                  ApplicationDescriptor,
+                                  reports)
 
 econ1 = 'Temperature Sensor Dx'
 econ2 = 'Economizer Correctly ON Dx'
@@ -91,7 +92,7 @@ class Application(DrivenApplicationBaseClass):
                  oaf_temperature_threshold=4.0,
                  cooling_enabled_threshold=5.0,
                  minimum_damper_setpoint=20, excess_damper_threshold=15.0,
-                 excess_oaf_threshold=30.0, desired_oaf=5.0,
+                 excess_oaf_threshold=30.0, desired_oaf=10.0,
                  ventilation_oaf_threshold=5.0,
                  insufficient_damper_threshold=15.0,
                  temp_damper_threshold=90.0, tonnage=None, eer=10.0,
@@ -166,7 +167,8 @@ class Application(DrivenApplicationBaseClass):
                                            temp_difference_threshold,
                                            open_damper_time,
                                            oat_mat_check,
-                                           temp_damper_threshold)
+                                           temp_damper_threshold,
+                                           data_sample_rate)
         self.econ2 = econ_correctly_on(oaf_economizing_threshold,
                                        open_damper_threshold,
                                        self.economizer_type, data_window,
@@ -191,7 +193,7 @@ class Application(DrivenApplicationBaseClass):
                                             ventilation_oaf_threshold,
                                             minimum_damper_setpoint,
                                             insufficient_damper_threshold,
-                                            desired_oaf)
+                                            desired_oaf, data_sample_rate)
 
     @classmethod
     def get_config_parameters(cls):
@@ -201,7 +203,7 @@ class Application(DrivenApplicationBaseClass):
         '''
         return {
 
-            'data_sample_rate': ConfigDescriptor(int, 'Data Sampling interval '
+            'data_sample_rate': ConfigDescriptor(float, 'Data Sampling interval '
                                                  '(minutes/sample)'),
             'tonnage': ConfigDescriptor(float,
                                         'AHU/RTU cooling capacity in tons'),
@@ -358,7 +360,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_app_descriptor(cls):
-        name = 'economizer_dx'
+        name = 'economizer_rcx'
         desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
         return ApplicationDescriptor(app_name=name, description=desc)
 
@@ -394,13 +396,13 @@ class Application(DrivenApplicationBaseClass):
         '''
         Called by UI to create Viz.
         Describe how to present output to user
-        Display this viz with these columns from this table
-
-        display_elements is a list of display
-        objects specifying viz and columns
-        for that viz
         '''
-        return []
+        report = reports.Report('Retuning Report')
+
+        report.add_element(reports.RetroCommissioningOAED(table_name='Economizer_RCx'))
+        report.add_element(reports.RetroCommissioningAFDD(table_name='Economizer_RCx'))
+
+        return [report]
 
     @classmethod
     def output_format(cls, input_object):
@@ -415,18 +417,18 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
         datetime_topic = '/'.join(output_topic_base +
-                                  ['economizer_dx', 'date'])
+                                  ['Economizer_RCx', 'date'])
         message_topic = '/'.join(output_topic_base +
-                                 ['economizer_dx', 'message'])
+                                 ['Economizer_RCx', 'message'])
         diagnostic_name = '/'.join(output_topic_base +
-                                   ['economizer_dx', 'diagnostic_name'])
+                                   ['Economizer_RCx', 'diagnostic_name'])
         energy_impact = '/'.join(output_topic_base +
-                                 ['economizer_dx', 'energy_impact'])
+                                 ['Economizer_RCx', 'energy_impact'])
         color_code = '/'.join(output_topic_base +
-                              ['economizer_dx', 'color_code'])
+                              ['Economizer_RCx', 'color_code'])
 
         output_needs = {
-            'Economizer_dx': {
+            'Economizer_RCx': {
                 'datetime': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
@@ -467,10 +469,11 @@ class Application(DrivenApplicationBaseClass):
         fan_stat_check = False
         for key, value in device_dict.items():
             if key.startswith(self.fan_status_name):
-                fan_stat_check = True
-                if not int(value):
-                    self.pre_requiste_messages.append(self.pre_msg1)
+                if value is not None and not int(value):
+                    Application.pre_requiste_messages.append(self.pre_msg1)
                     return diagnostic_result
+                elif value is not None:
+                    fan_stat_check = True
         if not fan_stat_check:
             Application.pre_requiste_messages.append(self.pre_msg2)
             return diagnostic_result
@@ -621,7 +624,8 @@ class temperature_sensor_dx(object):
 
     def __init__(self, data_window, no_required_data,
                  temp_difference_threshold, open_damper_time,
-                 oat_mat_check, temp_damper_threshold):
+                 oat_mat_check, temp_damper_threshold,
+                 data_sample_rate):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -630,6 +634,7 @@ class temperature_sensor_dx(object):
         self.open_damper_mat = []
         self.econ_check = False
         self.steady_state_start = None
+        self.data_sample_rate = float(data_sample_rate)
         self.open_damper_time = int(open_damper_time)
         self.econ_time_check = datetime.timedelta(
             minutes=self.open_damper_time - 1)
@@ -665,7 +670,10 @@ class temperature_sensor_dx(object):
 
         time_check = datetime.timedelta(minutes=(self.data_window))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
+
+        if (elapsed_time >= time_check and
                 len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.temperature_sensor_dx(
                 diagnostic_result, current_time)
@@ -714,7 +722,7 @@ class temperature_sensor_dx(object):
                     'color_code': color_code
                 }
                 result.log(diagnostic_message, logging.INFO)
-                result.insert_table_row('Economizer_dx', dx_table)
+                result.insert_table_row('Economizer_RCx', dx_table)
             self.open_damper_oat = []
             self.open_damper_mat = []
 
@@ -776,7 +784,7 @@ class temperature_sensor_dx(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         result = self.clear_data(result)
         return result
@@ -871,8 +879,11 @@ class econ_correctly_on(object):
 
         time_check = datetime.timedelta(minutes=(self.data_window))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
+
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.not_economizing_when_needed(
                 diagnostic_result, current_time)
         return diagnostic_result
@@ -919,7 +930,7 @@ class econ_correctly_on(object):
             'energy_impact': energy_impact,
             'color_code': color_code
         }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         result = self.clear_data(result)
         return result
@@ -1004,10 +1015,11 @@ class econ_correctly_off(object):
             self.timestamp.append(current_time)
 
             time_check = datetime.timedelta(minutes=(self.data_window))
-            self.timestamp.append(current_time)
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.economizing_when_not_needed(
                 diagnostic_result, current_time)
         return diagnostic_result
@@ -1019,7 +1031,7 @@ class econ_correctly_off(object):
         fault message(s).
         '''
         desired_oaf = self.desired_oaf / 100.0
-
+        energy_impact = None
         energy_calc = [(1.08 * self.cfm * (ma - (oa * desired_oaf +
                                                  (ra * (1.0 - desired_oaf))))
                         / (1000.0 * self.eer)) for ma, oa, ra in
@@ -1055,7 +1067,7 @@ class econ_correctly_off(object):
                     'color_code': color_code
                     }
 
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         result = self.clear_data(result)
         return result
@@ -1126,8 +1138,11 @@ class excess_oa_intake(object):
 
         time_check = datetime.timedelta(minutes=(self.data_window))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
+
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.excess_oa(diagnostic_result, current_time)
         return diagnostic_result
 
@@ -1172,7 +1187,7 @@ class excess_oa_intake(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-            result.insert_table_row('Economizer_dx', dx_table)
+            result.insert_table_row('Economizer_RCx', dx_table)
             result = self.clear_data(result)
             return result
 
@@ -1221,7 +1236,7 @@ class excess_oa_intake(object):
             'energy_impact': energy_impact,
             'color_code': color_code
         }
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
 
         result = self.clear_data(result)
@@ -1249,7 +1264,7 @@ class insufficient_oa_intake(object):
     def __init__(self, device_type, economizer_type, data_window,
                  no_required_data, ventilation_oaf_threshold,
                  minimum_damper_setpoint, insufficient_damper_threshold,
-                 desired_oaf):
+                 desired_oaf, data_sample_rate):
 
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -1261,6 +1276,7 @@ class insufficient_oa_intake(object):
         '''Application thresholds (Configurable)'''
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
+        self.data_sample_rate = float(data_sample_rate)
         self.ventilation_oaf_threshold = float(ventilation_oaf_threshold)
         self.insufficient_damper_threshold = float(
             insufficient_damper_threshold)
@@ -1289,8 +1305,11 @@ class insufficient_oa_intake(object):
 
         time_check = datetime.timedelta(minutes=(self.data_window))
 
-        if ((self.timestamp[-1] - self.timestamp[0]) >= time_check and
-                len(self.timestamp) >= self.no_required_data):
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
+                        datetime.timedelta(minutes=self.data_sample_rate))
+
+        if (elapsed_time >= time_check and
+           len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.insufficient_oa(
                 diagnostic_result, current_time)
         return diagnostic_result
@@ -1321,7 +1340,7 @@ class insufficient_oa_intake(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-            result.insert_table_row('Economizer_dx', dx_table)
+            result.insert_table_row('Economizer_RCx', dx_table)
             result = self.clear_data(result)
             return result
 
@@ -1342,7 +1361,7 @@ class insufficient_oa_intake(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-            result.insert_table_row('Economizer_dx', dx_table)
+            result.insert_table_row('Economizer_RCx', dx_table)
             result = self.clear_data(result)
             return result
 
@@ -1371,7 +1390,7 @@ class insufficient_oa_intake(object):
                 'color_code': color_code
             }
 
-        result.insert_table_row('Economizer_dx', dx_table)
+        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         Application.pre_msg_time = []
         Application.pre_requiste_messages = []

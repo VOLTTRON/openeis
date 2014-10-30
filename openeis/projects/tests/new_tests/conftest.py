@@ -64,6 +64,11 @@ def create_data_file(name, **kwargs):
 
 
 @pytest.fixture
+def datafile_greenbutton(project):
+    return create_data_file('Premise1_2011_GreenButtonData_Texas.xml', project=project,
+                            comments='One month of data.')
+
+@pytest.fixture
 def datafile_1month(project):
     return create_data_file('1Month_hourly.csv', project=project,
                             comments='One month of data.')

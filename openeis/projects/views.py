@@ -595,7 +595,7 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
             models.SensorIngestLog(level=CRITICAL, dataset=ingest, message='an unhandled exception occurred during sensor '
                           'ingestion ({}) the message was: {}'.format(ingest.id, e), row=-1).save()
         else:
-            models.SensorIngestLog(level=CRITICAL, dataset=ingest, message=e, row=-1).save()
+            models.SensorIngestLog(level=CRITICAL, dataset=ingest, message=str(e), row=-1).save()
         logging.exception('an unhandled exception occurred during sensor '
                           'ingestion ({})'.format(ingest.id))
     finally:
@@ -618,7 +618,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
             return Response(process)
         return Response({
             'id': ingest.id,
-            'status': 'complete',
+            'status': 'complete' if ingest.end else 'incomplete',
             'percent': 100.0,
             'current_file_percent': 0.0,
             'current_file': None
@@ -628,8 +628,15 @@ class DataSetViewSet(viewsets.ModelViewSet):
     def errors(self, request, *args, **kwargs):
         '''Retrieves all errors that occured during an ingestion.'''
         ingest = self.get_object()
-        serializer = serializers.SensorIngestLogSerializer(
-                ingest.logs.all(), many=True)
+        errors = ingest.logs.all()
+        if not ingest.end and ingest.id not in _processes:
+            error = models.SensorIngestLog(dataset=ingest, level=models.CRITICAL,
+               message='Processing ended prematurely. Not all files and/or '
+                       'records were read. Please delete this dataset and '
+                       'retry. If you continue to have problems, please '
+                       'contact technical support.')
+            errors = itertools.chain((error,), errors)
+        serializer = serializers.SensorIngestLogSerializer(errors, many=True)
         return Response(serializer.data)
 
     def pre_save(self, obj):
@@ -646,8 +653,8 @@ class DataSetViewSet(viewsets.ModelViewSet):
         '''
         if created:
             _update_ingest_progress(obj.id, None, 0, 0, 0, 0)
-            thread = threading.Thread(target=perform_ingestion, args=(obj,))
-            thread.start()
+            threading.Thread(
+                    target=perform_ingestion, args=(obj,), daemon=True).start()
 
     def get_queryset(self):
         '''Only allow users to see ingests they own.'''
@@ -992,8 +999,8 @@ class AnalysisViewSet(viewsets.ModelViewSet):
     def post_save(self, obj, created):
         '''Start application run after Analysis object has been saved.'''
         if created:
-            thread = threading.Thread(target=_perform_analysis, args=(obj,))
-            thread.start()
+            threading.Thread(
+                    target=_perform_analysis, args=(obj,), daemon=True).start()
 
     def get_queryset(self):
         '''Only show user analyses associated with projects they own,
