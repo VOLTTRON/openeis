@@ -125,7 +125,14 @@ class Application(DriverApplicationBaseClass):
         self.sq_ft = building_sq_ft
         self.building_name = building_name
 
-
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Daily Summary'
+        desc = 'Daily summary is a collection of metrics that summarize the daily energy use.\
+                Metrics included in the application are load variability, load minimum and maximum,\
+                peak load benchmark, daily load ratio, and daily load range.'
+        return ApplicationDescriptor(app_name=name, description=desc)
+        
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
@@ -204,8 +211,6 @@ class Application(DriverApplicationBaseClass):
         # Called after User hits GO
         """
         Calculates the following metrics and outputs.
-            -Load Max Intensity
-            -Load Min Intensity
             -Daily Load 95th Percentile
             -Daily Load 5th Percentile
             -Daily Load Ratio

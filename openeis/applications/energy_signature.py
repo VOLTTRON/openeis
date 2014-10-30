@@ -119,7 +119,17 @@ class Application(DriverApplicationBaseClass):
 
         self.building_name = building_name
 
-
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Energy Signature and Weather Sensitivity'
+        desc = 'Energy signatures are used to monitor and maintain\
+                the performance of temperature-dependent loads such as\
+                whole-building electric or gas use, or heating and cooling systems\
+                or components.\n\
+                Weather sensitivity is a single summary statistic\
+                that contextualizes the shape of the energy signature.'
+        return ApplicationDescriptor(app_name=name, description=desc)
+        
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
