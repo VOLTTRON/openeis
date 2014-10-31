@@ -92,12 +92,14 @@ import copy
 
 class TestComfortAndSetback(AppTestBase):
 
-    def test_setback_none(self):
+    def test_setback_fail(self):
+        # ten data points
         a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
         #delta = 6 hours
         base = set_up_datetimes(a, b, 21600)
 
+        # copy data to put in the right format
         DAT = copy.deepcopy(base)
         DAT_temp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         append_data_to_datetime(DAT, DAT_temp)
@@ -106,6 +108,7 @@ class TestComfortAndSetback(AppTestBase):
         IAT_temp = [10, 10, 10, 10, 10, 10, 10, 10, 80, 80]
         append_data_to_datetime(IAT, IAT_temp)
 
+        # the first point is the only operational point
         op_hours = [[0, 1], [3], []]
 
         result = setback_non_op(IAT, DAT, op_hours, 10000, 5000)
@@ -147,25 +150,5 @@ class TestComfortAndSetback(AppTestBase):
             'Savings': round(((80-60) * 0.03 * 1 * 0.07 * test_ele_cost * (10/11)), 2)}
 
         self.assertEqual(result, expected)
-
-    def test_setback_expect_fail(self):
-        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
-        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
-        #delta = 6 hours
-        base = set_up_datetimes(a, b, 21600)
-
-        DAT = copy.deepcopy(base)
-        DAT_temp = [8, 8, 8, 8, 8, 8, 8, 8, 100, 100]
-        append_data_to_datetime(DAT, DAT_temp)
-
-        IAT = copy.deepcopy(base)
-        IAT_temp = [10, 10, 10, 10, 10, 10, 10, 10, 80, 80]
-        append_data_to_datetime(IAT, IAT_temp)
-
-        op_hours = [[0, 1], [3], []]
-
-        result = setback_non_op(IAT, DAT, op_hours, 10000, 5000)
-
-        self.assertRaises(Exception)
 
 

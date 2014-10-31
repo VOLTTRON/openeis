@@ -158,10 +158,10 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
             heat_on.append(ZAT_op[i][1])
         i += 1
 
-    # Calculate the average
     cooling_threshold = 76.
     heating_threshold = 72.
-    #
+
+    # Calculate the average
     if heat_on != []:
         heating_setpt = mean(heat_on)
     else:
@@ -180,12 +180,15 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
     over_heating_perc = over_heat/len(DAT_op)
     #
     percent_cooling = over_cooling_perc * percent_c * percent_op
-    cooling_savings = (cooling_threshold - cooling_setpt) * 0.03 * percent_cooling *elec_cost
+    cooling_savings = (cooling_threshold - cooling_setpt) * 0.03 * \
+            percent_cooling *elec_cost
     #
     percent_heating = over_heating_perc * percent_h * percent_op
-    heating_savings = (heating_setpt - heating_threshold) * 0.03 * percent_heating *elec_cost
+    heating_savings = (heating_setpt - heating_threshold) * 0.03 * \
+            percent_heating *elec_cost
 
-    if ((heating_setpt > heating_threshold) and (cooling_setpt < cooling_threshold)):
+    if ((heating_setpt > heating_threshold) and \
+            (cooling_setpt < cooling_threshold)):
         setpoint_flag = {
         'Problem': "Overly narrow separation between heating " + \
                 "and cooling setpoints.",

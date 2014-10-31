@@ -90,40 +90,220 @@ from openeis.applications.utils.sensor_suitcase.comfort_and_setpoint import comf
 import datetime
 import copy
 
-#TODO: more extensive tests.
 class TestComfortAndSetback(AppTestBase):
 
-    def test_economizer_basic(self):
+    def test_setback(self):
         a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
-        b = datetime.datetime(2014, 1, 4, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
         #delta = 6 hours
         base = set_up_datetimes(a, b, 21600)
 
         DAT = copy.deepcopy(base)
-        DAT_temp = [8, 8, 8, 8, 8, 8, 8, 8, 100, 100, 100, 100, 100]
+        DAT_temp = [0, 0, 0, 0, 0, 100, 100, 100, 100, 100]
         append_data_to_datetime(DAT, DAT_temp)
 
         IAT = copy.deepcopy(base)
-        IAT_temp = [10, 10, 10, 10, 10, 10, 10, 10, 80, 80, 80, 80, 80]
+        IAT_temp = [50, 50, 50, 50, 50, 80, 80, 80, 80, 80]
         append_data_to_datetime(IAT, IAT_temp)
 
+        # 24/7, no holidays
         op_hours = [[0, 23], [1, 2, 3, 4, 5, 6, 7], []]
 
-        comfort_result, setback_result = comfort_and_setpoint(IAT, DAT, op_hours, 5000, 1000)
-        """
-        setback_expected = {
+        test_area = 5000
+        test_elec_cost = 10000
+
+        comfort_result, setback_result = comfort_and_setpoint(IAT, DAT, op_hours, \
+                test_area, test_elec_cost)
+
+        exp_cool_cost = (76 - 50) * 0.03 * 0.5 * 0.07 * 1 * test_elec_cost
+        exp_heat_cost = (80 - 72) * 0.03 * 0.5 * 0.31 * 1 * test_elec_cost
+
+        expected = {
             'Problem': "Overly narrow separation between heating " + \
                     "and cooling setpoints.",
             'Diagnostic': "During occupied hours, the cooling setpoint was lower " + \
                     "than 76F and the heating setpoint was greater than 72F.",
             'Recommendation': "Adjust the heating and cooling setpoints so that " + \
                     "they differ by more than four degrees.",
-            'Savings': cooling_savings + heating_savings
-            }
-        """
-        print(comfort_result)
+            'Savings': round(exp_cool_cost + exp_heat_cost, 2)
+        }
 
-        self.assertIsNot(comfort_result, False)
+        self.assertEqual(setback_result, expected)
 
+
+    def test_comfort_overcooling(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [50, 50, 50, 50, 50, 50, 50, 50, 50, 50]
+
+        append_data_to_datetime(IAT, IAT_temp)
+
+        # 24/7, no holidays
+        op_hours = [[0, 23], [1, 2, 3, 4, 5, 6, 7], []]
+
+        test_area = 5000
+        test_elec_cost = 10000
+
+        comfort_result, setback_result = comfort_and_setpoint(IAT, DAT, op_hours, \
+                test_area, test_elec_cost)
+
+        exp_cool_cost = (76 - 50) * 0.03 * 1 * 0.07 * 1 * test_elec_cost
+
+        expected = {
+        'Problem': "Over-conditioning, thermostat cooling setpoint is low",
+        'Diagnostic': "More than 30 percent of the time, the cooling setpoint " + \
+                "during occupied hours was lower than 75F, a temperature that " + \
+                "is comfortable to most occupants",
+        'Recommendation': "Program your thermostats to increase the cooling " + \
+                "setpoint during occupied hours.",
+        'Savings': round(exp_cool_cost, 2)
+        }
+
+        self.assertEqual(comfort_result, expected)
+
+    def test_comfort_undercooling(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [200, 200, 200, 200, 200, 200, 200, 200, 200, 200]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        # 24/7, no holidays
+        op_hours = [[0, 23], [1, 2, 3, 4, 5, 6, 7], []]
+
+        test_area = 5000
+        test_elec_cost = 10000
+
+        comfort_result, setback_result = comfort_and_setpoint(IAT, DAT, op_hours, \
+                test_area, test_elec_cost)
+
+        expected = {
+        'Problem': "Under-conditioning, thermostat cooling " + \
+                "setpoint is high.",
+        'Diagnostic':  "More than 30 percent of the time, the cooling setpoint " + \
+                "during occupied hours was greater than 80F.",
+        'Recommendation': "Program your thermostats to decrease the cooling " + \
+                "setpoint to improve building comfort during occupied hours."
+        }
+
+        self.assertEqual(comfort_result, expected)
+
+    def test_comfort_overheating(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [80, 80, 80, 80, 80, 80, 80, 80, 80, 80]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        # 24/7, no holidays
+        op_hours = [[0, 23], [1, 2, 3, 4, 5, 6, 7], []]
+
+        test_area = 5000
+        test_elec_cost = 10000
+
+        comfort_result, setback_result = comfort_and_setpoint(IAT, DAT, op_hours, \
+                test_area, test_elec_cost)
+
+        exp_heat_cost = (80 - 72) * 0.03 * 1 * 0.31 * 1 * test_elec_cost
+
+        expected = {
+        'Problem': "Over-conditioning, thermostat heating " + \
+                "setpoint is high.",
+        'Diagnostic': "More than 30 percent of the time, the heating setpoint " + \
+                "during occupied hours was greater than 72F, a temperature that " + \
+                "is comfortable to most occupants.",
+        'Recommendation': "Program your thermostats to decrease the heating " + \
+                "setpoint during occupied hours.",
+        'Savings': round(exp_heat_cost, 2)
+        }
+
+        self.assertEqual(comfort_result, expected)
+
+    def test_comfort_underheating(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [50, 50, 50, 50, 50, 50, 50, 50, 50, 50]
+
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        # 24/7, no holidays
+        op_hours = [[0, 23], [1, 2, 3, 4, 5, 6, 7], []]
+
+        test_area = 5000
+        test_elec_cost = 10000
+
+        comfort_result, setback_result = comfort_and_setpoint(IAT, DAT, op_hours, \
+                test_area, test_elec_cost)
+
+        exp_cool_cost = (76 - 50) * 0.03 * 0.5 * 0.07 * 1 * test_elec_cost
+        exp_heat_cost = (80 - 72) * 0.03 * 0.5 * 0.31 * 1 * test_elec_cost
+
+        expected = {
+        'Problem': "Under-conditioning - thermostat heating " + \
+                "setpoint is low.",
+        'Diagnostic': "For more than 30% of the time, the cooling setpoint " + \
+                "during occupied hours was less than 69 degrees F.",
+        'Recommendation': "Program thermostats to increase the heating " + \
+                "setpoint to improve building comfort during occupied hours."
+        }
+
+
+        self.assertEqual(comfort_result, expected)
+
+    def test_setback_comfort_success(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [75, 75, 75, 75, 75, 75, 75, 75, 75, 75]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [75, 75, 75, 75, 75, 75, 75, 75, 75, 75]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        # 24/7, no holidays
+        op_hours = [[0, 23], [1, 2, 3, 4, 5, 6, 7], []]
+
+        test_area = 5000
+        test_elec_cost = 10000
+
+        comfort_result, setback_result = comfort_and_setpoint(IAT, DAT, op_hours, \
+                test_area, test_elec_cost)
+
+        self.assertEqual(comfort_result, {})
+        self.assertEqual(setback_result, {})
 
 
