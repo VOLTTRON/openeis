@@ -84,7 +84,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 from datetime import datetime
 import numpy as np
-from openeis.applications.utils.sensor_suitcase.utils import get_CBECS
+from openeis.applications.utils.sensor_suitcase.utils import separate_hours, get_CBECS
 
 
 def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
@@ -144,7 +144,8 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
     vent_val = non_hvac_dat/non_op_data_len
     percent_unocc = non_op_data_len/len(DAT)
 
-    non_cool_zat, non_heat_zat, non_hvac_zat = _grab_data(DAT_non_op, ZAT_non_op, ZAT_non_op,HVAC_non_op)
+    non_cool_zat, non_heat_zat, non_hvac_zat = _grab_data(DAT_non_op, \
+            ZAT_non_op, ZAT_non_op, HVAC_non_op)
     #
     ZAT_cool_threshold = 80
     ZAT_heat_threshold = 55
@@ -176,7 +177,7 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
                     "heating setpoint, or increase the cooling setpoint during " + \
                     "unoccuppied times.  Additionally, you may have a " + \
                     "contractor configure the RTU to reduce ventilation.",
-            'Savings': round(c_savings + h_savings + ven_savings, 2)}
+            'Savings': round((c_savings + h_savings + ven_savings), 2)}
     else:
         return {}
 
@@ -187,15 +188,20 @@ def _grab_data(DAT, ZAT, copyTemp, HVACstat=None):
     Parameters
         DAT - array of diffuser air temperatures
         ZAT - array of zone air temperatures
-        copyTemp - 
+        copyTemp - data needed to separate
         HVACstat - array of HVAC statuses
 
     Returns:
-        cool_on - z
+        cool_on - data points in copyTemp that is considered 'cooling'
+        heat_on - datat points in copyTemp that is considered 'heating'
+        vent_on - number of points in which ventilation is on
+    """
+
     cool_on = []
     heat_on = []
     vent_on = 0
     i = 0
+
     while (i < len(DAT)):
         if ((ZAT[i][1] > 55) and (ZAT[i][1] < 80)):
             # if DAT is less than 90% of ZAT, it's cooling
@@ -220,29 +226,4 @@ def _grab_data(DAT, ZAT, copyTemp, HVACstat=None):
         i += 1
     return cool_on, heat_on, vent_on
 
-def separate_hours(data, op_hours, days_op, holidays=[]):
-    """
-    Given a dataset and a building's operational hours, this function will
-    separate data from operational hours and non-operational hours.
 
-    Parameters:
-        - data: array of arrays that have [datetime, data]
-        - op_hours: operational hour for the building in military time
-            - i.e. [9, 17]
-        - days_op: days of the week it is operational as a list
-            - Monday = 1, Tuesday = 2 ... Sunday = 7
-            - i.e. [1, 2, 3, 4, 5] is Monday through Friday
-        - holidays: a list of datetime.date that are holidays.
-            - data with these dates will be put into non-operational hours
-    """
-    operational = []
-    non_op = []
-    for point in data:
-        if (point[0].date() in holidays) or \
-            (point[0].isoweekday() not in days_op):
-            non_op.append(point)
-        elif ((point[0].hour >= op_hours[0]) and (point[0].hour < op_hours[1])):
-            operational.append(point)
-        else:
-            non_op.append(point)
-    return operational, non_op
