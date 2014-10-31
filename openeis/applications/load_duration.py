@@ -138,7 +138,6 @@ class Application(DriverApplicationBaseClass):
         """
         Output is the sorted load to be graphed later.
         """
-        #TODO: find an easier way of formatting the topics
         topics = input_object.get_topics()
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
