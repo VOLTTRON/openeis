@@ -132,7 +132,7 @@ def comfort_and_setpoint(ZAT, DAT, op_hours, area, elec_cost, HVACstat=None):
         if (DAT_op[i][1] < (0.9 * ZAT_op[i][1])):
             # If there's HVAC, make sure it's actually cooling
             if (HVACstat):
-                if (HVAC_op[i][1] != 3):
+                if (HVAC_op[i][1] == 0):
                     i += 1
                     continue
             # if DAT is less than 75 F, it's over cooling
