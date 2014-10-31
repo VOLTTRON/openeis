@@ -124,7 +124,6 @@ class TestEconomizer(AppTestBase):
 
         self.assertEqual(expected, result)
 
-
     def test_economizer_no_flag(self):
         a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = datetime.datetime(2014, 1, 4, 0, 0, 0, 0)
@@ -147,3 +146,4 @@ class TestEconomizer(AppTestBase):
         expected = {}
 
         self.assertEqual(expected, result)
+
