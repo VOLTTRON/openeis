@@ -137,7 +137,16 @@ class Application(DriverApplicationBaseClass):
         self.building_area = building_area
         self.electricity_cost = electricity_cost
         
-
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Sensor Suitcase: Lighting'
+        desc = 'RCx sensor suitcase diagnostics is used to identify problems in\
+                the operation and performance of lighting systems in small\
+                commercial buildings. This diagnostic suite targets problems\
+                that are common to this class of buildings, specifically,\
+                excessive lighting during the day-time and after-hours periods. '
+        return ApplicationDescriptor(app_name=name, description=desc)
+        
     @classmethod
     def get_config_parameters(cls):
         # Called by UI

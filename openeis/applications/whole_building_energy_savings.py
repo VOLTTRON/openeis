@@ -1,6 +1,6 @@
 """
 Implement a building baseline load prediction model based on temperature and time-of-week (TTOW).
-Calculates the <total/cumulative> savings from the difference between predicted
+Calculates the cumulative savings from the difference between predicted
 and measured energy use.
 
 See Johanna L. Mathieu, Phillip N. Price, Sila Kiliccote, and Mary Ann Piette,
@@ -90,7 +90,6 @@ All rights reserved.
 NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
-# TODO: Make sure this is working!
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
     OutputDescriptor, ConfigDescriptor
@@ -130,6 +129,19 @@ class Application(DriverApplicationBaseClass):
         self.savings_start = dt.datetime.strptime(savings_startdate, '%Y-%m-%d')
         self.savings_stop = dt.datetime.strptime(savings_stopdate, '%Y-%m-%d')
 
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Whole-Building Energy Savings'
+        desc = 'Whole-building Energy savings is used to quantify\
+                the energy savings associated with an improvement\
+                in building operations or equipment. Energy savings\
+                is calculated as the difference between the metered\
+                energy use after improvements were made, and the baseline\
+                projection of energy use.'
+        return ApplicationDescriptor(app_name=name, description=desc)
+
+
+    
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
