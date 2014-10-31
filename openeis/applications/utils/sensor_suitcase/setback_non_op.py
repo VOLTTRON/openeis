@@ -201,14 +201,13 @@ def _grab_data(DAT, ZAT, copyTemp, HVACstat=None):
     heat_on = []
     vent_on = 0
     i = 0
-
     while (i < len(DAT)):
         if ((ZAT[i][1] > 55) and (ZAT[i][1] < 80)):
             # if DAT is less than 90% of ZAT, it's cooling
             if (DAT[i][1] < (0.9 * ZAT[i][1])):
                 # If there's HVAC, make sure it's actually cooling
                 if (HVACstat):
-                    if (HVACstat[i][1] != 2):
+                    if (HVACstat[i][1] == 0):
                         i += 1
                         continue
                 cool_on.append(copyTemp[i][1])

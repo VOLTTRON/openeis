@@ -92,7 +92,7 @@ import copy
 
 class TestComfortAndSetback(AppTestBase):
 
-    def test_setback_fail(self):
+    def test_setback_success(self):
         # ten data points
         a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
@@ -113,9 +113,9 @@ class TestComfortAndSetback(AppTestBase):
 
         result = setback_non_op(IAT, DAT, op_hours, 10000, 5000)
 
-        self.assertIsNot(result, True)
+        self.assertEqual(result, {})
 
-    def test_setback_true(self):
+    def test_setback_basic(self):
         a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
         b = datetime.datetime(2014, 1, 3, 12, 0, 0, 0)
         #delta = 6 hours
@@ -136,7 +136,68 @@ class TestComfortAndSetback(AppTestBase):
         test_area = 5000
         result = setback_non_op(IAT, DAT, op_hours, test_ele_cost, test_area)
 
-        print(result)
+        expected = {
+            'Problem': "Nighttime thermostat setbacks are not enabled.",
+            'Diagnostic': "More than 30 percent of the data indicates that the " + \
+                    "building is being conditioned or ventilated normally " + \
+                    "during unoccupied hours.",
+            'Recommendation': "Program your thermostats to decrease the " + \
+                    "heating setpoint, or increase the cooling setpoint during " + \
+                    "unoccuppied times.  Additionally, you may have a " + \
+                    "contractor configure the RTU to reduce ventilation.",
+            'Savings': round(((80-60) * 0.03 * 1 * 0.07 * test_ele_cost * (10/11)), 2)}
+
+        self.assertEqual(result, expected)
+
+    def test_setback_HVAC_success(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        # copy data to put in the right format
+        DAT = copy.deepcopy(base)
+        DAT_temp = [10, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        HVAC = copy.deepcopy(base)
+        HVAC_temp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(HVAC, HVAC_temp)
+
+        # the first point is the only operational point
+        op_hours = [[0, 1], [3], []]
+        result = setback_non_op(IAT, DAT, op_hours, 10000, 5000, HVAC)
+
+        self.assertEqual(result, {})
+
+    def test_setback_HVAC_basic(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 12, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        HVAC = copy.deepcopy(base)
+        HVAC_temp = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        append_data_to_datetime(HVAC, HVAC_temp)
+
+        # just the first data point will count as during operational hours
+        op_hours = [[0, 1], [3], []]
+
+        test_ele_cost = 10000
+        test_area = 5000
+        result = setback_non_op(IAT, DAT, op_hours, test_ele_cost, test_area)
 
         expected = {
             'Problem': "Nighttime thermostat setbacks are not enabled.",
@@ -150,5 +211,6 @@ class TestComfortAndSetback(AppTestBase):
             'Savings': round(((80-60) * 0.03 * 1 * 0.07 * test_ele_cost * (10/11)), 2)}
 
         self.assertEqual(result, expected)
+
 
 
