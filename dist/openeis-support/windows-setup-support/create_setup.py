@@ -248,8 +248,9 @@ def make_requirements():
     
     if not os.path.exists('env/Scripts/pip.exe'):
         raise Exception('must be called from root directory of the openeis project.')
-    
-    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(MISC_DIR.replace('/','\\')+"\\requirements.txt", 'w'))
+    reqfile = MISC_DIR.replace('/','\\')+"\\requirements.txt"
+    print("REQ FILE: "+reqfile)
+    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(reqfile, 'w'))
     lines = ''
     for l in open(MISC_DIR.replace('/','\\')+"\\requirements.txt"):
         # Don't include libs thata aren't in pypi numpy is explicitly handled differently
@@ -273,6 +274,8 @@ def validate_and_setfolders(support_root, outdir):
     WORKING_DIR = tempfile.mkdtemp()
     
     INNO_SETUP_DIR = os.path.join(support_root, 'extracted_inno_setup')
+    MISC_DIR = os.path.join(support_root, 'misc')
+    
     
     WORKING_DIR = os.path.join(TEMP_DIR, 'build')
     WHEEL_DIR = os.path.join(TEMP_DIR, 'wheels')    
@@ -287,7 +290,7 @@ def validate_and_setfolders(support_root, outdir):
         os.makedirs(outdir)
     
     # parses the short version num from the returned string.
-    repovers = subprocess.check_output(["git.exe", 'describe']).split('-')[-1].strip()
+    repovers = str(subprocess.check_output(["git.exe", 'describe'])).split('-')[-1].strip()
     OUTPUT_FILE = os.path.join(outdir, "openeis-setup-{}.exe".format(repovers))
     return True
     
