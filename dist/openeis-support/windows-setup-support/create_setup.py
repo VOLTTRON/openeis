@@ -291,7 +291,9 @@ def validate_and_setfolders(support_root, outdir):
         os.makedirs(outdir)
     
     # parses the short version num from the returned string.
-    repovers = str(subprocess.check_output(["git.exe", 'describe'])).split('-')[-1].strip()
+    repovers = subprocess.check_output(["git.exe", 'describe'])
+    
+    repovers = str(repovers).split('-')[-1][:-3]
     OUTPUT_FILE = os.path.join(outdir, "openeis-setup-{}.exe".format(repovers))
     return True
     
