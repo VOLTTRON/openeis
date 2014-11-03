@@ -248,6 +248,31 @@ def make_requirements():
     # now build all of the wheels for the requirements file
     ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
     
+    
+
+def validate_and_setfolders(support_root, outdir):
+    
+    global cfg, OPENEIS_SRC_DIR, WORKING_DIR, NUMPY_DIR, MISC_DIR
+    global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR
+    
+    support_root = support_root.replace('\\', '/')
+     
+    WORKING_DIR = tempfile.mkdtemp()
+    
+    INNO_SETUP_DIR = os.path.join(support_root, 'extracted_inno_setup')
+    
+    WORKING_DIR = os.path.join(TEMP_DIR, 'build')    
+
+    if not os.path.exists(WORKING_DIR):
+        os.makedirs(WORKING_DIR)
+    
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    
+    # parses the short version num from the returned string.
+    repovers = subprocess.check_output(["git.exe", 'describe']).split('-')[-1].strip()
+    OUTPUT_FILE = os.path.join(outdir, "openeis-setup-{}.exe".format(repovers))
+
 def show_help():
     help = '''
     python create_setup.py support_dir outdir
