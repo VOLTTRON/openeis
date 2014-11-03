@@ -84,7 +84,11 @@ if not os.path.exists(setup_cfg):
 """)
     sys.exit()
 
-cfg = json.loads(open(setup_cfg, 'r').read())
+cfg = {}
+
+for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR', 
+              'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
+    cfg[x] = ''
     
 
 # This is the python (extracted from the msi file)
