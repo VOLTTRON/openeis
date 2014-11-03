@@ -68,22 +68,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 # Script should always be called from the root of the repository.
 OPENEIS_SRC_DIR = os.path.abspath(os.curdir)
 
-setup_cfg = os.path.join(basedir, 'setup.cfg.json')
-if not os.path.exists(setup_cfg):
-    sys.stderr.write('Invalid config file specified\n\t{}'.format(setup_cfg))
-    sys.stderr.write('An example setup file looks like:\n'+"""
-{
-    "CLEAN_PYTHON_DIR": "C:/openeis-1.0/python-fresh",
-    "WORKING_DIR": "C:/openeis-1.0/Output",
-    "OPENEIS_SRC_DIR": "C:/Users/d3m614/git/openeis",
-    "WHEEL_DIR": "C:/openeis-1.0/wheels",
-    "NUMPY_DIR": "C:/openeis-1.0/numpy1.8.2",
-    "MISC_DIR": "C:/openeis-1.0/misc",
-    "INNO_SETUP_DIR": "C:/extracted_inno_setup"
-}
-""")
-    sys.exit()
-
 cfg = {}
 
 for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR', 
