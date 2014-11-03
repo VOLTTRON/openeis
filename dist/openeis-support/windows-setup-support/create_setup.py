@@ -253,6 +253,7 @@ def validate_and_setfolders(support_root, outdir):
     global cfg, OPENEIS_SRC_DIR, WORKING_DIR, NUMPY_DIR, MISC_DIR
     global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, WHEEL_DIR,CLEAN_PYTHON_DIR
     
+    print("Out directory is: "+outdir)
     support_root = support_root.replace('/', '\\')
      
     WORKING_DIR = tempfile.mkdtemp()
