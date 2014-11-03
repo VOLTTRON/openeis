@@ -248,15 +248,39 @@ def make_requirements():
     # now build all of the wheels for the requirements file
     ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
     
+def show_help():
+    help = '''
+    python create_setup.py support_dir outdir
+    
+    support_dir    The directory wheere the support fiels from the 
+                   openeis-setup-support repository has ben cloned.
+    
+    outdir         The path to the output dir.  The command git describe 
+                   will be used to generate unique names.
+'''
+    sys.stdout.write(help)
+    
+     
 
 if __name__ == '__main__':
     
-    if len(sys.argv) > 1:
-        # Change the source dir
-        rename_dirs(sys.argv[1], sys.argv[2])
+    if len(sys.argv) != 3:
+        sys.stderr.write('Invalid arguments!\n\n')
+        show_help()        
+        sys.exit(500)
     
+    # checck and setup global variables.
+    if not validate_and_setfolders(sys.argv[1], sys.argv[2]):
+        sys.exit(500)
+                                 
+        
+    
+    sys.exit(25)
+    TEMP_DIR = tempfile.mkdtemp()
     #if os.path.isdir(WHEEL_DIR.replace('/','\\')):
     #    shutil.rmtree(WHEEL_DIR.replace('/','\\'))
     #os.makedirs(WHEEL_DIR.replace('/','\\'))
     make_setup()
                
+    sys.stdout.write("clean up temp dir")
+    shutil.rmtree(TEMP_DIR, ignore_errors=True)
