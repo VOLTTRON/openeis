@@ -190,11 +190,11 @@ def move_to_working_dir():
                                   'windows-setup-support', 'setup.iss')
         shutil.copy(setup_file, 'setup.iss')
 
-        print('ABS PATH: '+os.path.abspath('setup.iss'))
+
         data = open('setup.iss').read()
         for x in ('WORKING_DIR',):
             data = data.replace('~~{}~~'.format(x), eval(x).replace('/', '\\'))
-        print('working dir'+os.path.abspath(WORKING_DIR))
+
         with open('setup.iss', 'w') as f:
             f.write(data)
         
@@ -207,13 +207,13 @@ def make_installer():
     os.chdir(WORKING_DIR)
     try:
         compiler = os.path.join(INNO_SETUP_DIR.replace('/','\\'), 'iscc.exe')
-        print("COMPILER: "+compiler)
         ret = subprocess.check_call([compiler, 'setup.iss'])
         
         file_created = os.path.abspath(os.path.join('Output', 'setup.exe'))
         
         if (os.path.exists(OUTPUT_FILE)):
             os.remove(OUTPUT_FILE)
+        print("Moving file {} to {}".format(file_created, OUTPUT_FILE))
         shutil.move(file_created, OUTPUT_FILE)
     finally:
         os.chdir(ORIG_CWD)
