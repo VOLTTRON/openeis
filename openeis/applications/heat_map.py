@@ -53,7 +53,6 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 from .utils import conversion_utils as cu
-import datetime as dt
 import logging
 
 
@@ -190,8 +189,6 @@ class Application(DriverApplicationBaseClass):
         
         for x in loads[0]:
             datevalue = x[0]
-            if not isinstance(datevalue, dt.datetime):
-                datevalue = dt.datetime.strptime(datevalue, '%Y-%m-%d %H')
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),
                 'hour': datevalue.hour,
