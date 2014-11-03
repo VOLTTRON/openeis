@@ -549,13 +549,9 @@ class Analysis(models.Model):
     '''
     configuration = JSONField()
     debug = models.BooleanField(default=False)
-    # Ran successfully or not
-    status = models.CharField(max_length=50, default='queued')
-    # Initially queued
     added = models.DateTimeField(auto_now_add=True)
     started = models.DateTimeField(null=True, default=None)
     ended = models.DateTimeField(null=True, default=None)
-    progress_percent = models.FloatField(default=0)
     reports = JSONField()
 
 
