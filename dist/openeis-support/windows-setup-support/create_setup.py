@@ -267,15 +267,16 @@ def make_requirements():
 def validate_and_setfolders(support_root, outdir):
     
     global cfg, OPENEIS_SRC_DIR, WORKING_DIR, NUMPY_DIR, MISC_DIR
-    global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, WHEEL_DIR
+    global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, WHEEL_DIR,CLEAN_PYTHON_DIR
     
-    support_root = support_root.replace('\\', '/')
+    support_root = support_root.replace('/', '\\')
      
     WORKING_DIR = tempfile.mkdtemp()
     
     INNO_SETUP_DIR = os.path.join(support_root, 'extracted_inno_setup')
     MISC_DIR = os.path.join(support_root, 'misc')
-    
+    CLEAN_PYTHON_DIR = os.path.join(support_root, 'python-fresh')
+    NUMPY_DIR = os.path.join(support_root, 'numpy1.8.2')
     
     WORKING_DIR = os.path.join(TEMP_DIR, 'build')
     WHEEL_DIR = os.path.join(TEMP_DIR, 'wheels')    
