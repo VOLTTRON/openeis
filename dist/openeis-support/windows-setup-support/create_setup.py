@@ -62,8 +62,12 @@ import posixpath
 import shutil
 import subprocess
 import sys
+import tempfile
 
 basedir = os.path.abspath(os.path.dirname(__file__))
+# Script should always be called from the root of the repository.
+OPENEIS_SRC_DIR = os.path.abspath(os.curdir)
+
 setup_cfg = os.path.join(basedir, 'setup.cfg.json')
 if not os.path.exists(setup_cfg):
     sys.stderr.write('Invalid config file specified\n\t{}'.format(setup_cfg))
@@ -91,9 +95,6 @@ CLEAN_PYTHON_DIR = cfg['CLEAN_PYTHON_DIR'].replace('/', '\\')
 # of support files.
 WORKING_DIR = cfg['WORKING_DIR'].replace('/', '\\')
 
-# The checked out src directory from the git repository.
-OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'].replace('/', '\\')
-
 # The location of the cache wheel directory so we
 # don't need to re download things from the internet.
 WHEEL_DIR = cfg['WHEEL_DIR'].replace('/', '\\')
@@ -112,6 +113,11 @@ MISC_DIR = cfg['MISC_DIR'].replace('/', '\\')
 # The directory of an extracted inno setup folder.  This can
 # be obtained through innoextractor program from the internet.
 INNO_SETUP_DIR = cfg['INNO_SETUP_DIR'].replace('/', '\\')
+
+OUTPUT_FILE = ''
+
+# A temp cirectory for use during this build.
+TEMP_DIR = ''
 
 ORIG_CWD = os.getcwd()
 
