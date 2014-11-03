@@ -306,6 +306,9 @@ if __name__ == '__main__':
     
     TEMP_DIR = tempfile.mkdtemp()
     
+    print("outfile is "+ sys.argv[2])
+    sys.exit()
+    
     # checck and setup global variables.
     if not validate_and_setfolders(sys.argv[1], sys.argv[2]):
         shutil.rmtree(TEMP_DIR, ignore_errors=True)
