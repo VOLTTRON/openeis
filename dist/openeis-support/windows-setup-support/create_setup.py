@@ -207,7 +207,7 @@ def make_installer():
     os.chdir(WORKING_DIR)
     try:
         compiler = os.path.join(INNO_SETUP_DIR.replace('/','\\'), 'iscc.exe')
-
+        print("COMPILER: "+compiler)
         ret = subprocess.check_call([compiler, 'setup.iss'])
         
         file_created = os.path.abspath(os.path.join('Output', 'setup.exe'))
