@@ -304,10 +304,7 @@ if __name__ == '__main__':
         show_help()        
         sys.exit(500)
     
-    TEMP_DIR = tempfile.mkdtemp()
-    
-    print("outfile is "+ sys.argv[2])
-    sys.exit()
+    TEMP_DIR = tempfile.mkdtemp()    
     
     # checck and setup global variables.
     if not validate_and_setfolders(sys.argv[1], sys.argv[2]):
