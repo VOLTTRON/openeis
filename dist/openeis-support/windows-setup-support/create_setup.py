@@ -97,7 +97,7 @@ WORKING_DIR = cfg['WORKING_DIR'].replace('/', '\\')
 
 # The location of the cache wheel directory so we
 # don't need to re download things from the internet.
-WHEEL_DIR = cfg['WHEEL_DIR'].replace('/', '\\')
+WHEEL_DIR = ''
 
 # A folder that contains a numpy and numpy dist egg info file.
 # This folder needs to be suitable for droping directly into
@@ -168,6 +168,7 @@ def build_wheels():
         os.chdir(ORIG_CWD)
 
 def move_to_working_dir():
+    print("move_to_working_dir")
     tocopy=(CLEAN_PYTHON_DIR, NUMPY_DIR, WHEEL_DIR)
     try:
         if os.path.exists(WORKING_DIR):
@@ -185,10 +186,11 @@ def move_to_working_dir():
                                   'windows-setup-support', 'setup.iss')
         shutil.copy(setup_file, 'setup.iss')
 
+        print('ABS PATH: '+os.path.abspath('setup.iss'))
         data = open('setup.iss').read()
         for x in ('WORKING_DIR',):
-            data = data.replace('~~{}~~'.format(x), cfg[x].replace('/', '\\'))
-
+            data = data.replace('~~{}~~'.format(x), eval(x).replace('/', '\\'))
+        print('working dir'+os.path.abspath(WORKING_DIR))
         with open('setup.iss', 'w') as f:
             f.write(data)
         
@@ -197,11 +199,18 @@ def move_to_working_dir():
 
 
 def make_installer():
+    print("make_installer")
     os.chdir(WORKING_DIR)
     try:
         compiler = os.path.join(INNO_SETUP_DIR.replace('/','\\'), 'iscc.exe')
-                                                       
+
         ret = subprocess.check_call([compiler, 'setup.iss'])
+        
+        file_created = os.path.abspath(os.path.join('Output', 'setup.exe'))
+        
+        if (os.path.exists(OUTPUT_FILE)):
+            os.remove(OUTPUT_FILE)
+        shutil.move(file_created, OUTPUT_FILE)
     finally:
         os.chdir(ORIG_CWD)
         
@@ -209,7 +218,7 @@ def make_setup():
     print("Configuration for setup:")
     for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR', 
               'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
-        print("{}->{}".format(x, cfg[x]))
+        print("{}->{}".format(x, eval(x)))
     make_requirements()
     build_wheels()
     move_to_working_dir()
@@ -253,7 +262,7 @@ def make_requirements():
 def validate_and_setfolders(support_root, outdir):
     
     global cfg, OPENEIS_SRC_DIR, WORKING_DIR, NUMPY_DIR, MISC_DIR
-    global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR
+    global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, WHEEL_DIR
     
     support_root = support_root.replace('\\', '/')
      
@@ -261,7 +270,11 @@ def validate_and_setfolders(support_root, outdir):
     
     INNO_SETUP_DIR = os.path.join(support_root, 'extracted_inno_setup')
     
-    WORKING_DIR = os.path.join(TEMP_DIR, 'build')    
+    WORKING_DIR = os.path.join(TEMP_DIR, 'build')
+    WHEEL_DIR = os.path.join(TEMP_DIR, 'wheels')    
+    
+    if not os.path.exists(WHEEL_DIR):
+        os.makedirs(WHEEL_DIR)
 
     if not os.path.exists(WORKING_DIR):
         os.makedirs(WORKING_DIR)
@@ -272,6 +285,8 @@ def validate_and_setfolders(support_root, outdir):
     # parses the short version num from the returned string.
     repovers = subprocess.check_output(["git.exe", 'describe']).split('-')[-1].strip()
     OUTPUT_FILE = os.path.join(outdir, "openeis-setup-{}.exe".format(repovers))
+    return True
+    
 
 def show_help():
     help = '''
@@ -294,14 +309,15 @@ if __name__ == '__main__':
         show_help()        
         sys.exit(500)
     
+    TEMP_DIR = tempfile.mkdtemp()
+    
     # checck and setup global variables.
     if not validate_and_setfolders(sys.argv[1], sys.argv[2]):
+        shutil.rmtree(TEMP_DIR, ignore_errors=True)
         sys.exit(500)
                                  
         
     
-    sys.exit(25)
-    TEMP_DIR = tempfile.mkdtemp()
     #if os.path.isdir(WHEEL_DIR.replace('/','\\')):
     #    shutil.rmtree(WHEEL_DIR.replace('/','\\'))
     #os.makedirs(WHEEL_DIR.replace('/','\\'))
