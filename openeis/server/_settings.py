@@ -127,7 +127,7 @@ ROOT_URLCONF = 'openeis.server.urls'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'openeis.db.backends.sqlite3',
         'NAME': os.path.join(DATA_DIR, 'openeis-db.sqlite3'),
     }
 }

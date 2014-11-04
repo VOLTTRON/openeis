@@ -362,8 +362,22 @@ class DataSetPreviewSerializer(serializers.Serializer):
 class AnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Analysis
-        read_only_fields = ('added', 'started', 'ended', 'progress_percent',
-                            'reports', 'status', 'project')
+        read_only_fields = ('added', 'started', 'ended', 'reports', 'project')
+
+    def to_native(self, obj):
+        result = super().to_native(obj)
+        if obj is None:
+            return result
+        is_alive = self.context.get('is_alive', lambda x: False)
+        if obj and is_alive(obj.id):
+            result['status'] = 'running'
+        elif not obj.started:
+            result['status'] = 'queued'
+        elif not obj.ended:
+            result['status'] = 'incomplete'
+        else:
+            result['status'] = 'complete'
+        return result
 
 class AnalysisUpdateSerializer(AnalysisSerializer):
     class Meta:

@@ -89,7 +89,6 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 from .utils import conversion_utils as cu
-import datetime as dt
 import logging
 import pytz
 

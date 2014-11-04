@@ -61,11 +61,12 @@ import posixpath
 import random
 import string
 
+from django import dispatch
+from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.db import connections, models
 from django.db.models.query import QuerySet
-from django.core.exceptions import ValidationError
-from django import dispatch
 
 import jsonschema.exceptions
 
@@ -401,19 +402,22 @@ class Sensor(models.Model):
 
 
 class SensorDataQuerySet(QuerySet):
+    '''Override QuerySet to provide trunc_date() and timeseries() methods.'''
+
     class pg_trunc(dict):
         def __missing__(self, key):
-            if key not in {'minute', 'hour', 'day', 'month', 'year'}:
+            if key not in {'second', 'minute', 'hour', 'day', 'month', 'year'}:
                 raise KeyError(key)
             return "date_trunc('{0}', {{field}})".format(key)
 
     trunc_funcs = {
         "mysql": {
-            "year": "strftime('%%Y', {field})",
-            "month": "strftime('%%Y-%%m', {field})",
-            "day": "strftime('%%Y-%%m-%%d', {field})",
-            "hour": "strftime('%%Y-%%m-%%d %%H', {field})",
-            "minute": "strftime('%%Y-%%m-%%d %%H:%%i', {field})",
+            "year": "str_to_date(date_format('%%Y-01-01 00:00:00', {field}), '%%Y-%%m-%%d %%H:%%M:%%S')",
+            "month": "str_to_date(date_format('%%Y-%%m-01 00:00:00', {field}), '%%Y-%%m-%%d %%H:%%M:%%S')",
+            "day": "str_to_date(date_format('%%Y-%%m-%%d 00:00:00', {field}), '%%Y-%%m-%%d %%H:%%M:%%S')",
+            "hour": "str_to_date(date_format('%%Y-%%m-%%d %H:00:00', {field}), '%%Y-%%m-%%d %%H:%%M:%%S')",
+            "minute": "str_to_date(date_format('%%Y-%%m-%%d %%H:%%M:00', {field}), '%%Y-%%m-%%d %%H:%%M:%%S')",
+            "second": "str_to_date(date_format('%%Y-%%m-%%d %%H:%%M:%%S', {field}), '%%Y-%%m-%%d %%H:%%M:%%S')",
         },
         "oracle": {
             "year": "trunc({field}, 'YEAR')",
@@ -424,21 +428,23 @@ class SensorDataQuerySet(QuerySet):
         },
         "postgresql": pg_trunc(),
         "sqlite": {
-            "year": "strftime('%%Y', {field})",
-            "month": "strftime('%%Y-%%m', {field})",
-            "day": "strftime('%%Y-%%m-%%d', {field})",
-            "hour": "strftime('%%Y-%%m-%%d %%H', {field})",
-            "minute": "strftime('%%Y-%%m-%%d %%H:%%M', {field})",
+            "year": "strftime('%%Y-01-01 00:00:00{tz}', {field})",
+            "month": "strftime('%%Y-%%m-01 00:00:00{tz}', {field})",
+            "day": "strftime('%%Y-%%m-%%d 00:00:00{tz}', {field})",
+            "hour": "strftime('%%Y-%%m-%%d %%H:00:00{tz}', {field})",
+            "minute": "strftime('%%Y-%%m-%%d %%H:%%M:00{tz}', {field})",
+            "second": "strftime('%%Y-%%m-%%d %%H:%%M:%S{tz}', {field})",
         },
     }
 
     def trunc_date(self, kind, *args, **kwargs):
         '''Truncate a date field to the level indicated by kind.
 
-        kind must be one of 'year', 'month', 'day', 'hour', or 'minute'.
-        args and kwargs contain field names to truncate. Names in args
-        retain the same name while those in values of kwargs get named
-        according to the key.
+        kind must be one of 'year', 'month', 'day', 'hour', 'minute' or
+        'second' ('second' not supported on Oracle).  args and kwargs
+        contain field names to truncate.  Names in args retain the same
+        name while those in values of kwargs get named according to the
+        key.
         '''
         backend = connections[self.db].vendor
         try:
@@ -450,12 +456,20 @@ class SensorDataQuerySet(QuerySet):
             func = trunc[kind]
         except KeyError:
             raise ValueError('invalid truncation kind: {}'.format(kind))
+        tz = 'Z' if settings.USE_TZ else ''
         for arg in args:
             if arg in kwargs:
                 raise ValueError('field given twice: {}'.format(arg))
             kwargs[arg] = arg
-        select = {dest: func.format(field=source)
-                  for dest, source in kwargs.items()}
+        select = {}
+        for dest, source in kwargs.items():
+            if not dest.isidentifier():
+                raise ValueError('destination is not a valid identifier: '
+                                 '{!r}'.format(dest))
+            if not source.isidentifier():
+                raise ValueError('source is not a valid identifier: '
+                                 '{!r}'.format(source))
+            select[dest] = func.format(field=source, tz=tz)
         return self.extra(select=select) if select else self
 
     def timeseries(self, *, trunc_kind=None, aggregate=None):
@@ -483,7 +497,6 @@ class SensorDataManager(models.Manager):
     @property
     def trunc_date(self):
         return self.get_queryset().trunc_date
-
 
 
 class BaseSensorData(models.Model):
@@ -536,13 +549,9 @@ class Analysis(models.Model):
     '''
     configuration = JSONField()
     debug = models.BooleanField(default=False)
-    # Ran successfully or not
-    status = models.CharField(max_length=50, default='queued')
-    # Initially queued
     added = models.DateTimeField(auto_now_add=True)
     started = models.DateTimeField(null=True, default=None)
     ended = models.DateTimeField(null=True, default=None)
-    progress_percent = models.FloatField(default=0)
     reports = JSONField()
 
 
