@@ -366,6 +366,8 @@ class AnalysisSerializer(serializers.ModelSerializer):
 
     def to_native(self, obj):
         result = super().to_native(obj)
+        if obj is None:
+            return result
         is_alive = self.context.get('is_alive', lambda x: False)
         if obj and is_alive(obj.id):
             result['status'] = 'running'
