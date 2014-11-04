@@ -3,6 +3,42 @@ Heat map: show electricity use by time-of-day, across many days.
 
 Shows extent of daily, weekly, and seasonal load profiles.
 
+
+Copyright
+=========
+
+OpenEIS Algorithms Phase 2 Copyright (c) 2014,
+The Regents of the University of California, through Lawrence Berkeley National
+Laboratory (subject to receipt of any required approvals from the U.S.
+Department of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
+referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
+
+NOTICE:  This software was produced by The Regents of the University of
+California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
+For 5 years from November 1, 2012, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and perform
+publicly and display publicly, by or on behalf of the Government. There is
+provision for the possible extension of the term of this license. Subsequent to
+that period or any extension granted, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit others to
+do so. The specific term of the license can be identified by inquiry made to
+Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
+United States Department of Energy, nor any of their employees, makes any
+warranty, express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness, or usefulness of any data, apparatus, product,
+or process disclosed, or represents that its use would not infringe privately
+owned rights.
+
+
+License
+=======
+
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -55,7 +91,7 @@ from openeis.applications import reports
 from .utils import conversion_utils as cu
 import datetime as dt
 import logging
-
+import pytz
 
 class Application(DriverApplicationBaseClass):
 
@@ -75,7 +111,15 @@ class Application(DriverApplicationBaseClass):
 
         self.building_name = building_name
 
-
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Heat Map'
+        desc = 'Heat maps are a means of visualizing and presenting the\
+                information that is contained in a time series load profile.\
+                The maps color-code the size of the load so that “hot spots”\
+                and patterns are easily identified.'
+        return ApplicationDescriptor(app_name=name, description=desc)
+        
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
@@ -161,37 +205,39 @@ class Application(DriverApplicationBaseClass):
         return report_list
 
     def execute(self):
-        #Called after User hits GO
         """
         Output values for Heat Map.
         """
-        self.out.log("Starting analysis", logging.INFO)
+        self.out.log("Starting application: heat map.", logging.INFO)
 
+        self.out.log("Querying database.", logging.INFO)
         loads = self.inp.get_query_sets('load', group_by='hour', exclude={'value':None})
-        print(loads)
-        # Get conversion factor
+        
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
+
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
-        
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-        print (load_convertfactor)
-        
-        self.out.log("@length of a month"+str(len(loads[0])), logging.INFO)
-        
-        # Limit the number of datapoints, have 2 weeks worth of data. 
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
+        self.out.log("Limiting the analysis to a month.", logging.INFO)
+        # Limit the number of datapoints, have 4 weeks worth of data.
         # 24 hours x 14 days = 336.
-        # if len(loads[0]) > 336:
-            # start = len(loads[0]) - 336
-            # end = len(loads[0]) - 1
-        # else: 
-            # start = 0
-            # end = len(loads[0])
-        
-        for x in loads[0]:
-            datevalue = x[0]
-            if not isinstance(datevalue, dt.datetime):
-                datevalue = dt.datetime.strptime(datevalue, '%Y-%m-%d %H')
+        if len(loads[0]) > 336:
+            start = len(loads[0]) - 336
+            end = len(loads[0]) - 1
+        else:
+            start = 0
+            end = len(loads[0])
+
+        self.out.log("Compiling the report table.", logging.INFO)
+        for x in loads[0][start:end]:
+            datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
+            datevalue = self.inp.localize_sensor_time('load', base_topic['load'][0], datevalue)
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),
                 'hour': datevalue.hour,

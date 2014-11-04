@@ -1,5 +1,5 @@
 """
-Unit tests for Load Profiling application.
+Unit test `excessive_night_lighting.py`.
 
 
 Copyright
@@ -84,45 +84,64 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications.utest_applications.apptest import AppTestBase
-import os
+from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
 
+import datetime as dt
+import numpy as np
+from openeis.applications.utils.sensor_suitcase.excessive_night_lighting import excessive_nighttime
 
-class TestLoadProfiling(AppTestBase):
-    fixtures = [
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'load_profiling_fixture.json')
-        ]
+class TestExcessiveNighttimeLighting(AppTestBase):
 
-    def setUp(self):
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
+    def test_excessive_night_light_ones(self):
+        """Test: Lights are on the whole time period."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 21600)
 
-    def test_load_profiling_basic(self):
-        lp_basic_ini = os.path.join(self.basedir,
-            'load_profiling_basic.ini')
-        lp_basic_exp = {}
-        lp_basic_exp['Load_Profiling'] = os.path.join(self.basedir,
-            'load_profiling_basic.ref.csv')
-        self.run_it(lp_basic_ini, lp_basic_exp, clean_up=True)
+        light_stat = np.ones(len(base), bool)
 
-    def test_load_profiling_missing(self):
-        lp_missing_ini = os.path.join(self.basedir,
-            'load_profiling_missing.ini')
-        lp_missing_exp = {}
-        lp_missing_exp['Load_Profiling'] = os.path.join(self.basedir,
-            'load_profiling_missing.ref.csv')
-        self.run_it(lp_missing_ini, lp_missing_exp, clean_up=True)
+        append_data_to_datetime(base, light_stat)
 
-    def test_load_profiling_floats(self):
-        lp_floats_ini = os.path.join(self.basedir,
-            'load_profiling_floats.ini')
-        lp_floats_exp = {}
-        lp_floats_exp['Load_Profiling'] = os.path.join(self.basedir,
-            'load_profiling_floats.ref.csv')
-        self.run_it(lp_floats_ini, lp_floats_exp, clean_up=True)
+        result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue('Problem' in result.keys())
 
-    def test_load_profiling_floats_missing(self):
-        lp_floats_missing_ini = os.path.join(self.basedir,
-            'load_profiling_floats_missing.ini')
-        lp_floats_missing_exp = {}
-        lp_floats_missing_exp['Load_Profiling'] = os.path.join(self.basedir,
-            'load_profiling_floats_missing.ref.csv')
-        self.run_it(lp_floats_missing_ini, lp_floats_missing_exp, clean_up=True)
+    def test_excessive_night_light_zeros(self):
+        """Test: Lights are on the whole time period."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 4, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 21600)
+
+        light_stat = np.zeros(len(base), bool)
+
+        append_data_to_datetime(base, light_stat)
+
+        result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue(result == {})
+
+    def test_excessive_night_expect_fail(self):
+        """Test: Lights are on for 5 hours every day during unoccupied hours."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 3, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 3600)
+
+        light_stat = np.zeros(len(base), bool)
+        light_stat[0:6] = True
+        light_stat[39:47] = True
+        append_data_to_datetime(base, light_stat)
+
+        result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue('Problem' in result.keys())
+
+    def test_excessive_night_expect_success(self):
+        """Test: Lights are on for 2 hours every day during unoccupied hours."""
+        a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = dt.datetime(2014, 1, 3, 0, 0, 0, 0)
+        base = set_up_datetimes(a, b, 3600)
+
+        light_stat = np.zeros(len(base), bool)
+        light_stat[17:19] = True
+        light_stat[41:43] = True
+        append_data_to_datetime(base, light_stat)
+
+        result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
+        self.assertTrue(result == {})

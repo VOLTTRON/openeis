@@ -1,5 +1,5 @@
 """
-Unit tests for Load Profiling application.
+Unit test `whole_building_energy_savings.py`.
 
 
 Copyright
@@ -82,47 +82,43 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
-
 from openeis.applications.utest_applications.apptest import AppTestBase
+from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime  # TODO: remove append_data_to_datetime if possible
+
+import datetime
+import numpy
+from openeis.applications.utils.baseline_models import day_time_temperature_model as dtt
 import os
+import copy  # TODO: Remove if possible
 
-
-class TestLoadProfiling(AppTestBase):
+class TestDayTimeTemperature(AppTestBase):
     fixtures = [
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'load_profiling_fixture.json')
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'whole_building_energy_savings_fixture.json')
         ]
 
     def setUp(self):
         self.basedir = os.path.abspath(os.path.dirname(__file__))
 
-    def test_load_profiling_basic(self):
-        lp_basic_ini = os.path.join(self.basedir,
-            'load_profiling_basic.ini')
-        lp_basic_exp = {}
-        lp_basic_exp['Load_Profiling'] = os.path.join(self.basedir,
-            'load_profiling_basic.ref.csv')
-        self.run_it(lp_basic_ini, lp_basic_exp, clean_up=True)
+    def test_util_findDateIndex(self):
+        # Testing index finder for specific dates.
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 2, 0, 0, 0, 0)
+        datetime_list = numpy.array(set_up_datetimes(a, b, 3600)).flatten()
+        testDateIndex = dtt.findDateIndex(
+            datetime_list,
+            datetime.datetime(2014, 1, 1, 7, 0, 0, 0)
+            )
+        self.assertEqual(testDateIndex, 0)
+        testDateIndex = dtt.findDateIndex(
+            datetime_list,
+            datetime.datetime(2014, 2, 1, 0, 0, 0, 0)
+            )
+        self.assertEqual(testDateIndex, 24)
 
-    def test_load_profiling_missing(self):
-        lp_missing_ini = os.path.join(self.basedir,
-            'load_profiling_missing.ini')
-        lp_missing_exp = {}
-        lp_missing_exp['Load_Profiling'] = os.path.join(self.basedir,
-            'load_profiling_missing.ref.csv')
-        self.run_it(lp_missing_ini, lp_missing_exp, clean_up=True)
-
-    def test_load_profiling_floats(self):
-        lp_floats_ini = os.path.join(self.basedir,
-            'load_profiling_floats.ini')
-        lp_floats_exp = {}
-        lp_floats_exp['Load_Profiling'] = os.path.join(self.basedir,
-            'load_profiling_floats.ref.csv')
-        self.run_it(lp_floats_ini, lp_floats_exp, clean_up=True)
-
-    def test_load_profiling_floats_missing(self):
-        lp_floats_missing_ini = os.path.join(self.basedir,
-            'load_profiling_floats_missing.ini')
-        lp_floats_missing_exp = {}
-        lp_floats_missing_exp['Load_Profiling'] = os.path.join(self.basedir,
-            'load_profiling_floats_missing.ref.csv')
-        self.run_it(lp_floats_missing_ini, lp_floats_missing_exp, clean_up=True)
+    def test_whole_building_energy_savings_base(self):
+        wbes_base_ini = os.path.join(self.basedir,
+            'whole_building_energy_savings_base.ini')
+        wbes_base_exp = {}
+        wbes_base_exp['DayTimeTemperatureModel'] = os.path.join(self.basedir,
+            'whole_building_energy_savings_base.ref.csv')
+        self.run_it(wbes_base_ini, wbes_base_exp, clean_up=True)

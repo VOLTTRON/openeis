@@ -1,6 +1,6 @@
 """
 Implement a building baseline load prediction model based on temperature and time-of-week (TTOW).
-Calculates the <total/cumulative> savings from the difference between predicted 
+Calculates the cumulative savings from the difference between predicted
 and measured energy use.
 
 See Johanna L. Mathieu, Phillip N. Price, Sila Kiliccote, and Mary Ann Piette,
@@ -9,6 +9,42 @@ Lawrence Berkeley National Laboratory,
 report LBNL-4944E
 (April 2011)
 http://escholarship.org/uc/item/6068k5nh
+
+
+Copyright
+=========
+
+OpenEIS Algorithms Phase 2 Copyright (c) 2014,
+The Regents of the University of California, through Lawrence Berkeley National
+Laboratory (subject to receipt of any required approvals from the U.S.
+Department of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
+referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
+
+NOTICE:  This software was produced by The Regents of the University of
+California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
+For 5 years from November 1, 2012, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and perform
+publicly and display publicly, by or on behalf of the Government. There is
+provision for the possible extension of the term of this license. Subsequent to
+that period or any extension granted, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit others to
+do so. The specific term of the license can be identified by inquiry made to
+Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
+United States Department of Energy, nor any of their employees, makes any
+warranty, express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness, or usefulness of any data, apparatus, product,
+or process disclosed, or represents that its use would not infringe privately
+owned rights.
+
+
+License
+=======
 
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
@@ -54,7 +90,6 @@ All rights reserved.
 NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
-# TODO: Make sure this is working!
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
     OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
@@ -69,7 +104,7 @@ from openeis.applications.utils import conversion_utils as cu
 
 class Application(DriverApplicationBaseClass):
 
-    def __init__(self, *args, building_name=None, 
+    def __init__(self, *args, building_name=None,
                               baseline_startdate=None,
                               baseline_stopdate=None,
                               savings_startdate=None,
@@ -90,10 +125,23 @@ class Application(DriverApplicationBaseClass):
 
         self.building_name = building_name
         self.baseline_start = dt.datetime.strptime(baseline_startdate, '%Y-%m-%d')
-        self.baseline_stop = dt.datetime.strptime(baseline_stopdate, '%Y-%m-%d') 
-        self.savings_start = dt.datetime.strptime(savings_startdate, '%Y-%m-%d') 
+        self.baseline_stop = dt.datetime.strptime(baseline_stopdate, '%Y-%m-%d')
+        self.savings_start = dt.datetime.strptime(savings_startdate, '%Y-%m-%d')
         self.savings_stop = dt.datetime.strptime(savings_stopdate, '%Y-%m-%d')
 
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Whole-Building Energy Savings'
+        desc = 'Whole-building Energy savings is used to quantify\
+                the energy savings associated with an improvement\
+                in building operations or equipment. Energy savings\
+                is calculated as the difference between the metered\
+                energy use after improvements were made, and the baseline\
+                projection of energy use.'
+        return ApplicationDescriptor(app_name=name, description=desc)
+
+
+    
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
@@ -134,7 +182,9 @@ class Application(DriverApplicationBaseClass):
         load_topic = topics['load'][0]
         load_topic_parts = load_topic.split('/')
         output_topic_base = load_topic_parts[:-1]
-        
+
+        # TODO: Should names derived from "day time temperature model" be replaced, to
+        # reflect the new branding of this application as "whole building energy savings"?
         time_values = '/'.join(output_topic_base + ['daytimetemperature', 'datetime'])
         predicted_values = '/'.join(output_topic_base + ['daytimetemperature', 'predicted'])
         measured_values  = '/'.join(output_topic_base + ['daytimetemperature', 'measured'])
@@ -175,13 +225,13 @@ class Application(DriverApplicationBaseClass):
                                    y_label='Energy [kWh]'
                                    )
         report.add_element(cumsum_plot)
-        
+
         text_guide1= reports.TextBlurb(text="A flat slope of the cumulative sum time series indicates that use has\
                                              remained the same. A positive slope indicates energy savings, while a \
                                              negative slope indicates that more energy is being used after the \
                                              supposed \"improvement\" date")
         report.add_element(text_guide1)
-        
+
         report_list = [report]
 
         return report_list
@@ -192,29 +242,38 @@ class Application(DriverApplicationBaseClass):
         Calculates weather sensitivity using Spearman rank.
         Also, outputs data points for energy signature scatter plot.
         """
-        self.out.log("Starting Day Time Temperature Analysis", logging.INFO)
+        self.out.log("Starting application: whole building energy savings.", logging.INFO)
 
         # Gather loads and outside air temperatures. Reduced to an hourly average
-        
+        self.out.log("Querying database.", logging.INFO)
         load_query = self.inp.get_query_sets('load', group_by='hour',
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
                                              wrap_for_merge=True)
-        oat_query = self.inp.get_query_sets('oat', group_by='hour', 
+        oat_query = self.inp.get_query_sets('oat', group_by='hour',
                                              group_by_aggregation=Avg,
                                              exclude={'value':None},
                                              wrap_for_merge=True)
 
-        # Get conversion factor
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
+
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
         temperature_unit = meta_topics['oat'][base_topic['oat'][0]]['unit']
-        
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-        
+        self.out.log(
+            "Convert temperatures from [{}] to [F].".format(temperature_unit),
+            logging.INFO
+            )
+
         # Match the values by timestamp
-        merged_load_oat = self.inp.merge(load_query, oat_query) 
+        merged_load_oat = self.inp.merge(load_query, oat_query)
 
         load_values = []
         oat_values = []
@@ -226,13 +285,13 @@ class Application(DriverApplicationBaseClass):
             elif temperature_unit == 'kelvin':
                 convertedTemp = cu.convertKelvinToCelcius(
                                 cu.convertCelciusToFahrenheit(x['oat'][0]))
-            else: 
+            else:
                 convertedTemp = x['oat'][0]
-                
+
             load_values.append(x['load'][0] * load_convertfactor) #Converted to kWh
             oat_values.append(convertedTemp)
             datetime_values.append(dt.datetime.strptime(x['time'],'%Y-%m-%d %H'))
-            
+
         indexList = {}
         indexList['trainingStart'] = ttow.findDateIndex(datetime_values, self.baseline_start)
         self.out.log('@trainingStart '+str(indexList['trainingStart']), logging.INFO)
@@ -242,11 +301,11 @@ class Application(DriverApplicationBaseClass):
         self.out.log('@predictStart '+str(indexList['predictStart']), logging.INFO)
         indexList['predictStop'] = ttow.findDateIndex(datetime_values, self.savings_stop)
         self.out.log('@predictStop '+str(indexList['predictStop']), logging.INFO)
-        
+
         for indx in indexList.keys():
             if indexList[indx] == None:
                 self.out.log("Date not found in the datelist", logging.WARNING)
-                
+
         # Break up data into training and prediction periods.
         timesTrain = datetime_values[indexList['trainingStart']:indexList['trainingStop']]
         timesPredict = datetime_values[indexList['predictStart']:indexList['predictStop']]
@@ -258,28 +317,28 @@ class Application(DriverApplicationBaseClass):
         oatsPredict = oat_values[indexList['predictStart']:indexList['predictStop']]
 
         # Generate other information needed for model.
-        timeStepMinutes = (timesTrain[1] - timesTrain[0]).total_seconds()/60  
+        timeStepMinutes = (timesTrain[1] - timesTrain[0]).total_seconds()/60
         # TODO: Should this be calculated in the utility function
         binCt = 6  # TODO: Allow caller to pass this in as an argument.
 
         # Form the temperature-time-of-week model.
-        self.out.log("Starting baseline model", logging.INFO)
-        ttowModel = ttow.formModel(timesTrain, 
-                                   oatsTrain, 
+        self.out.log("Finding baseline model", logging.INFO)
+        ttowModel = ttow.formModel(timesTrain,
+                                   oatsTrain,
                                    valsTrain,
-                                   timeStepMinutes, 
+                                   timeStepMinutes,
                                    binCt)
 
         # Apply the model.
         self.out.log("Applying baseline model", logging.INFO)
         valsPredict = ttow.applyModel(ttowModel, timesPredict, oatsPredict)
-        
+
         # Output for scatter plot
         prevSum = 0
         for ctr in range(len(timesPredict)):
-            # Calculate cumulative savings. 
+            # Calculate cumulative savings.
             prevSum += (valsPredict[ctr] - valsActual[ctr])
-            self.out.insert_row("DayTimeTemperatureModel", { 
+            self.out.insert_row("DayTimeTemperatureModel", {
                                 "datetimeValues": timesPredict[ctr],
                                 "measured": valsActual[ctr],
                                 "predicted": valsPredict[ctr],

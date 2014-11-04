@@ -1,6 +1,42 @@
 """
 Load profile: show building loads over time.
 
+
+Copyright
+=========
+
+OpenEIS Algorithms Phase 2 Copyright (c) 2014,
+The Regents of the University of California, through Lawrence Berkeley National
+Laboratory (subject to receipt of any required approvals from the U.S.
+Department of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
+referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
+
+NOTICE:  This software was produced by The Regents of the University of
+California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
+For 5 years from November 1, 2012, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and perform
+publicly and display publicly, by or on behalf of the Government. There is
+provision for the possible extension of the term of this license. Subsequent to
+that period or any extension granted, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit others to
+do so. The specific term of the license can be identified by inquiry made to
+Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
+United States Department of Energy, nor any of their employees, makes any
+warranty, express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness, or usefulness of any data, apparatus, product,
+or process disclosed, or represents that its use would not infringe privately
+owned rights.
+
+
+License
+=======
+
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -50,7 +86,7 @@ and includes the following modification: Paragraph 3. has been added.
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
-from .utils import conversion_utils as cu
+from openeis.applications.utils import conversion_utils as cu
 import datetime as dt
 import logging
 
@@ -73,6 +109,15 @@ class Application(DriverApplicationBaseClass):
 
         self.building_name = building_name
 
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Time Series Load Profiling'
+        desc = 'Time series load profiling is used to understand the relationship\
+                between energy use and time of day. Abnormalities or changes in\
+                load profiles can indicate inefficiencies due to scheduling errors,\
+                unexpected or irregular equipment operation,\
+                high use during unoccupied hours, or untimely peaks.'
+        return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
     def get_config_parameters(cls):
@@ -126,11 +171,11 @@ class Application(DriverApplicationBaseClass):
         display_elements is a list of display objects specifying viz and columns
         for that viz
         """
-        
+
         report = reports.Report('Building Load Profile Report')
 
         text_blurb = reports.TextBlurb(text="A plot showing building energy consumption over a time period.")
-        report.add_element(text_blurb)        
+        report.add_element(text_blurb)
 
         xy_dataset_list = []
         xy_dataset_list.append(reports.XYDataSet('Load_Profiling', 'timestamp', 'load'))
@@ -141,19 +186,19 @@ class Application(DriverApplicationBaseClass):
                                            y_label='Energy [kWh]'
                                            )
         report.add_element(scatter_plot)
-        
+
         text_guide1 = reports.TextBlurb(text="Do loads decrease during lower occupancy periods\
                                               (e.g. weekends or overnight)?")
         report.add_element(text_guide1)
-        
+
         text_guide2 = reports.TextBlurb(text="Does the width of similar load profiles correspond\
                                               to occupancy schedule?")
         report.add_element(text_guide2)
-        
+
         text_guide3 = reports.TextBlurb(text="Minima should occur during unoccupied hours\
                                               and be as close to zero as possible.")
-        report.add_element(text_guide3)        
-        
+        report.add_element(text_guide3)
+
         text_guide4 = reports.TextBlurb(text="Does the weekly profile correspond to occupancy\
                                               and use for each day for a typical week?")
         report.add_element(text_guide4)
@@ -163,33 +208,38 @@ class Application(DriverApplicationBaseClass):
         return report_list
 
     def execute(self):
-        #Called after User hits GO
-        "Outputs values for line graph."
-        self.out.log("Starting analysis", logging.INFO)
+        """Outputs values for line graph."""
+        self.out.log("Starting application: load profile.", logging.INFO)
 
-        # Get the units and the conversion factor. 
-        self.out.log("Find the conversion factor.", logging.INFO)
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
+
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
-        #
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-        
-        load_by_hour = self.inp.get_query_sets('load', 
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
+        self.out.log("Querying database.", logging.INFO)
+        load_by_hour = self.inp.get_query_sets('load',
                                                 exclude={'value': None},
                                                 group_by='hour')[0]
-                                                
-        # Limit the number of datapoints, have 2 weeks worth of data. 
+
+        self.out.log("Reducing the records to two weeks.", logging.INFO)
+        # Note: Limit the number of datapoints, have 2 weeks worth of data.
         # 24 hours x 14 days = 336.
         if len(load_by_hour) > 336:
             start = len(load_by_hour) - 336
             end = len(load_by_hour) - 1
-        else: 
+        else:
             start = 0
             end = len(load_by_hour)
-            
+
+        self.out.log("Compiling the report table.", logging.INFO)
         for x in load_by_hour[start:end]:
             self.out.insert_row("Load_Profiling", {
                 'timestamp': dt.datetime.strptime(x[0],'%Y-%m-%d %H'),
-                'load': x[1]*load_convertfactor 
+                'load': x[1]*load_convertfactor
                 })

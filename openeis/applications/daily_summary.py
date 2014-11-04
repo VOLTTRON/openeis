@@ -11,6 +11,42 @@ Calculates the following metrics:
     - Load Variability
     - Peak Load Benchmark
 
+
+Copyright
+=========
+
+OpenEIS Algorithms Phase 2 Copyright (c) 2014,
+The Regents of the University of California, through Lawrence Berkeley National
+Laboratory (subject to receipt of any required approvals from the U.S.
+Department of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
+referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
+
+NOTICE:  This software was produced by The Regents of the University of
+California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
+For 5 years from November 1, 2012, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and perform
+publicly and display publicly, by or on behalf of the Government. There is
+provision for the possible extension of the term of this license. Subsequent to
+that period or any extension granted, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit others to
+do so. The specific term of the license can be identified by inquiry made to
+Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
+United States Department of Energy, nor any of their employees, makes any
+warranty, express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness, or usefulness of any data, apparatus, product,
+or process disclosed, or represents that its use would not infringe privately
+owned rights.
+
+
+License
+=======
+
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -65,6 +101,7 @@ import numpy
 import math
 from django.db.models import Max, Min, Avg
 from dateutil.relativedelta import relativedelta
+from openeis.applications.utils import conversion_utils as cu
 
 
 class Application(DriverApplicationBaseClass):
@@ -88,7 +125,14 @@ class Application(DriverApplicationBaseClass):
         self.sq_ft = building_sq_ft
         self.building_name = building_name
 
-
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Daily Summary'
+        desc = 'Daily summary is a collection of metrics that summarize the daily energy use.\
+                Metrics included in the application are load variability, load minimum and maximum,\
+                peak load benchmark, daily load ratio, and daily load range.'
+        return ApplicationDescriptor(app_name=name, description=desc)
+        
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
@@ -173,8 +217,6 @@ class Application(DriverApplicationBaseClass):
         # Called after User hits GO
         """
         Calculates the following metrics and outputs.
-            -Load Max Intensity
-            -Load Min Intensity
             -Daily Load 95th Percentile
             -Daily Load 5th Percentile
             -Daily Load Ratio
@@ -183,27 +225,35 @@ class Application(DriverApplicationBaseClass):
             -Peak Load Benchmark
         """
 
-        self.out.log("Starting daily summary", logging.INFO)
+        self.out.log("Starting application: daily summary.", logging.INFO)
 
-        floorAreaSqft = self.sq_ft
-        load_max = self.inp.get_query_sets('load', group_by='all',
+        self.out.log("Querying database.", logging.INFO)
+        peakLoad = self.inp.get_query_sets('load', group_by='all',
                                            group_by_aggregation=Max)[0]
-        load_min = self.inp.get_query_sets('load', group_by='all',
-                                           group_by_aggregation=Min)[0]
         load_query = self.inp.get_query_sets('load', exclude={'value':None})[0]
 
-        # TODO: Time Zone support
         load_startDay = load_query.earliest()[0].date()
         load_endDay = load_query.latest()[0].date()
         current_Day = load_startDay
         load_day_list_95 = []
         load_day_list_5 = []
 
-        # find peak load benchmark
-        peakLoad = load_max
+        self.out.log("Getting unit conversions.", logging.INFO)
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+
+        load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
+        self.out.log("Calculating peak benchmark metric.", logging.INFO)
+        floorAreaSqft = self.sq_ft
         peakLoadIntensity = peakLoad / floorAreaSqft
 
-        # gather values in the 95th and 5th percentile every day
+        self.out.log("Calculating daily top and bottom percentile.", logging.INFO)
         while current_Day <= load_endDay:
             load_day_query = load_query.filter(time__year=current_Day.year,
                                             time__month=current_Day.month,
@@ -225,7 +275,7 @@ class Application(DriverApplicationBaseClass):
         load_day_range_mean = numpy.mean(numpy.subtract(load_day_list_95,
                                                         load_day_list_5))
 
-        # find the load variability
+        self.out.log("Calculating load variability.", logging.INFO)
         # TODO: Generate error if there are not 24 hours worth of data for
         # every day and less than two days of data.
         hourly_variability = []
@@ -248,30 +298,33 @@ class Application(DriverApplicationBaseClass):
 
         load_variability = numpy.mean(hourly_variability)
 
-
+        self.out.log("Compiling the report table.", logging.INFO)
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Load Max Intensity [W/sf]",
-            "value": "{:.2f}".format((load_max * 1000.) / floorAreaSqft),
+            "Metric": "Peak Load Benchmark [W/sf]",
+            "value": "{:.2f}".format(peakLoadIntensity * load_convertfactor * 1000.),
+            "description": "This is the absolute maximum electric load based on all of your data. "  \
+                "The median for commercial buildings under 150,000 sf is 4.4 W/sf. "  \
+                "Values much higher than 4.4 therefore indicate an opportunity to improve building performance."
+            })
+        self.out.insert_row("Daily_Summary_Table", {
+            "Metric": "Daily Load 95th Percentile [kW]",
+            "value": "{:.2f}".format(load_day_95_mean * load_convertfactor),
             "description": "The daily maximum usage could be dominated by a single large load, or "  \
                 "could be the sum of several smaller ones. "  \
                 "Long periods of usage near the maximum increase overall energy use."
             })
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Load Min Intensity [W/sf]",
-            "value": "{:.2f}".format((load_min * 1000.)/ floorAreaSqft),
+            "Metric": "Daily Load 5th Percentile [kW]",
+            "value": "{:.2f}".format(load_day_5_mean * load_convertfactor),
             "description": "Minimum usage is often dominated by loads that run 24 hours a day. "  \
                 "In homes, these include refrigerators and vampire loads. "  \
                 "In commercial buildings, these include ventilation, hallway lighting, computers, and vampire loads."
             })
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Daily Load 95th Percentile [kW]",
-            "value": "{:.2f}".format(load_day_95_mean),
-            "description": "Another way of calculating the peak load, which excludes extreme data points."
-            })
-        self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Daily Load 5th Percentile [kW]",
-            "value": "{:.2f}".format(load_day_5_mean),
-            "description": "Another way of calculating the base load, which excludes extreme data points."
+            "Metric": "Daily Load Range [kW]",
+            "value": "{:.2f}".format(load_day_range_mean * load_convertfactor),
+            "description": "This is a rough estimate of the total load turned on and off every day. "  \
+                "Higher values may indicate good control, but could also indicate excessive peak usage."
             })
         self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Daily Load Ratio",
@@ -280,26 +333,11 @@ class Application(DriverApplicationBaseClass):
                 "To save energy, look to extend and deepen shutoff periods, while also reducing peak energy use."
             })
         self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Daily Load Range [kW]",
-            "value": "{:.2f}".format(load_day_range_mean),
-            "description": "This is a rough estimate of the total load turned on and off every day. "  \
-                "Higher values may indicate good control, but could also indicate excessive peak usage."
-            })
-        self.out.insert_row("Daily_Summary_Table", {
             "Metric": "Load Variability",
             "value": "{:.2f}".format(load_variability),
             "description":"This metric is used to understand regularity of operations, "  \
-                "and the likelihood of consistency in the building’s demand responsiveness. "  \
+                "and the likelihood of consistency in the building's demand responsiveness. "  \
                 "It gives a coefficient of variation that ranges from 0 to 1. "  \
                 "This coefficient can be interpreted based on general guidelines. "  \
                 "For example, variability above 0.15 is generally considered high for commercial buildings."
-            })
-        # TODO: Looks like peakLoadIntensity is exactly the same as the "load max intensity"
-        # reported above (only the text description differs).  Check, and remove if duplicate.
-        self.out.insert_row("Daily_Summary_Table", {
-            "Metric": "Peak Load Benchmark [W/sf]",
-            "value": "{:.2f}".format(peakLoadIntensity * 1000.),
-            "description": "This is the absolute maximum electric load based on all of your data. "  \
-                "The median for commercial buildings under 150,000 sf is 4.4 W/sf. "  \
-                "Values much higher than 4.4 therefore indicate an opportunity to improve building performance."
             })

@@ -1,5 +1,5 @@
 """
-Part of the `Sensor Suitcase` suite of applications.
+Unit test `setback_non_op.py`.
 
 
 Copyright
@@ -82,93 +82,61 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
-from datetime import datetime
-import numpy as np
-from openeis.applications.utils.sensor_suitcase.utils import separate_hours, get_CBECS
 
+from openeis.applications.utest_applications.apptest import AppTestBase
+from openeis.applications.utils.testing_utils import set_up_datetimes, append_data_to_datetime
 
-def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
-    """
-    Checks to see if a location is being cooled or heated during non-operational
-    hours.
+from openeis.applications.utils.sensor_suitcase.setback_non_op import setback_non_op
+import datetime
+import copy
 
-    Parameters:
-        - ZAT: zone air temperature, 2D array of datetime and data
-        - DAT: discharge air temperature, 2D array of datetime and data
-        - HVACstat: HVAC status (optional), 2D array of datetime and data
-            - 0 - off, 1 - ventilation, 3 - compressor
-        - op_hours: operational hours
-            - [[operational hours], [business days], [holidays]]
-        - elec_cost: The electricity cost used to calculate savings.
-    Returns:
-        - flag indicating whether or not this should be flagged
-    """
-    # separate hours of ZAT and DAT
-    ZAT_op, ZAT_non_op = separate_hours(ZAT, op_hours[0], op_hours[1],
-            op_hours[2])
-    DAT_op, DAT_non_op = separate_hours(DAT, op_hours[0], op_hours[1],
-            op_hours[2])
+class TestComfortAndSetback(AppTestBase):
 
-    # if HVAC status exists, separate that too
-    if (HVACstat):
-        HVAC_op, HVAC_non_op = separate_hours(HVACstat, op_hours[0],
-                op_hours[1], op_hours[2])
-    else:
-        HVAC_op = []
-        HVAC_non_op = []
+    def test_setback_success(self):
+        # ten data points
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
 
-    # separate data into cooling, heating, and hvac
-    op_cool_dat, op_heat_dat, op_hvac_dat = _grab_data(DAT_op, ZAT_op, DAT_op, \
-            HVAC_op)
-    non_cool_dat, non_heat_dat, non_hvac_dat = _grab_data(DAT_non_op, \
-            ZAT_non_op, DAT_non_op, HVAC_non_op)
+        # copy data to put in the right format
+        DAT = copy.deepcopy(base)
+        DAT_temp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(DAT, DAT_temp)
 
-    # find the average cooling diffuser set temp
-    avg_DAT_c_occ = np.mean(op_cool_dat)
-    avg_DAT_h_occ = np.mean(op_heat_dat)
+        IAT = copy.deepcopy(base)
+        IAT_temp = [10, 10, 10, 10, 10, 10, 10, 10, 80, 80]
+        append_data_to_datetime(IAT, IAT_temp)
 
-    # count to see if cooling is on
-    c_flag = 0
-    for pt in non_cool_dat:
-        if ((pt < avg_DAT_c_occ) or (abs(pt - avg_DAT_h_occ) < 0.1)):
-            c_flag += 1
-    #
-    h_flag = 0
-    for pt in non_heat_dat:
-        if ((pt > avg_DAT_h_occ) or (abs(pt - avg_DAT_h_occ) < 0.1)):
-            h_flag += 1
-    #
-    non_op_data_len = len(DAT_non_op)
-    c_val = c_flag/non_op_data_len
-    h_val = h_flag/non_op_data_len
-    vent_val = non_hvac_dat/non_op_data_len
-    percent_unocc = non_op_data_len/len(DAT)
+        # the first point is the only operational point
+        op_hours = [[0, 1], [3], []]
 
-    non_cool_zat, non_heat_zat, non_hvac_zat = _grab_data(DAT_non_op, \
-            ZAT_non_op, ZAT_non_op, HVAC_non_op)
-    #
-    ZAT_cool_threshold = 80
-    ZAT_heat_threshold = 55
-    #
-    if non_cool_zat != []:
-        min_ZAT_c_unocc = np.min(non_cool_zat)
-    else:
-        min_ZAT_c_unocc = ZAT_cool_threshold
+        result = setback_non_op(IAT, DAT, op_hours, 10000, 5000)
 
-    if non_heat_zat != []:
-        max_ZAT_h_unocc = np.max(non_heat_zat)
-    else:
-        max_ZAT_h_unocc = ZAT_heat_threshold
-    #
-    if ((c_val + h_val + vent_val) > 0.3):
-        percent_l, percent_h, percent_c, med_num_op_hrs, per_hea_coo, \
-                 percent_HV = get_CBECS(area)
-        c_savings = (ZAT_cool_threshold-min_ZAT_c_unocc) * 0.03 * c_val * \
-                percent_c * elec_cost * percent_unocc
-        h_savings = (max_ZAT_h_unocc-ZAT_heat_threshold) * 0.03 * h_val * \
-                percent_h * elec_cost * percent_unocc
-        ven_savings = 0.06* vent_val * elec_cost * percent_unocc
-        return {
+        self.assertEqual(result, {})
+
+    def test_setback_basic(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 12, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        # just the first data point will count as during operational hours
+        op_hours = [[0, 1], [3], []]
+
+        test_ele_cost = 10000
+        test_area = 5000
+        result = setback_non_op(IAT, DAT, op_hours, test_ele_cost, test_area)
+
+        expected = {
             'Problem': "Nighttime thermostat setbacks are not enabled.",
             'Diagnostic': "More than 30 percent of the data indicates that the " + \
                     "building is being conditioned or ventilated normally " + \
@@ -177,52 +145,72 @@ def setback_non_op(ZAT, DAT, op_hours, elec_cost, area, HVACstat=None):
                     "heating setpoint, or increase the cooling setpoint during " + \
                     "unoccuppied times.  Additionally, you may have a " + \
                     "contractor configure the RTU to reduce ventilation.",
-            'Savings': round((c_savings + h_savings + ven_savings), 2)}
-    else:
-        return {}
+            'Savings': round(((80-60) * 0.03 * 1 * 0.07 * test_ele_cost * (10/11)), 2)}
 
-def _grab_data(DAT, ZAT, copyTemp, HVACstat=None):
-    """
-    Separates data out into when it is cooling, heating, or venting.
+        self.assertEqual(result, expected)
 
-    Parameters
-        DAT - array of diffuser air temperatures
-        ZAT - array of zone air temperatures
-        copyTemp - data needed to separate
-        HVACstat - array of HVAC statuses
+    def test_setback_HVAC_success(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 6, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
 
-    Returns:
-        cool_on - data points in copyTemp that is considered 'cooling'
-        heat_on - datat points in copyTemp that is considered 'heating'
-        vent_on - number of points in which ventilation is on
-    """
+        # copy data to put in the right format
+        DAT = copy.deepcopy(base)
+        DAT_temp = [10, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(DAT, DAT_temp)
 
-    cool_on = []
-    heat_on = []
-    vent_on = 0
-    i = 0
-    while (i < len(DAT)):
-        if ((ZAT[i][1] > 55) and (ZAT[i][1] < 80)):
-            # if DAT is less than 90% of ZAT, it's cooling
-            if (DAT[i][1] < (0.9 * ZAT[i][1])):
-                # If there's HVAC, make sure it's actually cooling
-                if (HVACstat):
-                    if (HVACstat[i][1] == 0):
-                        i += 1
-                        continue
-                cool_on.append(copyTemp[i][1])
-            # if DAT greater than 110% ZAT, then it's heating
-            elif (DAT[i][1] > (1.1 * ZAT[i][1])):
-                # if there's HVAC status, make sure it's actually heating
-                if (HVACstat):
-                    if (HVACstat[i][1] == 0):
-                        i += 1
-                        continue
-                heat_on.append(copyTemp[i][1])
-            elif (HVACstat):
-                if (HVACstat[i][1] == 1):
-                    vent_on += 1
-        i += 1
-    return cool_on, heat_on, vent_on
+        IAT = copy.deepcopy(base)
+        IAT_temp = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        HVAC = copy.deepcopy(base)
+        HVAC_temp = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(HVAC, HVAC_temp)
+
+        # the first point is the only operational point
+        op_hours = [[0, 1], [3], []]
+        result = setback_non_op(IAT, DAT, op_hours, 10000, 5000, HVAC)
+
+        self.assertEqual(result, {})
+
+    def test_setback_HVAC_basic(self):
+        a = datetime.datetime(2014, 1, 1, 0, 0, 0, 0)
+        b = datetime.datetime(2014, 1, 3, 12, 0, 0, 0)
+        #delta = 6 hours
+        base = set_up_datetimes(a, b, 21600)
+
+        DAT = copy.deepcopy(base)
+        DAT_temp = [10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        append_data_to_datetime(DAT, DAT_temp)
+
+        IAT = copy.deepcopy(base)
+        IAT_temp = [60, 60, 60, 60, 60, 60, 60, 60, 60, 60, 60]
+        append_data_to_datetime(IAT, IAT_temp)
+
+        HVAC = copy.deepcopy(base)
+        HVAC_temp = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+        append_data_to_datetime(HVAC, HVAC_temp)
+
+        # just the first data point will count as during operational hours
+        op_hours = [[0, 1], [3], []]
+
+        test_ele_cost = 10000
+        test_area = 5000
+        result = setback_non_op(IAT, DAT, op_hours, test_ele_cost, test_area)
+
+        expected = {
+            'Problem': "Nighttime thermostat setbacks are not enabled.",
+            'Diagnostic': "More than 30 percent of the data indicates that the " + \
+                    "building is being conditioned or ventilated normally " + \
+                    "during unoccupied hours.",
+            'Recommendation': "Program your thermostats to decrease the " + \
+                    "heating setpoint, or increase the cooling setpoint during " + \
+                    "unoccuppied times.  Additionally, you may have a " + \
+                    "contractor configure the RTU to reduce ventilation.",
+            'Savings': round(((80-60) * 0.03 * 1 * 0.07 * test_ele_cost * (10/11)), 2)}
+
+        self.assertEqual(result, expected)
+
 
 

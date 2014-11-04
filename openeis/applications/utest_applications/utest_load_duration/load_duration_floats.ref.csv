@@ -1,6 +1,6 @@
-sorted load
-1
-1.1
-2
-4
-5
+sorted load,percent time
+1,0.8
+1.1,0.6
+2,0.4
+4,0.2
+5,0.0
