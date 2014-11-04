@@ -91,7 +91,7 @@ from openeis.applications import reports
 from .utils import conversion_utils as cu
 import datetime as dt
 import logging
-
+import pytz
 
 class Application(DriverApplicationBaseClass):
 
@@ -111,7 +111,15 @@ class Application(DriverApplicationBaseClass):
 
         self.building_name = building_name
 
-
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Heat Map'
+        desc = 'Heat maps are a means of visualizing and presenting the\
+                information that is contained in a time series load profile.\
+                The maps color-code the size of the load so that “hot spots”\
+                and patterns are easily identified.'
+        return ApplicationDescriptor(app_name=name, description=desc)
+        
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
@@ -191,7 +199,9 @@ class Application(DriverApplicationBaseClass):
         return report_list
 
     def execute(self):
-        """Output values for Heat Map."""
+        """
+        Output values for Heat Map.
+        """
         self.out.log("Starting application: heat map.", logging.INFO)
 
         self.out.log("Querying database.", logging.INFO)
@@ -208,9 +218,6 @@ class Application(DriverApplicationBaseClass):
             )
         load_convertfactor = cu.getFactor_powertoKW(load_unit)
 
-        load_tz = meta_topics['load'][base_topic['load'][0]]['timezone']
-        print (load_tz)
-
         self.out.log("Limiting the analysis to a month.", logging.INFO)
         # Limit the number of datapoints, have 4 weeks worth of data.
         # 24 hours x 14 days = 336.
@@ -223,9 +230,8 @@ class Application(DriverApplicationBaseClass):
 
         self.out.log("Compiling the report table.", logging.INFO)
         for x in loads[0][start:end]:
-            datevalue = x[0]
-            if not isinstance(datevalue, dt.datetime):
-                datevalue = dt.datetime.strptime(datevalue, '%Y-%m-%d %H')
+            datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
+            datevalue = self.inp.localize_sensor_time('load', base_topic['load'][0], datevalue)
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),
                 'hour': datevalue.hour,
