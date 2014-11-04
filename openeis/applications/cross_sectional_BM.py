@@ -126,7 +126,6 @@ class Application(DriverApplicationBaseClass):
         self.sq_ft = building_sq_ft
         self.building_year = building_year_constructed
         self.building_name = building_name
-        #TODO: Provide list of Portfolio Manager valid building types.
         self.building_function = building_function
         self.building_zipcode = building_zipcode
 

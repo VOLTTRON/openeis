@@ -101,10 +101,10 @@ class TestExcessiveNighttimeLighting(AppTestBase):
         light_stat = np.ones(len(base), bool)
 
         append_data_to_datetime(base, light_stat)
-        
+
         result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
         self.assertTrue('Problem' in result.keys())
-        
+
     def test_excessive_night_light_zeros(self):
         """Test: Lights are on the whole time period."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
@@ -114,10 +114,10 @@ class TestExcessiveNighttimeLighting(AppTestBase):
         light_stat = np.zeros(len(base), bool)
 
         append_data_to_datetime(base, light_stat)
-        
+
         result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
-        self.assertTrue(result == {})        
-        
+        self.assertTrue(result == {})
+
     def test_excessive_night_expect_fail(self):
         """Test: Lights are on for 5 hours every day during unoccupied hours."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
@@ -131,7 +131,7 @@ class TestExcessiveNighttimeLighting(AppTestBase):
 
         result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
         self.assertTrue('Problem' in result.keys())
-        
+
     def test_excessive_night_expect_success(self):
         """Test: Lights are on for 2 hours every day during unoccupied hours."""
         a = dt.datetime(2014, 1, 1, 0, 0, 0, 0)
@@ -144,4 +144,4 @@ class TestExcessiveNighttimeLighting(AppTestBase):
         append_data_to_datetime(base, light_stat)
 
         result = excessive_nighttime(base, [[7,17],[1,2,3,4,5],[]], 100, 100)
-        self.assertTrue(result == {})        
+        self.assertTrue(result == {})

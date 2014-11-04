@@ -193,7 +193,7 @@ class Application(DriverApplicationBaseClass):
         text_blurb = reports.TextBlurb("Analysis of the relationship of power intensity to outdoor temperature.")
         report.add_element(text_blurb)
 
-        column_info = (('value', 'Sensitivity'),)  # TODO: Does that stray comma need to be there?
+        column_info = (('value', 'Sensitivity'),) 
         summary_table = reports.Table(
             WEATHER_SENSITIVITY_TABLE_NAME,
             column_info,

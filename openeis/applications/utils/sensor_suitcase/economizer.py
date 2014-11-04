@@ -97,7 +97,7 @@ def economizer(DAT, OAT, HVACstat, elec_cost, area):
         - DAT: discharge air temperature
         - OAT: outdoor air temperature
         - HVACstat: HVAC status
-            - HVAC: 0 - off 1 - fan 3 - compressor
+            - HVAC: 0 - off 1 - fan 2 - compressor
         * Assume that each is a 2-D array with datetime and data
         * DAT, OAT, HVACstat should have the same number of points
         * Datetimes must match up
