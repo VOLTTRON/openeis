@@ -58,7 +58,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
-    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
+    OutputDescriptor, ConfigDescriptor, Descriptor
 from openeis.applications import reports
 import logging
 import numpy
@@ -98,11 +98,11 @@ class Application(DriverApplicationBaseClass):
             }
     
     @classmethod
-    def get_app_descriptor(cls):
+    def get_self_descriptor(cls):
         # Called by UI
         name = 'daily_summary'
         desc = 'This application calculates daily load summary metrics and displays it in a tabular format'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):

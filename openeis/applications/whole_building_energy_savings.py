@@ -57,7 +57,7 @@ and includes the following modification: Paragraph 3. has been added.
 # TODO: Make sure this is working!
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
-    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
+    OutputDescriptor, ConfigDescriptor, Descriptor
 from openeis.applications import reports
 import logging
 import datetime as dt
@@ -107,10 +107,10 @@ class Application(DriverApplicationBaseClass):
             }
 
     @classmethod
-    def get_app_descriptor(cls):
+    def get_self_descriptor(cls):
         name = 'whole_building_energy_savings'
         desc = 'whole_building_energy_savings'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
     
     @classmethod
     def required_input(cls):

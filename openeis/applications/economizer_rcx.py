@@ -56,7 +56,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   ConfigDescriptor,
                                   InputDescriptor,
                                   Results,
-                                  ApplicationDescriptor,
+                                  Descriptor,
                                   reports)
 
 econ1 = 'Temperature Sensor Dx'
@@ -359,10 +359,10 @@ class Application(DrivenApplicationBaseClass):
             }
 
     @classmethod
-    def get_app_descriptor(cls):
+    def get_self_descriptor(cls):
         name = 'economizer_rcx'
         desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):

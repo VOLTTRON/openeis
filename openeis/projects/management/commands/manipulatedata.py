@@ -72,7 +72,6 @@ import traceback
 
 from pprint import pprint
 from openeis.filters import apply_filters
-import openeis.filters.common
 import json
 import sys
 

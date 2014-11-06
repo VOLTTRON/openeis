@@ -266,9 +266,9 @@ class TestRestApi(OpenEISTestBase):
         response = client.get('/api/applications')
 
         for app in response.data:
-            appDesc = _applicationDict[app['id']].get_app_descriptor()
+            appDesc = _applicationDict[app['id']].get_self_descriptor()
             if appDesc:
-                self.assertEqual(app['name'], appDesc.app_name,
+                self.assertEqual(app['name'], appDesc.name,
                                  'Name mismtach for application "{}"'.format(app['id']))
                 self.assertEqual(app['description'], appDesc.description,
                                  'Description mismtach for application "{}"'.format(app['id']))

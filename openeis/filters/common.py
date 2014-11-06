@@ -53,19 +53,37 @@
 #
 #}}}
 
-import openeis.filters as f
+from openeis.filters import SimpleRuleFilter, BaseFilter, register_column_modifier
+from openeis.core.descriptors import ConfigDescriptor, Descriptor
 from datetime import timedelta
 import abc
 
-@f.register_column_modifier
-class RoundOff(f.SimpleRuleIterable):
+@register_column_modifier
+class RoundOff(SimpleRuleFilter):
     def __init__(self, places=0, **kwargs):
         super().__init__(**kwargs)
         self.places = places
     def rule(self, time, value):
         return time, round(value, self.places)
+    @classmethod
+    def get_config_parameters(cls):
+        description  = 'Number of places to round to. \n'
+        description += 'i.e. 2 will round to 1.12345 to 1.12. \n'
+        description += 'i.e. 0 will round to 123.12345 to 123. \n'
+        description += 'i.e. -2 will round to 1234.12345 to 1200.'
+        return {
+                'places': ConfigDescriptor(int, "Rounding Places",
+                                           description=description,
+                                           value_default=0)
+                }
+        
+    @classmethod
+    def get_self_descriptor(cls):
+        name = 'Rounding Filter'
+        desc = 'Round the value of a column to a specified number of places.'
+        return Descriptor(name=name, description=desc)
 
-class BaseSimpleNormalize(f.BaseIterable, metaclass=abc.ABCMeta):
+class BaseSimpleNormalize(BaseFilter, metaclass=abc.ABCMeta):
     def __init__(self, period_seconds=60, drop_extra = True, **kwargs):
         super().__init__(**kwargs)
         self.period = timedelta(seconds=period_seconds)
@@ -117,8 +135,19 @@ class BaseSimpleNormalize(f.BaseIterable, metaclass=abc.ABCMeta):
         
         from_midnight =  timedelta(seconds=next_in_seconds)
         return midnight + from_midnight
+    
+    @classmethod
+    def get_config_parameters(cls):
+        return {
+                'period_seconds': ConfigDescriptor(int, "Period in second",
+                                                   description='Period to of time to normalize to in seconds.',
+                                                   value_default=60),
+                'drop_extra': ConfigDescriptor(bool, "Drop Extra",
+                                               description='Drop values that do no line up exactly with the specified period.',
+                                               value_default=True)
+                }
 
-@f.register_column_modifier    
+@register_column_modifier    
 class LinearInterpolation(BaseSimpleNormalize):
     def calculate_value(self, target_dt):
         x0 = self.previous_point[0]
@@ -128,9 +157,21 @@ class LinearInterpolation(BaseSimpleNormalize):
         y0 = self.previous_point[1]
         y1 = self.next_point[1]
         return target_dt, y0 + ((y1-y0)*((target_dt-x0)/(x1-x0)))
+        
+    @classmethod
+    def get_self_descriptor(cls):
+        name = 'Linear Interpolation'
+        desc = 'Normalize values to a specified time period using Linear Interpolation to supply missing values.'
+        return Descriptor(name=name, description=desc)
     
-@f.register_column_modifier     
+@register_column_modifier     
 class Fill(BaseSimpleNormalize):
     def calculate_value(self, target_dt):
         return target_dt, self.previous_point[1]
+    
+    @classmethod
+    def get_self_descriptor(cls):
+        name = 'Fill'
+        desc = 'Normalize values to a specified time period using the most recent previous value to supply any missing values.'
+        return Descriptor(name=name, description=desc)
             

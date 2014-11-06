@@ -58,7 +58,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   ConfigDescriptor,
                                   InputDescriptor,
                                   Results,
-                                  ApplicationDescriptor,
+                                  Descriptor,
                                   reports)
 
 Hot_water_RCx = 'Hot Water Central Plant Diagnostics'
@@ -262,11 +262,11 @@ class Application(DrivenApplicationBaseClass):
             }
 
     @classmethod
-    def get_app_descriptor(cls):
+    def get_self_descriptor(cls):
         name = 'hw_distribution_system_rcx'
         desc = ('Automated Retro-commissioning for '
                 'hot-water distribution system')
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     def data_check(self, point_dict, _name, opt_name='zyxwvutsrq'):
         data_check = False

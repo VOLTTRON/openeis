@@ -58,7 +58,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor,
                                   ConfigDescriptor,
                                   Results,
-                                  ApplicationDescriptor)
+                                  Descriptor)
 
 import logging
 
@@ -107,10 +107,10 @@ class Application(DrivenApplicationBaseClass):
 
                 }
     @classmethod
-    def get_app_descriptor(cls):
+    def get_self_descriptor(cls):
         name = 'test_driven'
         desc = 'test_driven'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):

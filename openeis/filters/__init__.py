@@ -53,13 +53,51 @@
 #
 #}}}
 
+
+
 import abc
 
+import pkgutil, importlib
+
+from openeis.core.descriptors import (ConfigDescriptorBaseClass,
+                                      SelfDescriptorBaseClass)
+
+class BaseFilter(SelfDescriptorBaseClass,
+                 ConfigDescriptorBaseClass,
+                 metaclass=abc.ABCMeta):
+    def __init__(self, parent=None):
+        self.parent = parent
+        
+    @abc.abstractmethod
+    def __iter__(self):
+        pass
+    
+class SimpleRuleFilter(BaseFilter, metaclass=abc.ABCMeta):
+    @abc.abstractmethod
+    def rule(self, time, value):
+        """Must return time, value pair."""
+    
+    def __iter__(self):
+        def generator():
+            for dt, value in self.parent:
+                yield self.rule(dt, value)
+        return generator()
+    
 column_modifiers = {}
 
 def register_column_modifier(klass):
     column_modifiers[klass.__name__] = klass
     return klass
+ 
+_extList = [name for _, name, _ in pkgutil.iter_modules(__path__)]
+
+extDict = {}
+ 
+for extName in _extList:
+    print('Importing module: ', extName)
+    #extDict[extName] = importlib.import_module(extName, 'openeis.filters')
+    extDict[extName] = __import__(extName,globals(),locals(),[], 1)    
+
 
 def apply_filters(generators, configs):
     errors = []
@@ -97,24 +135,7 @@ def apply_filters(generators, configs):
 
 
         
-class BaseIterable(metaclass=abc.ABCMeta):
-    def __init__(self, parent=None):
-        self.parent = parent
-        
-    @abc.abstractmethod
-    def __iter__(self):
-        pass
-    
-class SimpleRuleIterable(BaseIterable, metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def rule(self, time, value):
-        """Must return time, value pair."""
-    
-    def __iter__(self):
-        def generator():
-            for dt, value in self.parent:
-                yield self.rule(dt, value)
-        return generator()
+
     
 # class BaseMissingValueRule:
 #     def __init__(self, aggrigator):
@@ -155,15 +176,4 @@ class SimpleRuleIterable(BaseIterable, metaclass=abc.ABCMeta):
 # def register_aggrigator(klass):
 #     aggrigators[klass.__name__] = klass
 #     return klass
-
-# import pkgutil, importlib
-# 
-# _extList = [name for _, name, _ in pkgutil.iter_modules(__path__)]
-# 
-# extDict = {}
-# 
-# for extName in _extList:
-#     extDict[extName] = importlib.import_module(extName, 'openeis.filters')
-#     
-# print("common filter modules: ", extDict)
     

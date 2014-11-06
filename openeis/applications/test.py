@@ -63,7 +63,7 @@ Includes a weather sensitivity metric.
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor, \
-    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
+    OutputDescriptor, ConfigDescriptor, Descriptor
 from openeis.applications import reports
 import logging
 from django.db.models import Avg
@@ -105,10 +105,10 @@ class Application(DriverApplicationBaseClass):
             "a_value_from_a_list": ConfigDescriptor(str, "Fruit", optional=True, value_list=values)
             }
     @classmethod
-    def get_app_descriptor(cls):
+    def get_self_descriptor(cls):
         name = 'test'
         desc = 'test'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):

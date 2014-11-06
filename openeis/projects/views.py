@@ -875,9 +875,9 @@ class ApplicationViewSet(viewsets.ViewSet):
         for app_id, app in apps.items():
             app_list.append(serializers.ApplicationSerializer(app).data)
             app_list[-1]['id'] = app_id
-            if app.get_app_descriptor():
-                app_list[-1]['name'] = app.get_app_descriptor().app_name
-                app_list[-1]['description'] = app.get_app_descriptor().description
+            if app.get_self_descriptor():
+                app_list[-1]['name'] = app.get_self_descriptor().name
+                app_list[-1]['description'] = app.get_self_descriptor().description
         return Response(app_list)
 
 

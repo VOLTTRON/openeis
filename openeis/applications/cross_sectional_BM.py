@@ -50,7 +50,7 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
-    OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
+    OutputDescriptor, ConfigDescriptor, Descriptor
 from openeis.applications import reports
 import logging
 from django.db.models import Sum
@@ -128,10 +128,10 @@ class Application(DriverApplicationBaseClass):
             }
 
     @classmethod
-    def get_app_descriptor(cls):
+    def get_self_descriptor(cls):
         name = 'cross_sectional_BM'
         desc = 'cross_sectional_BM'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
     
     @classmethod
     def required_input(cls):

@@ -64,56 +64,18 @@ _applicationList = [name for _, name, _ in pkgutil.iter_modules(__path__)]
 
 _applicationDict = {}
 
-class InputDescriptor:
 
-    def __init__(self,
-                 sensor_type,
-                 display_name,
-                 count_min=1,
-                 count_max=1,
-                 _id=None):
-        # TODO: Throw exception on invalid values
-        self.sensor_type = sensor_type
-        self.display_name = display_name
-        self.count_min = count_min
-        self.count_max = count_max
+#make these available here so we don't have to fix all application just yet.
+from openeis.core.descriptors import (OutputDescriptor,
+                                      ConfigDescriptor,
+                                      InputDescriptor,
+                                      Descriptor,
+                                      ConfigDescriptorBaseClass,
+                                      SelfDescriptorBaseClass)
 
-class OutputDescriptor:
-
-    def __init__(self,
-                 output_type,
-                 topic):
-        #TODO: check and throw exception if self.sensor_data is none
-        #self.output_type = sensordata.get(sensor_type)
-        self.output_type = output_type
-        self.topic = topic
-
-class ConfigDescriptor:
-    def __init__(self,
-                 config_type,
-                 display_name,
-                 optional=False,
-                 value_default=None,
-                 value_min=None,
-                 value_max=None,
-                 value_list=None):
-        # TODO: Throw exception on invalid values
-        self.config_type = config_type
-        self.display_name = display_name
-        self.optional = optional
-        self.value_default = value_default
-        self.value_min = value_min
-        self.value_max = value_max
-        self.value_list = value_list
-
-class ApplicationDescriptor:
-    def __init__(self,
-                 app_name,
-                 description=''):
-        self.app_name = app_name
-        self.description = description
-
-class DriverApplicationBaseClass(metaclass=ABCMeta):
+class DriverApplicationBaseClass(ConfigDescriptorBaseClass, 
+                                 SelfDescriptorBaseClass,
+                                 metaclass=ABCMeta):
 
     def __init__(self,inp=None,out=None,**kwargs):
         """
@@ -186,38 +148,6 @@ class DriverApplicationBaseClass(metaclass=ABCMeta):
         """
         return {}
 
-    @classmethod
-    @abstractmethod
-    def get_config_parameters(cls):
-        """default config schema description used by the UI to get user input
-            which will be passed into the application
-            Default values are used to prepopulate the UI, not to pass into the app by default
-
-            See ConfigDescriptor for all arguments.
-            {
-                'Key1':ConfigDescriptor(Type1,Description1),
-                'Key2':ConfigDescriptor(Type2,Description2)
-            }
-
-            e.g.:
-            {
-                "building_sq_ft": ConfigDescriptor(float, "Square footage"),
-                "building_year_constructed": ConfigDescriptor(int, "Consruction Year"),
-                "building_name": ConfigDescriptor(str, "Building Name", optional=True)
-            }
-        """
-    
-    @classmethod
-    @abstractmethod
-    def get_app_descriptor(cls):
-        """
-            Returns ApplicationDescriptor instance with application name and description.
-            e.g.:
-            name = 'This is application name'
-            desc = 'This is what applications does'
-            return ApplicationDescriptor(app_name=name, description=desc)
-        """
-        
     @abstractmethod
     def execute(self):
         """

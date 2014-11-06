@@ -57,8 +57,11 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   ConfigDescriptor,
                                   InputDescriptor,
                                   Results,
-                                  ApplicationDescriptor,
+                                  Descriptor,
                                   reports)
+
+
+
 
 duct_stc_dx = 'Duct Static Pressure Diagnostics'
 duct_static1 = 'Low Duct Static Pressure Dx'
@@ -445,10 +448,10 @@ class Application(DrivenApplicationBaseClass):
                 }
 
     @classmethod
-    def get_app_descriptor(cls):
+    def get_self_descriptor(cls):
         name = 'airside_retuning_rcx'
         desc = 'Automated Retro-commisioning for AHUs'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):
