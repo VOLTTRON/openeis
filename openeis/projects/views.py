@@ -94,6 +94,7 @@ from .storage.db_input import DatabaseInput
 from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
+from openeis.filters import apply_filters
 
 _logger = logging.getLogger(__name__)
 
@@ -670,6 +671,8 @@ class DataSetViewSet(viewsets.ModelViewSet):
         return queryset.filter(map__project=project)
 
     def get_serializer_class(self):
+        if self.action=='manipulate':
+            return serializers.DataSetManipulateSerializer
         if self.request.method == 'POST':
             return serializers.SensorIngestCreateSerializer
         return serializers.SensorIngestSerializer
@@ -737,6 +740,75 @@ class DataSetViewSet(viewsets.ModelViewSet):
                         result['extra_rows'].append(row)
                         d[col_index] = True
         return Response(result)
+    
+    @action(methods=['POST'],
+            serializer_class=serializers.DataSetManipulateSerializer,
+            permission_classes=permission_classes)
+    def manipulate(self, request, *args, **kargs):
+        
+        def _iter_data(sensordata):
+            for data in sensordata:
+                yield data.time, data.value
+        
+        #request_data = "{\"config\": [[\"pnnl/isb2/OutdoorAirTemperature\", \"LinearInterpolation\", \
+        #{\"period_seconds\": 300, \"drop_extra\": false}],[\"pnnl/isb2/OutdoorAirTemperature\", \"RoundOff\", {\"places\": 2}]]}";
+        #config_string = json.loads(request_data)
+        #print(config_string['config'])*/
+        serializer = serializers.DataSetManipulateSerializer(data=request.DATA)
+        if serializer.is_valid():
+            obj = serializer.object
+            dataset_id = self.get_object().id
+            config = config_string['config']
+            sensoringest = models.SensorIngest.objects.get(pk=dataset_id)
+            datamap = sensoringest.map
+            sensors = list(datamap.sensors.all())
+            sensor_names = [s.name for s in sensors]
+            sensordata = [sensor.data.filter(ingest=sensoringest) for sensor in sensors]
+            generators = {} 
+            for name, qs in zip(sensor_names, sensordata):
+                #TODO: Add data type from schema
+                value = {"gen":_iter_data(qs),
+                         "type":None}
+                generators[name] = value
+                
+            generators, errors = apply_filters(generators, config)
+            
+            if errors:
+                print('Errors:')
+                return Response(errors, status.HTTP_400_BAD_REQUEST)
+            
+            datamap.id = None 
+            datamap.name = datamap.name+' version - '+str(datetime.now())
+            datamap.save()
+            
+            sensoringest.name = str(sensoringest.id) + ' - '+str(datetime.now())
+            sensoringest.id = None
+            sensoringest.map = datamap
+            sensoringest.save()
+            
+            for sensor in sensors:
+                sensor.id= None
+                sensor.map = datamap
+                sensor.save()
+                data_class = sensor.data_class
+                generator = generators[sensor.name]['gen']
+                sensor_data_list = []
+                for time,value in generator:
+                    sensor_data = data_class(sensor=sensor, ingest=sensoringest,
+                                             time=time, value=value)
+                    sensor_data_list.append(sensor_data)
+                    if len(sensor_data_list) >= 1000:
+                        data_class.objects.bulk_create(sensor_data_list)
+                        sensor_data_list = []
+                if sensor_data_list:
+                    data_class.objects.bulk_create(sensor_data_list)
+                    
+            
+            return Response(datamap.id)
+        
+        else:
+            return Response("Not a valid config", status.HTTP_400_BAD_REQUEST)
+            
 
 
 def preview_ingestion(datamap, input_files, count=15):
