@@ -910,10 +910,10 @@ def _perform_analysis(analysis):
             try:
                 app = klass(db_input, db_output, **kwargs)
                 app.run_application()
-            except Exception:
-                db_output.appenFileToZip("stackTrace.txt", traceback.format_exc())
                 analysis.reports = [serializers.ReportSerializer(report).data
                                     for report in klass.reports(output_format)]
+            except Exception:
+                db_output.appenFileToZip("stackTrace.txt", traceback.format_exc())
         finally:
             analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
             analysis.save()
