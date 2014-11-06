@@ -81,7 +81,7 @@ class Application(DrivenApplicationBaseClass):
     cool_call_name = 'cool_call'
     fan_speedcmd_name = 'fan_speedcmd'
 
-    def __init__(self, *args, economizer_type='DDB', econ_hl_temp=60.0,
+    def __init__(self, *args, economizer_type='DDB', econ_hl_temp=65.0,
                  device_type='AHU', temp_deadband=1.0,
                  data_window=15, no_required_data=10,
                  open_damper_time=5,
@@ -476,7 +476,7 @@ class Application(DrivenApplicationBaseClass):
                     fan_stat_check = True
         if (not fan_stat_check and
            self.fan_speedcmd_name is not None):
-            for key, value in device_dict.iteritems():
+            for key, value in device_dict.items():
                 if key.startswith(self.fan_speedcmd_name):
                     fan_stat_check = True
                     if value < self.low_supply_fan_threshold:
