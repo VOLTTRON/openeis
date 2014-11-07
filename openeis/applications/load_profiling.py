@@ -87,7 +87,6 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor, ApplicationDescriptor
 from openeis.applications import reports
 from openeis.applications.utils import conversion_utils as cu
-import datetime as dt
 import logging
 
 
@@ -240,6 +239,6 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Compiling the report table.", logging.INFO)
         for x in load_by_hour[start:end]:
             self.out.insert_row("Load_Profiling", {
-                'timestamp': dt.datetime.strptime(x[0],'%Y-%m-%d %H'),
+                'timestamp': x[0],
                 'load': x[1]*load_convertfactor
                 })
