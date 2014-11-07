@@ -184,7 +184,7 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_time = int(warm_up_time)
         self.warm_up_start = None
         auto_correctflag = True
-        Application.data_sample.rate = float(data_sample_rate)
+        Application.data_sample_rate = float(data_sample_rate)
 
         self.static_dx = duct_static_rcx(max_duct_stp_stpt, duct_stc_retuning,
                                          data_window, no_required_data,
@@ -345,7 +345,7 @@ class Application(DrivenApplicationBaseClass):
             ConfigDescriptor(float,
                              'High zone damper threshold for '
                              'high supply-air temperature '
-                             'auto-correct RCx (default=80%)',
+                             'auto-correct RCx (default=30%)',
                              optional=True),
 
             'percent_damper_threshold':
@@ -534,6 +534,7 @@ class Application(DrivenApplicationBaseClass):
         '''
         Check application pre-quisites and assemble analysis data set.
         '''
+        current_time = current_time.replace(tzinfo=datetime.timezone.utc).astimezone(tz=None)
         device_dict = {}
         diagnostic_result = Results()
 
@@ -592,9 +593,11 @@ class Application(DrivenApplicationBaseClass):
         for key, value in device_dict.items():
             if (self.fan_speedcmd_name is not None and
                self.fan_speedcmd_name in key):
-                if value > self.high_supply_fan_threshold:
+                if (value is not None and
+                   value > self.high_supply_fan_threshold):
                     low_dx_condition = True
-                elif value < self.low_supply_fan_threshold:
+                elif (value is not None and
+                      value < self.low_supply_fan_threshold):
                     high_dx_condition = True
             if self.fan_speedcmd_priority in key:
                 if value == self.override_state:
@@ -1265,6 +1268,7 @@ class schedule_reset_rcx(object):
         self.duct_stp_stpt_values = []
         self.sat_stpt_values = []
         self.timestamp = []
+        self.dx_time = None
         self.monday_sch = re.sub('[:;]', ',', monday_sch)
         self.monday_sch = [int(item) for item in (x.strip()
                                                   for x in
@@ -1350,6 +1354,7 @@ class schedule_reset_rcx(object):
 
         run = False
         if self.timestamp and self.timestamp[-1].date() != current_time.date():
+            self.dx_time = self.timestamp[-1].date()
             run = True
 
         self.timestamp.append(current_time)
@@ -1358,10 +1363,13 @@ class schedule_reset_rcx(object):
             diagnostic_result = self.unocc_fan_operation(diagnostic_result)
             diagnostic_result = self.no_static_pr_reset(diagnostic_result)
             diagnostic_result = self.no_sat_sp_reset(diagnostic_result)
+            self.dx_time = None
             self.sat_stpt_values = []
             self.duct_stp_stpt_values = []
             self.duct_stp_values = []
             self.fan_status_values = []
+            Application.pre_requiste_messages = []
+            Application.pre_msg_time = []
             if duct_stp_stpt_values is not None:
                 self.sat_stpt_values.append(sat_stpt_values)
                 self.duct_stp_stpt_values.append(duct_stp_stpt_values)
@@ -1409,7 +1417,7 @@ class schedule_reset_rcx(object):
                 color_code = 'GREY'
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': self.dx_time,
             'diagnostic_name': sched_dx,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -1417,10 +1425,6 @@ class schedule_reset_rcx(object):
         }
         result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
-        self.duct_stp_values = []
-        self.fan_status_values = []
-        Application.pre_requiste_messages = []
-        Application.pre_msg_time = []
         return result
 
     def no_static_pr_reset(self, result):
@@ -1428,6 +1432,8 @@ class schedule_reset_rcx(object):
         Auto-RCx  to detect whether a static pressure set point
         reset is implemented
         '''
+        if not self.duct_stp_stpt_values:
+            return result
         stp_diff = (max(self.duct_stp_stpt_values) -
                     min(self.duct_stp_stpt_values))
 
@@ -1447,7 +1453,7 @@ class schedule_reset_rcx(object):
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': str(self.dx_time),
             'diagnostic_name': duct_static3,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -1456,7 +1462,6 @@ class schedule_reset_rcx(object):
 
         result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
-        self.duct_stp_stpt_values = []
         return result
 
     def no_sat_sp_reset(self, result):
@@ -1464,6 +1469,8 @@ class schedule_reset_rcx(object):
         If the detected problems(s) are consistent
         then generate a fault message(s).
         '''
+        if not self.sat_stpt_values:
+            return result
         satemp_diff = max(self.sat_stpt_values) - min(self.sat_stpt_values)
         energy_impact = None
 
@@ -1480,7 +1487,7 @@ class schedule_reset_rcx(object):
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': str(self.dx_time),
             'diagnostic_name': sa_temp_dx2,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
