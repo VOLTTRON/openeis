@@ -118,7 +118,7 @@ class Command(BaseCommand):
                 topic_map[group] = topics.split()
 
             now = datetime.utcnow().replace(tzinfo=utc)
-            analysis = models.Analysis(added=now, started=now, status="running",
+            analysis = models.Analysis(added=now, started=now, 
                                        dataset=dataset, application=application,
                                        debug=debug,
                                        project_id = dataset.project_id,
@@ -157,8 +157,6 @@ class Command(BaseCommand):
 
 
         finally:
-            if analysis.status != "error":
-                analysis.status = "complete"
-                analysis.progress_percent = 100
+            analysis.progress_percent = 100
             analysis.ended = datetime.utcnow().replace(tzinfo=utc)
             analysis.save()

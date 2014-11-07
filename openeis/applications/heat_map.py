@@ -115,7 +115,7 @@ class Application(DriverApplicationBaseClass):
         name = 'Heat Map'
         desc = 'Heat maps are a means of visualizing and presenting the\
                 information that is contained in a time series load profile.\
-                The maps color-code the size of the load so that “hot spots”\
+                The maps color-code the size of the load so that hot spots\
                 and patterns are easily identified.'
         return ApplicationDescriptor(app_name=name, description=desc)
         
@@ -235,8 +235,8 @@ class Application(DriverApplicationBaseClass):
 
         self.out.log("Compiling the report table.", logging.INFO)
         for x in loads[0][start:end]:
-            datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
-            datevalue = self.inp.localize_sensor_time('load', base_topic['load'][0], datevalue)
+            datevalue = x[0]
+            datevalue = self.inp.localize_sensor_time(base_topic['load'][0], datevalue)
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),
                 'hour': datevalue.hour,
