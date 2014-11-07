@@ -90,7 +90,7 @@ class Application(DrivenApplicationBaseClass):
                  max_dp_threshold=25.0,
                  data_window=180, dp_reset_threshold=10.0,
                  no_required_data=50,
-                 dp_reset_threshold=5.0, setpoint_allowable_deviation=10.0,
+                 setpoint_allowable_deviation=10.0,
                  data_sample_rate=None,
                  dp_pump_threshold=45.0,
 
