@@ -357,13 +357,29 @@ class DataSetPreviewSerializer(serializers.Serializer):
     map = JSONField(required=True)
     files = SensorIngestFileSerializer(many=True, required=True)
     rows = serializers.IntegerField(required=False)
-
-
+    
+class DataSetManipulateSerializer(serializers.Serializer):
+    config = JSONField(required=True)
+    
 class AnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Analysis
-        read_only_fields = ('added', 'started', 'ended', 'progress_percent',
-                            'reports', 'status', 'project')
+        read_only_fields = ('added', 'started', 'ended', 'reports', 'project')
+
+    def to_native(self, obj):
+        result = super().to_native(obj)
+        if obj is None:
+            return result
+        is_alive = self.context.get('is_alive', lambda x: False)
+        if obj and is_alive(obj.id):
+            result['status'] = 'running'
+        elif not obj.started:
+            result['status'] = 'queued'
+        elif not obj.ended:
+            result['status'] = 'incomplete'
+        else:
+            result['status'] = 'complete'
+        return result
 
 class AnalysisUpdateSerializer(AnalysisSerializer):
     class Meta:

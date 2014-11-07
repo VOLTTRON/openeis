@@ -1,6 +1,42 @@
 """
 Retrieves the Portfolio Manager Energy Star score using targetFinder.
 
+
+Copyright
+=========
+
+OpenEIS Algorithms Phase 2 Copyright (c) 2014,
+The Regents of the University of California, through Lawrence Berkeley National
+Laboratory (subject to receipt of any required approvals from the U.S.
+Department of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
+referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
+
+NOTICE:  This software was produced by The Regents of the University of
+California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
+For 5 years from November 1, 2012, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and perform
+publicly and display publicly, by or on behalf of the Government. There is
+provision for the possible extension of the term of this license. Subsequent to
+that period or any extension granted, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit others to
+do so. The specific term of the license can be identified by inquiry made to
+Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
+United States Department of Energy, nor any of their employees, makes any
+warranty, express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness, or usefulness of any data, apparatus, product,
+or process disclosed, or represents that its use would not infringe privately
+owned rights.
+
+
+License
+=======
+
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -99,24 +135,28 @@ def retrieveScore(targetFinderData):
     request = urllib.request.Request(url, targetFinderData_bin, headers={'Content-Type': 'application/xml'})
     assert ( request.get_method() == 'POST' )
 
+    metrics = dict()
     try:
         response = opener.open(request)
         xmlRoot = ET.fromstring(response.read())
-        metrics = dict()
+        metrics['status'] = 'success'
         for val in xmlRoot.iter('metric'):
             metrics[val.get('name')] = (val.findtext('value'),val.get('uom'))
-        return (metrics)
     except urllib.request.HTTPError as err:
         print ('http error')
         print ('code is ', err.code)
         print ('reason is', err.reason)
         print (str(err))
         print (err.read())
+        metrics['status'] = 'HTTP Error'
+        metrics['reason'] = err.reason
     except urllib.request.URLError as err:
         print ('url error')
         print (err.args)
         print (err.reason)
-        return (None)
+        metrics['status'] = 'URL Error'
+        metrics['reason'] = err.reason
+    return (metrics)
 
     #
     # End :func:`retrieveEnergyStarScore_targetFinder`.

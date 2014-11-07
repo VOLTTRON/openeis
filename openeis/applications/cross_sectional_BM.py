@@ -3,6 +3,42 @@ Cross-sectional benchmarking: retrieve an ENERGY STAR score from EPA's Target Fi
 
 Shows the building performance relative to a comparable peer group.
 
+
+Copyright
+=========
+
+OpenEIS Algorithms Phase 2 Copyright (c) 2014,
+The Regents of the University of California, through Lawrence Berkeley National
+Laboratory (subject to receipt of any required approvals from the U.S.
+Department of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
+referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
+
+NOTICE:  This software was produced by The Regents of the University of
+California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
+For 5 years from November 1, 2012, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and perform
+publicly and display publicly, by or on behalf of the Government. There is
+provision for the possible extension of the term of this license. Subsequent to
+that period or any extension granted, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit others to
+do so. The specific term of the license can be identified by inquiry made to
+Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
+United States Department of Energy, nor any of their employees, makes any
+warranty, express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness, or usefulness of any data, apparatus, product,
+or process disclosed, or represents that its use would not infringe privately
+owned rights.
+
+
+License
+=======
+
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -54,9 +90,9 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
 from openeis.applications import reports
 import logging
 from django.db.models import Sum
-from .utils.gen_xml_tgtfndr import gen_xml_targetFinder
-from .utils.retrieveEnergyStarScore_tgtfndr import retrieveScore
-from .utils import conversion_utils as cu
+from openeis.applications.utils.gen_xml_tgtfndr import gen_xml_targetFinder
+from openeis.applications.utils.retrieveEnergyStarScore_tgtfndr import retrieveScore
+from openeis.applications.utils import conversion_utils as cu
 
 
 class Application(DriverApplicationBaseClass):
@@ -90,10 +126,17 @@ class Application(DriverApplicationBaseClass):
         self.sq_ft = building_sq_ft
         self.building_year = building_year_constructed
         self.building_name = building_name
-        #TODO: Provide list of Portfolio Manager valid building types.
         self.building_function = building_function
         self.building_zipcode = building_zipcode
 
+    @classmethod
+    def get_app_descriptor(cls):    
+        name = 'Cross-Sectional Benchmarking'
+        desc = 'Cross-sectional benchmarking is used to compare a building’s\
+                energy efficiency relative to a peer group. It is the first step\
+                in determining if performance is good or poor, and it shows\
+                how much potential there is to improve the building’s efficiency. '
+        return ApplicationDescriptor(app_name=name, description=desc)
 
     @classmethod
     def get_config_parameters(cls):
@@ -110,15 +153,15 @@ class Application(DriverApplicationBaseClass):
                     'K-12 School',
                     'Medical Office',
                     'Non-Refrigerated Warehouse',
-                    'Office', 
+                    'Office',
                     'Refrigerated Warehouse',
-                    'Residence Hall/Dormitory',   
-                    'Retail Store', 
-                    'Senior Care Community', 
-                    'Supermarket/Grocery Store', 
-                    'Wholesale Club/Supercenter') 
-        
-        
+                    'Residence Hall/Dormitory',
+                    'Retail Store',
+                    'Senior Care Community',
+                    'Supermarket/Grocery Store',
+                    'Wholesale Club/Supercenter')
+
+
         return {
             "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=5000),
             "building_year_constructed": ConfigDescriptor(int, "Construction Year", value_min=1800, value_max=2014),
@@ -203,14 +246,12 @@ class Application(DriverApplicationBaseClass):
 
     def execute(self):
         #Called after User hits GO
-        """
-        Will output the following: year, aggregated load amounts,
-        and aggregated gas amounts.
-        """
+        """Outputs the ENERGY Star Score from Target Finder API"""
         #NOTE: Connection check happens after data is formatted into XML and
         # sent into the web service request.
-        self.out.log("Starting analysis", logging.INFO)
+        self.out.log("Starting application: cross-sectional benchmarking.", logging.INFO)
 
+        self.out.log("Querying the database for model parameters.", logging.INFO)
         bldgMetaData = dict()
         bldgMetaData['floor-area']  = self.sq_ft
         bldgMetaData['year-built']  = self.building_year
@@ -218,7 +259,14 @@ class Application(DriverApplicationBaseClass):
         bldgMetaData['function']    = self.building_function
         bldgMetaData['zipcode']     = self.building_zipcode
 
+        self.out.log("Querying the database for most recent year of energy load.", logging.INFO)
         # NOTE: Hourly values are preferred to make calculations easier.
+        # TODO: The caveat above must be made stronger.  Aggregating by summing
+        #   only converts, e.g., [kW] to [kWh] for hourly observations.
+        #   Similar problem for gas data.
+        # TODO: The query here presumably groups by calendar year.  Need to check
+        #   whether application actually wants a year's worth of data, looking
+        #   backward from most recent observation.
         load_by_year = self.inp.get_query_sets('load', group_by='year',
                                                group_by_aggregation=Sum,
                                                exclude={'value':None},
@@ -237,30 +285,44 @@ class Application(DriverApplicationBaseClass):
 
         recent_record = merge_data_list[len(merge_data_list)-1]
 
-        # Get units from sensor maps.
+        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
         meta_topics = self.inp.get_topics_meta()
+
         load_unit = meta_topics['load'][base_topic['load'][0]]['unit']
+        self.out.log(
+            "Convert loads from [{}] to [kW]; integration will take to [kWh].".format(load_unit),
+            logging.INFO
+            )
+        load_convertfactor = cu.getFactor_powertoKW(load_unit)
+
         natgas_unit = meta_topics['natgas'][base_topic['natgas'][0]]['unit']
-        
-        load_convertfactor = cu.conversiontoKWH(load_unit)
-        natgas_convertfactor = cu.conversiontoKBTU(natgas_unit)
-        
-        #TODO: Convert values to units that are PM Manager values.
+        self.out.log(
+            "Convert natgas from [{}] to [kBtu/hr]; integration will take to [kBtu].".format(natgas_unit),
+            logging.INFO
+            )
+        natgas_convertfactor = cu.getFactor_powertoKBtu_hr(natgas_unit)
+
+        #TODO: Convert values to units that are PM Manager valid values.
         energyUseList = [['Electric','kWh (thousand Watt-hours)',int(recent_record[1]*load_convertfactor)],
                          ['Natural Gas','kBtu (thousand Btu)',int(recent_record[2]*natgas_convertfactor)]]
 
-        # Generate XML-formatted data to pass data to the webservice.
+        self.out.log("Generate XML-formatted data to pass data to the webservice.", logging.INFO)
         targetFinder_xml = gen_xml_targetFinder(bldgMetaData,energyUseList,'z_targetFinder_xml')
-        # Function that does a URL Request with ENERGY STAR web server.
+
+        self.out.log("Function that sends a URL Request with ENERGY STAR web server.", logging.INFO)
         PMMetrics = retrieveScore(targetFinder_xml)
 
-        if PMMetrics == None:
-            errmessage = 'Network connection needed to run application.'
-            self.out.log(errmessage, logging.WARNING)
-        else:
+        self.out.log("Compile report table.", logging.INFO)
+        if PMMetrics['status'] == 'success':
             self.out.log('Analysis successful', logging.INFO)
             self.out.insert_row('CrossSectional_BM', {
                 'Metric Name': 'Target Finder Score',
                 'Value': str(PMMetrics['designScore'][0])
+                })
+        else:
+            self.out.log(str(PMMetrics['status'])+'\nReason:\t'+str(PMMetrics['reason']), logging.WARNING)
+            self.out.insert_row('CrossSectional_BM', {
+                'Metric Name': 'Target Finder Score',
+                'Value': 'Check log for error.'
                 })

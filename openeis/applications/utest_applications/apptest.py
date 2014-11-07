@@ -1,11 +1,92 @@
 """
 Module for testing applications.
+
+
+Copyright
+=========
+
+OpenEIS Algorithms Phase 2 Copyright (c) 2014,
+The Regents of the University of California, through Lawrence Berkeley National
+Laboratory (subject to receipt of any required approvals from the U.S.
+Department of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
+referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
+
+NOTICE:  This software was produced by The Regents of the University of
+California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
+For 5 years from November 1, 2012, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and perform
+publicly and display publicly, by or on behalf of the Government. There is
+provision for the possible extension of the term of this license. Subsequent to
+that period or any extension granted, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit others to
+do so. The specific term of the license can be identified by inquiry made to
+Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
+United States Department of Energy, nor any of their employees, makes any
+warranty, express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness, or usefulness of any data, apparatus, product,
+or process disclosed, or represents that its use would not infringe privately
+owned rights.
+
+
+License
+=======
+
+Copyright (c) 2014, The Regents of the University of California, Department
+of Energy contract-operators of the Lawrence Berkeley National Laboratory.
+All rights reserved.
+
+1. Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+
+   (a) Redistributions of source code must retain the copyright notice, this
+   list of conditions and the following disclaimer.
+
+   (b) Redistributions in binary form must reproduce the copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+   (c) Neither the name of the University of California, Lawrence Berkeley
+   National Laboratory, U.S. Dept. of Energy nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+2. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+   ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+   ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+3. You are under no obligation whatsoever to provide any bug fixes, patches,
+   or upgrades to the features, functionality or performance of the source code
+   ("Enhancements") to anyone; however, if you choose to make your Enhancements
+   available either publicly, or directly to Lawrence Berkeley National
+   Laboratory, without imposing a separate written license agreement for such
+   Enhancements, then you hereby grant the following license: a non-exclusive,
+   royalty-free perpetual license to install, use, modify, prepare derivative
+   works, incorporate into other computer software, distribute, and sublicense
+   such enhancements or derivative works thereof, in binary and source code
+   form.
+
+NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
+and includes the following modification: Paragraph 3. has been added.
 """
 
 import datetime
 import csv
 import os
 import math
+import sys
 
 from django.test import TestCase
 from django.utils.timezone import utc
@@ -29,7 +110,14 @@ class AppTestBase(TestCase):
             - actual_outputs, dictionary, maps table name to file name of run results
         """
 
+        # Note the overall process here follows that of method
+        # openeis/projects/management/commands/runapplication.handle().
+
         # Read the configuration file.
+        self.assertTrue(
+            os.path.isfile(configFileName),
+            msg='Cannot find configuration file "{}"'.format(configFileName)
+            )
         config = ConfigParser()
         config.read(configFileName)
 
@@ -55,9 +143,11 @@ class AppTestBase(TestCase):
 
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
         project = models.Project.objects.get(pk=1)
-        analysis = models.Analysis(project=project,
+        analysis = models.Analysis(
             added=now, started=now, status="running",
             dataset=dataset, application=appName,
+            debug=True,
+            project_id = dataset.project_id,
             configuration={
                 'parameters': kwargs,
                 'inputs': topic_map
@@ -71,10 +161,20 @@ class AppTestBase(TestCase):
         output_format = klass.output_format(db_input)
         file_output = DatabaseOutputFile(analysis, output_format)
 
+        # Execute the application.
         app = klass(db_input, file_output, **kwargs)
-
-        # Execute the application
-        app.run_application()
+        try:
+            app.run_application()
+        except Exception as ee:
+            analysis.status = 'error'
+            # Re-raise the exception, since testing may include checking for expected exceptions.
+            raise( ee )
+        finally:
+            if( analysis.status != 'error' ):
+                analysis.status = 'complete'
+                analysis.progress_percent = 100
+            analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
+            analysis.save()
 
         # Retrieve the map of tables to output CSVs from the application
         actual_outputs = {}
@@ -117,7 +217,7 @@ class AppTestBase(TestCase):
             - The count of rows should match.
             - The order of rows should match.
             - The first row contains column headers.
-        
+
         Interpreting columns:
             - The count of columns should match.
             - The order of columns does not have to match between the two
@@ -188,11 +288,11 @@ class AppTestBase(TestCase):
                 #   Note these are strings.
                 str_xpd = expected_rows[rowIdx][colIdx_xpd]
                 str_act = actual_rows[rowIdx][colIdx_act]
-                
+
                 # Coerce to numbers if possible.
                 num_xpd = self._is_num(str_xpd)
                 num_act = self._is_num(str_act)
-                
+
                 # Compare.
                 if( (num_xpd is not None) and (num_act is not None) ):
                     # Here, compare as numbers:
@@ -214,20 +314,21 @@ class AppTestBase(TestCase):
                             colName, rowIdx+1, str_act, str_xpd
                             )
                         )
-                
+
                 # Here, done checking entries for this row of this column.
-            
+
             # Remove this column from the actual results.
             #   To facilitate further checking later.
             del colNameToIdx_act[colName]
-        
+
         # Here, done checking all columns of the expected results file.
-        self.assertEqual(
-            len(colNameToIdx_act), 0,
-            msg='The actual results file has unexpected column "{}"'.format(
-                list(colNameToIdx_act.keys())[0]
+        if( len(colNameToIdx_act) != 0 ):
+            self.assertTrue(
+                False,
+                msg='The actual results file has unexpected column "{}"'.format(
+                    list(colNameToIdx_act.keys())[0]
+                    )
                 )
-            )
 
 
     def _is_num(self, ss):
@@ -275,19 +376,17 @@ class AppTestBase(TestCase):
         Throws: Assertion error if the files do not match.
         """
 
-        # Read the configuration file.
-        config = ConfigParser()
-        config.read(configFileName)
-
-        # Get application name.
-        appName = config['global_settings']['application']
-        # TODO: This, and config above, is not needed unless {clean_up}.
-
         # Run application.
         actual_outputs = self.run_application(configFileName)
 
         # Check results.
         for tableName in expected_outputs:
+            # Provide file names to facilitate debugging.
+            #   Note by default {py.test} only shows output to {stdout} and {stderr}
+            # if a test fails.  To force the line below to show, run with flag "-s".
+            sys.stderr.write('Comparing expected output in "{}" to actual output in "{}"'.format(
+                expected_outputs[tableName], actual_outputs[tableName]
+                ))
             expected_rows = self._getCSV_asList(expected_outputs[tableName])
             actual_rows = self._getCSV_asList(actual_outputs[tableName])
             self._diff_checker(expected_rows, actual_rows)
@@ -295,6 +394,15 @@ class AppTestBase(TestCase):
         if clean_up:
             for tableName in actual_outputs:
                 os.remove(actual_outputs[tableName])
+            # Get application name from config file.
+            self.assertTrue(
+                os.path.isfile(configFileName),
+                msg='Cannot find configuration file "{}"'.format(configFileName)
+                )
+            config = ConfigParser()
+            config.read(configFileName)
+            appName = config['global_settings']['application']
+            # Remove log file.
             logFiles = [
                 fileName for fileName in os.listdir()  \
                     if (appName in fileName and '.log' in fileName)

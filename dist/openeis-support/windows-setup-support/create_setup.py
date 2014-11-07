@@ -62,25 +62,17 @@ import posixpath
 import shutil
 import subprocess
 import sys
+import tempfile
 
 basedir = os.path.abspath(os.path.dirname(__file__))
-setup_cfg = os.path.join(basedir, 'setup.cfg.json')
-if not os.path.exists(setup_cfg):
-    sys.stderr.write('Invalid config file specified\n\t{}'.format(setup_cfg))
-    sys.stderr.write('An example setup file looks like:\n'+"""
-{
-    "CLEAN_PYTHON_DIR": "C:/openeis-1.0/python-fresh",
-    "WORKING_DIR": "C:/openeis-1.0/Output",
-    "OPENEIS_SRC_DIR": "C:/Users/d3m614/git/openeis",
-    "WHEEL_DIR": "C:/openeis-1.0/wheels",
-    "NUMPY_DIR": "C:/openeis-1.0/numpy1.8.2",
-    "MISC_DIR": "C:/openeis-1.0/misc",
-    "INNO_SETUP_DIR": "C:/extracted_inno_setup"
-}
-""")
-    sys.exit()
+# Script should always be called from the root of the repository.
+OPENEIS_SRC_DIR = os.path.abspath(os.curdir)
 
-cfg = json.loads(open(setup_cfg, 'r').read())
+cfg = {}
+
+for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR', 
+              'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
+    cfg[x] = ''
     
 
 # This is the python (extracted from the msi file)
@@ -91,12 +83,9 @@ CLEAN_PYTHON_DIR = cfg['CLEAN_PYTHON_DIR'].replace('/', '\\')
 # of support files.
 WORKING_DIR = cfg['WORKING_DIR'].replace('/', '\\')
 
-# The checked out src directory from the git repository.
-OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'].replace('/', '\\')
-
 # The location of the cache wheel directory so we
 # don't need to re download things from the internet.
-WHEEL_DIR = cfg['WHEEL_DIR'].replace('/', '\\')
+WHEEL_DIR = ''
 
 # A folder that contains a numpy and numpy dist egg info file.
 # This folder needs to be suitable for droping directly into
@@ -112,6 +101,11 @@ MISC_DIR = cfg['MISC_DIR'].replace('/', '\\')
 # The directory of an extracted inno setup folder.  This can
 # be obtained through innoextractor program from the internet.
 INNO_SETUP_DIR = cfg['INNO_SETUP_DIR'].replace('/', '\\')
+
+OUTPUT_FILE = ''
+
+# A temp cirectory for use during this build.
+TEMP_DIR = ''
 
 ORIG_CWD = os.getcwd()
 
@@ -162,6 +156,7 @@ def build_wheels():
         os.chdir(ORIG_CWD)
 
 def move_to_working_dir():
+    print("move_to_working_dir")
     tocopy=(CLEAN_PYTHON_DIR, NUMPY_DIR, WHEEL_DIR)
     try:
         if os.path.exists(WORKING_DIR):
@@ -179,9 +174,10 @@ def move_to_working_dir():
                                   'windows-setup-support', 'setup.iss')
         shutil.copy(setup_file, 'setup.iss')
 
+
         data = open('setup.iss').read()
         for x in ('WORKING_DIR',):
-            data = data.replace('~~{}~~'.format(x), cfg[x].replace('/', '\\'))
+            data = data.replace('~~{}~~'.format(x), eval(x).replace('/', '\\'))
 
         with open('setup.iss', 'w') as f:
             f.write(data)
@@ -191,11 +187,18 @@ def move_to_working_dir():
 
 
 def make_installer():
+    print("make_installer")
     os.chdir(WORKING_DIR)
     try:
         compiler = os.path.join(INNO_SETUP_DIR.replace('/','\\'), 'iscc.exe')
-                                                       
         ret = subprocess.check_call([compiler, 'setup.iss'])
+        
+        file_created = os.path.abspath(os.path.join('Output', 'setup.exe'))
+        
+        if (os.path.exists(OUTPUT_FILE)):
+            os.remove(OUTPUT_FILE)
+        print("Moving file {} to {}".format(file_created, OUTPUT_FILE))
+        shutil.move(file_created, OUTPUT_FILE)
     finally:
         os.chdir(ORIG_CWD)
         
@@ -203,7 +206,7 @@ def make_setup():
     print("Configuration for setup:")
     for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR', 
               'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
-        print("{}->{}".format(x, cfg[x]))
+        print("{}->{}".format(x, eval(x)))
     make_requirements()
     build_wheels()
     move_to_working_dir()
@@ -229,8 +232,9 @@ def make_requirements():
     
     if not os.path.exists('env/Scripts/pip.exe'):
         raise Exception('must be called from root directory of the openeis project.')
-    
-    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(MISC_DIR.replace('/','\\')+"\\requirements.txt", 'w'))
+    reqfile = MISC_DIR.replace('/','\\')+"\\requirements.txt"
+    print("REQ FILE: "+reqfile)
+    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(reqfile, 'w'))
     lines = ''
     for l in open(MISC_DIR.replace('/','\\')+"\\requirements.txt"):
         # Don't include libs thata aren't in pypi numpy is explicitly handled differently
@@ -242,15 +246,77 @@ def make_requirements():
     # now build all of the wheels for the requirements file
     ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
     
+    
+
+def validate_and_setfolders(support_root, outdir):
+    
+    global cfg, OPENEIS_SRC_DIR, WORKING_DIR, NUMPY_DIR, MISC_DIR
+    global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, WHEEL_DIR,CLEAN_PYTHON_DIR
+    
+    print("Out directory is: "+outdir)
+    support_root = support_root.replace('/', '\\')
+     
+    WORKING_DIR = tempfile.mkdtemp()
+    
+    INNO_SETUP_DIR = os.path.join(support_root, 'extracted_inno_setup')
+    MISC_DIR = os.path.join(support_root, 'misc')
+    CLEAN_PYTHON_DIR = os.path.join(support_root, 'python-fresh')
+    NUMPY_DIR = os.path.join(support_root, 'numpy1.8.2')
+    
+    WORKING_DIR = os.path.join(TEMP_DIR, 'build')
+    WHEEL_DIR = os.path.join(TEMP_DIR, 'wheels')    
+    
+    if not os.path.exists(WHEEL_DIR):
+        os.makedirs(WHEEL_DIR)
+
+    if not os.path.exists(WORKING_DIR):
+        os.makedirs(WORKING_DIR)
+    
+    if not os.path.exists(outdir):
+        os.makedirs(outdir)
+    
+    # parses the short version num from the returned string.
+    repovers = subprocess.check_output(["git.exe", 'describe'])
+    
+    repovers = str(repovers).split('-')[-1][:-3]
+    OUTPUT_FILE = os.path.join(outdir, "openeis-setup-{}.exe".format(repovers))
+    return True
+    
+
+def show_help():
+    help = '''
+    python create_setup.py support_dir outdir
+    
+    support_dir    The directory wheere the support fiels from the 
+                   openeis-setup-support repository has ben cloned.
+    
+    outdir         The path to the output dir.  The command git describe 
+                   will be used to generate unique names.
+'''
+    sys.stdout.write(help)
+    
+     
 
 if __name__ == '__main__':
     
-    if len(sys.argv) > 1:
-        # Change the source dir
-        rename_dirs(sys.argv[1], sys.argv[2])
+    if len(sys.argv) != 3:
+        sys.stderr.write('Invalid arguments!\n\n')
+        show_help()        
+        sys.exit(500)
+    
+    TEMP_DIR = tempfile.mkdtemp()    
+    
+    # checck and setup global variables.
+    if not validate_and_setfolders(sys.argv[1], sys.argv[2]):
+        shutil.rmtree(TEMP_DIR, ignore_errors=True)
+        sys.exit(500)
+                                 
+        
     
     #if os.path.isdir(WHEEL_DIR.replace('/','\\')):
     #    shutil.rmtree(WHEEL_DIR.replace('/','\\'))
     #os.makedirs(WHEEL_DIR.replace('/','\\'))
     make_setup()
                
+    sys.stdout.write("clean up temp dir")
+    shutil.rmtree(TEMP_DIR, ignore_errors=True)

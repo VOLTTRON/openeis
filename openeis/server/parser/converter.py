@@ -102,7 +102,7 @@ def Convert(input_file, output_file):
     }
     
     prefixes = {
-        '0': "test",        #x10^0  ('0': 'None',)
+        '0': None,        #x10^0  ('0': 'None',)
         '1': 'deca',    #=x10^1',
         '2': 'hecto',   #=x100',
         '-3': 'mili',   #=x10-3',
@@ -119,18 +119,14 @@ def Convert(input_file, output_file):
     # which meant the time is UTC - a much simpler conversion.
     tree = parse(input_file)
     root = tree.getroot()
-    tzOffset = root.find('.//espi:tzOffset', namespaces=ns).text
-    tzOffset = int(tzOffset)
-    powerOfTenMultiplier = root.find('.//espi:ReadingType/espi:powerOfTenMultiplier', namespaces=ns).text
-    powerOfTenMultiplier = int(powerOfTenMultiplier)
+    tzOffset = get_child_node_text(root, ns, 'tzOffset')
+    powerOfTenMultiplier = get_child_node_text(root, ns, "powerOfTenMultiplier")
     
     currencyType = get_currency_type(root, ns)
-    uomType = get_uom_type(root, ns)
-    # print('currencyType',currencyType, sep="")
-    # print('uomType',uomType)
-    # print("Power of Ten Multiplier: ",powerOfTenMultiplier)
-    # print(root.tag)
-    # print('tzOffset: ', tzOffset)
+    prefix = None
+    if powerOfTenMultiplier in prefixes:
+        prefix = prefixes[powerOfTenMultiplier]
+    uomType = get_uom_type(root, ns, prefix)
     
     count = 0
     startDateHeader = 'Start Timestamp'
@@ -211,6 +207,12 @@ def process_row(node, writer, ns):
         endDate = datetime.utcfromtimestamp(intervalAdjusted + int(intervalDuration))
     
     intervalCost = get_child_node_text(node, ns, "cost")
+    
+    # An examination of the espi schema shows IntervalCost is in hundred-thousandths of the given currency type.
+    # Ex: Assuming USD, if IntervalCost == 2585 this actually means 0.02585 USD, because 2585/100000 = 0.02585
+    if intervalCost != None and int(intervalCost) != 0:
+        intervalCost = int(intervalCost) / 100000   
+    
     intervalReadingQuality = get_child_node_text(node, ns, "ReadingQuality")
     
     # intervalValue = node.find('./{http://naesb.org/espi}value').text  # the url way
@@ -254,7 +256,7 @@ def get_child_node_text(node, ns, node_tag, node_ns=None):
     returns: the text of the child node (not attributes), or an empty string ("")
     """
     lookupStr = node_ns+node_tag if (node_ns != None) else './/espi:{0}'.format(node_tag)
-    special_tags = ['start']    # These tags must return an integer
+    special_tags = ['start', 'tzOffset', 'powerOfTenMultiplier']    # These tags must return an integer
     retVal = ""
     
     childNode = node.find(lookupStr, namespaces=ns)
@@ -302,10 +304,10 @@ def get_retail_customer(node, ns):
     retail_customer = link.attrib[1]
     return retail_customer
     
-def get_uom_type(root, ns):
+def get_uom_type(root, ns, prefix = None):
     """
     Helper function to get unit of measure (uom)
-    Parameters: Root node, namespaces
+    Parameters: Root node, namespaces, prefix (a string containing a scientific notation prefix)
     Returns: A string containing the uom
     """
     uomTypes = {
@@ -341,14 +343,16 @@ def get_uom_type(root, ns):
         '169' :'Therm'
     }
     
-    uomVal = ""
     uomType = ""
-    uomNode = root.find('.//espi:ReadingType/espi:uom', namespaces=ns)
-    if uomNode != None:
-        uomVal = uomNode.text
+    uomVal = get_child_node_text(root, ns, './/espi:ReadingType/espi:uom', "")
         
     if uomVal in uomTypes:
         uomType = uomTypes[uomVal]
+        # If we have a prefix, prepend it to the unit type, and also prepend it inside 1st open parenthesis, if present.
+        if prefix != None:
+            uomType = '{0}-{1}'.format(prefix, uomType)
+            if uomType.find('(') != -1:
+                uomType = uomType.replace('(', '({0}-'.format(prefix), 1)
     
     return uomType
 

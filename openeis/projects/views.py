@@ -94,6 +94,7 @@ from .storage.db_input import DatabaseInput
 from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
+from openeis.filters import apply_filters
 
 _logger = logging.getLogger(__name__)
 
@@ -487,7 +488,7 @@ class DataMapViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-_processes = {}
+_ingest_processes = {}
 
 def iter_ingest(ingest):
     '''Ingest into the common schema tables from the DataFiles.'''
@@ -548,7 +549,7 @@ def iter_ingest(ingest):
 
 
 def _update_ingest_progress(ingest_id, file_id, pos, size, processed, total):
-    _processes[ingest_id] = {
+    _ingest_processes[ingest_id] = {
         'id': ingest_id,
         'status': 'processing',
         'percent': processed * 100.0 / total if total else 0.0,
@@ -595,13 +596,13 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
             models.SensorIngestLog(level=CRITICAL, dataset=ingest, message='an unhandled exception occurred during sensor '
                           'ingestion ({}) the message was: {}'.format(ingest.id, e), row=-1).save()
         else:
-            models.SensorIngestLog(level=CRITICAL, dataset=ingest, message=e, row=-1).save()
+            models.SensorIngestLog(level=CRITICAL, dataset=ingest, message=str(e), row=-1).save()
         logging.exception('an unhandled exception occurred during sensor '
                           'ingestion ({})'.format(ingest.id))
     finally:
         ingest.end = datetime.datetime.utcnow().replace(tzinfo=utc)
         ingest.save()
-        _processes.pop(ingest.id, None)
+        _ingest_processes.pop(ingest.id, None)
 
 
 class DataSetViewSet(viewsets.ModelViewSet):
@@ -613,23 +614,31 @@ class DataSetViewSet(viewsets.ModelViewSet):
     @link(permission_classes = (permissions.IsAuthenticated,))
     def status(self, request, *args, **kwargs):
         ingest = self.get_object()
-        process = _processes.get(ingest.id)
-        if process:
-            return Response(process)
-        return Response({
-            'id': ingest.id,
-            'status': 'complete',
-            'percent': 100.0,
-            'current_file_percent': 0.0,
-            'current_file': None
-        })
+        try:
+            process = _ingest_processes[ingest.id]
+        except KeyError:
+            process = {
+                'id': ingest.id,
+                'status': 'complete' if ingest.end else 'incomplete',
+                'percent': 100.0,
+                'current_file_percent': 0.0,
+                'current_file': None
+            }
+        return Response(process)
 
     @link()
     def errors(self, request, *args, **kwargs):
         '''Retrieves all errors that occured during an ingestion.'''
         ingest = self.get_object()
-        serializer = serializers.SensorIngestLogSerializer(
-                ingest.logs.all(), many=True)
+        errors = ingest.logs.all()
+        if not ingest.end and ingest.id not in _ingest_processes:
+            error = models.SensorIngestLog(dataset=ingest, level=models.CRITICAL,
+               message='Processing ended prematurely. Not all files and/or '
+                       'records were read. Please delete this dataset and '
+                       'retry. If you continue to have problems, please '
+                       'contact technical support.')
+            errors = itertools.chain((error,), errors)
+        serializer = serializers.SensorIngestLogSerializer(errors, many=True)
         return Response(serializer.data)
 
     def pre_save(self, obj):
@@ -646,8 +655,8 @@ class DataSetViewSet(viewsets.ModelViewSet):
         '''
         if created:
             _update_ingest_progress(obj.id, None, 0, 0, 0, 0)
-            thread = threading.Thread(target=perform_ingestion, args=(obj,))
-            thread.start()
+            threading.Thread(
+                    target=perform_ingestion, args=(obj,), daemon=True).start()
 
     def get_queryset(self):
         '''Only allow users to see ingests they own.'''
@@ -662,6 +671,8 @@ class DataSetViewSet(viewsets.ModelViewSet):
         return queryset.filter(map__project=project)
 
     def get_serializer_class(self):
+        if self.action=='manipulate':
+            return serializers.DataSetManipulateSerializer
         if self.request.method == 'POST':
             return serializers.SensorIngestCreateSerializer
         return serializers.SensorIngestSerializer
@@ -729,6 +740,75 @@ class DataSetViewSet(viewsets.ModelViewSet):
                         result['extra_rows'].append(row)
                         d[col_index] = True
         return Response(result)
+    
+    @action(methods=['POST'],
+            serializer_class=serializers.DataSetManipulateSerializer,
+            permission_classes=permission_classes)
+    def manipulate(self, request, *args, **kargs):
+        
+        def _iter_data(sensordata):
+            for data in sensordata:
+                yield data.time, data.value
+        
+        #request_data = "{\"config\": [[\"pnnl/isb2/OutdoorAirTemperature\", \"LinearInterpolation\", \
+        #{\"period_seconds\": 300, \"drop_extra\": false}],[\"pnnl/isb2/OutdoorAirTemperature\", \"RoundOff\", {\"places\": 2}]]}";
+        #config_string = json.loads(request_data)
+        #print(config_string['config'])*/
+        serializer = serializers.DataSetManipulateSerializer(data=request.DATA)
+        if serializer.is_valid():
+            obj = serializer.object
+            dataset_id = self.get_object().id
+            config = config_string['config']
+            sensoringest = models.SensorIngest.objects.get(pk=dataset_id)
+            datamap = sensoringest.map
+            sensors = list(datamap.sensors.all())
+            sensor_names = [s.name for s in sensors]
+            sensordata = [sensor.data.filter(ingest=sensoringest) for sensor in sensors]
+            generators = {} 
+            for name, qs in zip(sensor_names, sensordata):
+                #TODO: Add data type from schema
+                value = {"gen":_iter_data(qs),
+                         "type":None}
+                generators[name] = value
+                
+            generators, errors = apply_filters(generators, config)
+            
+            if errors:
+                print('Errors:')
+                return Response(errors, status.HTTP_400_BAD_REQUEST)
+            
+            datamap.id = None 
+            datamap.name = datamap.name+' version - '+str(datetime.now())
+            datamap.save()
+            
+            sensoringest.name = str(sensoringest.id) + ' - '+str(datetime.now())
+            sensoringest.id = None
+            sensoringest.map = datamap
+            sensoringest.save()
+            
+            for sensor in sensors:
+                sensor.id= None
+                sensor.map = datamap
+                sensor.save()
+                data_class = sensor.data_class
+                generator = generators[sensor.name]['gen']
+                sensor_data_list = []
+                for time,value in generator:
+                    sensor_data = data_class(sensor=sensor, ingest=sensoringest,
+                                             time=time, value=value)
+                    sensor_data_list.append(sensor_data)
+                    if len(sensor_data_list) >= 1000:
+                        data_class.objects.bulk_create(sensor_data_list)
+                        sensor_data_list = []
+                if sensor_data_list:
+                    data_class.objects.bulk_create(sensor_data_list)
+                    
+            
+            return Response(datamap.id)
+        
+        else:
+            return Response("Not a valid config", status.HTTP_400_BAD_REQUEST)
+            
 
 
 def preview_ingestion(datamap, input_files, count=15):
@@ -881,48 +961,39 @@ class ApplicationViewSet(viewsets.ViewSet):
         return Response(app_list)
 
 
-def _perform_analysis(analysis):
-    '''Create thread for individual runs of an applicaton.
-    '''
+_analysis_processes = set()
 
+def _perform_analysis(analysis):
+    '''Create thread for individual runs of an applicaton.'''
     try:
         analysis.started = datetime.datetime.utcnow().replace(tzinfo=utc)
-        analysis.status = "running"
         analysis.save()
+        try:
+            db_input = DatabaseInput(analysis.dataset.map.id,
+                    analysis.configuration["inputs"], analysis.dataset.id)
+            klass = get_algorithm_class(analysis.application)
+            output_format = klass.output_format(db_input)
+            kwargs = analysis.configuration['parameters']
+            #if analysis.debug:
+            db_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
+            #else:
+            #    db_output = DatabaseOutput(analysis, output_format)
 
-        dataset_id = analysis.dataset.id
-        datamap_id = analysis.dataset.map.id
-        topic_map = analysis.configuration["inputs"]
-        db_input = DatabaseInput(datamap_id, topic_map, dataset_id)
-
-        klass = get_algorithm_class(analysis.application)
-        output_format = klass.output_format(db_input)
-
-        kwargs = analysis.configuration['parameters']
-        #if analysis.debug:
-        db_output = DatabaseOutputZip(analysis, output_format, analysis.configuration)
-        #else:
-        #    db_output = DatabaseOutput(analysis, output_format)
-
-
-
-        app = klass(db_input, db_output, **kwargs)
-        app.run_application()
-
-    except Exception as e:
-        analysis.status = "error"
-        db_output.appenFileToZip("stackTrace.txt", traceback.format_exc())
+            try:
+                app = klass(db_input, db_output, **kwargs)
+                app.run_application()
+                analysis.reports = [serializers.ReportSerializer(report).data
+                                    for report in klass.reports(output_format)]
+            except Exception:
+                db_output.appenFileToZip("stackTrace.txt", traceback.format_exc())
+        finally:
+            analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
+            analysis.save()
+    except Exception:
         # TODO: log errors
         print(traceback.format_exc())
-
     finally:
-        if analysis.status != "error":
-            analysis.reports = [serializers.ReportSerializer(report).data for
-                                report in klass.reports(output_format)]
-            analysis.status = "complete"
-            analysis.progress_percent = 100
-        analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
-        analysis.save()
+        _analysis_processes.discard(analysis.id)
 
 
 def _get_output_data(request, analysis):
@@ -974,6 +1045,11 @@ class AnalysisViewSet(viewsets.ModelViewSet):
             return serializers.AnalysisUpdateSerializer
         return serializers.AnalysisSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['is_alive'] = lambda obj_id: obj_id in _analysis_processes
+        return context
+
     def pre_save(self, obj):
         '''Check dataset ownership and application existence.'''
         if self.request.method == 'POST':
@@ -985,15 +1061,14 @@ class AnalysisViewSet(viewsets.ModelViewSet):
         if not get_algorithm_class(obj.application):
             raise rest_exceptions.ParseError(
                 "Application '{}' not found.".format(obj.application))
-
-
         # TODO: validate dataset and application compatibility
 
     def post_save(self, obj, created):
         '''Start application run after Analysis object has been saved.'''
         if created:
-            thread = threading.Thread(target=_perform_analysis, args=(obj,))
-            thread.start()
+            _analysis_processes.add(obj.id)
+            threading.Thread(
+                    target=_perform_analysis, args=(obj,), daemon=True).start()
 
     def get_queryset(self):
         '''Only show user analyses associated with projects they own,

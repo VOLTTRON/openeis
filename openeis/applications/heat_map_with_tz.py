@@ -53,7 +53,6 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor, Descriptor
 from openeis.applications import reports
 from .utils import conversion_utils as cu
-import datetime as dt
 import logging
 import pytz
 
@@ -185,12 +184,8 @@ class Application(DriverApplicationBaseClass):
         
 
         for x in loads[0]:
-            print(x)
-
-            datevalue = dt.datetime.strptime(x[0], '%Y-%m-%d %H')
+            datevalue = x[0]
             datevalue = self.inp.localize_sensor_time(base_topic['load'][0], datevalue)
-            
-            print(datevalue)
 #            tz.localize(datevalue)
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),

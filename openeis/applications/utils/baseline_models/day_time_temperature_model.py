@@ -1,5 +1,86 @@
-"""Calculate the parameters for the Day-Time-Temperature baseline model."""
+"""
+Calculate the parameters for the Day-Time-Temperature baseline model.
 
+
+Copyright
+=========
+
+OpenEIS Algorithms Phase 2 Copyright (c) 2014,
+The Regents of the University of California, through Lawrence Berkeley National
+Laboratory (subject to receipt of any required approvals from the U.S.
+Department of Energy). All rights reserved.
+
+If you have questions about your rights to use or distribute this software,
+please contact Berkeley Lab's Technology Transfer Department at TTD@lbl.gov
+referring to "OpenEIS Algorithms Phase 2 (LBNL Ref 2014-168)".
+
+NOTICE:  This software was produced by The Regents of the University of
+California under Contract No. DE-AC02-05CH11231 with the Department of Energy.
+For 5 years from November 1, 2012, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, and perform
+publicly and display publicly, by or on behalf of the Government. There is
+provision for the possible extension of the term of this license. Subsequent to
+that period or any extension granted, the Government is granted for itself and
+others acting on its behalf a nonexclusive, paid-up, irrevocable worldwide
+license in this data to reproduce, prepare derivative works, distribute copies
+to the public, perform publicly and display publicly, and to permit others to
+do so. The specific term of the license can be identified by inquiry made to
+Lawrence Berkeley National Laboratory or DOE. Neither the United States nor the
+United States Department of Energy, nor any of their employees, makes any
+warranty, express or implied, or assumes any legal liability or responsibility
+for the accuracy, completeness, or usefulness of any data, apparatus, product,
+or process disclosed, or represents that its use would not infringe privately
+owned rights.
+
+
+License
+=======
+
+Copyright (c) 2014, The Regents of the University of California, Department
+of Energy contract-operators of the Lawrence Berkeley National Laboratory.
+All rights reserved.
+
+1. Redistribution and use in source and binary forms, with or without
+   modification, are permitted provided that the following conditions are met:
+
+   (a) Redistributions of source code must retain the copyright notice, this
+   list of conditions and the following disclaimer.
+
+   (b) Redistributions in binary form must reproduce the copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+   (c) Neither the name of the University of California, Lawrence Berkeley
+   National Laboratory, U.S. Dept. of Energy nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+2. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+   DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+   ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+   (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+   LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+   ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+   (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+   THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+3. You are under no obligation whatsoever to provide any bug fixes, patches,
+   or upgrades to the features, functionality or performance of the source code
+   ("Enhancements") to anyone; however, if you choose to make your Enhancements
+   available either publicly, or directly to Lawrence Berkeley National
+   Laboratory, without imposing a separate written license agreement for such
+   Enhancements, then you hereby grant the following license: a non-exclusive,
+   royalty-free perpetual license to install, use, modify, prepare derivative
+   works, incorporate into other computer software, distribute, and sublicense
+   such enhancements or derivative works thereof, in binary and source code
+   form.
+
+NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
+and includes the following modification: Paragraph 3. has been added.
+"""
 
 #--- Provide access.
 #
@@ -8,28 +89,38 @@ import numpy as np
 
 def findDateIndex(datelist, locatedate):
     """Given a list of date objects, return index of a specific date."""
-    
+
+    # TODO: Need to document expectation that the dates are not sorted.  In
+    # general, would expect them to be sorted, and therefore would expect a
+    # binary search to be much better than this.
     ctr = 0
     dateIndex = None
     while ctr < len(datelist):
-        if (datelist[ctr].year == locatedate.year) & (datelist[ctr].month == locatedate.month) & (datelist[ctr].day == locatedate.day): 
-           dateIndex = ctr 
+        if (datelist[ctr].year == locatedate.year) & (datelist[ctr].month == locatedate.month) & (datelist[ctr].day == locatedate.day):
+           dateIndex = ctr
            break
         else:
            ctr += 1
-    if (dateIndex == None): 
+
+    # TODO: Need to document why the code below is executed (or else remove the code).
+    # - This says, "If you didn't find {locatedate}, look for one day earlier."
+    # - This potentially creates an infinite loop, since {locatedate} might start
+    #   out earlier than earliest date in {datelist}.
+    # - Even if it finds a solution, and somehow know it's sensible, need to document
+    #   in the method header that this is what happens.
+    if (dateIndex == None):
         newlocatedate = locatedate - dt.timedelta(days=1)
         dateIndex = findDateIndex(datelist, newlocatedate)
-         
+
     return dateIndex
-        
+
 
 def getBins(oat, binCt):
     """
     Determines boundary values for `binCt` bins
     - binCt, the number of bins desired
     - oat, outdoor air temperature vector for the period of interest
-    
+
     Outputs:
     - boundary values for bins (binCt-1)
     ***The functions using this don't work properly for 2 bins
@@ -42,9 +133,9 @@ def getBins(oat, binCt):
     else:
         B=list([np.median(oat)])
     return B
-    
+
 def getTc(oat,B):
-    """ 
+    """
     Returns Tc values
     oat = outdoor air temperature (as vector)
     B = vector of divisions between bins (use 'getBins')
@@ -55,7 +146,7 @@ def getTc(oat,B):
     B=np.array(B)
     #Tc=np.tile(oat*0,(1,len(B)+1))
     Tc=np.zeros((len(oat),(len(B)+1)))
-    
+
     # Writes Tc according to Mathieu, Price et al 2011
     oatt=np.reshape(oat,len(oat))
     Tc[:,0]=oatt
@@ -68,7 +159,7 @@ def getTc(oat,B):
     tempB=np.array(oatt>B[len(B)-1])
     Tc[:,len(B)]=(oatt-B[len(B)-1])*tempB
     return Tc
-    
+
 
 def findThresholdValue(datevec, e):
     """Find the threshold value for each time of day."""
@@ -93,11 +184,11 @@ def _getOccupiedTime(datevec, medianval, timeStepMinutes, thresholdvec):
     """
     dow = np.array([x.weekday() for x in datevec])  # day of week vector
     hod = np.array([x.hour for x in datevec])       # hour of day vector
-    moh = np.array([x.minute for x in datevec])     # minutes 
+    moh = np.array([x.minute for x in datevec])     # minutes
     timeDiv = int(round(60/timeStepMinutes))           # of timesteps per hour
-    
+
     OvU = np.ones([7,24,timeDiv], dtype=bool)
-    
+
     tint=round(timeStepMinutes/60)
     for i in range(0,7):
         threshold = thresholdvec[i] #threshold value for 'occupied'
@@ -154,7 +245,7 @@ def formModel(timesTrain, oatsTrain, valsTrain, timeStepMinutes, binCt):
     # TODO: Document what the information in the model means.
 
     # Check inputs.
-    
+
     timesTrain = np.array(timesTrain)
     assert( timesTrain.ndim == 1 )
     assert( type(timesTrain[0]) is dt.datetime )
@@ -174,11 +265,11 @@ def formModel(timesTrain, oatsTrain, valsTrain, timeStepMinutes, binCt):
 
     assert( type(binCt) is int )
     assert( binCt > 0 )
-    
+
     thresholdval = findThresholdValue(timesTrain, valsTrain)
-    OvU = _getOccupiedTime(timesTrain, valsTrain, timeStepMinutes, thresholdval)  
+    OvU = _getOccupiedTime(timesTrain, valsTrain, timeStepMinutes, thresholdval)
     # Specifies occ(1) or unoc(0) for each [dow,hod,increment of hour]
-    Ovec = sch2vec(OvU, timesTrain, timeStepMinutes)  
+    Ovec = sch2vec(OvU, timesTrain, timeStepMinutes)
     # Converts schedule to 0/1 for specific vector of dates
 
     # Occupied
@@ -205,8 +296,8 @@ def formModel(timesTrain, oatsTrain, valsTrain, timeStepMinutes, binCt):
         'OvU':OvU
         # TODO: Consider adding further information, like `binCt` and some stats on training data.
         })
-        
-        
+
+
 def applyModel(ttowModel, datevec, oat):
     """
     Calculates modeled energy based on parameters in ttowModel[`wN`], by forming matrix A
@@ -222,14 +313,14 @@ def applyModel(ttowModel, datevec, oat):
     oat = np.array(oat)
 
     Ovec=sch2vec(OvU,datevec,timeStepMinutes)
-    
+
     #Occupied
     sc = (np.isnan(oat)==False) & Ovec
     a = getA(datevec[sc],oat[sc],timeStepMinutes,B)
     em=np.dot(a,wN)
     Eall=np.nan*sc
     Eall[sc]=em
-    
+
     #Unoccupied
     scU = (np.isnan(oat)==False) & (Ovec==False)
     aU=getA(datevec[scU],oat[scU],timeStepMinutes,list([1]))

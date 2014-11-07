@@ -1,6 +1,7 @@
 """
 Unit tests for Energy Signature application.
 
+=======
 Copyright (c) 2014, The Regents of the University of California, Department
 of Energy contract-operators of the Lawrence Berkeley National Laboratory.
 All rights reserved.
@@ -48,33 +49,61 @@ and includes the following modification: Paragraph 3. has been added.
 
 
 from openeis.applications.utest_applications.apptest import AppTestBase
+from openeis.projects.models import (SensorIngestFile, DataFile)
 import os
+import pytest
 
+# @pytest.fixture
+# def energy_signature_datafile(project):
+#     return create_data_file(os.path.join(abs_file_dir, 'energy_signature_data.csv'), 
+#                             project=project,
+#                             comments='Energy signature test data data.')
+# content of test_setenv.py
+import os
+import pytest
+pytestmark = pytest.mark.django_db
+    
+@pytest.mark.usesfixtures('energy_signature_datafile')
 class TestEnergySignature(AppTestBase):
-    fixtures = [os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                    'energy_signature_fixture.json')]
-
-    def setUp(self):
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
-
     def test_energy_signature_basic(self):
-        es_basic_exp = {}
-        es_basic_ini = os.path.join(self.basedir,
-                                    'energy_signature_negone.ini')
-        es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
-                                    'energy_signature_negone_SP.ref.csv')
-        es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
-                                    'energy_signature_negone_WS.ref.csv')
-        self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
-
-    def test_energy_signature_missing(self):
-        es_missing_exp = {}
-        es_missing_ini = os.path.join(self.basedir,
-                                   'energy_signature_missing.ini')
-        es_missing_exp['Scatterplot'] = os.path.join(self.basedir,
-                                   'energy_signature_missing_SP.ref.csv')
-        es_missing_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
-                                   'energy_signature_missing_WS.ref.csv')
-        self.run_it(es_missing_ini, es_missing_exp, clean_up=True)
+        print("I am here!")
+        assert DataFile.objects.count() > 0
+#     fixtures = [os.path.join(os.path.abspath(os.path.dirname(__file__)),
+#                                     'energy_signature_fixture.json')]
+# 
+#     def setUp(self):
+#         self.basedir = os.path.abspath(os.path.dirname(__file__))
+# 
+#     def test_energy_signature_basic(self):
+#         es_basic_exp = {}
+#         es_basic_ini = os.path.join(self.basedir,
+#                                     'energy_signature_negone.ini')
+#         es_basic_exp['Scatterplot'] = os.path.join(self.basedir,
+#                                     'energy_signature_negone_SP.ref.csv')
+#         es_basic_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
+#                                     'energy_signature_negone_WS.ref.csv')
+#         self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
+# 
+#     def test_energy_signature_missing(self):
+#         es_missing_exp = {}
+#         es_missing_ini = os.path.join(self.basedir,
+#                                    'energy_signature_missing.ini')
+#         es_missing_exp['Scatterplot'] = os.path.join(self.basedir,
+#                                    'energy_signature_missing_SP.ref.csv')
+#         es_missing_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
+#                                    'energy_signature_missing_WS.ref.csv')
+#         self.run_it(es_missing_ini, es_missing_exp, clean_up=True)
+#                                     'energy_signature_negone_WS.ref.csv')
+#         self.run_it(es_basic_ini, es_basic_exp, clean_up=True)
+# 
+#     def test_energy_signature_missing(self):
+#         es_missing_exp = {}
+#         es_missing_ini = os.path.join(self.basedir,
+#                                    'energy_signature_missing.ini')
+#         es_missing_exp['Scatterplot'] = os.path.join(self.basedir,
+#                                    'energy_signature_missing_SP.ref.csv')
+#         es_missing_exp['Weather_Sensitivity'] = os.path.join(self.basedir,
+#                                    'energy_signature_missing_WS.ref.csv')
+#         self.run_it(es_missing_ini, es_missing_exp, clean_up=True)
 
 
