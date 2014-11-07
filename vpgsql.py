@@ -16,28 +16,31 @@ import zipfile
 _revision = '1'
 
 
-def pushd(path):
-    return_path = os.getcwd()
-    os.chdir(path)
-    class popd:
-        def __enter__(self):
-            return self
-        def __exit__(self, *args):
-            os.chdir(return_path)
-    return popd()
-
-
 class Recorder:
-    def __init__(self, *, algo='sha256', blocksize=1<<16, absolute_paths=True):
+    def __init__(self, startdir, *, algo='sha256', blocksize=1<<16):
         self.algo = algo
         self.blocksize = blocksize
-        self.absolute_paths = absolute_paths
-        self.record = []
+        self._record = []
+        self.chdir(startdir)
 
-    def add(self, path, digest=None, size=None, absolute=None):
-        if self.absolute_paths if absolute is None else absolute:
-            path = os.path.abspath(path)
-        self.record.append((path, digest, size))
+    def add(self, path, digest=None, size=None):
+        self._record.append(('add', path, digest, size))
+
+    def pushd(self, path):
+        return_path = os.getcwd()
+        chdir = self.chdir
+        chdir(path)
+        class popd:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                chdir(return_path)
+        return popd()
+
+    def chdir(self, path):
+        cwd = os.getcwd()
+        os.chdir(path)
+        self._record.append(('chdir', os.getcwd(), cwd))
 
     def mkdir(self, path):
         try:
@@ -46,7 +49,7 @@ class Recorder:
             return
         if not path.endswith(os.sep):
             path += os.sep
-        self.add(path)
+        self._record.append(('mkdir', path))
 
     def makedirs(self, path):
         try:
@@ -74,56 +77,40 @@ class Recorder:
         digest = h.digest()
         self.add(dstpath, digest, size)
 
-    def symlink(self, srcpath, dstpath):
-        try:
-            os.symlink(srcpath, dstpath)
-        except FileNotFoundError:
-            self.makedirs(os.path.dirname(dstpath))
-            os.symlink(srcpath, dstpath)
-        self.add(dstpath)
-
-    def link(self, srcpath, dstpath, mode=0o644):
-        try:
-            os.link(srcpath, dstpath)
-        except FileNotFoundError:
-            self.makedirs(os.path.dirname(dstpath))
-            os.link(srcpath, dstpath)
-        os.chmod(dstpath, mode)
-        self.add(dstpath)
-
-    def remove(self, path):
+    def remove(self, path, digest, size):
+        if digest:
+            with open(path, 'rb') as file:
+                if os.fstat(file.fileno()).st_size != size:
+                    print('file size mismatch; not removing', path, file=sys.stderr)
+                    return
+                h = hashlib.new(self.algo)
+                while True:
+                    buf = file.read(self.blocksize)
+                    if not buf:
+                        break
+                    h.update(buf)
+            if h.digest() != digest:
+                print('file hash mismatch; not removing', path, file=sys.stderr)
+                return
         try:
             os.remove(path)
         except FileNotFoundError:
             pass
 
-    def safe_remove(self, path, digest, size):
-        with open(path, 'rb') as file:
-            if os.fstat(file.fileno()).st_size != size:
-                print('file size mismatch; not removing', path, file=sys.stderr)
-                return
-            h = hashlib.new(self.algo)
-            while True:
-                buf = file.read(self.blocksize)
-                if not buf:
-                    break
-                h.update(buf)
-        if h.digest() != digest:
-            print('file hash mismatch; not removing', path, file=sys.stderr)
-        else:
-            self.remove(path)
-
     def rollback(self):
-        for path, digest, size in reversed(self.record):
-            if path.endswith(os.sep) or os.path.isdir(path):
+        for action, path, *args in reversed(self._record):
+            if action == 'add':
+                try:
+                    self.remove(path, *args)
+                except OSError as exc:
+                    print(path + ':', str(exc), file=sys.stderr)
+            elif action == 'mkdir':
                 try:
                     os.removedirs(path)
                 except OSError:
                     pass
-            elif digest:
-                self.safe_remove(path, digest, size)
-            else:
-                self.remove(path)
+            elif action == 'chdir':
+                os.chdir(*args)
 
     def __enter__(self):
         return self
@@ -134,19 +121,25 @@ class Recorder:
         print('extraction error; backing out changes', file=sys.stderr)
         self.rollback()
 
-    def __iter__(self):
-        return self.iter_record()
+    def iter_record(self, relative_root):
+        root = os.path.abspath(os.path.normpath(relative_root)) + os.sep
+        curdir = os.getcwd()
+        for action, path, *args in self._record:
+            if action == 'add':
+                path = os.path.join(curdir, path)
+                if path.startswith(root):
+                    path = path[len(root):]
+                digest, size = args
+                if digest:
+                    digest = '{}={}'.format(self.algo,
+                        urlsafe_b64encode(digest).decode('latin1').rstrip('='))
+                yield path, digest, size
+            elif action == 'chdir':
+                curdir = path
 
-    def iter_record(self):
-        for path, digest, size in self.record:
-            if digest:
-                digest = '{}={}'.format(self.algo,
-                    urlsafe_b64encode(digest).decode('latin1').rstrip('='))
-            yield path, digest, size
-
-    def dump(self, dumpfile):
+    def dump(self, dumpfile, site_path):
         writer = csv.writer(dumpfile, lineterminator='\n')
-        writer.writerows(iter(self))
+        writer.writerows(self.iter_record(site_path))
 
 
 class ZipFileProxy(zipfile.ZipFile):
@@ -173,7 +166,8 @@ def unpack(archive_path, destdir):
         archive = ZipFileProxy(archive_path)
     else:
         raise ValueError('unknown archive format')
-    with pushd(destdir), archive, Recorder() as recorder:
+    recorder = Recorder(destdir)
+    with archive, recorder:
         extracted = []
         for member in archive.getmembers():
             parts = member.name.split('/')
@@ -198,16 +192,15 @@ def unpack(archive_path, destdir):
                     recorder.copy(src, dstpath, mode)
         version = subprocess.check_output(
             [os.path.join('bin', 'postgres'), '--version'],
-            stdin=open(os.devnull)).split()[-1]
+            stdin=open(os.devnull)).split()[-1].decode('latin1')
         site_path = os.path.join(
             'lib', 'python{}.{}'.format(*sys.version_info[:2]), 'site-packages')
-        os.makedirs(site_path)
-        with pushd(site_path):
-            dist_info = 'vpgsql-{}.{}.dist-info'.format(version, _revision)
-            record_path = os.path.join(dist_info, 'RECORD')
-            recorder.add(record_path, absolute=False)
-            with open(record_path, 'w') as dumpfile:
-                recorder.dump(dumpfile)
+        dist_info = 'vpgsql-{}.{}.dist-info'.format(version, _revision)
+        record_path = os.path.join(site_path, dist_info, 'RECORD')
+        recorder.makedirs(os.path.dirname(record_path))
+        recorder.add(record_path)
+        with open(record_path, 'w') as dumpfile:
+            recorder.dump(dumpfile, site_path)
 
 
 _path = os.path.dirname(__file__) or os.getcwd()
@@ -225,7 +218,7 @@ def main(argv):
     group.add_argument('-f', '--from-archive', metavar='PATH',
         help='install from specified archive')
     opts = parser.parse_args(argv[1:])
-    return unpack(opts.from_archive, 'test')
+    #return unpack(opts.from_archive, 'test')
     try:
         in_venv = sys.base_prefix != sys.prefix
     except AttributeError:
