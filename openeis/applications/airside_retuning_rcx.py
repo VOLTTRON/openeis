@@ -553,7 +553,7 @@ class Application(DrivenApplicationBaseClass):
 
         if not fan_stat_check and self.fan_speedcmd_name is not None:
             for key, value in device_dict.items():
-                if key.startswith(self.fan_speedcmd_name):
+                if key.startswith(self.fan_speedcmd_name) and value is not None:
                     fan_stat_check = True
                     if value < self.low_supply_fan_threshold:
                         self.warm_up_flag = True
