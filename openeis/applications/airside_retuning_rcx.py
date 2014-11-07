@@ -263,14 +263,6 @@ class Application(DrivenApplicationBaseClass):
                              'diagnostic will never exceed this value '
                              '(default=2.5 inch w.g.)', optional=True),
 
-            'high_supply_fan_threshold':
-            ConfigDescriptor(float,
-                             ('Value (%) above which the supply fan will '
-                              'be considered running at its maximum speed. '
-                              'If fan is running at its '
-                              'maximum speed (default=100%)'),
-                             optional=True),
-
             'duct_stc_retuning':
             ConfigDescriptor(float,
                              ('Increment/decrement of static pressure '
@@ -296,7 +288,13 @@ class Application(DrivenApplicationBaseClass):
                              'Value above which the supply fan will be '
                              'considered at its minimum speed (default=20%)',
                              optional=True),
-
+            'high_supply_fan_threshold':
+            ConfigDescriptor(float,
+                             ('Value (%) above which the supply fan will '
+                              'be considered running at its maximum speed. '
+                              'If fan is running at its '
+                              'maximum speed (default=100%)'),
+                             optional=True),
             'setpoint_allowable_deviation':
             ConfigDescriptor(float,
                              '% allowable deviation from set points '
@@ -307,7 +305,7 @@ class Application(DrivenApplicationBaseClass):
                              ('Required difference between minimum and '
                               'maximum duct static pressure set point '
                               'detecting a duct static pressure '
-                              'set point reset (default=0.2 inch w.g.)'),
+                              'set point reset (default=0.25 inch w.g.)'),
                              optional=True),
             'reheat_valve_threshold':
             ConfigDescriptor(float,
@@ -373,7 +371,7 @@ class Application(DrivenApplicationBaseClass):
             'unocc_time_threshold':
             ConfigDescriptor(float,
                              'Time threshold used for AHU schedule Dx. '
-                             '(default=80%)', optional=True),
+                             '(default=30%)', optional=True),
             'unocc_stp_threshold':
             ConfigDescriptor(float,
                              'AHU off static pressure deadband '
@@ -416,7 +414,7 @@ class Application(DrivenApplicationBaseClass):
                              'Used to detect the '
                              'time when the supply fan should '
                              'be operational '
-                             '(default=0:00;0:00 - (unoccupied))',
+                             '(default=0:00;0:00(unoccupied))',
                              optional=True),
             'saturday_sch':
             ConfigDescriptor(str,
@@ -424,7 +422,7 @@ class Application(DrivenApplicationBaseClass):
                              'Used to detect the '
                              'time when the supply fan should '
                              'be operational '
-                             '(default=0:00;0:00 - (unoccupied))',
+                             '(default=0:00;0:00(unoccupied))',
                              optional=True),
             'sunday_sch':
             ConfigDescriptor(str,
@@ -534,7 +532,6 @@ class Application(DrivenApplicationBaseClass):
         '''
         Check application pre-quisites and assemble analysis data set.
         '''
-        current_time = current_time.replace(tzinfo=datetime.timezone.utc).astimezone(tz=None)
         device_dict = {}
         diagnostic_result = Results()
 
@@ -763,11 +760,11 @@ class duct_static_rcx(object):
 
         time_check = datetime.timedelta(minutes=self.data_window)
         elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=Application.data_sample_rate))
+                        datetime.timedelta(minutes=Application.
+                                           data_sample_rate))
 
         if (elapsed_time >= time_check and
            len(self.timestamp) >= self.no_required_data):
-
             avg_duct_stpr_stpt = sum(
                 self.duct_stp_stpt_values) / len(self.duct_stp_stpt_values)
 
@@ -1038,7 +1035,8 @@ class supply_air_temp_rcx(object):
         self.timestamp.append(current_time)
         time_check = datetime.timedelta(minutes=self.data_window)
         elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=Application.data_sample_rate))
+                        datetime.timedelta(minutes=Application.
+                                           data_sample_rate))
 
         if (elapsed_time >= time_check and
            len(self.timestamp) >= self.no_required_data):
