@@ -357,8 +357,10 @@ class DataSetPreviewSerializer(serializers.Serializer):
     map = JSONField(required=True)
     files = SensorIngestFileSerializer(many=True, required=True)
     rows = serializers.IntegerField(required=False)
-
-
+    
+class DataSetManipulateSerializer(serializers.Serializer):
+    config = JSONField(required=True)
+    
 class AnalysisSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Analysis
