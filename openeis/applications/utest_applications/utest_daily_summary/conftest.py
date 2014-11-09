@@ -35,13 +35,13 @@ def onetofive_dataset(project, onetofive_datamap, daily_summary_datafile):
                           files={'0': daily_summary_datafile})
 
 @pytest.fixture
-def missing_numbers_datamap(project):
-    return create_datamap(project, "missingandfloats")
+def missing_datamap(project):
+    return create_datamap(project, "withmissing")
 
 @pytest.fixture
-def missing_numbers_dataset(project, missing_numbers_datamap, daily_summary_datafile):
+def missing_dataset(project, missing_datamap, daily_summary_datafile):
     return create_dataset(name='Daily Summary Datamap', project=project, 
-                          datamap=missing_numbers_datamap, 
+                          datamap=missing_datamap, 
                           files={'0': daily_summary_datafile})
 
 @pytest.fixture

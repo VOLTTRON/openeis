@@ -138,14 +138,14 @@ def test_daily_summary_one_to_five(onetofive_dataset):
     app = AppWrapper()
     app.run_it(config, ds_onetofive_exp, clean_up=True)
     
-def test_daily_summary_missing_numbers(missing_numbers_dataset):
+def test_daily_summary_missing_(missing_dataset):
     ds_missing_exp = {
         'Daily_Summary_Table': os.path.join(basedir,
                                     'daily_summary_missing.ref.csv')
     }
     
-    config = build_config_parser(missing_numbers_dataset.id, 
-                                 missing_numbers_dataset.map.id)
+    config = build_config_parser(missing_dataset.id, 
+                                 missing_dataset.map.id)
     app = AppWrapper()
     app.run_it(config, ds_missing_exp, clean_up=True)
     
@@ -162,7 +162,8 @@ def test_daily_summary_floats(floats_dataset):
     app = AppWrapper()
     app.run_it(config, ds_floats_exp, clean_up=True)
     
- 
+
+# @pytest.raises(Exception)
 # def test_daily_summary_invalid(self):
 #     ds_incorrect_ini = os.path.join(self.basedir,
 #         'daily_summary_invalid.ini')
