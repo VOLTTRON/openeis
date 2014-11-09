@@ -1,8 +1,9 @@
 
 import itertools
 import os.path
-
 import pytest
+
+from configparser import ConfigParser
 
 from openeis.projects import (models, views)
 
@@ -44,6 +45,26 @@ def project(active_user):
     database, returns it'''
     return models.Project.objects.create(owner=active_user, name='Test Project')
 
+def build_config_parser(app_name, dataset_id, sensormap_id):
+    '''
+    This function creates a config parser with the specified dataset and
+    sensormap_id. 
+    '''
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', app_name)
+    config.set("global_settings", 'dataset_id', str(dataset_id))
+    config.set("global_settings", 'sensormap_id', str(sensormap_id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_sq_ft', '3000')
+    config.set('application_config', 'building_name', '"bldg90"')
+    
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingElectricity')
+    
+    return config
 
 def create_data_file(name_or_full_path, **kwargs):
     '''Creates a data file object from the passed name_or_full_path.  
