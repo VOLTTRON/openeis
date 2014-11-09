@@ -91,10 +91,12 @@ from openeis.applications.utest_applications.appwrapper import AppWrapper
 from openeis.projects.models import (SensorIngest,
                                      DataMap,
                                      DataFile)
-from django.conf import global_settings
 
+# Enables django database integration.
 pytestmark = pytest.mark.django_db
 
+# get the path to the current directory because that is where
+# the expected outputs will be located.
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 def build_config_parser(dataset_id, sensormap_id):
