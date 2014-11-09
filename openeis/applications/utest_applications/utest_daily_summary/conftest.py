@@ -53,6 +53,7 @@ def floats_dataset(project, floats_datamap, daily_summary_datafile):
     return create_dataset(name='Daily Summary Datamap', project=project, 
                           datamap=floats_datamap, 
                           files={'0': daily_summary_datafile})
+
     
 def create_datamap(project, column):
     return models.DataMap.objects.create(project=project, name="Daily Summary Map",
@@ -91,40 +92,3 @@ def create_datamap(project, column):
             "version": 1
         })
     
-    
-
-#     return models.DataMap.objects.create(project=project, name="Daily Summary Map",
-#         map={
-#             
-#             "sensors": {
-#                 "lbnl/bldg90/WholeBuildingElectricity": {
-#                     "column": "samenumber",
-#                     "unit":"kilowatt",
-#                     "type": "WholeBuildingElectricity",
-#                     "file": "0"
-#                 },
-#                 "lbnl":{
-#                     "level":"site"
-#                 }
-#             },
-#             "files": {
-#                 "0": {
-#                     "signature": {
-#                         "headers": [
-#                             "datetime", 
-#                             "onetofive", 
-#                             "withmissing", 
-#                             "samenumber", 
-#                             "floats", 
-#                             "missingandfloats"
-#                         ]
-#                     },
-#                     "timestamp": {
-#                         "columns": [
-#                             0
-#                         ]
-#                     }
-#                 }
-#             },
-#             "version": 1
-#         })
