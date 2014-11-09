@@ -195,14 +195,15 @@ class AppWrapper:
         app = klass(db_input, file_output, **kwargs)
         try:
             app.run_application()
+            for report in klass.reports(output_format):
+                print(report)
+            
         except Exception as ee:
-            analysis.status = 'error'
+            #analysis.status = 'error'
             # Re-raise the exception, since testing may include checking for expected exceptions.
             raise( ee )
         finally:
-            if( analysis.status != 'error' ):
-                analysis.status = 'complete'
-                analysis.progress_percent = 100
+            
             analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
             analysis.save()
 
