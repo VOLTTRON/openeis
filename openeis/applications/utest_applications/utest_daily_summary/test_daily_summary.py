@@ -85,17 +85,23 @@ and includes the following modification: Paragraph 3. has been added.
 import os
 import pytest
 
+from configparser import ConfigParser
+
 from openeis.applications.utest_applications.appwrapper import AppWrapper
+from openeis.projects.models import (SensorIngest,
+                                     DataMap,
+                                     DataFile)
+from django.conf import global_settings
 
 pytestmark = pytest.mark.django_db
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-@pytest.mark.usesfixtures('daily_summary_datafile')
-def test_daily_summary_same_numbers():
-    ds_same_num_ini = os.path.join(basedir, 
-                                   'daily_summary_same_number.ini')
+
+def test_daily_summary_same_numbers(daily_summary_sensor_dataset):
     
+    for v in DataFile.objects.all():
+        print(v.id)
     
     
     ds_same_num_exp = {
@@ -103,8 +109,23 @@ def test_daily_summary_same_numbers():
                                     'daily_summary_same_number.ref.csv')
     }
     
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', "daily_summary")
+    config.set("global_settings", 'dataset_id', str(daily_summary_sensor_dataset.id))
+    config.set("global_settings", 'sensormap_id', str(daily_summary_sensor_dataset.id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_sq_ft', '3000')
+    config.set('application_config', 'building_name', '"bldg90"')
+    
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingElectricity')
+    
+    
     app = AppWrapper()
-    app.run_it(ds_same_num_ini, ds_same_num_exp, clean_up=True)
+    app.run_it(config, ds_same_num_exp, clean_up=True)
     
 # class TestDailySummary(AppTestBase):
 #     fixtures = [
