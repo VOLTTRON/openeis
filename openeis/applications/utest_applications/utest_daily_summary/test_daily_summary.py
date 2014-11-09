@@ -97,6 +97,22 @@ pytestmark = pytest.mark.django_db
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
+def build_config_parser(dataset_id, sensormap_id):
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', "daily_summary")
+    config.set("global_settings", 'dataset_id', str(dataset_id))
+    config.set("global_settings", 'sensormap_id', str(sensormap_id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_sq_ft', '3000')
+    config.set('application_config', 'building_name', '"bldg90"')
+    
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingElectricity')
+    
+    return config
 
 def test_daily_summary_same_numbers(daily_summary_sensor_dataset):
     
@@ -107,26 +123,22 @@ def test_daily_summary_same_numbers(daily_summary_sensor_dataset):
     ds_same_num_exp = {
         'Daily_Summary_Table': os.path.join(basedir, 
                                     'daily_summary_same_number.ref.csv')
-    }
+    }  
     
-    config = ConfigParser()
-    
-    config.add_section("global_settings")
-    config.set("global_settings", 'application', "daily_summary")
-    config.set("global_settings", 'dataset_id', str(daily_summary_sensor_dataset.id))
-    config.set("global_settings", 'sensormap_id', str(daily_summary_sensor_dataset.id))
-    
-    config.add_section("application_config")
-    config.set('application_config', 'building_sq_ft', '3000')
-    config.set('application_config', 'building_name', '"bldg90"')
-    
-    config.add_section('inputs')
-    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingElectricity')
-    
+    config = build_config_parser(daily_summary_sensor_dataset.id, 
+                                 daily_summary_sensor_dataset.map.id)
     
     app = AppWrapper()
     app.run_it(config, ds_same_num_exp, clean_up=True)
     
+# def test_daily_summary_one_to_five(self):
+#         ds_onetofive_ini = os.path.join(self.basedir,
+#             'daily_summary_onetofive.ini')
+#         ds_onetofive_exp = {}
+#         ds_onetofive_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
+#             'daily_summary_onetofive.ref.csv')
+#         self.run_it(ds_onetofive_ini, ds_onetofive_exp, clean_up=True)
+#         
 # class TestDailySummary(AppTestBase):
 #     fixtures = [
 #         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'daily_summary_fixture.json')
