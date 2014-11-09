@@ -100,6 +100,10 @@ pytestmark = pytest.mark.django_db
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 def build_config_parser(dataset_id, sensormap_id):
+    '''
+    This function creates a config parser with the specified dataset and
+    sensormap_id. 
+    '''
     config = ConfigParser()
     
     config.add_section("global_settings")

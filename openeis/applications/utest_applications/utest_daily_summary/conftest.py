@@ -2,7 +2,7 @@ import os
 import pytest
 
 from openeis.projects import models
-from openeis.applications.utest_applications.conftest import (project,
+from openeis.applications.utest_applications.fixture_support import (project,
                                                               create_data_file,
                                                               create_dataset,
                                                               active_user)  
