@@ -116,10 +116,6 @@ def build_config_parser(dataset_id, sensormap_id):
 
 def test_daily_summary_same_numbers(samenumber_dataset):
     
-    for v in DataFile.objects.all():
-        print(v.id)
-    
-    
     ds_same_num_exp = {
         'Daily_Summary_Table': os.path.join(basedir, 
                                     'daily_summary_same_number.ref.csv')
@@ -131,14 +127,17 @@ def test_daily_summary_same_numbers(samenumber_dataset):
     app = AppWrapper()
     app.run_it(config, ds_same_num_exp, clean_up=True)
     
-# def test_daily_summary_one_to_five(daily_summary_onetofive):
-#     ds_onetofive_ini = os.path.join(self.basedir,
-#         'daily_summary_onetofive.ini')
-#     ds_onetofive_exp = {}
-#     ds_onetofive_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-#         'daily_summary_onetofive.ref.csv')
-#     self.run_it(ds_onetofive_ini, ds_onetofive_exp, clean_up=True)
-#          
+def test_daily_summary_one_to_five(onetofive_dataset):
+    ds_onetofive_exp = {
+        'Daily_Summary_Table': os.path.join(basedir,
+                                    'daily_summary_onetofive.ref.csv')
+    }
+    
+    config = build_config_parser(onetofive_dataset.id, 
+                                 onetofive_dataset.map.id)
+    app = AppWrapper()
+    app.run_it(config, ds_onetofive_exp, clean_up=True)
+    
 # class TestDailySummary(AppTestBase):
 #     fixtures = [
 #         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'daily_summary_fixture.json')

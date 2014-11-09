@@ -22,6 +22,15 @@ def samenumber_datamap(project):
 def samenumber_dataset(project, samenumber_datamap, daily_summary_datafile):
     return create_dataset(name='Daily Summary Datamap', project=project, 
                           datamap=samenumber_datamap, files={'0': daily_summary_datafile})
+    
+@pytest.fixture
+def onetofive_datamap(project):
+    return create_datamap(project, "onetofive")
+
+@pytest.fixture
+def onetofive_dataset(project, onetofive_datamap, daily_summary_datafile):
+    return create_dataset(name='Daily Summary Datamap', project=project, 
+                          datamap=onetofive_datamap, files={'0': daily_summary_datafile})
 
 def create_datamap(project, column):
     return models.DataMap.objects.create(project=project, name="Daily Summary Map",
