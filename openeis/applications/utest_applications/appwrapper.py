@@ -130,27 +130,15 @@ class AppWrapper:
             assert given == expected, msg
         else:
             assert given == expected
-
-    def run_application(self, configFileName):
-        """
-        Runs the application with a given configuration file.
-        Parameters:
-            - configFileName: configuration file for application run
-        Returns:
-            - actual_outputs, dictionary, maps table name to file name of run results
-        """
-
-        # Note the overall process here follows that of method
-        # openeis/projects/management/commands/runapplication.handle().
-
-        # Read the configuration file.
-        self.assertTrue(
-            os.path.isfile(configFileName),
-            msg='Cannot find configuration file "{}"'.format(configFileName)
-            )
-        config = ConfigParser()
-        config.read(configFileName)
-
+            
+    def assertIn(self, value, collection, msg=None):
+        if msg:
+            assert value in collection, msg
+        else:
+            assert value in collection
+    
+    def _run_app(self, config):
+        
         # Get application.
         appName = config['global_settings']['application']
         klass = get_algorithm_class(appName)
@@ -174,7 +162,7 @@ class AppWrapper:
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
         project = models.Project.objects.get(pk=1)
         analysis = models.Analysis(
-            added=now, started=now, status="running",
+            added=now, started=now,
             dataset=dataset, application=appName,
             debug=True,
             project_id = dataset.project_id,
@@ -214,6 +202,31 @@ class AppWrapper:
 
         return actual_outputs
 
+
+    def run_application(self, configOrFileName):
+        """
+        Runs the application with a given configuration file.
+        Parameters:
+            - configOrFileName: configuration file for application run
+        Returns:
+            - actual_outputs, dictionary, maps table name to file name of run results
+        """
+
+        # Note the overall process here follows that of method
+        # openeis/projects/management/commands/runapplication.handle().
+
+        if isinstance(configOrFileName, ConfigParser):
+            config = configOrFileName
+        else:
+            # Read the configuration file.
+            self.assertTrue(
+                os.path.isfile(configOrFileName),
+                msg='Cannot find configuration file "{}"'.format(configOrFileName)
+                )
+            config = ConfigParser()
+            config.read(configOrFileName)
+        return self._run_app(config)
+        
 
     def _getCSV_asList(self, csvFileName):
         """
@@ -395,20 +408,20 @@ class AppWrapper:
         return( nearlySame )
 
 
-    def run_it(self, configFileName, expected_outputs, clean_up=False):
+    def run_it(self, configOrFileName, expected_outputs, clean_up=False):
         """
         Runs the application and checks the output with the expected output.
             Will clean up output files if clean_up is set to true.
 
         Parameters:
-            - configFileName: configuration file for application run
+            - configOrFileName: configuration file for application run
             - expected_outputs: dictionary, maps table name to file name of expected results
             - clean_up: if it should clean newly made files or not
         Throws: Assertion error if the files do not match.
         """
 
         # Run application.
-        actual_outputs = self.run_application(configFileName)
+        actual_outputs = self.run_application(configOrFileName)
 
         # Check results.
         for tableName in expected_outputs:
@@ -425,13 +438,18 @@ class AppWrapper:
         if clean_up:
             for tableName in actual_outputs:
                 os.remove(actual_outputs[tableName])
-            # Get application name from config file.
-            self.assertTrue(
-                os.path.isfile(configFileName),
-                msg='Cannot find configuration file "{}"'.format(configFileName)
-                )
-            config = ConfigParser()
-            config.read(configFileName)
+                
+            if not isinstance(configOrFileName, ConfigParser):
+                # Get application name from config file.
+                self.assertTrue(
+                    os.path.isfile(configOrFileName),
+                    msg='Cannot find configuration file "{}"'.format(configOrFileName)
+                    )
+                config = ConfigParser()
+                config.read(configOrFileName)
+            else:
+                config = configOrFileName
+                
             appName = config['global_settings']['application']
             # Remove log file.
             logFiles = [
