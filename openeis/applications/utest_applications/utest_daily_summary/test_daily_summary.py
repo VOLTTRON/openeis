@@ -149,15 +149,20 @@ def test_daily_summary_missing_numbers(missing_numbers_dataset):
     app = AppWrapper()
     app.run_it(config, ds_missing_exp, clean_up=True)
     
-# 
-# def test_daily_summary_floats(self):
-#     ds_floats_ini = os.path.join(self.basedir,
-#         'daily_summary_floats.ini')
-#     ds_floats_exp = {}
-#     ds_floats_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-#         'daily_summary_floats.ref.csv')
-#     self.run_it(ds_floats_ini, ds_floats_exp, clean_up=True)
-# 
+ 
+def test_daily_summary_floats(floats_dataset):
+    
+    ds_floats_exp = {
+        'Daily_Summary_Table': os.path.join(basedir,
+                                    'daily_summary_floats.ref.csv')
+    }
+    
+    config = build_config_parser(floats_dataset.id, 
+                                 floats_dataset.map.id)
+    app = AppWrapper()
+    app.run_it(config, ds_floats_exp, clean_up=True)
+    
+ 
 # def test_daily_summary_invalid(self):
 #     ds_incorrect_ini = os.path.join(self.basedir,
 #         'daily_summary_invalid.ini')

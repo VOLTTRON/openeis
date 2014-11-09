@@ -44,6 +44,16 @@ def missing_numbers_dataset(project, missing_numbers_datamap, daily_summary_data
                           datamap=missing_numbers_datamap, 
                           files={'0': daily_summary_datafile})
 
+@pytest.fixture
+def floats_datamap(project):
+    return create_datamap(project, "floats")
+
+@pytest.fixture
+def floats_dataset(project, floats_datamap, daily_summary_datafile):
+    return create_dataset(name='Daily Summary Datamap', project=project, 
+                          datamap=floats_datamap, 
+                          files={'0': daily_summary_datafile})
+    
 def create_datamap(project, column):
     return models.DataMap.objects.create(project=project, name="Daily Summary Map",
         map={
