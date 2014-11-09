@@ -21,7 +21,8 @@ def samenumber_datamap(project):
 @pytest.fixture
 def samenumber_dataset(project, samenumber_datamap, daily_summary_datafile):
     return create_dataset(name='Daily Summary Datamap', project=project, 
-                          datamap=samenumber_datamap, files={'0': daily_summary_datafile})
+                          datamap=samenumber_datamap, 
+                          files={'0': daily_summary_datafile})
     
 @pytest.fixture
 def onetofive_datamap(project):
@@ -30,7 +31,18 @@ def onetofive_datamap(project):
 @pytest.fixture
 def onetofive_dataset(project, onetofive_datamap, daily_summary_datafile):
     return create_dataset(name='Daily Summary Datamap', project=project, 
-                          datamap=onetofive_datamap, files={'0': daily_summary_datafile})
+                          datamap=onetofive_datamap, 
+                          files={'0': daily_summary_datafile})
+
+@pytest.fixture
+def missing_numbers_datamap(project):
+    return create_datamap(project, "missingandfloats")
+
+@pytest.fixture
+def missing_numbers_dataset(project, missing_numbers_datamap, daily_summary_datafile):
+    return create_dataset(name='Daily Summary Datamap', project=project, 
+                          datamap=missing_numbers_datamap, 
+                          files={'0': daily_summary_datafile})
 
 def create_datamap(project, column):
     return models.DataMap.objects.create(project=project, name="Daily Summary Map",

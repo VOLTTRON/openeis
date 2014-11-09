@@ -138,47 +138,27 @@ def test_daily_summary_one_to_five(onetofive_dataset):
     app = AppWrapper()
     app.run_it(config, ds_onetofive_exp, clean_up=True)
     
-# class TestDailySummary(AppTestBase):
-#     fixtures = [
-#         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'daily_summary_fixture.json')
-#         ]
+def test_daily_summary_missing_numbers(missing_numbers_dataset):
+    ds_missing_exp = {
+        'Daily_Summary_Table': os.path.join(basedir,
+                                    'daily_summary_missing.ref.csv')
+    }
+    
+    config = build_config_parser(missing_numbers_dataset.id, 
+                                 missing_numbers_dataset.map.id)
+    app = AppWrapper()
+    app.run_it(config, ds_missing_exp, clean_up=True)
+    
 # 
-#     def setUp(self):
-#         self.basedir = os.path.abspath(os.path.dirname(__file__))
+# def test_daily_summary_floats(self):
+#     ds_floats_ini = os.path.join(self.basedir,
+#         'daily_summary_floats.ini')
+#     ds_floats_exp = {}
+#     ds_floats_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
+#         'daily_summary_floats.ref.csv')
+#     self.run_it(ds_floats_ini, ds_floats_exp, clean_up=True)
 # 
-#     def test_daily_summary_same_numbers(self):
-#         ds_same_num_ini = os.path.join(self.basedir,
-#             'daily_summary_same_number.ini')
-#         ds_same_num_exp = {}
-#         ds_same_num_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-#             'daily_summary_same_number.ref.csv')
-#         self.run_it(ds_same_num_ini, ds_same_num_exp, clean_up=True)
-# 
-#     def test_daily_summary_one_to_five(self):
-#         ds_onetofive_ini = os.path.join(self.basedir,
-#             'daily_summary_onetofive.ini')
-#         ds_onetofive_exp = {}
-#         ds_onetofive_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-#             'daily_summary_onetofive.ref.csv')
-#         self.run_it(ds_onetofive_ini, ds_onetofive_exp, clean_up=True)
-# 
-#     def test_daily_summary_missing_numbers(self):
-#         ds_missing_ini = os.path.join(self.basedir,
-#             'daily_summary_missing.ini')
-#         ds_missing_exp = {}
-#         ds_missing_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-#             'daily_summary_missing.ref.csv')
-#         self.run_it(ds_missing_ini, ds_missing_exp, clean_up=True)
-# 
-#     def test_daily_summary_floats(self):
-#         ds_floats_ini = os.path.join(self.basedir,
-#             'daily_summary_floats.ini')
-#         ds_floats_exp = {}
-#         ds_floats_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-#             'daily_summary_floats.ref.csv')
-#         self.run_it(ds_floats_ini, ds_floats_exp, clean_up=True)
-# 
-#     def test_daily_summary_invalid(self):
-#         ds_incorrect_ini = os.path.join(self.basedir,
-#             'daily_summary_invalid.ini')
-#         self.assertRaises(Exception, self.run_application, ds_incorrect_ini)
+# def test_daily_summary_invalid(self):
+#     ds_incorrect_ini = os.path.join(self.basedir,
+#         'daily_summary_invalid.ini')
+#     self.assertRaises(Exception, self.run_application, ds_incorrect_ini)
