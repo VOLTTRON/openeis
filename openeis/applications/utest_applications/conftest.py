@@ -4,7 +4,7 @@ import os.path
 
 import pytest
 
-from openeis.projects import models
+from openeis.projects import (models, views)
 
 @pytest.fixture
 def admin_user():
