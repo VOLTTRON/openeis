@@ -115,7 +115,7 @@ class Application(DriverApplicationBaseClass):
         name = 'Longitudinal Benchmarking'
         desc = 'Longitudinal benchmarking compares the energy usage\
                 in a fixed period for a building, system, or component\
-                to a comparable “baseline” or “base” period of the same length,\
+                to a comparable "baseline" or "base" period of the same length,\
                 to determine if performance has deteriorated or improved,\
                 to set goals for a building or system,\
                 or to monitor for unexpectedly high usage.'
@@ -271,7 +271,7 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Compiling the report table.", logging.INFO)
         for x in merge_load_gas:
             self.out.insert_row('Longitudinal_BM', {
-                'year': x['time'],
+                'year': x['time'].year,
                 'load': x['load'][0]*load_convertfactor,
                 'natgas': x['natgas'][0]*natgas_convertfactor
                 })
