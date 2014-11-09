@@ -14,20 +14,22 @@ def daily_summary_datafile(project):
     return create_data_file(os.path.join(abs_file_dir, 'daily_summary_data.csv'), 
                             project=project,
                             comments='Daily Summary test data.')
+@pytest.fixture
+def samenumber_datamap(project):
+    return create_datamap(project, "samenumber")
 
 @pytest.fixture
-def daily_summary_sensor_dataset(project, daily_summary_datamap, daily_summary_datafile):
+def samenumber_dataset(project, samenumber_datamap, daily_summary_datafile):
     return create_dataset(name='Daily Summary Datamap', project=project, 
-                          datamap=daily_summary_datamap, files={'0': daily_summary_datafile})
-    
-@pytest.fixture
-def daily_summary_datamap(project):
+                          datamap=samenumber_datamap, files={'0': daily_summary_datafile})
+
+def create_datamap(project, column):
     return models.DataMap.objects.create(project=project, name="Daily Summary Map",
         map={
             
             "sensors": {
                 "lbnl/bldg90/WholeBuildingElectricity": {
-                    "column": "samenumber",
+                    "column": column,
                     "unit":"kilowatt",
                     "type": "WholeBuildingElectricity",
                     "file": "0"
@@ -57,3 +59,41 @@ def daily_summary_datamap(project):
             },
             "version": 1
         })
+    
+    
+
+#     return models.DataMap.objects.create(project=project, name="Daily Summary Map",
+#         map={
+#             
+#             "sensors": {
+#                 "lbnl/bldg90/WholeBuildingElectricity": {
+#                     "column": "samenumber",
+#                     "unit":"kilowatt",
+#                     "type": "WholeBuildingElectricity",
+#                     "file": "0"
+#                 },
+#                 "lbnl":{
+#                     "level":"site"
+#                 }
+#             },
+#             "files": {
+#                 "0": {
+#                     "signature": {
+#                         "headers": [
+#                             "datetime", 
+#                             "onetofive", 
+#                             "withmissing", 
+#                             "samenumber", 
+#                             "floats", 
+#                             "missingandfloats"
+#                         ]
+#                     },
+#                     "timestamp": {
+#                         "columns": [
+#                             0
+#                         ]
+#                     }
+#                 }
+#             },
+#             "version": 1
+#         })
