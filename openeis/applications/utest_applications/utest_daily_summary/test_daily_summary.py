@@ -163,8 +163,12 @@ def test_daily_summary_floats(floats_dataset):
     app.run_it(config, ds_floats_exp, clean_up=True)
     
 
-# @pytest.raises(Exception)
-# def test_daily_summary_invalid(self):
-#     ds_incorrect_ini = os.path.join(self.basedir,
-#         'daily_summary_invalid.ini')
-#     self.assertRaises(Exception, self.run_application, ds_incorrect_ini)
+def test_daily_summary_invalid():
+    config = build_config_parser(52, 51)
+    
+    with pytest.raises(Exception) as excinfo:
+        app = AppWrapper()
+        app.run_it(config, 'invalid_datasetref.cxv', clean_up=True)
+        
+    assert excinfo.value != ""
+    
