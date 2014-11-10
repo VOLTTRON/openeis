@@ -131,7 +131,7 @@ class Application(DriverApplicationBaseClass):
         desc = 'Daily summary is a collection of metrics that summarize the daily energy use.\
                 Metrics included in the application are load variability, load minimum and maximum,\
                 peak load benchmark, daily load ratio, and daily load range.'
-        return Descriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
         
     @classmethod
     def get_config_parameters(cls):

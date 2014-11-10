@@ -138,7 +138,7 @@ class Application(DriverApplicationBaseClass):
                 is calculated as the difference between the metered\
                 energy use after improvements were made, and the baseline\
                 projection of energy use.'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
 
     
@@ -153,12 +153,6 @@ class Application(DriverApplicationBaseClass):
             "savings_startdate": ConfigDescriptor(str, "Savings Start Date (YYYY-MM-DD)", optional=False),
             "savings_stopdate": ConfigDescriptor(str, "Savings End Date (YYYY-MM-DD)", optional=False)
             }
-
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'whole_building_energy_savings'
-        desc = 'whole_building_energy_savings'
-        return Descriptor(name=name, description=desc)
     
     @classmethod
     def required_input(cls):

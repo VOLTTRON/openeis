@@ -109,14 +109,14 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
     @classmethod
-    def get_app_descriptor(cls):    
+    def get_self_descriptor(cls):    
         name = 'Time Series Load Profiling'
         desc = 'Time series load profiling is used to understand the relationship\
                 between energy use and time of day. Abnormalities or changes in\
                 load profiles can indicate inefficiencies due to scheduling errors,\
                 unexpected or irregular equipment operation,\
                 high use during unoccupied hours, or untimely peaks.'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     @classmethod
     def get_config_parameters(cls):
@@ -124,12 +124,6 @@ class Application(DriverApplicationBaseClass):
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
-
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'load_profiling'
-        desc = 'load_profiling'
-        return Descriptor(name=name, description=desc)
     
     @classmethod
     def required_input(cls):

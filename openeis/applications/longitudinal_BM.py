@@ -111,7 +111,7 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
     @classmethod
-    def get_app_descriptor(cls):    
+    def get_self_descriptor(cls):    
         name = 'Longitudinal Benchmarking'
         desc = 'Longitudinal benchmarking compares the energy usage\
                 in a fixed period for a building, system, or component\
@@ -119,7 +119,7 @@ class Application(DriverApplicationBaseClass):
                 to determine if performance has deteriorated or improved,\
                 to set goals for a building or system,\
                 or to monitor for unexpectedly high usage.'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     @classmethod
     def get_config_parameters(cls):
@@ -128,12 +128,6 @@ class Application(DriverApplicationBaseClass):
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
-        
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'longitudinal_BM'
-        desc = 'longitudinal_BM'
-        return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):

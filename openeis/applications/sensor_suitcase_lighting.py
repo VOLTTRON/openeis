@@ -138,14 +138,14 @@ class Application(DriverApplicationBaseClass):
         self.electricity_cost = electricity_cost
         
     @classmethod
-    def get_app_descriptor(cls):    
+    def get_self_descriptor(cls):    
         name = 'Sensor Suitcase: Lighting'
         desc = 'RCx sensor suitcase diagnostics is used to identify problems in\
                 the operation and performance of lighting systems in small\
                 commercial buildings. This diagnostic suite targets problems\
                 that are common to this class of buildings, specifically,\
                 excessive lighting during the day-time and after-hours periods. '
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
         
     @classmethod
     def get_config_parameters(cls):
@@ -159,12 +159,6 @@ class Application(DriverApplicationBaseClass):
             "operating_days": ConfigDescriptor(str, "List the weekdays when building is operated: \n (1 = Monday, 7 = Sunday), separated by commas"),
             "holidays": ConfigDescriptor(str, "List the holidays (YYYY-MM-DD) in the dataset, separated by commas.", optional=True),
             }
-
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'sensor_suitcase_lighting'
-        desc = 'sensor_suitcase_lighting'
-        return Descriptor(name=name, description=desc)
     
     @classmethod
     def required_input(cls):

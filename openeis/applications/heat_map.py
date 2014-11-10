@@ -111,13 +111,13 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
     @classmethod
-    def get_app_descriptor(cls):    
+    def get_self_descriptor(cls):    
         name = 'Heat Map'
         desc = 'Heat maps are a means of visualizing and presenting the\
                 information that is contained in a time series load profile.\
                 The maps color-code the size of the load so that hot spots\
                 and patterns are easily identified.'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
         
     @classmethod
     def get_config_parameters(cls):
@@ -125,12 +125,6 @@ class Application(DriverApplicationBaseClass):
         return {
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
-
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'heat_map'
-        desc = 'heat_map'
-        return Descriptor(name=name, description=desc)
     
     @classmethod
     def required_input(cls):

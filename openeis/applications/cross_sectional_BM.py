@@ -130,13 +130,13 @@ class Application(DriverApplicationBaseClass):
         self.building_zipcode = building_zipcode
 
     @classmethod
-    def get_app_descriptor(cls):    
+    def get_self_descriptor(cls):    
         name = 'Cross-Sectional Benchmarking'
         desc = 'Cross-sectional benchmarking is used to compare a building’s\
                 energy efficiency relative to a peer group. It is the first step\
                 in determining if performance is good or poor, and it shows\
                 how much potential there is to improve the building’s efficiency. '
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(name=name, description=desc)
 
     @classmethod
     def get_config_parameters(cls):
@@ -169,12 +169,6 @@ class Application(DriverApplicationBaseClass):
             "building_function": ConfigDescriptor(str, "Building Function", value_list=buildingTypeList),
             "building_zipcode": ConfigDescriptor(str, "Building Zipcode")
             }
-
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'cross_sectional_BM'
-        desc = 'cross_sectional_BM'
-        return Descriptor(name=name, description=desc)
     
     @classmethod
     def required_input(cls):
