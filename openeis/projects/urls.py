@@ -115,6 +115,10 @@ api_urls.append(url(r'applications',
                     views.ApplicationViewSet.as_view({'get': 'list'}),
                     name='applications'))
 
+api_urls.append(url(r'filters',
+                    views.FilterViewSet.as_view({'get': 'list'}),
+                    name='filters'))
+
 urlpatterns = patterns('openeis.projects.views',
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     url(r'^api-docs/', include('rest_framework_swagger.urls')),
