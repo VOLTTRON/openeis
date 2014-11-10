@@ -305,5 +305,4 @@ for applicationName in _applicationList:
 
 
 def get_algorithm_class(name):
-    print(name)
     return _applicationDict.get(name)

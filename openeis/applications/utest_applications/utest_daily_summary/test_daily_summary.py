@@ -85,52 +85,77 @@ and includes the following modification: Paragraph 3. has been added.
 import os
 import pytest
 
-from openeis.applications.utest_applications.apptest import AppTestBase
+from openeis.applications.utest_applications.appwrapper import AppWrapper
+from openeis.applications.utest_applications.fixture_support import build_config_parser
+from openeis.projects.models import (SensorIngest,
+                                     DataMap,
+                                     DataFile)
 
+# Enables django database integration.
 pytestmark = pytest.mark.django_db
 
-@pytest.mark.usesfixtures('daily_summary_datafile')
-class TestDailySummary(AppTestBase):
-    fixtures = [
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'daily_summary_fixture.json')
-        ]
+# get the path to the current directory because that is where
+# the expected outputs will be located.
+basedir = os.path.abspath(os.path.dirname(__file__))
 
-    def setUp(self):
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
+# The app that is being run.
+app_name = 'daily_summary'
 
-    def test_daily_summary_same_numbers(self):
-        ds_same_num_ini = os.path.join(self.basedir,
-            'daily_summary_same_number.ini')
-        ds_same_num_exp = {}
-        ds_same_num_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-            'daily_summary_same_number.ref.csv')
-        self.run_it(ds_same_num_ini, ds_same_num_exp, clean_up=True)
+def test_daily_summary_same_numbers(samenumber_dataset):
+    
+    ds_same_num_exp = {
+        'Daily_Summary_Table': os.path.join(basedir, 
+                                    'daily_summary_same_number.ref.csv')
+    }  
+    
+    config = build_config_parser(app_name, samenumber_dataset.id, 
+                                 samenumber_dataset.map.id)
+    
+    app = AppWrapper()
+    app.run_it(config, ds_same_num_exp, clean_up=True)
+    
+def test_daily_summary_one_to_five(onetofive_dataset):
+    ds_onetofive_exp = {
+        'Daily_Summary_Table': os.path.join(basedir,
+                                    'daily_summary_onetofive.ref.csv')
+    }
+    
+    config = build_config_parser(app_name, onetofive_dataset.id, 
+                                 onetofive_dataset.map.id)
+    app = AppWrapper()
+    app.run_it(config, ds_onetofive_exp, clean_up=True)
+    
+def test_daily_summary_missing_(missing_dataset):
+    ds_missing_exp = {
+        'Daily_Summary_Table': os.path.join(basedir,
+                                    'daily_summary_missing.ref.csv')
+    }
+    
+    config = build_config_parser(app_name, missing_dataset.id, 
+                                 missing_dataset.map.id)
+    app = AppWrapper()
+    app.run_it(config, ds_missing_exp, clean_up=True)
+    
+ 
+def test_daily_summary_floats(floats_dataset):
+    
+    ds_floats_exp = {
+        'Daily_Summary_Table': os.path.join(basedir,
+                                    'daily_summary_floats.ref.csv')
+    }
+    
+    config = build_config_parser(app_name, floats_dataset.id, 
+                                 floats_dataset.map.id)
+    app = AppWrapper()
+    app.run_it(config, ds_floats_exp, clean_up=True)
+    
 
-    def test_daily_summary_one_to_five(self):
-        ds_onetofive_ini = os.path.join(self.basedir,
-            'daily_summary_onetofive.ini')
-        ds_onetofive_exp = {}
-        ds_onetofive_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-            'daily_summary_onetofive.ref.csv')
-        self.run_it(ds_onetofive_ini, ds_onetofive_exp, clean_up=True)
-
-    def test_daily_summary_missing_numbers(self):
-        ds_missing_ini = os.path.join(self.basedir,
-            'daily_summary_missing.ini')
-        ds_missing_exp = {}
-        ds_missing_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-            'daily_summary_missing.ref.csv')
-        self.run_it(ds_missing_ini, ds_missing_exp, clean_up=True)
-
-    def test_daily_summary_floats(self):
-        ds_floats_ini = os.path.join(self.basedir,
-            'daily_summary_floats.ini')
-        ds_floats_exp = {}
-        ds_floats_exp['Daily_Summary_Table'] = os.path.join(self.basedir,
-            'daily_summary_floats.ref.csv')
-        self.run_it(ds_floats_ini, ds_floats_exp, clean_up=True)
-
-    def test_daily_summary_invalid(self):
-        ds_incorrect_ini = os.path.join(self.basedir,
-            'daily_summary_invalid.ini')
-        self.assertRaises(Exception, self.run_application, ds_incorrect_ini)
+def test_daily_summary_invalid():
+    config = build_config_parser(app_name, 52, 51)
+    
+    with pytest.raises(Exception) as excinfo:
+        app = AppWrapper()
+        app.run_it(config, 'invalid_datasetref.cxv', clean_up=True)
+        
+    assert excinfo.value != ""
+    

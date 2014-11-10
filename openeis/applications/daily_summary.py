@@ -126,12 +126,12 @@ class Application(DriverApplicationBaseClass):
         self.building_name = building_name
 
     @classmethod
-    def get_app_descriptor(cls):    
+    def get_self_descriptor(cls):    
         name = 'Daily Summary'
         desc = 'Daily summary is a collection of metrics that summarize the daily energy use.\
                 Metrics included in the application are load variability, load minimum and maximum,\
                 peak load benchmark, daily load ratio, and daily load range.'
-        return ApplicationDescriptor(app_name=name, description=desc)
+        return Descriptor(app_name=name, description=desc)
         
     @classmethod
     def get_config_parameters(cls):
@@ -140,13 +140,6 @@ class Application(DriverApplicationBaseClass):
             "building_sq_ft": ConfigDescriptor(float, "Square footage", value_min=200),
             "building_name": ConfigDescriptor(str, "Building Name", optional=True)
             }
-    
-    @classmethod
-    def get_self_descriptor(cls):
-        # Called by UI
-        name = 'daily_summary'
-        desc = 'This application calculates daily load summary metrics and displays it in a tabular format'
-        return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):

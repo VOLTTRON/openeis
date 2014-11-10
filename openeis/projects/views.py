@@ -756,9 +756,8 @@ class DataSetViewSet(viewsets.ModelViewSet):
         #print(config_string['config'])*/
         serializer = serializers.DataSetManipulateSerializer(data=request.DATA)
         if serializer.is_valid():
-            obj = serializer.object
             dataset_id = self.get_object().id
-            config = config_string['config']
+            config = serializer.object['config']
             sensoringest = models.SensorIngest.objects.get(pk=dataset_id)
             datamap = sensoringest.map
             sensors = list(datamap.sensors.all())

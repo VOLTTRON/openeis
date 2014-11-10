@@ -187,7 +187,7 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_time = int(warm_up_time)
         self.warm_up_start = None
         auto_correctflag = True
-        Application.data_sample.rate = float(data_sample_rate)
+        Application.data_sample_rate = float(data_sample_rate)
 
         self.static_dx = duct_static_rcx(max_duct_stp_stpt, duct_stc_retuning,
                                          data_window, no_required_data,
@@ -266,14 +266,6 @@ class Application(DrivenApplicationBaseClass):
                              'diagnostic will never exceed this value '
                              '(default=2.5 inch w.g.)', optional=True),
 
-            'high_supply_fan_threshold':
-            ConfigDescriptor(float,
-                             ('Value (%) above which the supply fan will '
-                              'be considered running at its maximum speed. '
-                              'If fan is running at its '
-                              'maximum speed (default=100%)'),
-                             optional=True),
-
             'duct_stc_retuning':
             ConfigDescriptor(float,
                              ('Increment/decrement of static pressure '
@@ -299,7 +291,13 @@ class Application(DrivenApplicationBaseClass):
                              'Value above which the supply fan will be '
                              'considered at its minimum speed (default=20%)',
                              optional=True),
-
+            'high_supply_fan_threshold':
+            ConfigDescriptor(float,
+                             ('Value (%) above which the supply fan will '
+                              'be considered running at its maximum speed. '
+                              'If fan is running at its '
+                              'maximum speed (default=100%)'),
+                             optional=True),
             'setpoint_allowable_deviation':
             ConfigDescriptor(float,
                              '% allowable deviation from set points '
@@ -310,7 +308,7 @@ class Application(DrivenApplicationBaseClass):
                              ('Required difference between minimum and '
                               'maximum duct static pressure set point '
                               'detecting a duct static pressure '
-                              'set point reset (default=0.2 inch w.g.)'),
+                              'set point reset (default=0.25 inch w.g.)'),
                              optional=True),
             'reheat_valve_threshold':
             ConfigDescriptor(float,
@@ -348,7 +346,7 @@ class Application(DrivenApplicationBaseClass):
             ConfigDescriptor(float,
                              'High zone damper threshold for '
                              'high supply-air temperature '
-                             'auto-correct RCx (default=80%)',
+                             'auto-correct RCx (default=30%)',
                              optional=True),
 
             'percent_damper_threshold':
@@ -376,7 +374,7 @@ class Application(DrivenApplicationBaseClass):
             'unocc_time_threshold':
             ConfigDescriptor(float,
                              'Time threshold used for AHU schedule Dx. '
-                             '(default=80%)', optional=True),
+                             '(default=30%)', optional=True),
             'unocc_stp_threshold':
             ConfigDescriptor(float,
                              'AHU off static pressure deadband '
@@ -419,7 +417,7 @@ class Application(DrivenApplicationBaseClass):
                              'Used to detect the '
                              'time when the supply fan should '
                              'be operational '
-                             '(default=0:00;0:00 - (unoccupied))',
+                             '(default=0:00;0:00(unoccupied))',
                              optional=True),
             'saturday_sch':
             ConfigDescriptor(str,
@@ -427,7 +425,7 @@ class Application(DrivenApplicationBaseClass):
                              'Used to detect the '
                              'time when the supply fan should '
                              'be operational '
-                             '(default=0:00;0:00 - (unoccupied))',
+                             '(default=0:00;0:00(unoccupied))',
                              optional=True),
             'sunday_sch':
             ConfigDescriptor(str,
@@ -558,7 +556,7 @@ class Application(DrivenApplicationBaseClass):
 
         if not fan_stat_check and self.fan_speedcmd_name is not None:
             for key, value in device_dict.items():
-                if key.startswith(self.fan_speedcmd_name):
+                if key.startswith(self.fan_speedcmd_name) and value is not None:
                     fan_stat_check = True
                     if value < self.low_supply_fan_threshold:
                         self.warm_up_flag = True
@@ -595,9 +593,11 @@ class Application(DrivenApplicationBaseClass):
         for key, value in device_dict.items():
             if (self.fan_speedcmd_name is not None and
                self.fan_speedcmd_name in key):
-                if value > self.high_supply_fan_threshold:
+                if (value is not None and
+                   value > self.high_supply_fan_threshold):
                     low_dx_condition = True
-                elif value < self.low_supply_fan_threshold:
+                elif (value is not None and
+                      value < self.low_supply_fan_threshold):
                     high_dx_condition = True
             if self.fan_speedcmd_priority in key:
                 if value == self.override_state:
@@ -763,11 +763,11 @@ class duct_static_rcx(object):
 
         time_check = datetime.timedelta(minutes=self.data_window)
         elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=Application.data_sample_rate))
+                        datetime.timedelta(minutes=Application.
+                                           data_sample_rate))
 
         if (elapsed_time >= time_check and
            len(self.timestamp) >= self.no_required_data):
-
             avg_duct_stpr_stpt = sum(
                 self.duct_stp_stpt_values) / len(self.duct_stp_stpt_values)
 
@@ -1038,7 +1038,8 @@ class supply_air_temp_rcx(object):
         self.timestamp.append(current_time)
         time_check = datetime.timedelta(minutes=self.data_window)
         elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=Application.data_sample_rate))
+                        datetime.timedelta(minutes=Application.
+                                           data_sample_rate))
 
         if (elapsed_time >= time_check and
            len(self.timestamp) >= self.no_required_data):
@@ -1268,6 +1269,7 @@ class schedule_reset_rcx(object):
         self.duct_stp_stpt_values = []
         self.sat_stpt_values = []
         self.timestamp = []
+        self.dx_time = None
         self.monday_sch = re.sub('[:;]', ',', monday_sch)
         self.monday_sch = [int(item) for item in (x.strip()
                                                   for x in
@@ -1353,6 +1355,7 @@ class schedule_reset_rcx(object):
 
         run = False
         if self.timestamp and self.timestamp[-1].date() != current_time.date():
+            self.dx_time = self.timestamp[-1].date()
             run = True
 
         self.timestamp.append(current_time)
@@ -1361,10 +1364,13 @@ class schedule_reset_rcx(object):
             diagnostic_result = self.unocc_fan_operation(diagnostic_result)
             diagnostic_result = self.no_static_pr_reset(diagnostic_result)
             diagnostic_result = self.no_sat_sp_reset(diagnostic_result)
+            self.dx_time = None
             self.sat_stpt_values = []
             self.duct_stp_stpt_values = []
             self.duct_stp_values = []
             self.fan_status_values = []
+            Application.pre_requiste_messages = []
+            Application.pre_msg_time = []
             if duct_stp_stpt_values is not None:
                 self.sat_stpt_values.append(sat_stpt_values)
                 self.duct_stp_stpt_values.append(duct_stp_stpt_values)
@@ -1412,7 +1418,7 @@ class schedule_reset_rcx(object):
                 color_code = 'GREY'
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': self.dx_time,
             'diagnostic_name': sched_dx,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -1420,10 +1426,6 @@ class schedule_reset_rcx(object):
         }
         result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
-        self.duct_stp_values = []
-        self.fan_status_values = []
-        Application.pre_requiste_messages = []
-        Application.pre_msg_time = []
         return result
 
     def no_static_pr_reset(self, result):
@@ -1431,6 +1433,8 @@ class schedule_reset_rcx(object):
         Auto-RCx  to detect whether a static pressure set point
         reset is implemented
         '''
+        if not self.duct_stp_stpt_values:
+            return result
         stp_diff = (max(self.duct_stp_stpt_values) -
                     min(self.duct_stp_stpt_values))
 
@@ -1450,7 +1454,7 @@ class schedule_reset_rcx(object):
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': str(self.dx_time),
             'diagnostic_name': duct_static3,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -1459,7 +1463,6 @@ class schedule_reset_rcx(object):
 
         result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
-        self.duct_stp_stpt_values = []
         return result
 
     def no_sat_sp_reset(self, result):
@@ -1467,6 +1470,8 @@ class schedule_reset_rcx(object):
         If the detected problems(s) are consistent
         then generate a fault message(s).
         '''
+        if not self.sat_stpt_values:
+            return result
         satemp_diff = max(self.sat_stpt_values) - min(self.sat_stpt_values)
         energy_impact = None
 
@@ -1483,7 +1488,7 @@ class schedule_reset_rcx(object):
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': str(self.dx_time),
             'diagnostic_name': sa_temp_dx2,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
