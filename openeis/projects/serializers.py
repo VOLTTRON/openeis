@@ -174,7 +174,6 @@ class MinimalUserSerializer(serializers.ModelSerializer):
         model = models.User
         fields = ('id', 'username', 'last_name', 'first_name')
 
-
 class VerificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.AccountVerification
@@ -397,18 +396,19 @@ class SharedAnalysisSerializer(serializers.ModelSerializer):
         model = models.SharedAnalysis
         read_only_fields = ('key',)
 
-
-class ApplicationSerializer(serializers.Serializer):
+class ConfigurableObjectSerializer(serializers.Serializer):
     parameters = serializers.SerializerMethodField('_get_parameters')
-    inputs = serializers.SerializerMethodField('_get_inputs')
+    
+    def _get_parameters(self, obj):
+        return {k: self._convert_parameter(v) for k, v in
+            obj.get_config_parameters().items()}
 
     def _convert_parameter(self, parameter):
         parameter.config_type = parameter.config_type.__name__
         return parameter.__dict__
 
-    def _get_parameters(self, obj):
-        return {k: self._convert_parameter(v) for k, v in
-                obj.get_config_parameters().items()}
+class ApplicationSerializer(ConfigurableObjectSerializer):
+    inputs = serializers.SerializerMethodField('_get_inputs')
 
     def _get_inputs(self, obj):
         return {k: v.__dict__ for k, v in obj.required_input().items()}
