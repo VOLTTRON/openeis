@@ -777,10 +777,10 @@ class DataSetViewSet(viewsets.ModelViewSet):
                 return Response(errors, status.HTTP_400_BAD_REQUEST)
             
             datamap.id = None 
-            datamap.name = datamap.name+' version - '+str(datetime.now())
+            datamap.name = datamap.name+' version - '+str(datetime.datetime.now())
             datamap.save()
             
-            sensoringest.name = str(sensoringest.id) + ' - '+str(datetime.now())
+            sensoringest.name = str(sensoringest.id) + ' - '+str(datetime.datetime.now())
             sensoringest.id = None
             sensoringest.map = datamap
             sensoringest.save()
