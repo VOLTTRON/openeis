@@ -14,6 +14,7 @@ import zipfile
 
 
 _revision = '1'
+_windows = sys.platform.startswith('win')
 
 
 class Recorder:
@@ -66,7 +67,10 @@ class Recorder:
             self.makedirs(os.path.dirname(dstpath))
             dst = open(dstpath, 'xb')
         with dst:
-            os.fchmod(dst.fileno(), mode)
+            if _windows:
+                os.chmod(dstpath, mode)
+            else:
+                os.fchmod(dst.fileno(), mode)
             while True:
                 buf = src.read(self.blocksize)
                 if not buf:
@@ -129,6 +133,8 @@ class Recorder:
                 path = os.path.join(curdir, path)
                 if path.startswith(root):
                     path = path[len(root):]
+                    if os.sep != '/':
+                        path = path.replace(os.sep, '/')
                 digest, size = args
                 if digest:
                     digest = '{}={}'.format(self.algo,
@@ -148,10 +154,14 @@ class ZipFileProxy(zipfile.ZipFile):
         __slots__ = ()
         name = property(lambda my: my.filename)
         mode = property(lambda my: (my.external_attr >> 16) & 0xFFFF)
-        type = property(lambda my: DIRTYPE if my.filename.endsiwth('/') else REGTYPE)
+        type = property(lambda my: DIRTYPE if my.filename.endswith('/') else REGTYPE)
 
     extractfile = property(lambda my: my.open)
 
+    def __init__(self, path, *args, **kwargs):
+        path = os.path.abspath(path)
+        super().__init__(path, *args, **kwargs)
+        
     def getmembers(self):
         members = self.infolist()
         for member in members:
@@ -175,8 +185,8 @@ def unpack(archive_path, destdir):
                 root, subdir = parts[:2]
             except ValueError:
                 continue
-            if (root != 'pgsql' or
-                    subdir not in ['bin', 'lib', 'include'] or '..' in parts):
+            if (root != 'pgsql' or '..' in parts or
+                    subdir not in ['bin', 'lib', 'include', 'share']):
                 continue
             # Treat links like regular files because pip doesn't uninstall
             # symlinks and the link may come before the linked file.
@@ -193,8 +203,11 @@ def unpack(archive_path, destdir):
         version = subprocess.check_output(
             [os.path.join('bin', 'postgres'), '--version'],
             stdin=open(os.devnull)).split()[-1].decode('latin1')
-        site_path = os.path.join(
-            'lib', 'python{}.{}'.format(*sys.version_info[:2]), 'site-packages')
+        if _windows:
+            site_path = os.path.join('lib', 'site-packages')
+        else:
+            site_path = os.path.join('lib',
+                'python{}.{}'.format(*sys.version_info[:2]), 'site-packages')
         dist_info = 'vpgsql-{}.{}.dist-info'.format(version, _revision)
         record_path = os.path.join(site_path, dist_info, 'RECORD')
         recorder.makedirs(os.path.dirname(record_path))
@@ -223,11 +236,11 @@ def main(argv):
         in_venv = sys.base_prefix != sys.prefix
     except AttributeError:
         print('{}: unsupported Python version'.format(prog), file=sys.stderr)
-        return os.EX_USAGE
+        return 64
     #print(opts)
     if not in_venv:
         print('{}: not in a virtual environment'.format(prog), file=sys.stderr)
-        return os.EX_USAGE
+        return 64
     unpack(opts.from_archive, sys.prefix)
 
 
