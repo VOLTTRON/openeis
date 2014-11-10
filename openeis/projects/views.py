@@ -94,7 +94,10 @@ from .storage.db_input import DatabaseInput
 from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
-from openeis.filters import apply_filters
+from openeis.filters import apply_filters, column_modifiers
+
+
+from openeis.projects import version
 
 _logger = logging.getLogger(__name__)
 
@@ -958,6 +961,21 @@ class ApplicationViewSet(viewsets.ViewSet):
                 app_list[-1]['name'] = app.get_self_descriptor().name
                 app_list[-1]['description'] = app.get_self_descriptor().description
         return Response(app_list)
+    
+class FilterViewSet(viewsets.ViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
+    
+    def list(self, request, *args, **kargs):
+        '''Return list of filters with parameters.'''
+        filter_list = []
+        for filter_id, filter_ in column_modifiers.items():
+            # Filter has __iter__ method, many has to be set as False otherwise it will crash
+            filter_list.append(serializers.ConfigurableObjectSerializer(filter_, many=False).data)
+            filter_list[-1]['id'] = filter_id
+            if filter_.get_self_descriptor():
+                filter_list[-1]['name'] = filter_.get_self_descriptor().name
+                filter_list[-1]['description'] = filter_.get_self_descriptor().description
+        return Response(filter_list)
 
 
 _analysis_processes = set()
