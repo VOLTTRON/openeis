@@ -130,7 +130,7 @@ class Application(DriverApplicationBaseClass):
         self.savings_stop = dt.datetime.strptime(savings_stopdate, '%Y-%m-%d')
 
     @classmethod
-    def get_app_descriptor(cls):    
+    def get_self_descriptor(cls):    
         name = 'Whole-Building Energy Savings'
         desc = 'Whole-building Energy savings is used to quantify\
                 the energy savings associated with an improvement\
