@@ -97,7 +97,7 @@ from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
 from openeis.projects import models
 
-def run_application(config, expected_output):
+def run_appwrapper(config, expected_output):
     """
     Run the application with the passed configparser interface with the 
     expected_output.
