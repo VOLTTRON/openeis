@@ -81,47 +81,94 @@ All rights reserved.
 NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
-
-
-from openeis.applications.utest_applications.apptest import AppTestBase
 import os
+import pytest
+from configparser import ConfigParser
 
-class TestHeatMap(AppTestBase):
-    fixtures = [
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'heat_map_fixture.json')
-        ]
+from openeis.applications.utest_applications.appwrapper import run_application
+from openeis.projects.models import (SensorIngest,
+                                     DataMap,
+                                     DataFile)
 
-    def setUp(self):
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
+# Enables django database integration.
+pytestmark = pytest.mark.django_db
 
-    def test_heat_map_basic(self):
-        hm_basic_ini = os.path.join(self.basedir,
-            'heat_map_basic.ini')
-        hm_basic_exp = {}
-        hm_basic_exp['Heat_Map'] = os.path.join(self.basedir,
-            'heat_map_basic.ref.csv')
-        self.run_it(hm_basic_ini, hm_basic_exp, clean_up=True)
+# get the path to the current directory because that is where
+# the expected outputs will be located.
+basedir = os.path.abspath(os.path.dirname(__file__))
 
-    def test_heat_map_missing(self):
-        hm_missing_ini = os.path.join(self.basedir,
-            'heat_map_missing.ini')
-        hm_missing_exp = {}
-        hm_missing_exp['Heat_Map'] = os.path.join(self.basedir,
-            'heat_map_missing.ref.csv')
-        self.run_it(hm_missing_ini, hm_missing_exp, clean_up=True)
+# The app that is being run.
+app_name = 'heat_map'
 
-    def test_heat_map_floats(self):
-        hm_floats_ini = os.path.join(self.basedir,
-            'heat_map_floats.ini')
-        hm_floats_exp = {}
-        hm_floats_exp['Heat_Map'] = os.path.join(self.basedir,
-            'heat_map_floats.ref.csv')
-        self.run_it(hm_floats_ini, hm_floats_exp, clean_up=True)
 
-    def test_heat_map_floats_missing(self):
-        hm_floats_missing_ini = os.path.join(self.basedir,
-            'heat_map_floats_and_missing.ini')
-        hm_floats_missing_exp = {}
-        hm_floats_missing_exp['Heat_Map'] = os.path.join(self.basedir,
-            'heat_map_floats_missing.ref.csv')
-        self.run_it(hm_floats_missing_ini, hm_floats_missing_exp, clean_up=True)
+def test_heat_map_basic(basic_dataset):
+    expected_output = {
+        'Heat_Map': os.path.join(basedir, 
+                                    'heat_map_basic.ref.csv')
+    }  
+     
+    config = build_heatmap_config_parser(app_name, 
+                                         basic_dataset.id,
+                                         basic_dataset.map.id)
+     
+    run_application(config, expected_output)
+  
+def test_heat_map_missing(missing_dataset):
+    expected_output = {
+        'Heat_Map': os.path.join(basedir, 
+                                    'heat_map_missing.ref.csv')
+    }  
+    
+    config = build_heatmap_config_parser(app_name, 
+                                         missing_dataset.id,
+                                         missing_dataset.map.id)
+    
+    run_application(config, expected_output)
+    
+ 
+# def test_heat_map_floats(floats_dataset):
+#     expected_output = {
+#         'Heat_Map': os.path.join(basedir, 
+#                                     'heat_map_floats.ref.csv')
+#     }  
+#     
+#     config = build_heatmap_config_parser(app_name, 
+#                                          floats_dataset.id,
+#                                          floats_dataset.map.id)
+#     
+#     run_application(config, expected_output)
+#     
+#  
+# def test_heat_map_floats_missing(floats_missing_dataset):
+#     expected_output = {
+#         'Heat_Map': os.path.join(basedir, 
+#                                     'heat_map_floats_missing.ref.csv')
+#     }  
+#     
+#     config = build_heatmap_config_parser(app_name, 
+#                                          floats_missing_dataset.id,
+#                                          floats_missing_dataset.map.id)
+#     
+#     run_application(config, expected_output)
+        
+
+def build_heatmap_config_parser(app_name, dataset_id, sensormap_id):
+    '''
+    This function creates a config parser with the specified dataset and
+    sensormap_id. 
+    '''
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', app_name)
+    config.set("global_settings", 'dataset_id', str(dataset_id))
+    config.set("global_settings", 'sensormap_id', str(sensormap_id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_name', '"bldg90"')
+
+        
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingElectricity')
+    
+    return config
