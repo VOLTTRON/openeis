@@ -976,6 +976,13 @@ class FilterViewSet(viewsets.ViewSet):
                 filter_list[-1]['description'] = filter_.get_self_descriptor().description
         return Response(filter_list)
 
+class VersionViewSet(viewsets.ViewSet):
+    
+    permission_classes = (permissions.IsAuthenticated,)
+    
+    def list(self, request, *args, **kargs):
+        '''Return version numbers'''
+        return Response(version.vcs_version())
 
 _analysis_processes = set()
 
