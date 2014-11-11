@@ -105,6 +105,8 @@ def apply_filters(generators, configs):
     print("column mods: ", column_modifiers)
     
     for topic, filter_name, filter_config in configs:
+        if not isinstance(topic, str):
+            topic = topic[0]
         parent_filter_dict = generators.get(topic)
         if parent_filter_dict is None:
             errors.append('Invalid Topic for DataMap: ' + str(topic))
