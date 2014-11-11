@@ -88,7 +88,6 @@ class Command(BaseCommand):
     def handle(self, *args, verbosity=1, dry_run=False, **options):
         # Put of importing modules that access the database to allow
         # Django to magically install the plumbing first.
-        from openeis.projects.storage import sensorstore
         from openeis.projects import models
 
         def _iter_data(sensordata):

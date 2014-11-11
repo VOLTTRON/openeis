@@ -58,17 +58,7 @@ Created on Apr 28, 2014
 
 - assumes that each algo run would create a new table with a unique id
 TODO: import database Table object and TableColumn object from Django database model
-'''
 
-db_type_map = {
-               "int":"inttabledata_set",
-               "string":"stringtabledata_set",
-               "float":"floattabledata_set",
-               "boolean":"booleantabledata_set",
-               "datetime":"timetabledata_set"
-               }
-
-'''
 example input map:
 
 input_map =
@@ -76,24 +66,47 @@ input_map =
     'OAT_TEMPS': ('topic1','topic2', 'topic3'),
     'OCC_MODE': ('topic4',)
 }
-
 '''
+
+from collections import defaultdict
+from datetime import datetime, timedelta
 import logging
 
-from  django.db.models import Sum
-
-#from foo import get_sensor
-
-from datetime import datetime, timedelta
-from collections import defaultdict
-from pprint import pprint
 import pytz
 
-from openeis.projects.storage.sensorstore import get_sensors, get_sensormap
+from .. import models
 
 _logger = logging.getLogger(__name__)
 
 MAX_DATE =  pytz.utc.localize(datetime.max - timedelta(days=5))
+
+
+def get_sensors(datamap_id, topics):
+    '''Get querysets for to given topics.
+
+    get_sensors() returns a list of two-tuples. The first element is a
+    meta object that will hold the mapping definition and the sensor
+    definition. The second element is a function which takes no
+    arguments and will return a new queryset. The queryset has two
+    columns of data: the time and the data point value.
+    '''
+    if isinstance(topics, str):
+        topics = [topics]
+    result = []
+    mapdef = models.DataMap.objects.get(pk=datamap_id)
+    datamap = mapdef.map
+    for topic in topics:
+        meta = datamap['sensors'][topic]
+        # XXX: Augment metadata by adding general definition properties
+        if 'type' in meta:
+            sensor = mapdef.sensors.get(name=topic)
+            def get_queryset():
+                return sensor.data
+        else:
+            get_queryset = None
+        result.append((meta, get_queryset))
+    return result
+
 
 class DatabaseInput:
 
@@ -117,7 +130,7 @@ class DatabaseInput:
 
         self.topic_meta = {}
 
-        self.map_defintion = get_sensormap(datamap_id)
+        self.map_defintion = models.DataMap.objects.get(pk=datamap_id).map
 
         for input_name, topics in self.topic_map.items():
             self.topic_meta[input_name] = {}
