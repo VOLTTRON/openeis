@@ -66,7 +66,7 @@ from django import dispatch
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
-from django.db import connections, models
+from django.db import connections, models, transaction
 from django.db.models.query import QuerySet
 
 import jsonschema.exceptions
@@ -572,7 +572,7 @@ class AppOutput(models.Model):
 
     _create_lock = threading.Lock()
 
-    def get_data_model(self):
+    def get_data_model(self, using=None):
         '''Return a model appropriate for application output.
 
         Dynamically generates a Django model for the given fields and
@@ -585,7 +585,7 @@ class AppOutput(models.Model):
         the given output and the manager will automatically filter the
         queryset by the given output.
         '''
-        db = self._state.db
+        db = using or self._state.db
         output = self
         def __init__(self, *args, **kwargs):
             kwargs['source'] = output
@@ -605,3 +605,28 @@ class AppOutput(models.Model):
             if not dynamictables.table_exists(model, db):
                 dynamictables.create_table(model, db)
         return model
+
+
+@dispatch.receiver(models.signals.post_delete, sender=AppOutput)
+def delete_appoutputdata(sender, instance, using, **kwargs):
+    instance.get_data_model(using=using).objects.all().delete()
+
+
+@dispatch.receiver(models.signals.post_syncdb)
+def sync_appoutputdata(sender, verbosity=1, db='default', **kwargs):
+    '''Remove unreferenced application output data and tables.'''
+    if sender.__name__ != __name__:
+        return
+    verbosity = int(verbosity)
+    if verbosity >= 2:
+        print('Synchronizing dynamic application output tables ...')
+    used = {i.get_data_model()._meta.db_table for i in AppOutput.objects.all()}
+    cursor = connections[db].cursor()
+    for table in cursor.db.introspection.get_table_list(cursor):
+        if not table.startswith('appoutputdata_'):
+            continue
+        if table not in used:
+            if verbosity >= 1:
+                print('Dropping dynamic table', table)
+            with AppOutput._create_lock:
+                cursor.execute('DROP TABLE ' + table)

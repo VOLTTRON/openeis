@@ -81,11 +81,19 @@ class Command(NoArgsCommand):
                 if not table.startswith('appoutputdata_'):
                     continue
                 if not all_tables:
-                    cursor.execute('SELECT COUNT(*) FROM ' + table)
+                    if verbosity >= 1:
+                        self.stdout.write('Clearing unused records from dynamic table ' + table)
+                    if not dry_run:
+                        cursor.execute('DELETE FROM {} WHERE source_id NOT IN '
+                                       '(SELECT id FROM projects_appoutput)'.format(table))
+                        cursor.execute('SELECT COUNT(*) FROM ' + table)
+                    else:
+                        cursor.execute('SELECT COUNT(*) FROM {} WHERE source_id IN '
+                                       '(SELECT id FROM projects_appoutput)'.format(table))
                     count, = cursor.cursor.fetchone()
                     if count:
                         continue
                 if verbosity >= 1:
-                    self.stdout.write('Dropping table: {}'.format(table))
+                    self.stdout.write('Dropping dynamic table ' + table)
                 if not dry_run:
                     cursor.execute('DROP TABLE ' + table)
