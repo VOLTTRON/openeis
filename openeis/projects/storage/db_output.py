@@ -65,7 +65,6 @@ import io
 import os
 import json
 from .. import models
-from . import sensorstore
 from collections import defaultdict
 from zipfile import ZipFile
 import shutil
@@ -103,10 +102,7 @@ class DatabaseOutput:
             app_output = models.AppOutput.objects.create(analysis=analysis,
                                                          name=table_name,
                                                          fields=fields)
-            model_klass = sensorstore.get_data_model(app_output,
-                                                     analysis.dataset.map.project.id,
-                                                     fields)
-
+            model_klass = app_output.get_data_model()
             self.table_map[table_name] = model_klass
 
         #create the logging table
@@ -114,10 +110,7 @@ class DatabaseOutput:
         log_output = models.AppOutput.objects.create(analysis=analysis,
                                                      name=LOG_TABLE_NAME,
                                                      fields=logging_fields)
-        log_klass = sensorstore.get_data_model(log_output,
-                                               analysis.dataset.map.project.id,
-                                               logging_fields)
-
+        log_klass = log_output.get_data_model()
         self.table_map[LOG_TABLE_NAME] = log_klass
 
         self.log_level = logging.ERROR

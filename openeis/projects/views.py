@@ -86,7 +86,6 @@ from . import models, renderers, serializers
 from .models import INFO, WARNING, ERROR, CRITICAL
 from .protectedmedia import protected_media, ProtectedMediaResponse
 from .conf import settings as proj_settings
-from .storage import sensorstore
 from .storage.clone import CloneProject
 from .storage.ingest import ingest_files, iter_rows, IngestError
 from .storage.sensormap import Schema as Schema
@@ -1007,10 +1006,7 @@ def _get_output_data(request, analysis):
         outputs = {}
 
         for output in models.AppOutput.objects.filter(analysis=analysis):
-            data_model = sensorstore.get_data_model(output,
-                                                    output.analysis.project.id,
-                                                    output.fields)
-
+            data_model = output.get_data_model()
             outputs[output.name] = {
                 'rows': data_model.objects.count()
             }
@@ -1018,9 +1014,7 @@ def _get_output_data(request, analysis):
         return Response(outputs)
 
     output = models.AppOutput.objects.get(analysis=analysis, name=output_name)
-    data_model = sensorstore.get_data_model(output,
-                                            output.analysis.project.id,
-                                            output.fields)
+    data_model = output.get_data_model()
 
     start = max(start, 0)
     rows = data_model.objects.all()[start:end]

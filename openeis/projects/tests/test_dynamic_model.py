@@ -64,7 +64,6 @@ import pytest
 
 from openeis.projects import models
 from openeis.projects.storage import dynamictables as dyn
-from openeis.projects.storage import sensorstore
 
 
 now = lambda: datetime.now().replace(tzinfo=timezone.utc)
@@ -72,18 +71,22 @@ now = lambda: datetime.now().replace(tzinfo=timezone.utc)
 
 class TestDynamicModelCreation(TestCase):
     def setUp(self):
-        # Replace models.AppOutput with empty model to avoid dealing with
+        # Replace models.Analysis with empty model to avoid dealing with
         # required fields and foreign keys. Replace it after tests run.
-        model = self._AppOutput = models.AppOutput
-        meta = type('Meta', (), {'db_table': 'appoutput_test'})
-        del loading.cache.app_models[model._meta.app_label][model._meta.model_name]
-        models.AppOutput = type('AppOutput', (models.models.Model,),
-                                {'__module__': model.__module__, 'Meta': meta})
-        dyn.create_table(models.AppOutput)
+        self._Analysis = models.Analysis
+        #del loading.cache.app_models[models.Analysis._meta.app_label][models.Analysis._meta.model_name]
+        loading.cache.app_models.get(models.Analysis._meta.app_label, {}).pop(models.Analysis._meta.model_name, None)
+        class Analysis(models.models.Model):
+            project = models.models.ForeignKey(models.Project)
+            class Meta:
+                app_label = 'projects'
+                db_table = 'projects_analysis_test'
+        dyn.create_table(Analysis)
         setup_test_environment()
+        self.user = models.User.objects.create(username='dynamo')
 
     def tearDown(self):
-        models.AppOutput = self._AppOutput
+        models.Analysis = self._Analysis
 
     def test_table_naming(self):
         '''Test that table and fields are properly named and ordered.
@@ -163,15 +166,20 @@ class TestDynamicModelCreation(TestCase):
         self.assertFalse(model4 is model3)
         test_create(model4)
 
+    def _create_output(self, pk=None):
+        #user = models.User.objects.get_or_create(username='dynamo')
+        project = models.Project.objects.create(
+                name='Dynamic Model Test', owner=self.user)
+        analysis = models.Analysis.objects.create(project=project)
+        output = models.AppOutput.objects.create(pk=pk, analysis=analysis,
+            fields={'time': 'timestamp', 'value': 'float',
+                    'flags': 'integer', 'note': 'string'}, name='test')
+        return output
+
     def test_create_insert(self):
         '''Test table creation and insertion'''
-        user = models.User.objects.create(username='dynamo')
-        project = models.Project.objects.create(
-                name='Dynamic Model Test', owner=user)
-        output = models.AppOutput.objects.create(pk=200)
-        fields = {'time': 'timestamp', 'value': 'float',
-                  'flags': 'integer', 'note': 'string'}
-        model = sensorstore.get_data_model(output, project.pk, fields)
+        output = self._create_output(200)
+        model = output.get_data_model()
         self.assertTrue(dyn.table_exists(model))
         model.objects.create(source=output, time=now(),
                              value=12.34, note='Testing')
@@ -189,31 +197,27 @@ class TestDynamicModelCreation(TestCase):
                       for x in objs]
             result.sort()
             return result
-        fields = {'time': 'timestamp', 'value': 'float',
-                  'flags': 'integer', 'note': 'string'}
-        output = models.AppOutput.objects.create(pk=300)
-        model = sensorstore.get_data_model(output, 5, fields)
+        output = self._create_output(300)
+        model = output.get_data_model()
         self.assertTrue(dyn.table_exists(model))
         items = tolist(model.objects.create(time=now(), value=float(i),
                  note='Testing {}'.format(i)) for i in range(5))
         objs = tolist(model.objects.all())
         self.assertEqual(objs, items)
-        model = sensorstore.get_data_model(output, 5, fields)
+        model = output.get_data_model()
         objs = tolist(model.objects.all())
         self.assertEqual(objs, items)
 
     def test_bulk_create(self):
-        fields = {'time': 'timestamp', 'value': 'float',
-                  'flags': 'integer', 'note': 'string'}
-        output = models.AppOutput.objects.create(pk=400)
-        model = sensorstore.get_data_model(output, 5, fields)
+        output = self._create_output(400)
+        model = output.get_data_model()
         self.assertTrue(dyn.table_exists(model))
         items = [model(time=now(), value=float(i), note='Testing {}'.format(i))
                  for i in range(5)]
         model.objects.bulk_create(items)
         self.assertEqual(model.objects.count(), 5)
-        output = models.AppOutput.objects.create(pk=401)
-        model = sensorstore.get_data_model(output, 5, fields)
+        output = self._create_output(401)
+        model = output.get_data_model()
         self.assertTrue(dyn.table_exists(model))
         items = [model(time=now(), value=float(i), note='Testing {}'.format(i))
                  for i in range(5)]

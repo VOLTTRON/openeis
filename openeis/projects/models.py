@@ -60,6 +60,7 @@ import jsonschema
 import posixpath
 import random
 import string
+import threading
 
 from django import dispatch
 from django.conf import settings
@@ -71,7 +72,7 @@ from django.db.models.query import QuerySet
 import jsonschema.exceptions
 
 from .protectedmedia import ProtectedFileSystemStorage
-from .storage import sensormap
+from .storage import dynamictables, sensormap
 from .storage.csvfile import CSVFile
 
 
@@ -568,3 +569,39 @@ class AppOutput(models.Model):
     analysis = models.ForeignKey(Analysis, related_name='app_output')
     name = models.CharField(max_length=255)
     fields = JSONField()
+
+    _create_lock = threading.Lock()
+
+    def get_data_model(self):
+        '''Return a model appropriate for application output.
+
+        Dynamically generates a Django model for the given fields and
+        binds it to the analysis project ID.  fields should be a
+        dictionary or a list of 2-tuples equivalent to a dict's items()
+        method.  Each field is defined by a name, which must be a valid
+        Python identifier, and a type, which must be one of those mapped
+        in openeis.projects.storage.dynamictables._fields.  The
+        resulting model will automatically fill in the source field with
+        the given output and the manager will automatically filter the
+        queryset by the given output.
+        '''
+        db = self._state.db
+        output = self
+        def __init__(self, *args, **kwargs):
+            kwargs['source'] = output
+            super(self.__class__, self).__init__(*args, **kwargs)
+        def save(self, *args, **kwargs):
+            self.source = output
+            super(self.__class__, self).save(*args, **kwargs)
+        class Manager(models.Manager):
+            def get_queryset(self):
+                return super().get_queryset().filter(source=output)
+        attrs = {'source': models.ForeignKey(AppOutput, related_name='+'),
+                 'objects': Manager(), '__init__': __init__, 'save': save}
+        # Append PK to name since Django caches models by name
+        model = dynamictables.create_model('AppOutputData' + str(output.pk),
+                'appoutputdata', self.analysis.project.id, self.fields, attrs)
+        with AppOutput._create_lock:
+            if not dynamictables.table_exists(model, db):
+                dynamictables.create_table(model, db)
+        return model

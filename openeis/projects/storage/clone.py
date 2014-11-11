@@ -53,10 +53,12 @@
 #
 #}}}
 
-from openeis.projects import models
 import json
-from openeis.projects.storage import sensorstore
 import copy
+
+from .. import models
+
+
 class CloneProject():
     
     def __init__(self):
@@ -142,9 +144,7 @@ class CloneProject():
             
     def clone_appOutput(self, app_output_list, analysis):
         for app_output in app_output_list:
-            model_klass = sensorstore.get_data_model(app_output,
-                                                         self.src_project_id,
-                                                         app_output.fields)
+            model_klass = app_output.get_data_model()
             query_set = model_klass.objects.all()
             app_output.id = None
             app_output.analysis = analysis
@@ -153,10 +153,7 @@ class CloneProject():
             self.clone_appOutputData(query_set, app_output)
             
     def clone_appOutputData(self, query_set, app_output):
-        model_klass = sensorstore.get_data_model(app_output,
-                                                         app_output.analysis.dataset.map.project.id,
-                                                         app_output.fields)
-        
+        model_klass = app_output.get_data_model()
         model_klass_instances = []
         for row in query_set:
             kwargs = dict((x,getattr(row,x)) for x in app_output.fields)
