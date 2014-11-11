@@ -1,0 +1,1 @@
+FOR /r "utest_applications" %%G In (test*.py) do py.test %%G 
