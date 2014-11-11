@@ -185,13 +185,7 @@ class AppWrapper:
             app.run_application()
             for report in klass.reports(output_format):
                 print(report)
-            
-        except Exception as ee:
-            #analysis.status = 'error'
-            # Re-raise the exception, since testing may include checking for expected exceptions.
-            raise( ee )
         finally:
-            
             analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
             analysis.save()
 

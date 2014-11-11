@@ -144,7 +144,7 @@ class AppTestBase(TestCase):
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
         project = models.Project.objects.get(pk=1)
         analysis = models.Analysis(
-            added=now, started=now, status="running",
+            added=now, started=now,
             dataset=dataset, application=appName,
             debug=True,
             project_id = dataset.project_id,
@@ -165,14 +165,7 @@ class AppTestBase(TestCase):
         app = klass(db_input, file_output, **kwargs)
         try:
             app.run_application()
-        except Exception as ee:
-            analysis.status = 'error'
-            # Re-raise the exception, since testing may include checking for expected exceptions.
-            raise( ee )
         finally:
-            if( analysis.status != 'error' ):
-                analysis.status = 'complete'
-                analysis.progress_percent = 100
             analysis.ended = datetime.datetime.utcnow().replace(tzinfo=utc)
             analysis.save()
 
