@@ -61,9 +61,6 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
-
-
-
 duct_stc_dx = 'Duct Static Pressure Diagnostics'
 duct_static1 = 'Low Duct Static Pressure Dx'
 duct_static2 = 'High Duct Static Pressure Dx'
@@ -99,7 +96,7 @@ class Application(DrivenApplicationBaseClass):
     def __init__(self, *args,
                  no_required_data=5,
                  data_window=15,
-                 warm_up_time=30, data_sample_rate=None,
+                 warm_up_time=30,
                  duct_stc_retuning=0.15, max_duct_stp_stpt=2.5,
                  high_supply_fan_threshold=100.0,
                  zone_high_damper_threshold=90.0,
@@ -187,7 +184,6 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_time = int(warm_up_time)
         self.warm_up_start = None
         auto_correctflag = True
-        Application.data_sample_rate = float(data_sample_rate)
 
         self.static_dx = duct_static_rcx(max_duct_stp_stpt, duct_stc_retuning,
                                          data_window, no_required_data,
@@ -225,10 +221,6 @@ class Application(DrivenApplicationBaseClass):
         parameters with description for user
         '''
         return {
-
-            'data_sample_rate': ConfigDescriptor(float, 'Data Sampling '
-                                                        'interval '
-                                                        '(minutes/sample)'),
 
             'data_window': ConfigDescriptor(int, 'Minimum Elapsed time for '
                                             'analysis (default=15 minutes)',
@@ -761,12 +753,10 @@ class duct_static_rcx(object):
         self.duct_stp_stpt_values.append(
             sum(stc_pr_sp_data) / len(stc_pr_sp_data))
 
-        time_check = datetime.timedelta(minutes=self.data_window)
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=Application.
-                                           data_sample_rate))
+        elapsed_time = (self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+        elapsed_time = elapsed_time if elapsed_time > 0.0 else 1.0
 
-        if (elapsed_time >= time_check and
+        if (elapsed_time >= self.data_window and
            len(self.timestamp) >= self.no_required_data):
             avg_duct_stpr_stpt = sum(
                 self.duct_stp_stpt_values) / len(self.duct_stp_stpt_values)
@@ -1036,12 +1026,10 @@ class supply_air_temp_rcx(object):
         self.percent_damper.append(total_damper/count_damper)
 
         self.timestamp.append(current_time)
-        time_check = datetime.timedelta(minutes=self.data_window)
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=Application.
-                                           data_sample_rate))
+        elapsed_time = (self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+        elapsed_time = elapsed_time if elapsed_time > 0.0 else 1.0
 
-        if (elapsed_time >= time_check and
+        if (elapsed_time >= self.data_window and
            len(self.timestamp) >= self.no_required_data):
             avg_sat_stpt = (sum(self.sat_stpt_values) /
                             len(self.sat_stpt_values))
