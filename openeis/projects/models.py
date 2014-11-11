@@ -615,8 +615,6 @@ def delete_appoutputdata(sender, instance, using, **kwargs):
 @dispatch.receiver(models.signals.post_syncdb)
 def sync_appoutputdata(sender, verbosity=1, db='default', **kwargs):
     '''Remove unreferenced application output data and tables.'''
-    with open('/dev/pts/8', 'w') as tty:
-        print('post_syncdb', sender.__name__, file=tty)
     if sender.__name__ != __name__:
         return
     verbosity = int(verbosity)
