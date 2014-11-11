@@ -85,7 +85,7 @@ import os
 import pytest
 from configparser import ConfigParser
 
-from openeis.applications.utest_applications.appwrapper import run_application
+from openeis.applications.utest_applications.appwrapper import run_appwrapper
 from openeis.projects.models import (SensorIngest,
                                      DataMap,
                                      DataFile)
@@ -101,55 +101,46 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 app_name = 'heat_map'
 
 
+def build_expected(table_name, file_ref):
+    return {table_name: os.path.join(basedir, file_ref)}
+
 def test_heat_map_basic(basic_dataset):
-    expected_output = {
-        'Heat_Map': os.path.join(basedir, 
-                                    'heat_map_basic.ref.csv')
-    }  
-     
+    
+    expected_output = build_expected('Heat_Map', 'heat_map_basic.ref.csv')     
     config = build_heatmap_config_parser(app_name, 
                                          basic_dataset.id,
                                          basic_dataset.map.id)
      
-    run_application(config, expected_output)
+    run_appwrapper(config, expected_output)
   
 def test_heat_map_missing(missing_dataset):
-    expected_output = {
-        'Heat_Map': os.path.join(basedir, 
-                                    'heat_map_missing.ref.csv')
-    }  
     
+    expected_output = build_expected('Heat_Map', 'heat_map_missing.ref.csv')
     config = build_heatmap_config_parser(app_name, 
                                          missing_dataset.id,
                                          missing_dataset.map.id)
     
-    run_application(config, expected_output)
+    run_appwrapper(config, expected_output)
     
  
-# def test_heat_map_floats(floats_dataset):
-#     expected_output = {
-#         'Heat_Map': os.path.join(basedir, 
-#                                     'heat_map_floats.ref.csv')
-#     }  
-#     
-#     config = build_heatmap_config_parser(app_name, 
-#                                          floats_dataset.id,
-#                                          floats_dataset.map.id)
-#     
-#     run_application(config, expected_output)
-#     
-#  
-# def test_heat_map_floats_missing(floats_missing_dataset):
-#     expected_output = {
-#         'Heat_Map': os.path.join(basedir, 
-#                                     'heat_map_floats_missing.ref.csv')
-#     }  
-#     
-#     config = build_heatmap_config_parser(app_name, 
-#                                          floats_missing_dataset.id,
-#                                          floats_missing_dataset.map.id)
-#     
-#     run_application(config, expected_output)
+def test_heat_map_floats(floats_dataset):
+    
+    expected_output = build_expected('Heat_Map', 'heat_map_floats.ref.csv')
+    config = build_heatmap_config_parser(app_name, 
+                                         floats_dataset.id,
+                                         floats_dataset.map.id)
+     
+    run_appwrapper(config, expected_output)
+     
+  
+def test_heat_map_floats_missing(floats_missing_dataset):
+    
+    expected_output = build_expected('Heat_Map', 'heat_map_floats_missing.ref.csv')
+    config = build_heatmap_config_parser(app_name, 
+                                         floats_missing_dataset.id,
+                                         floats_missing_dataset.map.id)
+     
+    run_appwrapper(config, expected_output)
         
 
 def build_heatmap_config_parser(app_name, dataset_id, sensormap_id):
