@@ -53,118 +53,158 @@
 #
 #}}}
 
-import subprocess
+'''functions for determining package version information.
 
-__version__ = '0.1'
+All available version information can be retrieved using get_version_info(),
+which returns a dictionary containing the product and VCS version
+information.  This function hides underlying VCS exceptions and can be used
+without exception handling.
+
+product_version() returns the product version and also may be called without
+exception handling. It currently just returns __version__.
+
+have_vcs() returns a boolean indicating whether the package is under version
+control and can be called without exception handling. It just checks for the
+existence of a .git directory where the repository root should be.
+
+All of the vcs_* functions call out to the version control executable, which
+is currently expected to be git. These functions raise
+NotUnderVersionControl if the .git directory was not found or
+VersionControlNotFound if the git executable was not found. The subprocess
+module may raise CalledProcessError if there was an error running a git
+command. These are not handled by this module.
+'''
+
+
+from datetime import datetime
+import os
+import subprocess
+from subprocess import CalledProcessError
+
+import openeis
+
+
+__all__ = ['NotUnderVersionControl', 'VersionControlNotFound',
+           'CalledProcessError', 'have_vcs', 'product_version', 'vcs_revision',
+           'vcs_version', 'vcs_timestamp', 'get_version_info']
+
+__version__ = '0.2'
+
+
+class NotUnderVersionControl(Exception):
+    pass
+
+
+class VersionControlNotFound(Exception):
+    pass
+
+
+def _vcs_path():
+    '''Return the project base path if under VCS control, None otherwise.'''
+    basedir = os.path.dirname(os.path.dirname(openeis.__file__))
+    gitdir = os.path.join(basedir, '.git')
+    return basedir if os.path.exists(gitdir) else None
+
+
+def _git(*args):
+    '''Wrapper to make git calls.'''
+    vcsdir = _vcs_path()
+    if vcsdir is not None:
+        cmd = ['git']
+        cmd.extend(args)
+        try:
+            return subprocess.check_output(
+                    cmd, cwd=vcsdir, stdin=subprocess.DEVNULL).decode('utf-8')
+        except FileNotFoundError:
+            raise VersionControlNotFound('The git executable was not found')
+    raise NotUnderVersionControl('The project is not under version control')
+        
+
+def have_vcs():
+    '''Return a boolean inidcating if projects is under VCS control.'''
+    return _vcs_path is not None
+
 
 def product_version():
+    '''Return the product version.'''
     return __version__
 
-def vcs_version_count():
-    """
-    # Returns revision count: 
-    # git rev-list --count HEAD
-    """
-    
+
+def vcs_revision():
+    '''Return the git revision number (count of commits).'''
     global _revision_count
     try: 
         return _revision_count
     except NameError:
         pass
-    
-    _revision_count = ""
-    
-    revision_args = ['git', 'rev-list', '--count', 'HEAD']
-    revision_subprocess = subprocess.Popen(revision_args, stdout=subprocess.PIPE, shell=True)
-    revision_out, revision_err = revision_subprocess.communicate()
-    _revision_count = (revision_out.decode('utf-8')).strip()   # bytes/byte string, must be converted to utf-8
+    _revision_count = int(_git('rev-list', '--count', 'HEAD').strip())
     return _revision_count
 
-def vcs_short_hash():
-    """
-    # Returns short revision hash:
-    # git --no-pager log -n 1 --pretty=format:'%h'
-    """
-    
+
+def vcs_version():
+    '''Return the shortened git hash for the current revision.'''
     global _revision_hash
     try: 
         return _revision_hash
     except NameError:
         pass
-    
-    _revision_hash = ""
-    args = ['git', '--no-pager', 'log', '-n', '1', '--pretty=format:\'%h\'']
-    result = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
-    hash_out, hash_err = result.communicate()
-    _revision_hash = (hash_out.decode('utf-8')).strip('\'\"')   # bytes/byte string, must be decoded
+    _revision_hash = _git('rev-parse', '--short', 'HEAD').strip()
     return _revision_hash
 
-def vcs_updated():
-    '''
-    # Returns updated timestamp:
-    # git --no-pager log -n 1 --pretty=format:'%ct'
-    '''
+
+def vcs_timestamp():
+    '''Return timestamp of latest commit.'''
     
     global _revision_timestamp
     try:
         return _revision_timestamp
     except NameError:
         pass
-    
-    _revision_timestamp = ""
-    args = ['git', '--no-pager', 'log', '-n', '1', '--pretty=format:\'%ct\'']
-    command_result = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
-    time_out, time_err = command_result.communicate()
-    _revision_timestamp = (time_out.decode('utf-8')).strip("\'")
+    time = _git('log', '-n', '1', "--pretty=format:%ci").strip()
+    _revision_timestamp = datetime.strptime(time, '%Y-%m-%d %H:%M:%S %z')
     return _revision_timestamp
     
 
-def vcs_version():
-    """
-    # To get both short hash and local timestamp:
-    # git --no-pager log -n 1 --date=local --pretty=format:'%h %ct
-    # 
-    # Returns dictionary of version information:
-    #   'version': program version
-    #   'vcs_version': The version control system (vcs) last commit short hash in Git
-    #   'updated': The last updated vcs commit date
-    #   'revision': The count of the vcs revisions (number of commits)
-    """
+def get_version_info():
+    '''Return a dictionary containing version information.
+
+    The dictionary contains the following
+
+        'version': program version (from product_version())
+        'vcs_version': VCS version unique identifier (from vcs_version())
+        'updated': a datetime object containing the last commit time
+                   (from vcs_timestamp())
+        'revision': number of commits (from vcs_revision())
     
-    global _results_dict
+    Example:
+        {
+            "version": "1.2",
+            "vcs_version": "1a2b3cd",
+            "updated": datetime("2014-10-28T09:33:45.123Z"),
+            "revision": 431
+        }
+    """
+    '''
+    
+    global _version_info
     try:
-        return _results_dict
+        return _version_info
     except NameError:
         pass
-    
-    _results_dict = {}
-    
-    # abbreviated hash and timestamp
-    # hash_args = ['git', '--no-pager', 'log', '-n', '1', '--date=local', '--pretty=format:\'%h %ct\'']
-    # hash_result = subprocess.Popen(hash_args, stdout=subprocess.PIPE, shell=True)
-    # hash_out, hash_err = hash_result.communicate()
-    # hash_converted = hash_out.decode('utf-8')   # bytes/byte string, must be converted
-    # _results_dict['vcs_version'], _results_dict['updated'] = (hash_converted.strip("\"\'").split())
-    
-    _results_dict['version'] = __version__
-    _results_dict['vcs_version'] = vcs_short_hash()
-    _results_dict['updated'] = vcs_updated()
-    _results_dict['revision'] = vcs_version_count()
-    
-    """
-    # Example from EIS-481
-    {
-        "version": "1.2.431",
-        "vcs_version": "1a2b3cd",
-        "updated": "2014-10-28T09:33:45.123Z",
-        "revision": 431
-    }
-    """
-    return _results_dict
+    _version_info = {'version': product_version()}
+    try:
+        _version_info['vcs_version'] = vcs_version()
+        _version_info['updated'] = vcs_timestamp()
+        _version_info['revision'] = vcs_revision()
+    except (NotUnderVersionControl, VersionControlNotFound):
+        pass
+    return _version_info
 
 
 if __name__ == '__main__':
-    print(vcs_short_hash())
-    print(vcs_updated())
-    print(vcs_version_count())
-    print(vcs_version())
+    #import pdb; pdb.set_trace()
+    print(have_vcs())
+    #print(vcs_version())
+    #print(vcs_timestamp())
+    #print(vcs_revision())
+    print(get_version_info())
