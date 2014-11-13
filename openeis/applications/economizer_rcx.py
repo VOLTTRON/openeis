@@ -97,7 +97,7 @@ class Application(DrivenApplicationBaseClass):
                  excess_oaf_threshold=20.0, desired_oaf=10.0,
                  ventilation_oaf_threshold=5.0,
                  insufficient_damper_threshold=15.0,
-                 temp_damper_threshold=90.0, tonnage=None, eer=10.0,
+                 temp_damper_threshold=90.0, rated_cfm=500.0, eer=10.0,
                  data_sample_rate=None, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -107,6 +107,7 @@ class Application(DrivenApplicationBaseClass):
         self.ma_temp_name = Application.ma_temp_name
         self.damper_signal_name = Application.damper_signal_name
         self.cool_call_name = Application.cool_call_name
+        self.fan_speedcmd_name = Application.fan_speedcmd_name
 
         self.device_type = device_type.lower()
 
@@ -130,7 +131,8 @@ class Application(DrivenApplicationBaseClass):
         self.temp_deadband = float(temp_deadband)
         self.low_supply_fan_threshold = float(low_supply_fan_threshold)
         self.cooling_enabled_threshold = float(cooling_enabled_threshold)
-        cfm = float(tonnage) * 400.0
+        cfm = float(rated_cfm)
+        eer = float(eer)
 
         '''Pre-requisite messages'''
         self.pre_msg1 = ('Supply fan is off, current data will '
@@ -170,33 +172,29 @@ class Application(DrivenApplicationBaseClass):
                                            temp_difference_threshold,
                                            open_damper_time,
                                            oat_mat_check,
-                                           temp_damper_threshold,
-                                           data_sample_rate)
+                                           temp_damper_threshold)
         self.econ2 = econ_correctly_on(oaf_economizing_threshold,
                                        open_damper_threshold,
                                        self.economizer_type, data_window,
-                                       no_required_data, cfm, eer,
-                                       data_sample_rate)
+                                       no_required_data, cfm, eer)
         self.econ3 = econ_correctly_off(device_type, self.economizer_type,
                                         data_window, no_required_data,
                                         minimum_damper_setpoint,
                                         excess_damper_threshold,
                                         cooling_enabled_threshold,
-                                        desired_oaf, cfm, eer,
-                                        data_sample_rate)
+                                        desired_oaf, cfm, eer)
         self.econ4 = excess_oa_intake(self.economizer_type, device_type,
                                       data_window, no_required_data,
                                       excess_oaf_threshold,
                                       minimum_damper_setpoint,
                                       excess_damper_threshold,
-                                      desired_oaf, cfm, eer,
-                                      data_sample_rate)
+                                      desired_oaf, cfm, eer)
         self.econ5 = insufficient_oa_intake(device_type, self.economizer_type,
                                             data_window, no_required_data,
                                             ventilation_oaf_threshold,
                                             minimum_damper_setpoint,
                                             insufficient_damper_threshold,
-                                            desired_oaf, data_sample_rate)
+                                            desired_oaf)
 
     @classmethod
     def get_config_parameters(cls):
@@ -206,9 +204,6 @@ class Application(DrivenApplicationBaseClass):
         '''
         return {
 
-            'data_sample_rate': ConfigDescriptor(float, 'Data Sampling '
-                                                        'interval '
-                                                        '(minutes/sample)'),
             'low_supply_fan_threshold': ConfigDescriptor(float,
                                                          'Value above which '
                                                          'the supply fan will '
@@ -216,9 +211,11 @@ class Application(DrivenApplicationBaseClass):
                                                          'its minimum speed '
                                                          '(default=20%)',
                                                          optional=True),
-            'tonnage': ConfigDescriptor(float,
-                                        'AHU/RTU cooling capacity in tons'),
-
+            'rated_cfm': ConfigDescriptor(float,
+                                          'Rated CFM of supply '
+                                          'fan at 100% speed '
+                                          '(default=500)',
+                                          optional=True),
             'data_window': ConfigDescriptor(int, 'Minimum Elapsed time for '
                                             'analysis (default=15 minutes)',
                                             optional=True),
@@ -495,6 +492,7 @@ class Application(DrivenApplicationBaseClass):
         matemp_data = []
         ratemp_data = []
         cooling_data = []
+        fan_speedcmd_data = []
 
         for key, value in device_dict.items():
             if (key.startswith(self.damper_signal_name)
@@ -516,6 +514,10 @@ class Application(DrivenApplicationBaseClass):
             elif (key.startswith(self.cool_call_name)
                   and value is not None):
                 cooling_data.append(value)
+
+            elif (key.startswith(self.fan_speedcmd_name)
+                  and value is not None):
+                fan_speedcmd_data.append(value)
 
         if not oatemp_data:
             Application.pre_requiste_messages.append(self.pre_msg3)
@@ -542,6 +544,9 @@ class Application(DrivenApplicationBaseClass):
         ratemp = (sum(ratemp_data) / len(ratemp_data))
         matemp = (sum(matemp_data) / len(matemp_data))
         damper_signal = (sum(damper_data) / len(damper_data))
+        fan_speedcmd = None
+        if fan_speedcmd_data:
+            fan_speedcmd = sum(fan_speedcmd_data)/len(fan_speedcmd_data)
 
         limit_check = False
         if oatemp < self.oat_low_threshold or oatemp > self.oat_high_threshold:
@@ -603,19 +608,22 @@ class Application(DrivenApplicationBaseClass):
                                                      ratemp, matemp,
                                                      damper_signal,
                                                      economizer_conditon,
-                                                     current_time)
+                                                     current_time,
+                                                     fan_speedcmd)
             diagnostic_result = self.econ3.econ_alg3(diagnostic_result,
                                                      cooling_call,
                                                      oatemp, ratemp,
                                                      matemp, damper_signal,
                                                      economizer_conditon,
-                                                     current_time)
+                                                     current_time,
+                                                     fan_speedcmd)
             diagnostic_result = self.econ4.econ_alg4(diagnostic_result,
                                                      cooling_call,
                                                      oatemp, ratemp,
                                                      matemp, damper_signal,
                                                      economizer_conditon,
-                                                     current_time)
+                                                     current_time,
+                                                     fan_speedcmd)
             diagnostic_result = self.econ5.econ_alg5(diagnostic_result,
                                                      cooling_call,
                                                      oatemp, ratemp,
@@ -657,8 +665,7 @@ class temperature_sensor_dx(object):
 
     def __init__(self, data_window, no_required_data,
                  temp_difference_threshold, open_damper_time,
-                 oat_mat_check, temp_damper_threshold,
-                 data_sample_rate):
+                 oat_mat_check, temp_damper_threshold):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -667,7 +674,6 @@ class temperature_sensor_dx(object):
         self.open_damper_mat = []
         self.econ_check = False
         self.steady_state_start = None
-        self.data_sample_rate = float(data_sample_rate)
         self.open_damper_time = int(open_damper_time)
         self.econ_time_check = datetime.timedelta(
             minutes=self.open_damper_time - 1)
@@ -699,17 +705,17 @@ class temperature_sensor_dx(object):
         self.oa_temp_values.append(oatemp)
         self.ma_temp_values.append(matemp)
         self.ra_temp_values.append(ratemp)
-        if (self.timestamp and (current_time - self.timestamp[-1]) >
-           datetime.timedelta(minutes=(self.data_sample_rate))):
+
+        if (self.timestamp and
+           ((current_time - self.timestamp[-1]).total_seconds()/60) > 5.0):
             self.econ_check = False
+
         self.timestamp.append(current_time)
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
+                        .total_seconds()/60)
+        elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
 
-        time_check = datetime.timedelta(minutes=(self.data_window))
-
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=self.data_sample_rate))
-
-        if (elapsed_time >= time_check and
+        if (elapsed_time >= self.data_window and
                 len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.temperature_sensor_dx(
                 diagnostic_result, current_time)
@@ -843,12 +849,11 @@ class econ_correctly_on(object):
     '''
 
     def __init__(self, oaf_economizing_threshold, open_damper_threshold,
-                 economizer_type, data_window, no_required_data, cfm, eer,
-                 data_sample_rate):
-
+                 economizer_type, data_window, no_required_data, cfm, eer):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
+        self.fan_speed_values = []
         self.damper_signal_values = []
         self.timestamp = []
         self.output_no_run = []
@@ -858,8 +863,7 @@ class econ_correctly_on(object):
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
         self.cfm = cfm
-        self.eer = float(eer)
-        self.data_sample_rate = float(data_sample_rate)
+        self.eer = eer
 
         '''Application result messages'''
         self.alg_result_messages = ['Conditions are favorable for '
@@ -872,7 +876,8 @@ class econ_correctly_on(object):
                                     'is not brining in near 100% OA.']
 
     def econ_alg2(self, diagnostic_result, cooling_call, oatemp, ratemp,
-                  matemp, damper_signal, economizer_conditon, current_time):
+                  matemp, damper_signal, economizer_conditon, current_time,
+                  fan_speedcmd):
         if not cooling_call:
             diagnostic_result.log('The unit is not cooling, data '
                                   'corresponding to {timestamp} will '
@@ -909,12 +914,16 @@ class econ_correctly_on(object):
         self.timestamp.append(current_time)
         self.damper_signal_values.append(damper_signal)
 
-        time_check = datetime.timedelta(minutes=(self.data_window))
+        fan_speedcmd = fan_speedcmd/100.0 if fan_speedcmd is not None else 1.0
+        self.fan_speed_values.append(fan_speedcmd)
 
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=self.data_sample_rate))
+        self.timestamp.append(current_time)
 
-        if (elapsed_time >= time_check and
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
+                        .total_seconds()/60)
+        elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
+
+        if (elapsed_time >= self.data_window and
            len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.not_economizing_when_needed(
                 diagnostic_result, current_time)
@@ -929,6 +938,8 @@ class econ_correctly_on(object):
         oaf = [(m - r) / (o - r) for o, r, m in zip(self.oa_temp_values,
                                                     self.ra_temp_values,
                                                     self.ma_temp_values)]
+        avg_step = ((self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+                    if len(self.timestamp) > 1 else 1)
         avg_oaf = sum(oaf) / len(oaf) * 100.0
         avg_damper_signal = sum(
             self.damper_signal_values) / len(self.damper_signal_values)
@@ -946,13 +957,15 @@ class econ_correctly_on(object):
                 diagnostic_message = (self.alg_result_messages[2])
                 color_code = 'RED'
 
-        energy_calc = [(1.08 * self.cfm * (ma - oa) / (1000.0 * self.eer)) for
-                       ma, oa in zip(self.ma_temp_values, self.oa_temp_values)
+        energy_calc = [(1.08 * spd * self.cfm * (ma - oa) / (1000.0 * self.eer)) for
+                       ma, oa, spd in zip(self.ma_temp_values,
+                                          self.oa_temp_values,
+                                          self.fan_speed_values)
                        if (ma - oa) > 0 and color_code == 'RED']
 
         if energy_calc:
             dx_time = (len(energy_calc) - 1) * \
-                self.data_sample_rate if len(energy_calc) > 1 else 1.0
+                avg_step if len(energy_calc) > 1 else 1.0
             energy_impact = (sum(energy_calc) * 60.0) / \
                 (len(energy_calc) * dx_time)
 
@@ -975,6 +988,7 @@ class econ_correctly_on(object):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
+        self.fan_speed_values = []
         self.timestamp = []
         return diagnostic_result
 
@@ -990,15 +1004,15 @@ class econ_correctly_off(object):
     def __init__(self, device_type, economizer_type, data_window,
                  no_required_data, minimum_damper_setpoint,
                  excess_damper_threshold, cooling_enabled_threshold,
-                 desired_oaf, cfm, eer, data_sample_rate):
+                 desired_oaf, cfm, eer):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
         self.damper_signal_values = []
         self.cool_call_values = []
         self.cfm = cfm
-        self.eer = float(eer)
-        self.data_sample_rate = float(data_sample_rate)
+        self.eer = eer
+        self.fan_speed_values = []
         self.timestamp = []
 
         '''Application result messages'''
@@ -1011,7 +1025,7 @@ class econ_correctly_off(object):
                                     'verify the status of the economizer.']
         self.cfm = cfm
         self.eer = float(eer)
-        self.data_sample_rate = float(data_sample_rate)
+
         self.device_type = device_type
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
@@ -1022,7 +1036,8 @@ class econ_correctly_off(object):
         self.desired_oaf = float(desired_oaf)
 
     def econ_alg3(self, diagnostic_result, cooling_call, oatemp, ratemp,
-                  matemp, damper_signal, economizer_conditon, current_time):
+                  matemp, damper_signal, economizer_conditon, current_time,
+                  fan_speedcmd):
         '''
         Check application pre-quisites and
         economizer conditions (Problem or No Problem).
@@ -1042,12 +1057,14 @@ class econ_correctly_off(object):
             self.ma_temp_values.append(matemp)
             self.ra_temp_values.append(ratemp)
             self.timestamp.append(current_time)
+            fan_speedcmd = fan_speedcmd/100.0 if fan_speedcmd is not None else 1.0
+            self.fan_speed_values.append(fan_speedcmd)
 
-            time_check = datetime.timedelta(minutes=(self.data_window))
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=self.data_sample_rate))
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
+                        .total_seconds()/60)
+        elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
 
-        if (elapsed_time >= time_check and
+        if (elapsed_time >= self.data_window and
            len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.economizing_when_not_needed(
                 diagnostic_result, current_time)
@@ -1059,14 +1076,17 @@ class econ_correctly_off(object):
         are consistent then generate a
         fault message(s).
         '''
+        avg_step = ((self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+                    if len(self.timestamp) > 1 else 1)
         desired_oaf = self.desired_oaf / 100.0
         energy_impact = None
-        energy_calc = [(1.08 * self.cfm * (ma - (oa * desired_oaf +
+        energy_calc = [(1.08 * spd * self.cfm * (ma - (oa * desired_oaf +
                                                  (ra * (1.0 - desired_oaf))))
-                        / (1000.0 * self.eer)) for ma, oa, ra in
+                        / (1000.0 * self.eer)) for ma, oa, ra, spd in
                        zip(self.ma_temp_values,
                            self.oa_temp_values,
-                           self.ra_temp_values)
+                           self.ra_temp_values,
+                           self.fan_speed_values)
                        if (ma - (oa * desired_oaf +
                                  (ra * (1.0 - desired_oaf)))) > 0]
 
@@ -1084,7 +1104,7 @@ class econ_correctly_off(object):
 
         if energy_calc and color_code == 'RED':
             dx_time = (len(energy_calc) - 1) * \
-                self.data_sample_rate if len(energy_calc) > 1 else 1.0
+                avg_step if len(energy_calc) > 1 else 1.0
             energy_impact = (sum(energy_calc) * 60.0) / \
                 (len(energy_calc) * dx_time)
 
@@ -1108,6 +1128,7 @@ class econ_correctly_off(object):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
+        self.fan_speed_values = []
         self.timestamp = []
         return diagnostic_result
 
@@ -1123,17 +1144,17 @@ class excess_oa_intake(object):
     def __init__(self, economizer_type, device_type, data_window,
                  no_required_data, excess_oaf_threshold,
                  minimum_damper_setpoint, excess_damper_threshold,
-                 desired_oaf, cfm, eer, data_sample_rate):
+                 desired_oaf, cfm, eer):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
         self.damper_signal_values = []
         self.cool_call_values = []
         self.timestamp = []
+        self.fan_speed_values = []
         '''Application thresholds (Configurable)'''
         self.cfm = cfm
-        self.eer = float(eer)
-        self.data_sample_rate = float(data_sample_rate)
+        self.eer = eer
         self.economizer_type = economizer_type
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
@@ -1143,7 +1164,8 @@ class excess_oa_intake(object):
         self.excess_damper_threshold = float(excess_damper_threshold)
 
     def econ_alg4(self, diagnostic_result, cooling_call, oatemp, ratemp,
-                  matemp, damper_signal, economizer_conditon, current_time):
+                  matemp, damper_signal, economizer_conditon, current_time,
+                  fan_speedcmd):
         '''
         Check application pre-quisites and assemble
         data set for analysis.
@@ -1162,13 +1184,14 @@ class excess_oa_intake(object):
         self.ra_temp_values.append(ratemp)
         self.ma_temp_values.append(matemp)
         self.timestamp.append(current_time)
+        fan_speedcmd = fan_speedcmd/100.0 if fan_speedcmd is not None else 1.0
+        self.fan_speed_values.append(fan_speedcmd)
 
-        time_check = datetime.timedelta(minutes=(self.data_window))
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
+                        .total_seconds()/60)
+        elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
 
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=self.data_sample_rate))
-
-        if (elapsed_time >= time_check and
+        if (elapsed_time >= self.data_window and
            len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.excess_oa(diagnostic_result, current_time)
         return diagnostic_result
@@ -1178,6 +1201,8 @@ class excess_oa_intake(object):
         If the detected problems(s) are
         consistent then generate a fault message(s).
         '''
+        avg_step = ((self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+                    if len(self.timestamp) > 1 else 1)
         oaf = [(m - r) / (o - r) for o, r, m in zip(self.oa_temp_values,
                                                     self.ra_temp_values,
                                                     self.ma_temp_values)]
@@ -1187,12 +1212,13 @@ class excess_oa_intake(object):
             len(self.damper_signal_values)
 
         desired_oaf = self.desired_oaf / 100.0
-        energy_calc = [(1.08 * self.cfm * (ma - (oa * desired_oaf +
+        energy_calc = [(1.08 * spd * self.cfm * (ma - (oa * desired_oaf +
                                                  (ra * (1.0 - desired_oaf))))
-                        / (1000.0 * self.eer)) for ma, oa, ra in
+                        / (1000.0 * self.eer)) for ma, oa, ra, spd in
                        zip(self.ma_temp_values,
                            self.oa_temp_values,
-                           self.ra_temp_values)
+                           self.ra_temp_values,
+                           self.fan_speed_values)
                        if (ma - (oa * desired_oaf +
                                  (ra * (1.0 - desired_oaf)))) > 0]
         color_code = 'GREY'
@@ -1225,7 +1251,7 @@ class excess_oa_intake(object):
 
             if energy_calc:
                 dx_time = (len(energy_calc) - 1) * \
-                    self.data_sample_rate if len(energy_calc) > 1 else 1.0
+                    avg_step if len(energy_calc) > 1 else 1.0
                 energy_impact = (sum(energy_calc) * 60.0) / \
                     (len(energy_calc) * dx_time)
         if avg_oaf - self.desired_oaf > self.excess_oaf_threshold:
@@ -1243,7 +1269,7 @@ class excess_oa_intake(object):
 
             if energy_calc:
                 dx_time = (len(energy_calc) - 1) * \
-                    self.data_sample_rate if len(energy_calc) > 1 else 1.0
+                    avg_step if len(energy_calc) > 1 else 1.0
                 energy_impact = (sum(energy_calc) * 60.0) / \
                     (len(energy_calc) * dx_time)
 
@@ -1274,6 +1300,7 @@ class excess_oa_intake(object):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
+        self.fan_speed_values = []
         self.timestamp = []
         return diagnostic_result
 
@@ -1288,7 +1315,7 @@ class insufficient_oa_intake(object):
     def __init__(self, device_type, economizer_type, data_window,
                  no_required_data, ventilation_oaf_threshold,
                  minimum_damper_setpoint, insufficient_damper_threshold,
-                 desired_oaf, data_sample_rate):
+                 desired_oaf):
 
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -1300,7 +1327,7 @@ class insufficient_oa_intake(object):
         '''Application thresholds (Configurable)'''
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
-        self.data_sample_rate = float(data_sample_rate)
+
         self.ventilation_oaf_threshold = float(ventilation_oaf_threshold)
         self.insufficient_damper_threshold = float(
             insufficient_damper_threshold)
@@ -1324,15 +1351,14 @@ class insufficient_oa_intake(object):
         self.oa_temp_values.append(oatemp)
         self.ra_temp_values.append(ratemp)
         self.ma_temp_values.append(matemp)
-        self.timestamp.append(current_time)
         self.damper_signal_values.append(damper_signal)
 
-        time_check = datetime.timedelta(minutes=(self.data_window))
+        self.timestamp.append(current_time)
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
+                        .total_seconds()/60)
+        elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
 
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=self.data_sample_rate))
-
-        if (elapsed_time >= time_check and
+        if (elapsed_time >= self.data_window and
            len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.insufficient_oa(
                 diagnostic_result, current_time)

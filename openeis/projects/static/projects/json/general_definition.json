@@ -21,9 +21,11 @@
             "OutdoorAirTemperature",
             "OutdoorAirRelativeHumidity",
             "WholeBuildingElectricity",
+            "WholeBuildingPower",
             "WholeBuildingGas",
             "LightingStatus",
-            "HVACStatus"
+            "HVACStatus",
+            "EnergyTariff"
         ],
         "child_list": [
             "RTU",
@@ -45,7 +47,10 @@
             "BoilerStatus",
             "SupplyWaterTemperatureSetPoint",
             "SupplyWaterTemperature",
-            "ReturnWaterTemperature"
+            "ReturnWaterTemperature",
+            "ElectricEnergy",
+            "NaturalGasEnergy",
+            "EnergyTariff"
         ]
     },
     "AHU": {
@@ -81,7 +86,10 @@
             "ZoneSetpoint",
             "ZoneTemperature",
             "TerminalBoxDamperCommand",
-            "TerminalBoxReheatValvePosition"
+            "TerminalBoxReheatValvePosition",
+            "ElectricEnergy",
+            "NaturalGasEnergy",
+            "EnergyTariff"
         ]
     },
     "Chilled Water Distribution System": {
@@ -96,7 +104,10 @@
             "BoilerStatus",
             "SupplyWaterTemperatureSetPoint",
             "SupplyWaterTemperature",
-            "ReturnWaterTemperature"
+            "ReturnWaterTemperature",
+            "ElectricEnergy",
+            "NaturalGasEnergy",
+            "EnergyTariff"
         ]
     },
     "RTU": {
@@ -133,7 +144,10 @@
             "HeatingCall",
             "HVACStatus",
             "TerminalBoxDamperCommand",
-            "TerminalBoxReheatValvePosition"
+            "TerminalBoxReheatValvePosition",
+            "ElectricEnergy",
+            "NaturalGasEnergy",
+            "EnergyTariff"
         ]
     },
     "other": {
@@ -604,7 +618,7 @@
         },
         "TotalPower": {
             "data_type": "float",
-            "unit_type": "energy",
+            "unit_type": "power",
             "sensor_name": "TotalPower",
             "sensor_type": "TotalPower"
         },
@@ -645,7 +659,7 @@
             "unit_type": "dimensionless"
         },
         "SupplyFanPower": {
-            "unit_type": "energy",
+            "unit_type": "power",
             "sensor_name": "SupplyFanPower",
             "sensor_type": "SupplyFanPower",
             "data_type": "float"
@@ -672,7 +686,7 @@
             "data_type": "float",
             "sensor_name": "CondenserFanPower",
             "sensor_type": "CondenserFanPower",
-            "unit_type": "energy"
+            "unit_type": "power"
         },
         "DuctStaticPressureSetPoint": {
             "data_type": "float",
@@ -736,7 +750,7 @@
         },
         "WholeBuildingGas": {
             "data_type": "float",
-            "unit_type": "power",
+            "unit_type": "energy",
             "sensor_name": "WholeBuildingGas",
             "sensor_type": "WholeBuildingGas"
         },
@@ -850,7 +864,7 @@
         },
         "WholeBuildingElectricity": {
             "data_type": "float",
-            "unit_type": "power",
+            "unit_type": "energy",
             "sensor_name": "WholeBuildingElectricity",
             "sensor_type": "WholeBuildingElectricity"
         },
@@ -865,6 +879,30 @@
             "unit_type": "unitless",
             "sensor_name": "HVACStatus",
             "sensor_type": "HVACStatus"
+        },
+        "EnergyTariff": {
+            "data_type": "float",
+            "unit_type": "tariff",
+            "sensor_name": "EnergyTariff",
+            "sensor_type": "EnergyTariff"
+        },
+        "ElectricEnergy": {
+            "data_type": "float",
+            "unit_type": "energy",
+            "sensor_name": "ElectricEnergy",
+            "sensor_type": "ElectricEnergy"
+        },
+        "NaturalGasEnergy": {
+            "data_type": "float",
+            "unit_type": "energy",
+            "sensor_name": "NaturalGasEnergy",
+            "sensor_type": "NaturalGasEnergy"
+        },
+        "WholeBuildingPower": {
+            "data_type": "float",
+            "unit_type": "power",
+            "sensor_name": "WholeBuildingPower",
+            "sensor_type": "WholeBuildingPower"
         }
     }
 }

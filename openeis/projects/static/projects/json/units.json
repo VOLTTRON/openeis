@@ -1264,5 +1264,27 @@
             "key":"milliliters_per_second",
             "value":"mL/s"
         }
+    },
+    "tariff":{
+        "dollars_per_kwh":{
+            "key":"dollars_per_kwh",
+            "value":"$/kWh"
+        },
+        "dollars_per_therm":{
+            "key":"dollars_per_therm",
+            "value":"$/therm"
+        },
+        "dollars_per_cf":{
+            "key":"dollars_per_cf",
+            "value":"$/cf"
+        },
+        "dollars_per_ccf":{
+            "key":"dollars_per_ccf",
+            "value":"$/ccf"
+        },
+        "dollars_per_Mcf":{
+            "key":"dollars_per_Mcf",
+            "value":"$/Mcf"
+        }
     }
 }

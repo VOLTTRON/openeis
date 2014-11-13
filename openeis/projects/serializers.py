@@ -117,11 +117,18 @@ class CreateFileSerializer(serializers.ModelSerializer):
             name = file.name
             if name[-4:].lower() == '.xml':
                 name = name[:-3] + 'csv'
-            file = InMemoryUploadedFile(dst, field_name=file.field_name,
+                
+            if (hasattr(file, 'field_name')):
+                fieldname = file.field_name
+            else:
+                #Some files are coming in with no field name
+                fieldname = 'file'
+            file = InMemoryUploadedFile(dst, field_name=fieldname,
                 name=name, content_type='text/csv', size=len(dst.getvalue()),
                 charset=None)
             attrs[source] = file
             attrs['name'] = name
+
         else:
             attrs['format'] = 'csv'
             try:

@@ -82,7 +82,7 @@ from rest_framework.reverse import reverse
 from rest_framework import exceptions as rest_exceptions
 from rest_framework.settings import api_settings
 
-from . import models, renderers, serializers
+from . import models, renderers, serializers, version
 from .models import INFO, WARNING, ERROR, CRITICAL
 from .protectedmedia import protected_media, ProtectedMediaResponse
 from .conf import settings as proj_settings
@@ -94,9 +94,6 @@ from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
 from openeis.filters import apply_filters, column_modifiers
-
-
-from openeis.projects import version
 
 _logger = logging.getLogger(__name__)
 
@@ -750,7 +747,8 @@ class DataSetViewSet(viewsets.ModelViewSet):
         
         def _iter_data(sensordata):
             for data in sensordata:
-                yield data.time, data.value
+                if data.value is not None:
+                    yield data.time, data.value
         
         #request_data = "{\"config\": [[\"pnnl/isb2/OutdoorAirTemperature\", \"LinearInterpolation\", \
         #{\"period_seconds\": 300, \"drop_extra\": false}],[\"pnnl/isb2/OutdoorAirTemperature\", \"RoundOff\", {\"places\": 2}]]}";
@@ -961,6 +959,7 @@ class ApplicationViewSet(viewsets.ViewSet):
                 app_list[-1]['description'] = app.get_self_descriptor().description
         return Response(app_list)
     
+
 class FilterViewSet(viewsets.ViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     
@@ -976,13 +975,12 @@ class FilterViewSet(viewsets.ViewSet):
                 filter_list[-1]['description'] = filter_.get_self_descriptor().description
         return Response(filter_list)
 
+
 class VersionViewSet(viewsets.ViewSet):
-    
-    permission_classes = (permissions.IsAuthenticated,)
-    
     def list(self, request, *args, **kargs):
         '''Return version numbers'''
-        return Response(version.vcs_version())
+        return Response(version.get_version_info())
+
 
 _analysis_processes = set()
 

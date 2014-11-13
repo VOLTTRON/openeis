@@ -92,7 +92,8 @@ class Command(BaseCommand):
 
         def _iter_data(sensordata):
             for data in sensordata:
-                yield data.time, data.value
+                if data.value is not None:
+                    yield data.time, data.value
                     
         try:
             verbosity = int(verbosity)
