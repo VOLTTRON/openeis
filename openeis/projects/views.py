@@ -747,7 +747,8 @@ class DataSetViewSet(viewsets.ModelViewSet):
         
         def _iter_data(sensordata):
             for data in sensordata:
-                yield data.time, data.value
+                if data.value is not None:
+                    yield data.time, data.value
         
         #request_data = "{\"config\": [[\"pnnl/isb2/OutdoorAirTemperature\", \"LinearInterpolation\", \
         #{\"period_seconds\": 300, \"drop_extra\": false}],[\"pnnl/isb2/OutdoorAirTemperature\", \"RoundOff\", {\"places\": 2}]]}";
