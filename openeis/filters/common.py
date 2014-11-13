@@ -130,7 +130,7 @@ class BaseSimpleNormalize(BaseFilter, metaclass=abc.ABCMeta):
         if not offset:
             return dt
         
-        previous_in_seconds = seconds_from_midnight //  period_seconds
+        previous_in_seconds = seconds_from_midnight // period_seconds
         next_in_seconds = previous_in_seconds + period_seconds
         
         from_midnight =  timedelta(seconds=next_in_seconds)
@@ -174,4 +174,93 @@ class Fill(BaseSimpleNormalize):
         name = 'Fill'
         desc = 'Normalize values to a specified time period using the most recent previous value to supply any missing values.'
         return Descriptor(name=name, description=desc)
+    
+class BaseSimpleAggregate(BaseFilter, metaclass=abc.ABCMeta):
+    def __init__(self, period_seconds=3600, round_time=False, **kwargs):
+        super().__init__(**kwargs)
+        self.period = timedelta(seconds=period_seconds)
+        self.previous_point = None
+        self.next_point = None
+        self.current_dt = None
+        self.round_time = round_time
+        if self.round_time:
+            self.half_period = self.period / 2
+    def __iter__(self):
+        def generator():
+            try:
+                iterator = iter(self.parent)
+                current_point = next(iterator) 
+            except StopIteration:
+                return       
+                    
+            self.init_current_dt(current_point[0])
+            value_pairs = [current_point]
             
+            for dt, value in iterator:
+                if not self.update_dt(dt):
+                    value_pairs.append((dt, value))    
+                else:
+                    yield self.old_dt, self.aggregate_values(self.old_dt, value_pairs)
+                    value_pairs.clear()
+                    value_pairs.append((dt, value)) 
+                    
+            if value_pairs:
+                yield self.current_dt, self.aggregate_values(self.current_dt, value_pairs)
+            
+        return generator()
+    
+    @abc.abstractclassmethod
+    def aggregate_values(self, target_dt, value_pairs):
+        pass
+    
+    def update_dt(self, dt):
+        self.old_dt = self.current_dt
+        
+        if self.round_time:
+            while self.current_dt + self.half_period <= dt:
+                self.current_dt += self.period            
+        else:
+            while self.current_dt + self.period <= dt:
+                self.current_dt += self.period
+                
+        return self.old_dt != self.current_dt
+    
+    def init_current_dt(self, dt):
+        self.current_dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
+        self.update_dt(dt)
+        #Make sure old_dt it correct after init.
+        self.old_dt = self.current_dt
+    
+    
+    @classmethod
+    def get_config_parameters(cls):
+        return {
+                'period_seconds': ConfigDescriptor(int, "Period in second",
+                                                   description='Period to of time to normalize to in seconds.',
+                                                   value_default=3600),
+                'round_time': ConfigDescriptor(bool, "Round Time",
+                                               description='Round time to nearest period, otherwise truncate time to period.',
+                                               value_default=False)
+                }
+
+@register_column_modifier     
+class Sum(BaseSimpleAggregate):
+    def aggregate_values(self, target_dt, value_pairs):
+        return sum(value for _, value in value_pairs)
+    
+    @classmethod
+    def get_self_descriptor(cls):
+        name = 'Sum'
+        desc = 'Aggregate by summation.'
+        return Descriptor(name=name, description=desc) 
+    
+@register_column_modifier     
+class Average(BaseSimpleAggregate):
+    def aggregate_values(self, target_dt, value_pairs):
+        return sum(value for _, value in value_pairs)/len(value_pairs)
+    
+    @classmethod
+    def get_self_descriptor(cls):
+        name = 'Average'
+        desc = 'Aggregate by averaging.'
+        return Descriptor(name=name, description=desc)          
