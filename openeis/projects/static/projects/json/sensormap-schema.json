@@ -256,12 +256,24 @@
                     "properties": {
                         "type": {
                             "enum": [
-                                "CondenserFanPower",
-                                "SupplyFanPower",
-                                "TotalPower"
+                                "WholeBuildingElectricity",
+                                "WholeBuildingGas",
+                                "ElectricEnergy",
+                                "NaturalGasEnergy"
                             ]
                         },
                         "unit": {"$ref": "#/definitions/units/energy"}
+                    }
+                },
+                {
+                    "required": ["unit"],
+                    "properties": {
+                        "type": {
+                            "enum": [
+                                "EnergyTariff"
+                            ]
+                        },
+                        "unit": {"$ref": "#/definitions/units/tariff"}
                     }
                 },
                 {
@@ -283,8 +295,10 @@
                     "properties": {
                         "type": {
                             "enum": [
-                                "WholeBuildingElectricity",
-                                "WholeBuildingGas"
+                                "CondenserFanPower",
+                                "SupplyFanPower",
+                                "WholeBuildingPower",
+                                "TotalPower"
                             ]
                         },
                         "unit": {"$ref": "#/definitions/units/power"}
@@ -414,6 +428,15 @@
             "unitless": {
                 "enum": [
                     "status"
+               ]
+           },
+           "tariff": {
+                "enum": [
+                    "dollars_per_kwh",
+                    "dollars_per_therm",
+                    "dollars_per_cf",
+                    "dollars_per_ccf",
+                    "dollars_per_Mcf"
                ]
            }
         },
