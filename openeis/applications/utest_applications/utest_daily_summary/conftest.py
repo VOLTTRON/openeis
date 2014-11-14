@@ -60,10 +60,10 @@ def create_datamap(project, column):
         map={
             
             "sensors": {
-                "lbnl/bldg90/WholeBuildingElectricity": {
+                "lbnl/bldg90/WholeBuildingPower": {
                     "column": column,
                     "unit":"kilowatt",
-                    "type": "WholeBuildingElectricity",
+                    "type": "WholeBuildingPower",
                     "file": "0"
                 },
                 "lbnl":{

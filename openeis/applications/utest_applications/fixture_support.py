@@ -62,7 +62,7 @@ def build_config_parser(app_name, dataset_id, sensormap_id):
     config.set('application_config', 'building_name', '"bldg90"')
     
     config.add_section('inputs')
-    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingElectricity')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
     
     return config
 
@@ -130,10 +130,10 @@ def datamap(project):
     return models.DataMap.objects.create(project=project, name='Test Data Map',
         map={
             "sensors": {
-                "Test/WholeBuildingElectricity": {
+                "Test/WholeBuildingPower": {
                     "column": "Main Meter [kW]",
                     "unit": "kilowatt",
-                    "type": "WholeBuildingElectricity",
+                    "type": "WholeBuildingPower",
                     "file": "0"
                 },
                 "Test/OutdoorAirTemperature": {

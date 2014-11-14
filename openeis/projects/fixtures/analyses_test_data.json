@@ -38,11 +38,11 @@
                     "unit": "kilobtus_per_hour",
                     "type": "WholeBuildingGas"
                 },
-                "campus/building/WholeBuildingElectricity": {
+                "campus/building/WholeBuildingPower": {
                     "file": "0",
                     "column": "Main Meter [kW]",
                     "unit": "kilowatt",
-                    "type": "WholeBuildingElectricity"
+                    "type": "WholeBuildingPower"
                 }
             },
             "version": 1,
@@ -101,7 +101,7 @@
     "fields": {
         "map": 1,
         "data_type": "f",
-        "name": "campus/building/WholeBuildingElectricity"
+        "name": "campus/building/WholeBuildingPower"
     },
     "pk": 2
 },
