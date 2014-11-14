@@ -98,7 +98,7 @@ def datamap(project):
                 "Test/WholeBuildingElectricity": {
                     "column": "Main Meter [kW]",
                     "unit": "kilowatt",
-                    "type": "WholeBuildingElectricity",
+                    "type": "WholeBuildingPower",
                     "file": "0"
                 },
                 "Test/OutdoorAirTemperature": {
