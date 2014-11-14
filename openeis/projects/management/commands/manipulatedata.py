@@ -71,9 +71,11 @@ from configparser import ConfigParser, NoOptionError
 import traceback
 
 from pprint import pprint
-from openeis.filters import apply_filters
+from openeis.filters.apply_filter import apply_filter_config
+
 import json
 import sys
+from pip._vendor.requests.models import Response
 
 
 class Command(BaseCommand):
@@ -84,79 +86,23 @@ class Command(BaseCommand):
         make_option('-n', '--dry-run', action='store_true', default=False,
                     help="Don't make any permanent modifications."),
     )
-
+    
+    
     def handle(self, *args, verbosity=1, dry_run=False, **options):
-        # Put of importing modules that access the database to allow
-        # Django to magically install the plumbing first.
-        from openeis.projects import models
-
-        def _iter_data(sensordata):
-            for data in sensordata:
-                if data.value is not None:
-                    yield data.time, data.value
-                    
         try:
-            verbosity = int(verbosity)
-
             config = ConfigParser()
-
             config.read(args[0])
-
             dataset_id = int(config['global_settings']['dataset_id'])
-            sensoringest = models.SensorIngest.objects.get(pk=dataset_id)
-            datamap = sensoringest.map
-            sensors = list(datamap.sensors.all())
-            sensor_names = [s.name for s in sensors]
-            sensordata = [sensor.data.filter(ingest=sensoringest) for sensor in sensors]
-            generators = {} 
-            for name, qs in zip(sensor_names, sensordata):
-                #TODO: Add data type from schema
-                value = {"gen":_iter_data(qs),
-                         "type":None}
-                generators[name] = value
-                
             config_string = config['global_settings']['config']
             print("Config String: ", config_string)
             config = json.loads(config_string)
             
-            pprint(config)
+            result = apply_filter_config(dataset_id,config)
+            if isinstance(result,list):
+                print('Error = ',result) 
+            else:
+                print('New dataset id =',result)
             
-            generators, errors = apply_filters(generators, config)
-            
-            if errors:
-                print('Errors:')
-                pprint(errors)
-                sys.exit(1)
-            
-            datamap.id = None 
-            datamap.name = datamap.name+' version - '+str(datetime.now())
-            datamap.save()
-            
-            sensoringest.name = str(sensoringest.id) + ' - '+str(datetime.now())
-            sensoringest.id = None
-            sensoringest.map = datamap
-            sensoringest.save()
-            
-            for sensor in sensors:
-                sensor.id= None
-                sensor.map = datamap
-                sensor.save()
-                data_class = sensor.data_class
-                generator = generators[sensor.name]['gen']
-                sensor_data_list = []
-                for time,value in generator:
-                    sensor_data = data_class(sensor=sensor, ingest=sensoringest,
-                                             time=time, value=value)
-                    sensor_data_list.append(sensor_data)
-                    if len(sensor_data_list) >= 1000:
-                        data_class.objects.bulk_create(sensor_data_list)
-                        sensor_data_list = []
-                if sensor_data_list:
-                    data_class.objects.bulk_create(sensor_data_list)
-
         except Exception as e:
             # TODO: log errors
             print(traceback.format_exc())
-
-            
-    

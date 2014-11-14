@@ -93,7 +93,7 @@ from .storage.db_input import DatabaseInput
 from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
-from openeis.filters import apply_filters, column_modifiers
+from openeis.filters.apply_filter import apply_filter_config
 
 _logger = logging.getLogger(__name__)
 
@@ -758,52 +758,12 @@ class DataSetViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             dataset_id = self.get_object().id
             config = serializer.object['config']
-            sensoringest = models.SensorIngest.objects.get(pk=dataset_id)
-            datamap = sensoringest.map
-            sensors = list(datamap.sensors.all())
-            sensor_names = [s.name for s in sensors]
-            sensordata = [sensor.data.filter(ingest=sensoringest) for sensor in sensors]
-            generators = {} 
-            for name, qs in zip(sensor_names, sensordata):
-                #TODO: Add data type from schema
-                value = {"gen":_iter_data(qs),
-                         "type":None}
-                generators[name] = value
-                
-            generators, errors = apply_filters(generators, config)
             
-            if errors:
+            result = apply_filter_config(dataset_id,config)
+            if isinstance(result,list):
                 print('Errors:')
                 return Response(errors, status.HTTP_400_BAD_REQUEST)
-            
-            datamap.id = None 
-            datamap.name = datamap.name+' version - '+str(datetime.datetime.now())
-            datamap.save()
-            
-            sensoringest.name = str(sensoringest.id) + ' - '+str(datetime.datetime.now())
-            sensoringest.id = None
-            sensoringest.map = datamap
-            sensoringest.save()
-            
-            for sensor in sensors:
-                sensor.id= None
-                sensor.map = datamap
-                sensor.save()
-                data_class = sensor.data_class
-                generator = generators[sensor.name]['gen']
-                sensor_data_list = []
-                for time,value in generator:
-                    sensor_data = data_class(sensor=sensor, ingest=sensoringest,
-                                             time=time, value=value)
-                    sensor_data_list.append(sensor_data)
-                    if len(sensor_data_list) >= 1000:
-                        data_class.objects.bulk_create(sensor_data_list)
-                        sensor_data_list = []
-                if sensor_data_list:
-                    data_class.objects.bulk_create(sensor_data_list)
-                    
-            
-            return Response(datamap.id)
+            return Response(result)
         
         else:
             return Response("Not a valid config", status.HTTP_400_BAD_REQUEST)
