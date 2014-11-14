@@ -60,6 +60,34 @@ import os
 import sys
 
 
+__all__ = ['exec_parts']
+
+
+def exec_parts(rcdir, globals=None, locals=None, include=None):
+    '''Read each file in rcdir and exec the source code.
+    
+    May be used by a settings module to split settings among multiple
+    files in a directory. Files are exec'd in lexical order. globals and
+    locals are passed on to the exec() function. If include is given, it
+    must be a function which accepts a name as the input and returns a
+    boolean indicating whether the file of that name should be included.
+    The default inclusion test checks that the name starts with to
+    digits followed by a hyphen.
+    '''
+    if include is None:
+        include = lambda name: name[:2].isdigit() and name[2:3] == '-'
+    names = [name for name in os.listdir(rcdir) if include(name)]
+    names.sort()
+    for name in names:
+        try:
+            path = os.path.join(rcdir, name)
+            with open(path) as file:
+                source = file.read()
+        except IsADirectoryError:
+            continue
+        exec(compile(source, path, 'exec'), globals, locals)
+
+
 class ModuleLoader(Loader):
     '''Use the given module, or sensible default, for settings.
 
@@ -97,31 +125,44 @@ class ModuleLoader(Loader):
                 pass
 
 
+class DirectoryLoader(Loader):
+    '''Load settings from an runtime configuration directory.'''
+
+    def __init__(self, path):
+        self.path = path
+
+    def exec_module(self, module):
+        module.__path__ = [os.path.abspath(self.path)]
+        exec_parts(self.path, module.__dict__, module.__dict__)
+
+
 class FileLoader(SourceFileLoader):
     '''Load the module from a file and set its path.'''
 
     def exec_module(self, module):
+        module.__file__ = os.path.abspath(self.path)
         try:
             super().exec_module(module)
         except OSError:
             raise ImportError("No module named 'openeis.settings'")
-        module.__file__ = os.path.abspath(self.path)
     
 
 class SettingsFinder(MetaPathFinder):
     '''A finder for 'openeis.settings' pseudo-module.
 
     Allows one to use any Python file as the Django settings module
-    rather than only a module available on the path. Such a file should
-    either be a complete settings file or import and override from
-    openeis.server.settings. If the OPENEIS_SETTINGS environment
-    variable is defined, it will be used and interpreted as a file path
-    if the name contains a path separator or as a python module name
-    otherwise.
+    rather than only a module available on the path.  If the
+    OPENEIS_SETTINGS environment variable is defined, it will be used
+    and interpreted as a filesystem path, if the name contains a path
+    separator, or as a python module name otherwise. A path may be
+    either a file or a directory. If a file, it will be loaded and used
+    as the settings module. If a directory, it will be considered a
+    rutime configuration directory and handled as described below.
 
-    If OPENEIS_SETTINGS is not set, a search will be made for
-    settings.py in the following subdirectories of the current user's
-    home directory, in order:
+    If OPENEIS_SETTINGS is not set, a search will be made for a
+    settings.py file or a settings.d directory in the following
+    subdirectories of the current user's home directory, in the given
+    order:
 
         * .config/openeis
         * .openeis
@@ -129,8 +170,16 @@ class SettingsFinder(MetaPathFinder):
         * _openeis (one Windows only)
 
     If the user's home directory cannot be determined, /etc/openeis will
-    be searched. If settings.py is not found, importing openeis.settings
-    will fail.
+    be searched. If settings.py and settings.d are not found, importing
+    openeis.settings will fail.
+
+    A runtime configuration directory holds a list of files that will be
+    exec'd in order within the context of the openeis.settings module.
+    Files must start with two digits followed by a hyphen to be
+    included. Because they share the same global context, variables from
+    earlier files may be used in subsequent files. The modules __path__
+    variable will contain a single item that is the path to the
+    directory.
     '''
 
     def find_spec(self, fullname, path, target=None):
@@ -142,6 +191,8 @@ class SettingsFinder(MetaPathFinder):
                 pass
             else:
                 if os.sep in path:
+                    if os.path.isdir(path):
+                        return ModuleSpec(fullname, DirectoryLoader(path))
                     return ModuleSpec(fullname, FileLoader(fullname, path))
                 else:
                     return ModuleSpec(fullname, ModuleLoader(path))
@@ -159,6 +210,9 @@ class SettingsFinder(MetaPathFinder):
                 settings = os.path.join(home, path, 'settings.py')
                 if os.path.exists(settings):
                     return ModuleSpec(fullname, FileLoader(fullname, settings))
+                rcdir = os.path.join(home, path, 'settings.d')
+                if os.path.exists(rcdir):
+                    return ModuleSpec(fullname, DirectoryLoader(rcdir))
             return ModuleSpec(fullname, ModuleLoader())
 
 
