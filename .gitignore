@@ -15,4 +15,3 @@ __pycache__/
 /dist/*.changes
 /dist/*.deb
 /dist/*.tar.gz
-/dist/openeis-support/windows-setup-support/setup.cfg.json
