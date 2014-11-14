@@ -119,7 +119,7 @@ core_management.find_management_module = find_management_module
 
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', __package__ + '.settings')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'openeis.settings')
     sys.exit(core_management.execute_from_command_line())
 
 if __name__ == '__main__':
