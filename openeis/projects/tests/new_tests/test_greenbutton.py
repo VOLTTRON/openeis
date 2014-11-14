@@ -11,7 +11,8 @@ from rest_framework.test import force_authenticate, APIRequestFactory, APIClient
 from rest_framework import status
 from openeis.projects import views
 from .conftest import detail_view
-from openeis.server.parser.converter import Convert, split_namespace
+from openeis.server.parser.converter import Convert, split_namespace,\
+    get_uom_type
 
 pytestmark = pytest.mark.django_db
 
@@ -65,7 +66,21 @@ def test_get_retail_customer():
     pass
 
 def test_get_uom_type():
-    pass
+    '''Test that uom type is correctly retrieved.'''
+    input_file = os.path.join(os.path.dirname(views.__file__),'fixtures/greenbutton','TestGBDataoneMonthBinnedDailyWCost.xml')
+    tree = parse(input_file)
+    root = tree.getroot()
+    
+    ns = {
+        'espi': "http://naesb.org/espi"
+    }
+    
+    node_uom = 'Real energy (Watt-hours)'
+    prefixed_uom = 'Giga-Real energy (Giga-Watt-hours)'
+    uom_retrieved = get_uom_type(root, ns)
+    uom_prefixed_retrieved = get_uom_type(root, ns, 'Giga')
+    assert(node_uom == uom_retrieved)
+    assert(prefixed_uom == uom_prefixed_retrieved)
 
 def test_split_namespace():
     '''Tests the ability to split various valid and invalid namespaces.'''
@@ -97,7 +112,6 @@ def test_row_count():
     # call Convert, get count of rows actually written
     with open(os.devnull, 'w') as nullout:
         row_count = Convert(input_file, nullout)
-    row_count += 1
     
     assert(row_count == node_count)
     
