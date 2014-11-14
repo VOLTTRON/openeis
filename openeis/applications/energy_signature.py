@@ -143,7 +143,7 @@ class Application(DriverApplicationBaseClass):
         # Sort out units.
         return {
             'oat':InputDescriptor('OutdoorAirTemperature', 'Outdoor Temp'),
-            'load':InputDescriptor('WholeBuildingElectricity', 'Building Load')
+            'load':InputDescriptor('WholeBuildingPower', 'Building Load')
             }
 
 
