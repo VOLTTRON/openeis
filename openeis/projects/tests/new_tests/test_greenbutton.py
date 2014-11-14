@@ -5,10 +5,13 @@ from django.utils.timezone import utc
 import json
 import os
 import pytest
+import sys
+from xml.etree.ElementTree import parse
 from rest_framework.test import force_authenticate, APIRequestFactory, APIClient
 from rest_framework import status
 from openeis.projects import views
 from .conftest import detail_view
+from openeis.server.parser.converter import Convert, split_namespace
 
 pytestmark = pytest.mark.django_db
 
@@ -34,3 +37,57 @@ def test_greenbutton_file(active_user, project):
     #check response data, look up obj
 #    file = datafile_greenbutton
 #    print(file)
+
+def test_process_row():
+    pass
+
+def test_build_header_list():
+    pass
+
+def test_get_child_node_text():
+    pass
+
+def test_get_currency_type():
+    pass
+
+def test_get_retail_customer():
+    pass
+
+def test_get_uom_type():
+    pass
+
+def test_split_namespace():
+    '''Tests the ability to split various valid and invalid namespaces.'''
+    
+    strings = {
+        'valid_namespace': '{http://naesb.org/espi}IntervalReading',
+        'invalid_namespace': '{http://naesb.org/espiIntervalReading'
+    }
+    
+    assert (split_namespace(strings['valid_namespace']) == 'IntervalReading')
+    assert (split_namespace(strings['invalid_namespace']) == "{http://naesb.org/espiIntervalReading")
+    
+
+
+def test_row_count():
+    '''Test that data does not go missing during conversion.'''
+    input_file = os.path.join(os.path.dirname(views.__file__),'fixtures','TestGBDataoneMonthBinnedDailyWCost.xml')
+    
+    tree = parse(input_file)
+    root = tree.getroot()
+    
+    ns = {
+        'espi': "http://naesb.org/espi"
+    }
+    
+    # process xml nodes of input file, get count of IntervalReading nodes
+    node_count = len(root.findall('.//espi:IntervalReading', namespaces=ns))
+    
+    # call Convert, get count of rows actually written
+    with open(os.devnull, 'w') as nullout:
+        row_count = Convert(input_file, nullout)
+    row_count += 1
+    
+    assert(row_count == node_count)
+    
+    

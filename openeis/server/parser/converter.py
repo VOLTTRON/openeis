@@ -61,9 +61,6 @@ from datetime import datetime
 from time import strftime
 from xml.etree.ElementTree import parse
 from xml.etree.ElementTree import iterparse
-# import xml.etree.cElementTree as ET
-# from xml.etree import ElementTree
-# from xml.etree.ElementTree import register_namespace
 #
 # The difference is this:
 # from elementtree import ElementTree
@@ -72,10 +69,12 @@ from xml.etree.ElementTree import iterparse
 # note that there is also a C implementation, which is more efficient:
 # import xml.etree.cElementTree as ET
     
-def Convert(input_file, output_file):
+def Convert(input_file, output_file, debug=False):
     """
     input_file: a file object from which the xml data is parsed
     outpt_file: a file object to which the parsed rows will be written
+    debug: boolean to switch print messages on/off
+    returns: integer count of the number of data rows written (not including the header row)
     """
     
     # Note: 'lineterminator' defaults to '\r\n', which injects extra newlines into excel
@@ -139,14 +138,16 @@ def Convert(input_file, output_file):
     headerDict['cost'] = '{0} - {1}'.format(headerDict['cost'], currencyType)
     headerDict['value'] = '{0} - {1}'.format(headerDict['value'], uomType)
     
-    headers_found = build_header_list(root, ns)
+    headers_found = build_header_list(root, ns, debug)
     headers_used = []
     for header in headers_found:
         if header in headerDict:
-            print("\'{0}\', \'{1}\'".format(header, headerDict[header]))
+            if debug: 
+                print("\'{0}\', \'{1}\'".format(header, headerDict[header]))
             headers_used.append(headerDict[header])
         else:
-            print(header)
+            if debug: 
+                print(header)
             headers_used.append(header)
     
     headers_used.append(endDateHeader)
@@ -155,7 +156,8 @@ def Convert(input_file, output_file):
     writer = csv.writer(output_file, 'csvdialect')
     writer.writerow(header_row)
     # writer.writerow(headers_used)
-            
+    
+    rowswritten = 0   # Counts data rows written to csv (not including header)
     # loop through every node in the input file
     # for (event, node) in iterparse(input_file, events=['end']):
     for node in root.iter():
@@ -163,7 +165,8 @@ def Convert(input_file, output_file):
         node_attributes = node.attrib
         node_text = node.text
         if node_tag == 'entry':
-                print(node_tag, ', ', node_attributes, ', ', node_text)
+                if debug: 
+                    print(node_tag, ', ', node_attributes, ', ', node_text)
                 
                 for child in node.iter(): 
                     child_tag = split_namespace(child.tag)
@@ -176,22 +179,26 @@ def Convert(input_file, output_file):
                         
                     # Error, but do not break out of the loop or change retail customer
                     elif child_tag == 'link' and 'rel' not in child.attrib:
-                        print(child_tag, child.attrib, child.text)
+                        if debug: 
+                            print(child_tag, child.attrib, child.text)
                     
                     # Process row data for IntervalReading nodes
                     elif child_tag == 'IntervalReading':
-                        process_row(child, writer, ns)
+                        process_row(child, writer, ns, debug)
+                        rowswritten += 1
                         
                 count += 1
-                print('\n\ncount: ',count)
+                if debug: 
+                    print('\n\ncount: ',count)
     
     print(strftime("%Y-%m-%d %H:%M:%S"))  #use this in the filename later
+    return rowswritten
     
 
-def process_row(node, writer, ns):
+def process_row(node, writer, ns, debug):
     """
     method to process an xml IntervalReading node and write an individual row
-    parameters: the IntervalReading node, the csv writer, and a list of namespaces
+    parameters: IntervalReading node, csv writer, list of namespaces, boolean debug on/off
     returns: nothing 
     """
     
@@ -217,20 +224,21 @@ def process_row(node, writer, ns):
     
     # intervalValue = node.find('./{http://naesb.org/espi}value').text  # the url way
     intervalValue = get_child_node_text(node, ns, "value", './{http://naesb.org/espi}')    # The url way
-                        
-    print("Interval Date: {0}\nFormatted Date: {1}".format(intervalDate, formattedDate))
-    print("Interval Duration: {0}\nInterval Cost: {1}".format(intervalDuration, intervalCost))
-    print("Interval Reading Quality: {0}\nIntervalValue: {1}".format(intervalReadingQuality, intervalValue))
+    
+    if debug:
+        print("Interval Date: {0}\nFormatted Date: {1}".format(intervalDate, formattedDate))
+        print("Interval Duration: {0}\nInterval Cost: {1}".format(intervalDuration, intervalCost))
+        print("Interval Reading Quality: {0}\nIntervalValue: {1}".format(intervalReadingQuality, intervalValue))
                         
     row = [formattedDate, intervalDuration, endDate, intervalCost, intervalValue, intervalReadingQuality]
     writer.writerow(row)
     
     
-def build_header_list(root, ns):
+def build_header_list(root, ns, debug=False):
     """
     Method to build a list of column headers for the csv file from the xml nodes.
     Nodes of any name within an IntervalReading node should be accepted
-    Parameters: the root node, the list of namespaces
+    Parameters: root node, namespaces list, boolean debug on/off
     Returns: A list of strings, each string is a column header
     """
     columnHeaders = []
@@ -240,10 +248,10 @@ def build_header_list(root, ns):
             stripped_tag = split_namespace(child.tag)
             text = (child.text.strip() if (child.text != None) else child.text)
             if (stripped_tag not in columnHeaders) and (text != "") and (text != None):
-                print(text)
                 columnHeaders.append(stripped_tag)
 
-    print(columnHeaders)
+    if debug: 
+        print(columnHeaders)
     
     return columnHeaders
 
@@ -406,9 +414,9 @@ if __name__ == "__main__":
         filename = 'TestGBDataoneMonthBinnedDailyWCost.xml'
         print("No files passed. Attempting to open test file '{0}'...".format(filename))
         with open(output_file_name, 'w') as output:
-            Convert(filename, output)
+            print(Convert(filename, output, True))
     
     for input_file in sys.argv[1:]:
         with open(output_file_name, 'w') as output: 
-            Convert(input_file, output)
+            print(Convert(input_file, output, True))
 
