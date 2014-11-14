@@ -82,7 +82,7 @@ def test_split_namespace():
 
 def test_row_count():
     '''Test that data does not go missing during conversion.'''
-    input_file = os.path.join(os.path.dirname(views.__file__),'fixtures','TestGBDataoneMonthBinnedDailyWCost.xml')
+    input_file = os.path.join(os.path.dirname(views.__file__),'fixtures/greenbutton','TestGBDataoneMonthBinnedDailyWCost.xml')
     
     tree = parse(input_file)
     root = tree.getroot()
