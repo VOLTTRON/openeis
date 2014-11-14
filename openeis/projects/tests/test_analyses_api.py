@@ -106,7 +106,7 @@ class TestAnalysesApi(OpenEISTestBase):
                                              },
                               "inputs": {
                                          "load": [
-                                                  "campus/building/WholeBuildingElectricity"
+                                                  "campus/building/WholeBuildingPower"
                                                   ]
                                          }
                               }
@@ -154,7 +154,7 @@ class TestAnalysesApi(OpenEISTestBase):
                         "campus/building/OutdoorAirTemperature"
                     ],
                     "load": [
-                        "campus/building/WholeBuildingElectricity"
+                        "campus/building/WholeBuildingPower"
                     ]
                 },
                 "parameters": {}

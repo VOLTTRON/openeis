@@ -124,10 +124,10 @@ class Application(DriverApplicationBaseClass):
             self.default_building_name_used = True
 
         self.building_name = building_name
-        self.baseline_start = dt.datetime.strptime(baseline_startdate, '%Y-%m-%d')
-        self.baseline_stop = dt.datetime.strptime(baseline_stopdate, '%Y-%m-%d')
-        self.savings_start = dt.datetime.strptime(savings_startdate, '%Y-%m-%d')
-        self.savings_stop = dt.datetime.strptime(savings_stopdate, '%Y-%m-%d')
+        self.baseline_start = baseline_startdate
+        self.baseline_stop = baseline_stopdate
+        self.savings_start = savings_startdate
+        self.savings_stop = savings_stopdate
 
     @classmethod
     def get_self_descriptor(cls):    
@@ -160,7 +160,7 @@ class Application(DriverApplicationBaseClass):
         # Sort out units.
         return {
             'oat':InputDescriptor('OutdoorAirTemperature', 'Outdoor Temperature'),
-            'load':InputDescriptor('WholeBuildingElectricity', 'Building Load')
+            'load':InputDescriptor('WholeBuildingPower', 'Building Load')
             }
 
     @classmethod
@@ -284,7 +284,7 @@ class Application(DriverApplicationBaseClass):
 
             load_values.append(x['load'][0] * load_convertfactor) #Converted to kWh
             oat_values.append(convertedTemp)
-            datetime_values.append(dt.datetime.strptime(x['time'],'%Y-%m-%d %H'))
+            datetime_values.append(x['time'])
 
         indexList = {}
         indexList['trainingStart'] = ttow.findDateIndex(datetime_values, self.baseline_start)

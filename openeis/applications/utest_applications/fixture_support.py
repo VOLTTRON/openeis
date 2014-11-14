@@ -45,6 +45,7 @@ def project(active_user):
     database, returns it'''
     return models.Project.objects.create(owner=active_user, name='Test Project')
 
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
 def create_data_file(name_or_full_path, **kwargs):
     '''Creates a data file object from the passed name_or_full_path.  
     
@@ -109,10 +110,10 @@ def datamap(project):
     return models.DataMap.objects.create(project=project, name='Test Data Map',
         map={
             "sensors": {
-                "Test/WholeBuildingElectricity": {
+                "Test/WholeBuildingPower": {
                     "column": "Main Meter [kW]",
                     "unit": "kilowatt",
-                    "type": "WholeBuildingElectricity",
+                    "type": "WholeBuildingPower",
                     "file": "0"
                 },
                 "Test/OutdoorAirTemperature": {

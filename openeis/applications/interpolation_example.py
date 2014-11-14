@@ -100,7 +100,7 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         return {
                     'oat':InputDescriptor('OutdoorAirTemperature','Outdoor Temp', count_min=1,count_max=10),
-                    'load':InputDescriptor('WholeBuildingElectricity','Building Load'),
+                    'load':InputDescriptor('WholeBuildingPower','Building Load'),
                 }
 
     @classmethod
