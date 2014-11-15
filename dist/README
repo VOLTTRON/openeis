@@ -61,7 +61,7 @@ as the openeis user, which was created by the openeis-support-config package:
 
 Check out the code into /var/lib/openeis:
 
-   [openeis /var/lib/openeis]$ git clone https://github.com/VOLTTRON/openeis
+   [openeis /var/lib/openeis]$ git clone https://github.com/VOLTTRON/openeis .
 
 Note that the above command clones the default branch, which may not be the
 master branch where active development occurs. If you want the latest code
