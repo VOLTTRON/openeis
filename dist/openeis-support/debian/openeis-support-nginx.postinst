@@ -31,7 +31,7 @@ do_configure() {
   if [ "$DEBCONF_RECONFIGURE" = 1 ]; then
     sed -i 's/^\(\s*server_name\s\+\)[^;]*/\1'"$names"'/' /etc/nginx/conf.d/openeis.conf
   else
-    sed -i 's/^\(\s*server_name\s\+\)example.com;/\1'"$names"';/' /etc/nginx/conf.d/openeis.conf
+    sed -i 's/^\(\s*server_name\s\+\)www\.example\.com;/\1'"$names"';/' /etc/nginx/conf.d/openeis.conf
   fi
 
   dpkg-divert --package openeis-support-nginx --rename --divert /etc/nginx/conf.d/default.conf.nginx --add /etc/nginx/conf.d/default.conf

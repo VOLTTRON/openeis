@@ -1,3 +1,10 @@
+openeis-support (1.1) unstable; urgency=low
+
+  * Added support for runtime configuration directories.
+  * Couple of bug fixes.
+
+ -- Brandon Carpenter <brandon.carpenter@pnnl.gov>  Fri, 14 Nov 2014 22:20:48 +0000
+
 openeis-support (1.0) unstable; urgency=low
 
   * Initial Release.

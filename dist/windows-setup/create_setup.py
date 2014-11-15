@@ -170,8 +170,7 @@ def move_to_working_dir():
         shutil.copytree(WHEEL_DIR, "wheels")
         shutil.copytree(MISC_DIR, "misc")
 
-        setup_file = os.path.join(OPENEIS_SRC_DIR, 'dist','openeis-support',
-                                  'windows-setup-support', 'setup.iss')
+        setup_file = os.path.join(os.path.dirname(__file__), 'setup.iss')
         shutil.copy(setup_file, 'setup.iss')
 
 
