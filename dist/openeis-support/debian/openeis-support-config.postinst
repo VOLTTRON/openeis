@@ -18,7 +18,7 @@ case "$1" in
     chgrp openeis /var/lib/openeis
     chmod g+rwxs /var/lib/openeis
 
-    (umask 0026; python -c 'import string, random; print("SECRET_KEY = {!r}".format("".join(random.choice(string.printable) for i in range(50))), file=open("/etc/openeis/settings.d/10-secret_key"))'
+    (umask 0026; python3 -c 'import string, random; print("SECRET_KEY = {!r}".format("".join(random.choice(string.printable) for i in range(50))), file=open("/etc/openeis/settings.d/10-secret_key", "w"))')
     chgrp openeis /etc/openeis/settings.d/10-secret_key
   ;;
 
