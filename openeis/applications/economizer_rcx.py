@@ -98,7 +98,7 @@ class Application(DrivenApplicationBaseClass):
                  ventilation_oaf_threshold=5.0,
                  insufficient_damper_threshold=15.0,
                  temp_damper_threshold=90.0, rated_cfm=500.0, eer=10.0,
-                 data_sample_rate=None, **kwargs):
+                 **kwargs):
         super().__init__(*args, **kwargs)
 
         self.fan_status_name = Application.fan_status_name
@@ -440,7 +440,7 @@ class Application(DrivenApplicationBaseClass):
 
         output_needs = {
             'Economizer_RCx': {
-                'datetime': OutputDescriptor('datetime', datetime_topic),
+                'datetime': OutputDescriptor('string', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
                                                        message_topic),
@@ -457,6 +457,11 @@ class Application(DrivenApplicationBaseClass):
         '''
         device_dict = {}
         diagnostic_result = Results()
+
+        topics = self.inp.get_topics()
+        diagnostic_topic = topics[self.fan_status_name][0]
+        current_time = self.inp.localize_sensor_time(diagnostic_topic,
+                                                     current_time)
 
         for key, value in points.items():
             device_dict[key.lower()] = value
