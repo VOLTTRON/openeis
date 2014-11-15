@@ -1,0 +1,8 @@
+All entries should be valid Python code and take the form ##-description, where # is a digit.
+
+  00-*: is reserved for 00-openeis.server.settings
+  10-*: is reserved for package default settings
+  20-*: is reserved for add-on package settings
+
+Variables from previous entries are available to later entries allowing
+previous settings to influence or be overridden by later entries.
