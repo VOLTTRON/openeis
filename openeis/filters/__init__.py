@@ -97,37 +97,3 @@ for extName in _extList:
     print('Importing module: ', extName)
     extDict[extName] = __import__(extName,globals(),locals(),[], 1)
 
-def apply_filters(generators, configs):
-    errors = []
-    
-    for topic, filter_name, filter_config in configs:
-        if not isinstance(topic, str):
-            topic = topic[0]
-        parent_filter_dict = generators.get(topic)
-        if parent_filter_dict is None:
-            errors.append('Invalid Topic for DataMap: ' + str(topic))
-            continue
-        
-        parent_filter = parent_filter_dict['gen']
-        parent_type = parent_filter_dict['type']
-        
-        filter_class = column_modifiers.get(filter_name)
-        if filter_class is None:
-            errors.append('Invalid filter name: ' + str(filter_name))
-            continue
-        
-        try:
-            new_filter = filter_class(parent=parent_filter, **filter_config)
-        except Exception as e:
-            errors.append('Error configuring filter: '+str(e))
-            continue
-            
-        value = parent_filter_dict.copy()
-        
-        value['gen']=new_filter
-        value['type']=parent_type
-        
-        generators[topic] = value
-    
-    return generators, errors
-
