@@ -108,26 +108,33 @@ def test_linearinterpolation_filter(one_month_dataset):
     
     expected = os.path.join(outputdir, "linear_interpolation_dataset.csv")
     run_data_manipulation(config, expected)
-     
-         
-def build_config():
-    '''[global_settings]
-    dataset_id: 1
     
-    config: [["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
-             ["lbnl/bldg90/roof/MixedAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
-             ["lbnl/bldg90/roof/ReturnAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
-             ["lbnl/bldg90/OutdoorAirTemperature", "RoundOff", {"places": 2}],
-             ["lbnl/bldg90/roof/MixedAirTemperature", "RoundOff", {"places": 3}],
-             ["lbnl/bldg90/roof/ReturnAirTemperature", "RoundOff", {"places": 1}],
-             ["lbnl/bldg90/roof/CoolingCall", "Fill", {"per iod_seconds": 300, "drop_extra": false}]]
-    '''
+def test_roundoff_filter(one_month_dataset):
+    
     config = ConfigParser()
     
     config.add_section("global_settings")
-    config.set("global_settings", 'dataset_id', str(dataset_id))
-    filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}]]'
+    config.set("global_settings", 'dataset_id', str(one_month_dataset.id))
+    filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "RoundOff", {"places": 2}]]'
     config.set("global_settings", 'config', str(filter_config))
     
-    return config
     
+    expected = os.path.join(outputdir, "roundoff_dataset_2digits.csv")
+    run_data_manipulation(config, expected)
+    
+def test_all_filter(one_month_dataset):
+    
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'dataset_id', str(one_month_dataset.id))
+    filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
+             ["lbnl/bldg90/roof/MixedAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
+             ["lbnl/bldg90/roof/ReturnAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
+             ["lbnl/bldg90/OutdoorAirTemperature", "RoundOff", {"places": 2}],\
+             ["lbnl/bldg90/roof/MixedAirTemperature", "RoundOff", {"places": 3}],\
+             ["lbnl/bldg90/roof/ReturnAirTemperature", "RoundOff", {"places": 1}],\
+             ["lbnl/bldg90/roof/CoolingCall", "Fill", {"per iod_seconds": 300, "drop_extra": false}]]'
+    config.set("global_settings", 'config', str(filter_config))
+    expected = os.path.join(outputdir, "linear_interpolation_dataset.csv")
+    run_data_manipulation(config, expected)
