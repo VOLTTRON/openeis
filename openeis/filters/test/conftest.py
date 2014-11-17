@@ -12,7 +12,7 @@ abs_file_dir = os.path.join(os.path.dirname(__file__))
 
 @pytest.fixture
 def one_month_datafile(project):
-    return create_data_file(os.path.join(abs_file_dir, '1Month_hourly.csv'), 
+    return create_data_file(os.path.join(abs_file_dir, "fixtures", '1Month_hourly.csv'), 
                             project=project,
                             comments='Month hourly test data.')
     
@@ -24,7 +24,7 @@ def one_month_datamap(project):
 @pytest.fixture
 def one_month_dataset(project, one_month_datamap, one_month_datafile):
     return create_dataset(name='Month Hourly Datamap', project=project, 
-                          datamap=samenumber_datamap, 
+                          datamap=one_month_datamap, 
                           files={'0': one_month_datafile})
 
 

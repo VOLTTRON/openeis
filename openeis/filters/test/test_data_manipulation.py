@@ -86,7 +86,7 @@ import os
 import pytest
 
 from configparser import ConfigParser
-from filterwrapper import run_filter
+from data_manipulation_wrapper import run_data_manipulation
 
 # Enables django database integration.
 pytestmark = pytest.mark.django_db
@@ -94,38 +94,39 @@ pytestmark = pytest.mark.django_db
 # get the path to the current directory because that is where
 # the expected outputs will be located.
 basedir = os.path.abspath(os.path.dirname(__file__))
+outputdir = os.path.join(basedir, 'expected_output')
 
-def test_linearinterpolation_filter():
+def test_linearinterpolation_filter(one_month_dataset):
     
     config = ConfigParser()
     
     config.add_section("global_settings")
-    config.set("global_settings", 'dataset_id', str(dataset_id))
-    filter_config = '[["ISB1/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}]]'
+    config.set("global_settings", 'dataset_id', str(one_month_dataset.id))
+    filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}]]'
     config.set("global_settings", 'config', str(filter_config))
     
     
-    #expected =
-    run_filter(config, expected)
+    expected = os.path.join(outputdir, "linear_interpolation_dataset.csv")
+    run_data_manipulation(config, expected)
      
          
 def build_config():
     '''[global_settings]
     dataset_id: 1
     
-    config: [["ISB1/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
-             ["ISB1/roof/MixedAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
-             ["ISB1/roof/ReturnAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
-             ["ISB1/OutdoorAirTemperature", "RoundOff", {"places": 2}],
-             ["ISB1/roof/MixedAirTemperature", "RoundOff", {"places": 3}],
-             ["ISB1/roof/ReturnAirTemperature", "RoundOff", {"places": 1}],
-             ["ISB1/roof/CoolingCall", "Fill", {"per iod_seconds": 300, "drop_extra": false}]]
+    config: [["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
+             ["lbnl/bldg90/roof/MixedAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
+             ["lbnl/bldg90/roof/ReturnAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],
+             ["lbnl/bldg90/OutdoorAirTemperature", "RoundOff", {"places": 2}],
+             ["lbnl/bldg90/roof/MixedAirTemperature", "RoundOff", {"places": 3}],
+             ["lbnl/bldg90/roof/ReturnAirTemperature", "RoundOff", {"places": 1}],
+             ["lbnl/bldg90/roof/CoolingCall", "Fill", {"per iod_seconds": 300, "drop_extra": false}]]
     '''
     config = ConfigParser()
     
     config.add_section("global_settings")
     config.set("global_settings", 'dataset_id', str(dataset_id))
-    filter_config = '[["ISB1/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}]]'
+    filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}]]'
     config.set("global_settings", 'config', str(filter_config))
     
     return config
