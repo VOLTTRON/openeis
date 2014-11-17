@@ -129,7 +129,7 @@ class Application(DriverApplicationBaseClass):
     def required_input(cls):
         #Called by UI
         return {
-            'load':InputDescriptor('WholeBuildingElectricity','Building Load'),
+            'load':InputDescriptor('WholeBuildingPower','Building Load'),
             }
 
 
@@ -149,7 +149,7 @@ class Application(DriverApplicationBaseClass):
         # Work with topics["OAT"][0] to get building topic
         output_needs = {
             'Load_Profiling': {
-                'timestamp':OutputDescriptor('datetime', time_topic),
+                'timestamp':OutputDescriptor('string', time_topic),
                 'load':OutputDescriptor('float', load_topic)
                 }
             }
@@ -232,7 +232,8 @@ class Application(DriverApplicationBaseClass):
 
         self.out.log("Compiling the report table.", logging.INFO)
         for x in load_by_hour[start:end]:
+            local_time = self.inp.localize_sensor_time(base_topic['load'][0], x[0])
             self.out.insert_row("Load_Profiling", {
-                'timestamp': x[0],
+                'timestamp': local_time,
                 'load': x[1]*load_convertfactor
                 })

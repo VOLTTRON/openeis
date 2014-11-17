@@ -362,7 +362,7 @@ class Application(DrivenApplicationBaseClass):
 
         output_needs = {
             'Hot_water_RCx': {
-                'datetime': OutputDescriptor('datetime', datetime_topic),
+                'datetime': OutputDescriptor('string', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
                                                        message_topic),
@@ -377,6 +377,12 @@ class Application(DrivenApplicationBaseClass):
         '''
         Check algorithm pre-quisites and assemble data set for analysis.
         '''
+        topics = self.inp.get_topics()
+        diagnostic_topic = topics[self.fan_status_name][0]
+
+        current_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
+
+        
         device_dict = {}
         diagnostic_result = Results()
 

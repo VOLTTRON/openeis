@@ -95,10 +95,10 @@ def datamap(project):
     return models.DataMap.objects.create(project=project, name='Test Data Map',
         map={
             "sensors": {
-                "Test/WholeBuildingElectricity": {
+                "Test/WholeBuildingPower": {
                     "column": "Main Meter [kW]",
                     "unit": "kilowatt",
-                    "type": "WholeBuildingElectricity",
+                    "type": "WholeBuildingPower",
                     "file": "0"
                 },
                 "Test/OutdoorAirTemperature": {
@@ -108,7 +108,8 @@ def datamap(project):
                     "file": "0"
                 },
                 "Test": {
-                    "level": "building"
+                    "level": "building",
+                    "attributes":{"timezone":"US/Pacific"}
                 }
             },
             "files": {

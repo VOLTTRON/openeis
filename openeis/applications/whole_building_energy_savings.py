@@ -130,7 +130,7 @@ class Application(DriverApplicationBaseClass):
         self.savings_stop = dt.datetime.strptime(savings_stopdate, '%Y-%m-%d')
 
     @classmethod
-    def get_app_descriptor(cls):    
+    def get_self_descriptor(cls):    
         name = 'Whole-Building Energy Savings'
         desc = 'Whole-building Energy savings is used to quantify\
                 the energy savings associated with an improvement\
@@ -160,7 +160,7 @@ class Application(DriverApplicationBaseClass):
         # Sort out units.
         return {
             'oat':InputDescriptor('OutdoorAirTemperature', 'Outdoor Temperature'),
-            'load':InputDescriptor('WholeBuildingElectricity', 'Building Load')
+            'load':InputDescriptor('WholeBuildingPower', 'Building Load')
             }
 
     @classmethod
@@ -284,7 +284,7 @@ class Application(DriverApplicationBaseClass):
 
             load_values.append(x['load'][0] * load_convertfactor) #Converted to kWh
             oat_values.append(convertedTemp)
-            datetime_values.append(dt.datetime.strptime(x['time'],'%Y-%m-%d %H'))
+            datetime_values.append(x['time'])
 
         indexList = {}
         indexList['trainingStart'] = ttow.findDateIndex(datetime_values, self.baseline_start)
@@ -332,8 +332,9 @@ class Application(DriverApplicationBaseClass):
         for ctr in range(len(timesPredict)):
             # Calculate cumulative savings.
             prevSum += (valsPredict[ctr] - valsActual[ctr])
+            local_time = str(self.inp.localize_sensor_time(base_topic['load'][0], timesPredict[ctr]))
             self.out.insert_row("DayTimeTemperatureModel", {
-                                "datetimeValues": timesPredict[ctr],
+                                "datetimeValues": local_time,
                                 "measured": valsActual[ctr],
                                 "predicted": valsPredict[ctr],
                                 "cumulativeSum": prevSum

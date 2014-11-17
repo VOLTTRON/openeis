@@ -239,7 +239,7 @@ def test_dataset_preview(active_user, mixed_datamap,
     expected_response = {
         'cols': [
             'time',
-            'Test/WholeBuildingElectricity',
+            'Test/WholeBuildingPower',
             'Test/OutdoorAirTemperature'
         ],
         'rows': [

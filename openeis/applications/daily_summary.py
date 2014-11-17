@@ -146,7 +146,7 @@ class Application(DriverApplicationBaseClass):
         # Called by UI
         # Sort out units.
         return {
-            'load':InputDescriptor('WholeBuildingElectricity', 'Building Load')
+            'load':InputDescriptor('WholeBuildingPower', 'Building Load')
             }
 
     @classmethod
