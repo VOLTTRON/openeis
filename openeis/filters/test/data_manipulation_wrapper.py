@@ -1,6 +1,8 @@
 import csv
 import json
+import math
 import os
+import shutil
 import traceback
 import tempfile
 
@@ -16,6 +18,24 @@ def run_data_manipulation(config, expected):
 
 class DataManipulationwrapper:
     
+    def assertTrue (self, given, msg=None):
+        if msg:
+            assert given == True, msg
+        else:
+            assert given == True
+            
+    def assertEqual(self, given, expected, msg=None):
+        if msg:
+            assert given == expected, msg
+        else:
+            assert given == expected
+            
+    def assertIn(self, value, collection, msg=None):
+        if msg:
+            assert value in collection, msg
+        else:
+            assert value in collection
+            
     def run_data_manipulation(self, config, expected):
         
         dataset_id = int(config['global_settings']['dataset_id'])
@@ -36,15 +56,19 @@ class DataManipulationwrapper:
         rows = dataset.merge(as_local_time = True)
     
         tmp_dir = tempfile.mkdtemp()
-        print(tmp_dir)
-        with open("output.csv", 'w', newline='\n') as fout:
+        temp_file = os.path.join(tmp_dir,"output.csv")
+        with open(temp_file, 'w', newline='\n') as fout:
             csvwriter = csv.writer(fout)
             for r in rows:
                 csvwriter.writerow(r)
         
+        actual_rows = self._getCSV_asList(temp_file)
+        expected_rows = self._getCSV_asList(expected)
+        self._diff_checker(expected_rows, actual_rows)
+            
+        shutil.rmtree(tmp_dir, ignore_errors=True)
         
         
-        assert True == False
         
 
     def _getCSV_asList(self, csvFileName):
@@ -192,3 +216,36 @@ class DataManipulationwrapper:
                     list(colNameToIdx_act.keys())[0]
                     )
                 )
+            
+    def _is_num(self, ss):
+        """
+        Check to see if a string ss is a number.
+
+        Parameters:
+            - ss: a number.
+        Returns:
+            - A number, or None.
+        """
+        try:
+            ss = float(ss)
+        except ValueError:
+            ss = None
+        return ss
+
+
+    def nearly_same(self, xx, yy, absTol=1e-12, relTol=1e-6):
+        """
+        Compare two numbers.
+
+        Parameters:
+            - xx, yy: two numbers to compare
+            - absTol: absolute tolerance
+            - relTol: relative tolerance
+        Returns: True if the two numbers are nearly the same; else False.
+        """
+        nearlySame = True
+        absDiff = math.fabs(yy - xx)
+        if( absDiff>absTol and absDiff>relTol*math.fabs(xx) ):
+            nearlySame = False
+        return( nearlySame )
+
