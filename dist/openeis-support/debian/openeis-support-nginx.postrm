@@ -5,9 +5,10 @@ set -e
 
 case "$1" in
   purge)
-    [ ! /etc/openeis/openeis.key -ef /etc/openeis/default.key ] || rm -f /etc/openeis/openeis.key || true
-    [ ! /etc/openeis/openeis.crt -ef /etc/openeis/default.crt ] || rm -f /etc/openeis/openeis.crt || true
-    rm -f /etc/openeis/default.key /etc/openeis/default.crt || true
+    cd /etc/openeis
+    [ ! openeis.key -ef default.key ] || rm -f openeis.key || true
+    [ ! openeis.crt -ef default.crt ] || rm -f openeis.crt || true
+    rm -f default.key default.crt || true
   ;;
 
   remove|abort-install|disappear)
