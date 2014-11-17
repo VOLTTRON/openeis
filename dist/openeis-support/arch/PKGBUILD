@@ -3,6 +3,7 @@
 pkgname=openeis-support-git
 _pkgname=${pkgname%-*}
 pkgver=1.1
+_pkgver=1.1
 pkgrel=1
 pkgdesc="Support configuration for running OpenEIS with Nginx and Postgresql"
 arch=(any)
@@ -15,12 +16,18 @@ options=('!strip')
 install=openeis-support.install
 source=("openeis::git+$url#branch=master"
         openeis-support.install)
-# XXX Add hashes later
-md5sums=(SKIP SKIP)
+sha256sums=(SKIP
+            20d0fcfca21ca619445b855cc93741b75261926f853c21e5bc9d7e5fd6e3341a)
 
 if [[ -d ../../../.git ]]; then
 	source[0]="openeis::git+file://$(realpath ../../..)"
 fi
+
+
+pkgver() {
+  printf "%s.r%s.%s" $_pkgver "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
 
 package() {
   install -Dm 644 openeis/LICENSE $pkgdir/usr/share/licenses/$_pkgname/LICENSE
