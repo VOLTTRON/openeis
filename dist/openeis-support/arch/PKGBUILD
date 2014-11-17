@@ -1,0 +1,40 @@
+# Maintainer: Brandon Carpenter <brandon.carpenter@pnnl.gov>
+
+pkgname=openeis-support-git
+_pkgname=${pkgname%-*}
+pkgver=1.1
+pkgrel=1
+pkgdesc="Support configuration for running OpenEIS with Nginx and Postgresql"
+arch=(any)
+url="https://github.com/VOLTTRON/openeis"
+license=('bsd')
+depends=('python>=3.3' 'nginx>=1.4' 'postgresql>=9.3' 'postgresql-libs>=9.3' 'openssl')
+provides=(openeis-support)
+conflicts=(openeis-support)
+options=('!strip')
+install=openeis-support.install
+source=("openeis::git+$url#branch=master"
+        openeis-support.install)
+# XXX Add hashes later
+md5sums=(SKIP SKIP)
+
+if [[ -d ../../../.git ]]; then
+	source[0]="openeis::git+file://$(realpath ../../..)"
+fi
+
+package() {
+  install -Dm 644 openeis/LICENSE $pkgdir/usr/share/licenses/$_pkgname/LICENSE
+  cd openeis/dist/openeis-support
+  for file in settings.d/{README,??-*} nginx/20-nginx postgresql/20-postgresql; do
+    install -Dm 644 $file $pkgdir/etc/openeis/settings.d/${file##*/}
+  done
+  install -Dm 644 uwsgi/uwsgi.ini $pkgdir/etc/openeis/uwsgi.ini
+  install -Dm 644 nginx/openeis.conf $pkgdir/etc/nginx/conf.d/openeis.conf
+  install -Dm 644 systemd/openeis.service $pkgdir/usr/lib/systemd/system/openeis.service
+  install -Dm 644 systemd/openeis.socket $pkgdir/usr/lib/systemd/system/openeis.socket
+  install -dm 2775 $pkgdir/var/lib/openeis
+  install -dm 2750 $pkgdir/var/run/openeis
+  install -dm 0775 $pkgdir/var/log/openeis
+}
+
+# vim:set sts=2 ts=2 sw=2 et:
