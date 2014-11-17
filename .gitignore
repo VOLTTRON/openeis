@@ -13,5 +13,10 @@ __pycache__/
 /data/
 /openeis/local/
 /dist/*.changes
+/dist/*.dsc
 /dist/*.deb
 /dist/*.tar.gz
+/dist/openeis-support/arch/openeis/
+/dist/openeis-support/arch/pkg/
+/dist/openeis-support/arch/src/
+/dist/openeis-support/arch/openeis-support-*.tar.xz
