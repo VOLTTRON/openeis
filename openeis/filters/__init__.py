@@ -102,8 +102,6 @@ for extName in _extList:
 def apply_filters(generators, configs):
     errors = []
     
-    print("column mods: ", column_modifiers)
-    
     for topic, filter_name, filter_config in configs:
         if not isinstance(topic, str):
             topic = topic[0]
