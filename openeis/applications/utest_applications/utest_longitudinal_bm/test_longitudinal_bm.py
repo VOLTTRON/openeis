@@ -82,46 +82,139 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
-from openeis.applications.utest_applications.apptest import AppTestBase
 import os
+import pytest
 
+from configparser import ConfigParser
 
-class TestLongitudinalBM(AppTestBase):
-    fixtures = [
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'longitudinal_bm_fixture.json')
-        ]
+from openeis.applications.utest_applications.appwrapper import run_appwrapper
+from openeis.projects.models import (SensorIngest,
+                                     DataMap,
+                                     DataFile)
 
-    def setUp(self):
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
+# Enables django database integration.
+pytestmark = pytest.mark.django_db
 
-    def test_longitudinal_BM_basic(self):
-        lb_basic_ini = os.path.join(self.basedir,
-            'longitudinal_bm_basic.ini')
-        lb_basic_exp = {}
-        lb_basic_exp['Longitudinal_BM'] = os.path.join(self.basedir,
-            'longitudinal_bm_basic.ref.csv')
-        self.run_it(lb_basic_ini, lb_basic_exp, clean_up=True)
+# get the path to the current directory because that is where
+# the expected outputs will be located.
+basedir = os.path.abspath(os.path.dirname(__file__))
 
-    def test_longitudinal_BM_missing(self):
-        lb_missing_ini = os.path.join(self.basedir,
-            'longitudinal_bm_missing.ini')
-        lb_missing_exp = {}
-        lb_missing_exp['Longitudinal_BM'] = os.path.join(self.basedir,
-            'longitudinal_bm_missing.ref.csv')
-        self.run_it(lb_missing_ini, lb_missing_exp, clean_up=True)
+app_name = 'longitudinal_BM'
 
-    def test_longitudinal_BM_floats(self):
-        lb_floats_ini = os.path.join(self.basedir,
-            'longitudinal_bm_floats.ini')
-        lb_floats_exp = {}
-        lb_floats_exp['Longitudinal_BM'] = os.path.join(self.basedir,
-            'longitudinal_bm_floats.ref.csv')
-        self.run_it(lb_floats_ini, lb_floats_exp, clean_up=True)
+def test_longitudinal_BM_basic(basic_dataset):
+    
+    outfile = os.path.join(basedir, 'longitudinal_bm_basic.ref.csv')
+    
+    expected = build_expected(('Longitudinal_BM',), 
+                              (outfile,))
+    
+    config = build_longitudinal_bm_config_parser(app_name,
+                                                  basic_dataset.id,
+                                                  basic_dataset.map.id)
+    
+    run_appwrapper(config, expected)
 
-    def test_longitudinal_BM_floats_missing(self):
-        lb_floats_missing_ini = os.path.join(self.basedir,
-            'longitudinal_bm_floats_missing.ini')
-        lb_floats_missing_exp = {}
-        lb_floats_missing_exp['Longitudinal_BM'] = os.path.join(self.basedir,
-            'longitudinal_bm_floats_missing.ref.csv')
-        self.run_it(lb_floats_missing_ini, lb_floats_missing_exp, clean_up=True)
+def test_longitudinal_BM_missing(missing_dataset):
+    outfile = os.path.join(basedir, 'longitudinal_bm_missing.ref.csv')
+    
+    expected = build_expected(('Longitudinal_BM',), 
+                              (outfile,))
+    
+    config = build_longitudinal_bm_config_parser(app_name,
+                                                  missing_dataset.id,
+                                                  missing_dataset.map.id)
+    
+    run_appwrapper(config, expected)
+    
+def test_longitudinal_BM_floats(floats_dataset):
+    outfile = os.path.join(basedir, 'longitudinal_bm_floats.ref.csv')
+    
+    expected = build_expected(('Longitudinal_BM',), 
+                              (outfile,))
+    
+    config = build_longitudinal_bm_config_parser(app_name,
+                                                  floats_dataset.id,
+                                                  floats_dataset.map.id)
+    
+    run_appwrapper(config, expected)
+
+def test_longitudinal_BM_floats_missing(floats_missing_dataset):
+    outfile = os.path.join(basedir, 'longitudinal_bm_floats_missing.ref.csv')
+    
+    expected = build_expected(('Longitudinal_BM',), 
+                              (outfile,))
+    
+    config = build_longitudinal_bm_config_parser(app_name,
+                                                  floats_missing_dataset.id,
+                                                  floats_missing_dataset.map.id)
+    
+    
+def build_expected(table_names, file_refs):
+    '''Expected list of table-names to match with list of file_refs'''
+    exp = {}
+    for i in range(len(table_names)):
+        exp[table_names[i]] = file_refs[i]
+        
+    return exp
+
+def build_longitudinal_bm_config_parser(app_name, dataset_id, sensormap_id):
+    '''
+    This function creates a config parser with the specified dataset and
+    sensormap_id. 
+    '''
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', app_name)
+    config.set("global_settings", 'dataset_id', str(dataset_id))
+    config.set("global_settings", 'sensormap_id', str(sensormap_id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_name', '"bldg90"')
+
+        
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
+    config.set('inputs', 'natgas', 'lbnl/bldg90/WholeBuildingGas')
+    
+    return config
+
+# class TestLongitudinalBM(AppTestBase):
+#     fixtures = [
+#         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'longitudinal_bm_fixture.json')
+#         ]
+# 
+#     def setUp(self):
+#         self.basedir = os.path.abspath(os.path.dirname(__file__))
+# 
+#     def test_longitudinal_BM_basic(self):
+#         lb_basic_ini = os.path.join(self.basedir,
+#             'longitudinal_bm_basic.ini')
+#         lb_basic_exp = {}
+#         lb_basic_exp['Longitudinal_BM'] = os.path.join(self.basedir,
+#             'longitudinal_bm_basic.ref.csv')
+#         self.run_it(lb_basic_ini, lb_basic_exp, clean_up=True)
+# 
+#     def test_longitudinal_BM_missing(self):
+#         lb_missing_ini = os.path.join(self.basedir,
+#             'longitudinal_bm_missing.ini')
+#         lb_missing_exp = {}
+#         lb_missing_exp['Longitudinal_BM'] = os.path.join(self.basedir,
+#             'longitudinal_bm_missing.ref.csv')
+#         self.run_it(lb_missing_ini, lb_missing_exp, clean_up=True)
+# 
+#     def test_longitudinal_BM_floats(self):
+#         lb_floats_ini = os.path.join(self.basedir,
+#             'longitudinal_bm_floats.ini')
+#         lb_floats_exp = {}
+#         lb_floats_exp['Longitudinal_BM'] = os.path.join(self.basedir,
+#             'longitudinal_bm_floats.ref.csv')
+#         self.run_it(lb_floats_ini, lb_floats_exp, clean_up=True)
+# 
+#     def test_longitudinal_BM_floats_missing(self):
+#         lb_floats_missing_ini = os.path.join(self.basedir,
+#             'longitudinal_bm_floats_missing.ini')
+#         lb_floats_missing_exp = {}
+#         lb_floats_missing_exp['Longitudinal_BM'] = os.path.join(self.basedir,
+#             'longitudinal_bm_floats_missing.ref.csv')
+#         self.run_it(lb_floats_missing_ini, lb_floats_missing_exp, clean_up=True)
