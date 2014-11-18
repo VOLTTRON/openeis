@@ -96,7 +96,6 @@ pytestmark = pytest.mark.django_db
 basedir = os.path.abspath(os.path.dirname(__file__))
 outputdir = os.path.join(basedir, 'expected_output')
 
-@pytest.mark.xfail(reason="Look into running these again from either the ui or command line.")
 def test_linearinterpolation_filter(one_month_dataset):
     
     config = ConfigParser()
@@ -110,7 +109,7 @@ def test_linearinterpolation_filter(one_month_dataset):
     expected = os.path.join(outputdir, "linear_interpolation_dataset_tz.csv")
     run_data_manipulation(config, expected)
 
-@pytest.mark.xfail(reason="Look into running these again from either the ui or command line.")    
+@pytest.mark.xfail(reason="Update to use tz correctly")    
 def test_roundoff_filter(one_month_dataset):
     
     config = ConfigParser()
@@ -124,7 +123,7 @@ def test_roundoff_filter(one_month_dataset):
     expected = os.path.join(outputdir, "roundoff_dataset_2digits.csv")
     run_data_manipulation(config, expected)
 
-@pytest.mark.xfail(reason="Look into running these again from either the ui or command line.")
+@pytest.mark.xfail(reason="Update to use TZ correctly.")
 def test_all_filter(one_month_dataset):
     
     config = ConfigParser()
