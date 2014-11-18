@@ -1,7 +1,9 @@
+import pytest
+from rest_framework.test import APIClient
 
+pytestmark = pytest.mark.django_db
 
-
-def test_data_manipulation(active_user):
+def test_data_manipulation(active_user, mixed_dataset):
     '''Tests data manipulation.'''
 
     client = APIClient()
