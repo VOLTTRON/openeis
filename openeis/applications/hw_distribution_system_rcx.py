@@ -90,7 +90,7 @@ class Application(DrivenApplicationBaseClass):
                  max_dp_threshold=25.0,
                  data_window=180, dp_reset_threshold=10.0,
                  no_required_data=50,
-                 dp_reset_threshold=5.0, setpoint_allowable_deviation=10.0,
+                 setpoint_allowable_deviation=10.0,
                  data_sample_rate=None,
                  dp_pump_threshold=45.0,
 
@@ -362,7 +362,7 @@ class Application(DrivenApplicationBaseClass):
 
         output_needs = {
             'Hot_water_RCx': {
-                'datetime': OutputDescriptor('string', datetime_topic),
+                'datetime': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
                                                        message_topic),
@@ -377,10 +377,10 @@ class Application(DrivenApplicationBaseClass):
         '''
         Check algorithm pre-quisites and assemble data set for analysis.
         '''
-        topics = self.inp.get_topics()
-        diagnostic_topic = topics[self.fan_status_name][0]
-
-        current_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
+#        topics = self.inp.get_topics()
+#        diagnostic_topic = topics[self.fan_status_name][0]
+#
+#        current_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
 
         
         device_dict = {}

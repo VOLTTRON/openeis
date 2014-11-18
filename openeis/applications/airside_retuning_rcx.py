@@ -510,7 +510,7 @@ class Application(DrivenApplicationBaseClass):
 
         output_needs = {
             'Airside_RCx': {
-                'datetime': OutputDescriptor('string', datetime_topic),
+                'datetime': OutputDescriptor('datetime', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
 
                 'diagnostic_message': OutputDescriptor('string',
@@ -531,8 +531,8 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_result = Results()
         topics = self.inp.get_topics()
         diagnostic_topic = topics[self.fan_status_name][0]
-        current_time = self.inp.localize_sensor_time(diagnostic_topic,
-                                                     current_time)
+#        current_time = self.inp.localize_sensor_time(diagnostic_topic,
+#                                                     current_time)
         for key, value in points.items():
             device_dict[key.lower()] = value
 
