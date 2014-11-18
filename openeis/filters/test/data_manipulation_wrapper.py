@@ -49,10 +49,10 @@ class DataManipulationwrapper:
         else:
             print('New dataset id =',result)
         
-        dataset = SensorIngest.objects.get(pk= result)
+        dataset = SensorIngest.objects.get(pk=result)
         assert dataset != None
         assert dataset.id == dataset_id + 1
-        rows = dataset.merge()
+        rows = dataset.merge(as_local_time= True)
     
         tmp_dir = tempfile.mkdtemp()
         print(tmp_dir)
