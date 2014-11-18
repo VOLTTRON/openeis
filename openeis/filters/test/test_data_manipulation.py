@@ -106,9 +106,9 @@ def test_linearinterpolation_filter(one_month_dataset):
     config.set("global_settings", 'config', str(filter_config))
     
     
-    expected = os.path.join(outputdir, "linear_interpolation_dataset_tz.csv")
+    expected = os.path.join(outputdir, "linear_interpolation_dataset.csv")
     run_data_manipulation(config, expected)
-
+    
 def test_roundoff_filter(one_month_dataset):
     
     config = ConfigParser()

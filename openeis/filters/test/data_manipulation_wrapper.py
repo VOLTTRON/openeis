@@ -5,7 +5,6 @@ import os
 import shutil
 import traceback
 import tempfile
-
 from openeis.filters.apply_filter import apply_filter_config
 from openeis.projects.models import (SensorIngest,)
 from openeis.projects import models
@@ -53,9 +52,7 @@ class DataManipulationwrapper:
         assert dataset != None
         assert dataset.id == dataset_id + 1
         rows = dataset.merge(as_local_time= True)
-    
         tmp_dir = tempfile.mkdtemp()
-        print(tmp_dir)
         temp_file = os.path.join(tmp_dir,"output.csv")
         with open(temp_file, 'w', newline='\n') as fout:
             csvwriter = csv.writer(fout)
