@@ -1,5 +1,5 @@
 """
-Unit tests for Heat Map application.
+Unit tests for Daily Summary application.
 
 
 Copyright
@@ -81,14 +81,12 @@ All rights reserved.
 NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
+
 import os
 import pytest
-from configparser import ConfigParser
 
-from openeis.applications.utest_applications.appwrapper import run_appwrapper
-from openeis.projects.models import (SensorIngest,
-                                     DataMap,
-                                     DataFile)
+from configparser import ConfigParser
+from data_manipulation_wrapper import run_data_manipulation
 
 # Enables django database integration.
 pytestmark = pytest.mark.django_db
@@ -96,70 +94,47 @@ pytestmark = pytest.mark.django_db
 # get the path to the current directory because that is where
 # the expected outputs will be located.
 basedir = os.path.abspath(os.path.dirname(__file__))
+outputdir = os.path.join(basedir, 'expected_output')
 
-# The app that is being run.
-app_name = 'heat_map'
-
-
-def build_expected(table_name, file_ref):
-    return {table_name: os.path.join(basedir, file_ref)}
-
-def test_heat_map_basic(basic_dataset):
+def test_linearinterpolation_filter(one_month_dataset):
     
-    expected_output = build_expected('Heat_Map', 'heat_map_basic.ref.csv')     
-    config = build_heatmap_config_parser(app_name, 
-                                         basic_dataset.id,
-                                         basic_dataset.map.id)
-     
-    run_appwrapper(config, expected_output)
-  
-def test_heat_map_missing(missing_dataset):
-    
-    expected_output = build_expected('Heat_Map', 'heat_map_missing.ref.csv')
-    config = build_heatmap_config_parser(app_name, 
-                                         missing_dataset.id,
-                                         missing_dataset.map.id)
-    
-    run_appwrapper(config, expected_output)
-    
- 
-def test_heat_map_floats(floats_dataset):
-    
-    expected_output = build_expected('Heat_Map', 'heat_map_floats.ref.csv')
-    config = build_heatmap_config_parser(app_name, 
-                                         floats_dataset.id,
-                                         floats_dataset.map.id)
-     
-    run_appwrapper(config, expected_output)
-     
-  
-def test_heat_map_floats_missing(floats_missing_dataset):
-    
-    expected_output = build_expected('Heat_Map', 'heat_map_floats_missing.ref.csv')
-    config = build_heatmap_config_parser(app_name, 
-                                         floats_missing_dataset.id,
-                                         floats_missing_dataset.map.id)
-     
-    run_appwrapper(config, expected_output)
-        
-
-def build_heatmap_config_parser(app_name, dataset_id, sensormap_id):
-    '''
-    This function creates a config parser with the specified dataset and
-    sensormap_id. 
-    '''
     config = ConfigParser()
     
     config.add_section("global_settings")
-    config.set("global_settings", 'application', app_name)
-    config.set("global_settings", 'dataset_id', str(dataset_id))
-    config.set("global_settings", 'sensormap_id', str(sensormap_id))
+    config.set("global_settings", 'dataset_id', str(one_month_dataset.id))
+    filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}]]'
+    config.set("global_settings", 'config', str(filter_config))
     
-    config.add_section("application_config")
-    config.set('application_config', 'building_name', '"bldg90"')
+    
+    expected = os.path.join(outputdir, "linear_interpolation_dataset_tz.csv")
+    run_data_manipulation(config, expected)
 
-        
-    config.add_section('inputs')
-    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
+@pytest.mark.xfail(reason="Update to use tz correctly")    
+def test_roundoff_filter(one_month_dataset):
     
-    return config
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'dataset_id', str(one_month_dataset.id))
+    filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "RoundOff", {"places": 2}]]'
+    config.set("global_settings", 'config', str(filter_config))
+    
+    
+    expected = os.path.join(outputdir, "roundoff_dataset_2digits.csv")
+    run_data_manipulation(config, expected)
+
+@pytest.mark.xfail(reason="Update to use TZ correctly.")
+def test_all_filter(one_month_dataset):
+    
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'dataset_id', str(one_month_dataset.id))
+    filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
+             ["lbnl/bldg90/WholeBuildingPower", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
+             ["lbnl/bldg90/OutdoorAirTemperature", "RoundOff", {"places": 2}],\
+             ["lbnl/bldg90/WholeBuildingPower", "RoundOff", {"places": 3}],\
+             ["lbnl/bldg90/WholeBuildingGas", "Fill", {"period_seconds": 300, "drop_extra": false}]]'
+    config.set("global_settings", 'config', str(filter_config))
+    expected = os.path.join(outputdir, "all_filter_dataset.csv")
+    run_data_manipulation(config, expected)

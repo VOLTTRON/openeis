@@ -94,7 +94,7 @@ from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
 from openeis.filters.apply_filter import apply_filter_config
-
+from openeis.filters import column_modifiers
 _logger = logging.getLogger(__name__)
 
 
@@ -704,7 +704,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
         dataset = self.get_object()
         start = self._parse_int_or_datetime(request.QUERY_PARAMS.get('start'))
         end = self._parse_int_or_datetime(request.QUERY_PARAMS.get('end'))
-        rows = dataset.merge(start=start, end=end)
+        rows = dataset.merge(start=start, end=end, as_local_time= True)
         if request.accepted_renderer.format == 'csv':
             response = renderers.StreamingCSVResponse(rows)
             response['Content-Type'] = 'text/csv; name="dataset.csv"'
@@ -721,7 +721,7 @@ class DataSetViewSet(viewsets.ModelViewSet):
             count = proj_settings.FILE_HEAD_ROWS_DEFAULT
         count = min(count, proj_settings.FILE_HEAD_ROWS_MAX)
         dataset = self.get_object()
-        rows = dataset.merge()
+        rows = dataset.merge(as_local_time= True)
         result = {'cols': [], 'rows': [], 'extra_rows': []}
         result['cols'] = rows.__next__()
         d = {}

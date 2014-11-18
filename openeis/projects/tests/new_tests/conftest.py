@@ -108,7 +108,8 @@ def datamap(project):
                     "file": "0"
                 },
                 "Test": {
-                    "level": "building"
+                    "level": "building",
+                    "attributes":{"timezone":"US/Pacific"}
                 }
             },
             "files": {

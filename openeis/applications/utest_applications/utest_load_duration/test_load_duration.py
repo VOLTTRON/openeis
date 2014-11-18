@@ -82,47 +82,168 @@ NOTE: This license corresponds to the "revised BSD" or "3-clause BSD" license
 and includes the following modification: Paragraph 3. has been added.
 """
 
-
-from openeis.applications.utest_applications.apptest import AppTestBase
 import os
+import pytest
+
+from configparser import ConfigParser
+
+from openeis.applications.utest_applications.appwrapper import run_appwrapper
+
+# Enables django database integration.
+pytestmark = pytest.mark.django_db
+
+# get the path to the current directory because that is where
+# the expected outputs will be located.
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+# The app that is being run.
+app_name = 'load_duration'
+
+def test_load_duration_basic(basic_dataset):
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', app_name)
+    config.set("global_settings", 'dataset_id', str(basic_dataset.id))
+    config.set("global_settings", 'sensormap_id', str(basic_dataset.map.id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_name', '"bldg90"')
+    
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
+    
+    expected = {
+        'Load_Duration': os.path.join(basedir, 'load_duration_basic.ref.csv')
+    }
+    
+    run_appwrapper(config, expected)
+    
+def test_load_duration_missing(missing_dataset):
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', app_name)
+    config.set("global_settings", 'dataset_id', str(missing_dataset.id))
+    config.set("global_settings", 'sensormap_id', str(missing_dataset.map.id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_name', '"bldg90"')
+    
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
+    
+    expected = {
+        'Load_Duration': os.path.join(basedir, 'load_duration_missing.ref.csv')
+    }
+    
+    run_appwrapper(config, expected)
+#     
+#     ld_missing_ini = os.path.join(self.basedir,
+#         'load_duration_missing.ini')
+#     ld_missing_exp = {}
+#     ld_missing_exp['Load_Duration'] = os.path.join(self.basedir,
+#         'load_duration_missing.ref.csv')
+#     self.run_it(ld_missing_ini, ld_missing_exp, clean_up=True)
+
+def test_load_duration_floats(floats_dataset):
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', app_name)
+    config.set("global_settings", 'dataset_id', str(floats_dataset.id))
+    config.set("global_settings", 'sensormap_id', str(floats_dataset.map.id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_name', '"bldg90"')
+    
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
+    
+    expected = {
+        'Load_Duration': os.path.join(basedir, 'load_duration_floats.ref.csv')
+    }
+    
+    run_appwrapper(config, expected)
+    
+#     ld_floats_ini = os.path.join(self.basedir,
+#         'load_duration_floats.ini')
+#     ld_floats_exp = {}
+#     ld_floats_exp['Load_Duration'] = os.path.join(self.basedir,
+#         'load_duration_floats.ref.csv')
+#     self.run_it(ld_floats_ini, ld_floats_exp, clean_up=True)
+
+def test_load_duration_floats_missing(floats_missing_dataset):
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', app_name)
+    config.set("global_settings", 'dataset_id', str(floats_missing_dataset.id))
+    config.set("global_settings", 'sensormap_id', str(floats_missing_dataset.map.id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_name', '"bldg90"')
+    
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
+    
+    expected = {
+        'Load_Duration': os.path.join(basedir, 'load_duration_floats_missing.ref.csv')
+    }
+    
+#     run_appwrapper(config, expected)
+#     ld_floats_missing_ini = os.path.join(self.basedir,
+#         'load_duration_floats_missing.ini')
+#     ld_floats_missing_exp = {}
+#     ld_floats_missing_exp['Load_Duration'] = os.path.join(self.basedir,
+#         'load_duration_floats_missing.ref.csv')
+#     self.run_it(ld_floats_missing_ini, ld_floats_missing_exp, clean_up=True)
+
+    
+#     ld_basic_ini = os.path.join(self.basedir,
+#         'load_duration_basic.ini')
+#     ld_basic_exp = {}
+#     ld_basic_exp['Load_Duration'] = os.path.join(self.basedir,
+#         'load_duration_basic.ref.csv')
+#     self.run_it(ld_basic_ini, ld_basic_exp, clean_up=True)
 
 
-class TestLoadDuration(AppTestBase):
-    fixtures = [
-        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'load_duration_fixture.json')
-        ]
-
-    def setUp(self):
-        self.basedir = os.path.abspath(os.path.dirname(__file__))
-
-    def test_load_duration_basic(self):
-        ld_basic_ini = os.path.join(self.basedir,
-            'load_duration_basic.ini')
-        ld_basic_exp = {}
-        ld_basic_exp['Load_Duration'] = os.path.join(self.basedir,
-            'load_duration_basic.ref.csv')
-        self.run_it(ld_basic_ini, ld_basic_exp, clean_up=True)
-
-    def test_load_duration_missing(self):
-        ld_missing_ini = os.path.join(self.basedir,
-            'load_duration_missing.ini')
-        ld_missing_exp = {}
-        ld_missing_exp['Load_Duration'] = os.path.join(self.basedir,
-            'load_duration_missing.ref.csv')
-        self.run_it(ld_missing_ini, ld_missing_exp, clean_up=True)
-
-    def test_load_duration_floats(self):
-        ld_floats_ini = os.path.join(self.basedir,
-            'load_duration_floats.ini')
-        ld_floats_exp = {}
-        ld_floats_exp['Load_Duration'] = os.path.join(self.basedir,
-            'load_duration_floats.ref.csv')
-        self.run_it(ld_floats_ini, ld_floats_exp, clean_up=True)
-
-    def test_load_duration_floats_missing(self):
-        ld_floats_missing_ini = os.path.join(self.basedir,
-            'load_duration_floats_missing.ini')
-        ld_floats_missing_exp = {}
-        ld_floats_missing_exp['Load_Duration'] = os.path.join(self.basedir,
-            'load_duration_floats_missing.ref.csv')
-        self.run_it(ld_floats_missing_ini, ld_floats_missing_exp, clean_up=True)
+# class TestLoadDuration(AppTestBase):
+#     fixtures = [
+#         os.path.join(os.path.abspath(os.path.dirname(__file__)), 'load_duration_fixture.json')
+#         ]
+# 
+#     def setUp(self):
+#         self.basedir = os.path.abspath(os.path.dirname(__file__))
+# 
+#     def test_load_duration_basic(self):
+#         ld_basic_ini = os.path.join(self.basedir,
+#             'load_duration_basic.ini')
+#         ld_basic_exp = {}
+#         ld_basic_exp['Load_Duration'] = os.path.join(self.basedir,
+#             'load_duration_basic.ref.csv')
+#         self.run_it(ld_basic_ini, ld_basic_exp, clean_up=True)
+# 
+#     def test_load_duration_missing(self):
+#         ld_missing_ini = os.path.join(self.basedir,
+#             'load_duration_missing.ini')
+#         ld_missing_exp = {}
+#         ld_missing_exp['Load_Duration'] = os.path.join(self.basedir,
+#             'load_duration_missing.ref.csv')
+#         self.run_it(ld_missing_ini, ld_missing_exp, clean_up=True)
+# 
+#     def test_load_duration_floats(self):
+#         ld_floats_ini = os.path.join(self.basedir,
+#             'load_duration_floats.ini')
+#         ld_floats_exp = {}
+#         ld_floats_exp['Load_Duration'] = os.path.join(self.basedir,
+#             'load_duration_floats.ref.csv')
+#         self.run_it(ld_floats_ini, ld_floats_exp, clean_up=True)
+# 
+#     def test_load_duration_floats_missing(self):
+#         ld_floats_missing_ini = os.path.join(self.basedir,
+#             'load_duration_floats_missing.ini')
+#         ld_floats_missing_exp = {}
+#         ld_floats_missing_exp['Load_Duration'] = os.path.join(self.basedir,
+#             'load_duration_floats_missing.ref.csv')
+#         self.run_it(ld_floats_missing_ini, ld_floats_missing_exp, clean_up=True)

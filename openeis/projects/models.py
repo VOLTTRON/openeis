@@ -58,6 +58,7 @@ import datetime
 import json
 import jsonschema
 import posixpath
+from pytz import timezone
 import random
 import string
 import threading
@@ -273,6 +274,15 @@ class DataMap(models.Model):
                                 for name in path)): value
                                for path, value in errors.items()})
 
+#TODO: Move to a utils class
+def _finditem(obj, key):
+    if key in obj: return obj[key]
+    for k, v in obj.items():
+        if isinstance(v,dict):
+            item = _finditem(v, key)
+            if item is not None:
+                return item
+    
 
 class SensorIngest(models.Model):
     project = models.ForeignKey(Project, related_name='datasets')
@@ -282,7 +292,7 @@ class SensorIngest(models.Model):
     start = models.DateTimeField(auto_now_add=True)
     end = models.DateTimeField(null=True, default=None)
 
-    def merge(self, start=None, end=None, include_header=True):
+    def merge(self, start=None, end=None, include_header=True, as_local_time = False):
         '''Return an iterator over the merged dataset.
 
         If start is an integer, skip start rows. If start is a datetime
@@ -309,6 +319,10 @@ class SensorIngest(models.Model):
                     yield None
             while True:
                 yield None
+        #look for timezone info
+        #TODO: handle multiple timezones in a map if that remains a use case
+        tz = _finditem(self.map.map,'timezone') if as_local_time else None
+
         sensors = list(self.map.sensors.order_by('name'))
         data = [sensor.data.filter(ingest=self) for sensor in sensors]
         # Filter by start and end times
@@ -323,7 +337,9 @@ class SensorIngest(models.Model):
                     time = min(t for t in (next(i) for i in iterators) if t)
                 except ValueError:
                     break
-                yield [time] + [d and d.value for d in [i.send(time) for i in iterators]]
+                data_time = time if tz is None else time.astimezone(timezone(tz)) 
+
+                yield [data_time] + [d and d.value for d in [i.send(time) for i in iterators]]
         generator = _merge()
         # Filter by start row and end count
         if isinstance(start, int):

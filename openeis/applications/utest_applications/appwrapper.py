@@ -97,6 +97,19 @@ from openeis.projects.storage.db_output import DatabaseOutputFile
 from openeis.projects.storage.db_input import DatabaseInput
 from openeis.projects import models
 
+def run_appwrapper(config, expected_output):
+    """
+    Run the application with the passed configparser interface with the 
+    expected_output.
+    
+    expected_output format output table with path representing the output.
+    expected_output = {
+        'Daily_Summary_Table': os.path.join(basedir, 
+                                    'daily_summary_same_number.ref.csv')
+    }  
+    """
+    app = AppWrapper()
+    app.run_it(config, expected_output, clean_up=True)
 
 class AppWrapper:
 #     '''

@@ -85,8 +85,9 @@ and includes the following modification: Paragraph 3. has been added.
 import os
 import pytest
 
-from openeis.applications.utest_applications.appwrapper import AppWrapper
-from openeis.applications.utest_applications.fixture_support import build_config_parser
+from configparser import ConfigParser
+
+from openeis.applications.utest_applications.appwrapper import run_appwrapper
 from openeis.projects.models import (SensorIngest,
                                      DataMap,
                                      DataFile)
@@ -108,11 +109,11 @@ def test_daily_summary_same_numbers(samenumber_dataset):
                                     'daily_summary_same_number.ref.csv')
     }  
     
-    config = build_config_parser(app_name, samenumber_dataset.id, 
+    config = build_dailysummary_config_parser(app_name, samenumber_dataset.id, 
                                  samenumber_dataset.map.id)
     
-    app = AppWrapper()
-    app.run_it(config, ds_same_num_exp, clean_up=True)
+    run_appwrapper(config, ds_same_num_exp)
+    
     
 def test_daily_summary_one_to_five(onetofive_dataset):
     ds_onetofive_exp = {
@@ -120,10 +121,10 @@ def test_daily_summary_one_to_five(onetofive_dataset):
                                     'daily_summary_onetofive.ref.csv')
     }
     
-    config = build_config_parser(app_name, onetofive_dataset.id, 
+    config = build_dailysummary_config_parser(app_name, onetofive_dataset.id, 
                                  onetofive_dataset.map.id)
-    app = AppWrapper()
-    app.run_it(config, ds_onetofive_exp, clean_up=True)
+    
+    run_appwrapper(config, ds_onetofive_exp)
     
 def test_daily_summary_missing_(missing_dataset):
     ds_missing_exp = {
@@ -131,10 +132,10 @@ def test_daily_summary_missing_(missing_dataset):
                                     'daily_summary_missing.ref.csv')
     }
     
-    config = build_config_parser(app_name, missing_dataset.id, 
+    config = build_dailysummary_config_parser(app_name, missing_dataset.id, 
                                  missing_dataset.map.id)
-    app = AppWrapper()
-    app.run_it(config, ds_missing_exp, clean_up=True)
+    
+    run_appwrapper(config, ds_missing_exp)
     
  
 def test_daily_summary_floats(floats_dataset):
@@ -144,14 +145,14 @@ def test_daily_summary_floats(floats_dataset):
                                     'daily_summary_floats.ref.csv')
     }
     
-    config = build_config_parser(app_name, floats_dataset.id, 
+    config = build_dailysummary_config_parser(app_name, floats_dataset.id, 
                                  floats_dataset.map.id)
-    app = AppWrapper()
-    app.run_it(config, ds_floats_exp, clean_up=True)
+    
+    run_appwrapper(config, ds_floats_exp)
     
 
 def test_daily_summary_invalid():
-    config = build_config_parser(app_name, 52, 51)
+    config = build_dailysummary_config_parser(app_name, 52, 51)
     
     with pytest.raises(Exception) as excinfo:
         app = AppWrapper()
@@ -159,3 +160,23 @@ def test_daily_summary_invalid():
         
     assert excinfo.value != ""
     
+def build_dailysummary_config_parser(app_name, dataset_id, sensormap_id):
+    '''
+    This function creates a config parser with the specified dataset and
+    sensormap_id. 
+    '''
+    config = ConfigParser()
+    
+    config.add_section("global_settings")
+    config.set("global_settings", 'application', app_name)
+    config.set("global_settings", 'dataset_id', str(dataset_id))
+    config.set("global_settings", 'sensormap_id', str(sensormap_id))
+    
+    config.add_section("application_config")
+    config.set('application_config', 'building_sq_ft', '3000')
+    config.set('application_config', 'building_name', '"bldg90"')
+    
+    config.add_section('inputs')
+    config.set('inputs', 'load', 'lbnl/bldg90/WholeBuildingPower')
+    
+    return config

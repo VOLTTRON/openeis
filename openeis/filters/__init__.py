@@ -95,6 +95,5 @@ extDict = {}
  
 for extName in _extList:
     print('Importing module: ', extName)
-    #extDict[extName] = importlib.import_module(extName, 'openeis.filters')
     extDict[extName] = __import__(extName,globals(),locals(),[], 1)
 
