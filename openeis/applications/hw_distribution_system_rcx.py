@@ -87,11 +87,11 @@ class Application(DrivenApplicationBaseClass):
 
     def __init__(self, *args,
                  min_dp_threshold=2.5,
-                 max_dp_threshold=25.0,
+                 max_dp_threshold=50.0,
                  data_window=180, dp_reset_threshold=10.0,
                  no_required_data=50,
                  setpoint_allowable_deviation=10.0,
-                 data_sample_rate=None,
+                 warm_up_time=30,
                  dp_pump_threshold=45.0,
 
                  hw_st_threshold=120.0,
@@ -154,11 +154,13 @@ class Application(DrivenApplicationBaseClass):
         self.data_window = float(data_window)
         self.min_dp_threshold = float(min_dp_threshold)
         self.max_dp_threshold = float(max_dp_threshold)
+        self.warm_up_flag = None
+        self.warm_up_time = int(warm_up_time)
+        self.warm_up_start = None
 
         self.hw_dx1 = HW_loopdp_RCx(no_required_data, data_window,
                                     setpoint_allowable_deviation,
-                                    dp_pump_threshold,
-                                    data_sample_rate)
+                                    dp_pump_threshold)
 
         self.hw_dx2 = HW_temp_RCx(no_required_data, data_window,
                                   hw_st_threshold,
@@ -166,8 +168,7 @@ class Application(DrivenApplicationBaseClass):
                                   setpoint_allowable_deviation,
                                   min_hwst_threshold, max_hwst_threshold,
                                   min_hwrt_threshold, max_hwrt_threshold,
-                                  delta_t_threshold, desired_delta_t,
-                                  data_sample_rate)
+                                  delta_t_threshold, desired_delta_t)
 
         self.hw_dx3 = HW_reset_RCx(no_required_data,
                                    hwst_reset_threshold,
@@ -181,7 +182,7 @@ class Application(DrivenApplicationBaseClass):
         '''
         return {
             'data_window': ConfigDescriptor(int, 'Minimum Elapsed time for '
-                                            'analysis (default=15 minutes)',
+                                            'analysis (default=180 minutes)',
                                             optional=True),
             'min_dp_threshold': ConfigDescriptor(float,
                                                  'Hot water loop minimum '
@@ -193,8 +194,12 @@ class Application(DrivenApplicationBaseClass):
                                                  'operational differential '
                                                  'pressure (default=25.0 psi)',
                                                  optional=True),
-            'data_sample_rate':
-                ConfigDescriptor(int, ('Data trending rate(minutes/sample)')),
+            'warm_up_time':
+            ConfigDescriptor(int,
+                             'When the system starts this much '
+                             'time will be allowed to elapse before adding '
+                             'using data for analysis (default=30 minutes)',
+                             optional=True),
 
             'setpoint_allowable_deviation':
                 ConfigDescriptor(float,
@@ -234,7 +239,8 @@ class Application(DrivenApplicationBaseClass):
             'min_hwst_threshold':
                 ConfigDescriptor(float,
                                  'Minimum allowable operational HW '
-                                 'supply temperature (default=125.0)'),
+                                 'supply temperature (default=125.0)',
+                                 optional=True),
             'max_hwst_threshold':
                 ConfigDescriptor(float, 'Maximum allowable operational '
                                  'HW supply temperature (default=185.0F)',
@@ -251,7 +257,7 @@ class Application(DrivenApplicationBaseClass):
                                  optional=True),
             'desired_delta_t':
                 ConfigDescriptor(float,
-                                 'Desired delta-T (differenece between HWS '
+                                 'Desired delta-T (difference between HWS '
                                  'and HWR temperatures (default=20.0F))',
                                  optional=True),
             'delta_t_threshold':
@@ -263,8 +269,8 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'hw_distribution_system_rcx'
-        desc = ('Automated Retro-commissioning for '
+        name = 'Auto-RCx for Hot-Water Distributions Systems'
+        desc = ('Automated Retro-commissioning Diagnostics for '
                 'hot-water distribution system')
         return Descriptor(name=name, description=desc)
 
@@ -290,39 +296,39 @@ class Application(DrivenApplicationBaseClass):
         '''
         return {
             cls.loop_dp_name:
-                InputDescriptor('Hot water loop differential pressure',
+                InputDescriptor('LoopDifferentialPressure',
                                 'Hot water central plant loop differential '
                                 'pressure',
                                 count_min=1),
             cls.loop_dp_stpt_name:
-                InputDescriptor('Loop differential pressure set point',
+                InputDescriptor('LoopDifferentialPressureSetPoint',
                                 'Hot water central plant loop differential '
                                 'pressure set point',
                                 count_min=1),
             cls.pump_status_name:
-                InputDescriptor('Pump status',
+                InputDescriptor('PumpStatus',
                                 'Hot water central plant pump status',
                                 count_min=0),
             cls.boiler_status_name:
-                InputDescriptor('Boiler status',
+                InputDescriptor('BoilerStatus',
                                 'Hot water central plant boiler status',
                                 count_min=1),
             cls.hw_pump_vfd_name:
-                InputDescriptor('Hot water pump VFD command',
+                InputDescriptor('PumpVFDCommand',
                                 'Hot water central plant pump VFD commands',
                                 count_min=1),
             cls.hws_temp_name:
-                InputDescriptor('Hot water supply temperature',
+                InputDescriptor('SupplyWaterTemperature',
                                 'Hot water central plant supply '
                                 'water temperature',
                                 count_min=1),
             cls.hw_stsp_name:
-                InputDescriptor('Hot water supply temperature set point',
+                InputDescriptor('SupplyWaterTemperatureSetPoint',
                                 'Hot water central plant supply water '
                                 'temperature set point',
                                 count_min=1),
             cls.hwr_temp_name:
-                InputDescriptor('Hot water return temperature',
+                InputDescriptor('ReturnWaterTemperature',
                                 'Hot water central plant return '
                                 'water temperature', count_min=1)
         }
@@ -389,31 +395,21 @@ class Application(DrivenApplicationBaseClass):
         for key, value in points.items():
             device_dict[key.lower()] = value
 
-        self.pre_msg_time.append(current_time)
-        message_check = datetime.timedelta(minutes=(self.data_window))
-
-        if (self.pre_msg_time[-1]-self.pre_msg_time[0]) >= message_check:
-            msg_lst = [self.pre_msg1, self.pre_msg2, self.pre_msg3,
-                       self.pre_msg4, self.pre_msg5, self.pre_msg6,
-                       self.pre_msg7, self.pre_msg8, self.pre_msg9,
-                       Application.pre_msg10, Application.pre_msg11]
-            for item in msg_lst:
-                if (Application.pre_requiste_messages.count(item) >
-                   (0.25) * len(self.pre_msg_time)):
-                    diagnostic_result.log(item, logging.INFO)
-            Application.pre_requiste_messages = []
-            self.pre_msg_time = []
-
         flow_check, dp_data = self.data_check(device_dict,
                                               self.loop_dp_name,
                                               self.loop_dp_stpt_name)
 
         for value in dp_data:
             if value < self.min_dp_threshold:
+                self.warm_up_flag = True
                 Application.pre_requiste_messages.append(self.pre_msg1)
+                diagnostic_result = self.pre_message(diagnostic_result,
+                                                     current_time)
                 return diagnostic_result
             elif value > self.max_dp_threshold:
                 Application.pre_requiste_messages.append(self.pre_msg2)
+                diagnostic_result = self.pre_message(diagnostic_result,
+                                                     current_time)
                 return diagnostic_result
 
         if not flow_check or not dp_data:
@@ -424,13 +420,18 @@ class Application(DrivenApplicationBaseClass):
 
             if not pump_id:
                 Application.pre_requiste_messages.append(self.pre_msg3)
+                diagnostic_result = self.pre_message(diagnostic_result,
+                                                     current_time)
                 return diagnostic_result
 
             pump_stat = (list(device_dict[val] for val in pump_id if val in
                               device_dict and int(device_dict[val]) > 0))
 
             if not pump_stat:
+                self.warm_up_flag = True
                 Application.pre_requiste_messages.append(self.pre_msg4)
+                diagnostic_result = self.pre_message(diagnostic_result,
+                                                     current_time)
                 return diagnostic_result
 
         boiler_id = fnmatch.filter(device_dict,
@@ -441,7 +442,21 @@ class Application(DrivenApplicationBaseClass):
                             boiler_id if val in device_dict
                             and int(device_dict[val]) > 0))
         if not boiler_stat:
+            self.warm_up_flag = True
             Application.pre_requiste_messages.append(self.pre_msg5)
+            diagnostic_result = self.pre_message(diagnostic_result,
+                                                 current_time)
+            return diagnostic_result
+
+        if self.warm_up_flag:
+            self.warm_up_flag = False
+            self.warm_up_start = current_time
+
+        time_check = datetime.timedelta(minutes=self.warm_up_time)
+        if (self.warm_up_start is not None and
+           (current_time - self.warm_up_start) < time_check):
+            diagnostic_result = self.pre_message(diagnostic_result,
+                                                 current_time)
             return diagnostic_result
 
         loop_dp_values = []
@@ -452,17 +467,17 @@ class Application(DrivenApplicationBaseClass):
         hwr_temp_values = []
 
         for key, value in device_dict.items():
-            if key.startswith(self.loop_dp_stpt_name) and value is None:
+            if key.startswith(self.loop_dp_stpt_name) and value is not None:
                 loop_dp_stpt_values.append(value)
-            elif key.startswith(self.loop_dp_name) and value is None:
+            elif key.startswith(self.loop_dp_name) and value is not None:
                 loop_dp_values.append(value)
-            elif key.startswith(self.hw_pump_vfd_name) and value is None:
+            elif key.startswith(self.hw_pump_vfd_name) and value is not None:
                 hw_pump_vfd_values.append(value)
-            elif key.startswith(self.hw_stsp_name) and value is None:
+            elif key.startswith(self.hw_stsp_name) and value is not None:
                 hw_stsp_values.append(value)
-            elif key.startswith(self.hws_temp_name) and value is None:
+            elif key.startswith(self.hws_temp_name) and value is not None:
                 hws_temp_values.append(value)
-            elif key.startswith(self.hwr_temp_name) and value is None:
+            elif key.startswith(self.hwr_temp_name) and value is not None:
                 hwr_temp_values.append(value)
 
         if not loop_dp_values:
@@ -476,6 +491,8 @@ class Application(DrivenApplicationBaseClass):
 
         if (not loop_dp_values and
            not (hws_temp_values and hwr_temp_values)):
+            diagnostic_result = self.pre_message(diagnostic_result,
+                                                 current_time)
             return diagnostic_result
 
         diagnostic_result = self.hw_dx1.hw_dp_rcx(diagnostic_result,
@@ -494,9 +511,25 @@ class Application(DrivenApplicationBaseClass):
                                                   loop_dp_stpt_values,
                                                   diagnostic_result)
         Application.pre_requiste_messages = []
-        self.pre_msg_time = []
+        Application.pre_msg_time = []
         return diagnostic_result
 
+    def pre_message(self, result, current_time):
+        Application.pre_msg_time.append(current_time)
+        message_check = datetime.timedelta(minutes=(self.data_window))
+        pre_check = Application.pre_msg_time[-1] - Application.pre_msg_time[0]
+        if pre_check >= message_check:
+            msg_lst = [self.pre_msg1, self.pre_msg2, self.pre_msg3,
+                       self.pre_msg4, self.pre_msg5, self.pre_msg6,
+                       self.pre_msg7, self.pre_msg8, self.pre_msg9,
+                       Application.pre_msg10, Application.pre_msg11]
+            for item in msg_lst:
+                if (Application.pre_requiste_messages.count(item) >
+                   (0.25) * len(Application.pre_msg_time)):
+                    result.log(item, logging.INFO)
+            Application.pre_requiste_messages = []
+            Application.pre_msg_time = []
+        return result
 
 class HW_loopdp_RCx(object):
     '''
@@ -504,14 +537,13 @@ class HW_loopdp_RCx(object):
     '''
     def __init__(self, no_required_data, data_window,
                  setpoint_allowable_deviation,
-                 dp_pump_threshold, data_sample_rate):
+                 dp_pump_threshold):
         self.hw_pump_vfd_values = []
         self.loop_dp_values = []
         self.loop_dp_stpt_values = []
         self.timestamp = []
         self.no_required_data = int(no_required_data)
         self.data_window = float(data_window)
-        self.data_sample_rate = int(data_sample_rate)
         self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
         self.dp_pump_threshold = float(dp_pump_threshold)
 
@@ -531,11 +563,10 @@ class HW_loopdp_RCx(object):
             len(loop_dp_stpt_values))
 
         self.timestamp.append(current_time)
-        time_check = datetime.timedelta(minutes=self.data_window)
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=self.data_sample_rate))
+        elapsed_time = (self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+        elapsed_time = elapsed_time if elapsed_time > 0.0 else 1.0
 
-        if (elapsed_time >= time_check and
+        if (elapsed_time >= self.data_window and
            len(self.timestamp) >= self.no_required_data):
 
             avg_loop_dp = (sum(self.loop_dp_values))/(len(self.loop_dp_values))
@@ -582,12 +613,14 @@ class HW_loopdp_RCx(object):
             energy_impact = None
 
             if (avg_pump_vfd > self.dp_pump_threshold):
+                color_code = 'RED'
                 diagnostic_message = ('{name}: The HW loop DP has been '
-                                      'detected to be too high.'
+                                      'detected to be too high'
                                       .format(name=hotwater_dx1))
             else:
+                color_code = 'GREEN'
                 diagnostic_message = ('{name}: No re-tuning opportunity '
-                                      'detected for the high HW loop DP.'
+                                      'detected for the high HW loop DP'
                                       .format(name=hotwater_dx1))
 
             dx_table = {
@@ -610,6 +643,9 @@ class HW_loopdp_RCx(object):
                 'color_code': 'GREY'
                 }
         self.hw_pump_vfd_values = []
+        self.loop_dp_values = []
+        self.loop_dp_stpt_values = []
+        self.timestamp = []
         result.insert_table_row('Hot_water_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
@@ -623,7 +659,7 @@ class HW_temp_RCx(object):
                  hw_st_threshold, hw_pump_vfd_threshold,
                  setpoint_allowable_deviation, min_hwst_threshold,
                  max_hwst_threshold, min_hwrt_threshold, max_hwrt_threshold,
-                 delta_t_threshold, desired_delta_t, data_sample_rate):
+                 delta_t_threshold, desired_delta_t):
 
         self.hw_stsp_values = []
         self.hws_temp_values = []
@@ -634,7 +670,7 @@ class HW_temp_RCx(object):
         self.data_window = float(data_window)
         self.no_required_data = int(no_required_data)
         self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
-        self.data_sample_rate = int(data_sample_rate)
+
         self.hw_st_threshold = float(hw_st_threshold)
         self.hw_pump_vfd_threshold = float(hw_pump_vfd_threshold)
 
@@ -671,14 +707,11 @@ class HW_temp_RCx(object):
             len(hw_pump_vfd_values))
 
         self.timestamp.append(current_time)
-        time_check = datetime.timedelta(minutes=self.data_window)
+        elapsed_time = (self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+        elapsed_time = elapsed_time if elapsed_time > 0.0 else 1.0
 
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0]) +
-                        datetime.timedelta(minutes=self.data_sample_rate))
-
-        if (elapsed_time >= time_check and
+        if (elapsed_time >= self.data_window and
            len(self.timestamp) >= self.no_required_data):
-
             if self.hw_stsp_values:
                 avg_hw_stsp = sum(self.hw_stsp_values)/len(self.hw_stsp_values)
                 set_point_tracking = [abs(x-y) for
@@ -756,7 +789,6 @@ class HW_temp_RCx(object):
                 'energy_impact': None,
                 'color_code': 'GREY'
                 }
-        self.hw_pump_vfd_values = []
         result.insert_table_row('Hot_water_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
@@ -799,10 +831,7 @@ class HW_temp_RCx(object):
         self.hws_temp_values = []
         self.hw_pump_vfd_values = []
         self.timestamp = []
-        self.oa_temp_values = []
-        self.rht_vlv_values = []
         self.hwr_temp_values = []
-
         Application.pre_requiste_messages = []
         Application.pre_msg_time = []
         return result
@@ -892,7 +921,7 @@ class HW_reset_RCx(object):
         energy_impact = None
         color_code = 'GREY'
 
-        if loop_dpst_condition < self.dp_diff_threshold:
+        if loop_dpst_condition < self.dp_reset_threshold:
             diagnostic_message = ('{name}: No hot water DP reset was detected '
                                   'for this system. Enable or add hot water '
                                   'DP reset to improve system performance '
@@ -915,4 +944,5 @@ class HW_reset_RCx(object):
         result.log(diagnostic_message, logging.INFO)
         self.timestamp = []
         self.loop_dp_stpt_values = []
+        self.hw_stsp_values = []
         return result
