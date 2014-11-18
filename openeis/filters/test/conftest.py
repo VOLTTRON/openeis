@@ -33,6 +33,9 @@ def create_datamap(project):
         map={
             "sensors": {
                 "lbnl":{
+                    "attributes": {
+                        "timezone": "US/Pacific"
+                    },
                     "level":"site"
                 },
                 "lbnl/bldg90": {
