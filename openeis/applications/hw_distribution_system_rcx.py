@@ -212,7 +212,7 @@ class Application(DrivenApplicationBaseClass):
             'dp_reset_threshold':
                 ConfigDescriptor(float,
                                  'HW loop DP threshold to detect DP reset '
-                                 '(default=5.0 psi)', optiional=True),
+                                 '(default=5.0 psi)', optional=True),
 
             'hwst_reset_threshold':
                 ConfigDescriptor(float,
@@ -382,7 +382,7 @@ class Application(DrivenApplicationBaseClass):
 #
 #        current_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
 
-        
+
         device_dict = {}
         diagnostic_result = Results()
 
