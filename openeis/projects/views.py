@@ -94,7 +94,7 @@ from .storage.db_output import DatabaseOutput, DatabaseOutputZip
 from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
 from openeis.filters.apply_filter import apply_filter_config
-
+from openeis.filters import column_modifiers
 _logger = logging.getLogger(__name__)
 
 
