@@ -368,7 +368,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'economizer_rcx'
+        name = 'Auto-RCx for for Economizer HVAC Systems'
         desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
         return Descriptor(name=name, description=desc)
 

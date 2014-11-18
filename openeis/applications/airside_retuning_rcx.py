@@ -430,7 +430,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'airside_retuning_rcx'
+        name = 'Auto-RCx for for Air Handling HVAC Systems'
         desc = 'Automated Retro-commisioning for AHUs'
         return Descriptor(name=name, description=desc)
 
