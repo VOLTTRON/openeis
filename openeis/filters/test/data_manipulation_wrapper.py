@@ -8,6 +8,7 @@ import tempfile
 
 from openeis.filters.apply_filter import apply_filter_config
 from openeis.projects.models import (SensorIngest,)
+from openeis.projects import models
 
 
 def run_data_manipulation(config, expected):
@@ -40,7 +41,6 @@ class DataManipulationwrapper:
         
         dataset_id = int(config['global_settings']['dataset_id'])
         config_string = config['global_settings']['config']
-        print("Config String: ", config_string)
         config = json.loads(config_string)
         
         result = apply_filter_config(dataset_id,config)
@@ -48,14 +48,14 @@ class DataManipulationwrapper:
             print('Error = ',result) 
         else:
             print('New dataset id =',result)
-            #TODO: Grab new data set as csv and compare with expected
         
         dataset = SensorIngest.objects.get(pk= result)
         assert dataset != None
         assert dataset.id == dataset_id + 1
-        rows = dataset.merge(as_local_time = True)
+        rows = dataset.merge()
     
         tmp_dir = tempfile.mkdtemp()
+        print(tmp_dir)
         temp_file = os.path.join(tmp_dir,"output.csv")
         with open(temp_file, 'w', newline='\n') as fout:
             csvwriter = csv.writer(fout)

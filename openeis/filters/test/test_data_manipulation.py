@@ -129,12 +129,10 @@ def test_all_filter(one_month_dataset):
     config.add_section("global_settings")
     config.set("global_settings", 'dataset_id', str(one_month_dataset.id))
     filter_config = '[["lbnl/bldg90/OutdoorAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
-             ["lbnl/bldg90/roof/MixedAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
-             ["lbnl/bldg90/roof/ReturnAirTemperature", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
+             ["lbnl/bldg90/WholeBuildingPower", "LinearInterpolation", {"period_seconds": 300, "drop_extra": false}],\
              ["lbnl/bldg90/OutdoorAirTemperature", "RoundOff", {"places": 2}],\
-             ["lbnl/bldg90/roof/MixedAirTemperature", "RoundOff", {"places": 3}],\
-             ["lbnl/bldg90/roof/ReturnAirTemperature", "RoundOff", {"places": 1}],\
-             ["lbnl/bldg90/roof/CoolingCall", "Fill", {"per iod_seconds": 300, "drop_extra": false}]]'
+             ["lbnl/bldg90/WholeBuildingPower", "RoundOff", {"places": 3}],\
+             ["lbnl/bldg90/WholeBuildingGas", "Fill", {"period_seconds": 300, "drop_extra": false}]]'
     config.set("global_settings", 'config', str(filter_config))
-    expected = os.path.join(outputdir, "linear_interpolation_dataset.csv")
+    expected = os.path.join(outputdir, "all_filter_dataset.csv")
     run_data_manipulation(config, expected)
