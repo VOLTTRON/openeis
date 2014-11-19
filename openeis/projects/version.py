@@ -114,7 +114,7 @@ def _git(*args):
         cmd.extend(args)
         try:
             return subprocess.check_output(
-                    cmd, cwd=vcsdir, stdin=subprocess.DEVNULL).decode('utf-8')
+                    cmd, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8')
         except FileNotFoundError:
             raise VersionControlNotFound('The git executable was not found')
     raise NotUnderVersionControl('The project is not under version control')
