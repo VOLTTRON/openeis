@@ -173,7 +173,7 @@ class AppWrapper:
             topic_map[group] = topics.split()
 
         now = datetime.datetime.utcnow().replace(tzinfo=utc)
-        project = models.Project.objects.get(pk=1)
+        project = dataset.project
         analysis = models.Analysis(
             added=now, started=now,
             dataset=dataset, application=appName,
