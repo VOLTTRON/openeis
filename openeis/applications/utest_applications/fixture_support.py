@@ -51,7 +51,10 @@ def create_data_file(path_and_name, **kwargs):
                          path_and_name)
     obj = models.DataFile.objects.create(name=os.path.basename(path_and_name), **kwargs)
     obj.file = obj.file.field.generate_filename(obj, path_and_name)
-    obj.time_zone="America/Los_Angeles"
+    if 'time_zone' in kwargs.keys():
+        obj.time_zone = kwargs['time_zone']
+    else:
+        obj.time_zone="America/Los_Angeles"
         
     path = path_and_name #os.path.join(os.path.dirname(models.__file__), 'fixtures', name)
     if not os.path.exists(os.path.dirname(obj.file.path)):
