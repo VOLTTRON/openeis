@@ -14,7 +14,8 @@ abs_file_dir = os.path.join(os.path.dirname(__file__))
 @pytest.fixture
 def whole_building_datafile(project):
     return create_data_file(os.path.join(abs_file_dir, 'whole_building_energy_savings_data.csv'), 
-                            project=project,
+                            project=project, 
+                            time_zone='UTC',
                             comments='whole building energy test data.')
 @pytest.fixture
 def base_datamap(project):
@@ -43,7 +44,7 @@ def create_datamap(project):
                 },
                 "test_site/test_bldg/WholeBuildingPower": {
                     "column": "whole-bldg-elec-W",
-                    "unit":"kilowatt",
+                    "unit":"watt",
                     "type": "WholeBuildingPower",
                     "file": "0"
                 },
