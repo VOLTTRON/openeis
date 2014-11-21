@@ -5,7 +5,7 @@ try:
     with open('/etc/openeis/server.conf') as file:
         conf = file.read(10000)
 except FileNotFoundError:
-    return
+    pass
 else:
     import re
     match = re.search(r'(?:^|\n|{|;)\s*server_name\s+([^;]*);', conf, re.M | re.S)
