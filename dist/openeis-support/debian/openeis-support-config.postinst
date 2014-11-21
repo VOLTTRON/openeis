@@ -19,7 +19,7 @@ case "$1" in
     chmod g+rwxs /var/lib/openeis
 
     if [ ! -f /etc/openeis/settings.d/10-secret_key.py ]; then
-      (umask 137 && echo -E "SECRET_KEY = r'$(tr -dc '[:graph:]' < /dev/urandom | tr -d "\\\\'" | head -c 50)'" > /etc/openeis/settings.d/10-secret_key.py)
+      (umask 137 && /bin/echo -E "SECRET_KEY = r'$(tr -dc '[:graph:]' < /dev/urandom | tr -d "\\\\'" | head -c 50)'" > /etc/openeis/settings.d/10-secret_key.py)
       chgrp openeis /etc/openeis/settings.d/10-secret_key.py
     fi
   ;;
