@@ -89,6 +89,7 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor, Descriptor
 from openeis.applications import reports
 from .utils import conversion_utils as cu
+from django.db.models import Avg
 import logging
 import pytz
 
@@ -204,7 +205,9 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting application: heat map.", logging.INFO)
 
         self.out.log("Querying database.", logging.INFO)
-        loads = self.inp.get_query_sets('load', group_by='hour', exclude={'value':None})
+        loads = self.inp.get_query_sets('load', group_by='hour',
+                                        group_by_aggregation=Avg,
+                                        exclude={'value':None})
         
         self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
