@@ -1,6 +1,8 @@
 from datetime import datetime
-import subprocess
+import dateutil
 import pytest
+import subprocess
+
 
 from rest_framework.test import APIClient
 
@@ -46,7 +48,9 @@ def test_vcs_timestamp():
         args = ['git', 'log', '-n', '1', "--pretty=format:%ci"]
         time_stamp = subprocess.check_output(
                     args, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8').strip()
-        assert (time_stamp == vcs_timestamp())
+                    
+        ts = dateutil.parser.parse(time_stamp)
+        assert (ts == vcs_timestamp())
 
 def test_get_version_info():
     vcsdir = _vcs_path()
