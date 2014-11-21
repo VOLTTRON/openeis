@@ -220,20 +220,9 @@ class Application(DriverApplicationBaseClass):
             )
         load_convertfactor = cu.getFactor_powertoKW(load_unit)
 
-        self.out.log("Limiting the analysis to a month.", logging.INFO)
-        # Limit the number of datapoints, have 4 weeks worth of data.
-        # 24 hours x 14 days = 336.
-        if len(loads[0]) > 336:
-            start = len(loads[0]) - 336
-            end = len(loads[0]) - 1
-        else:
-            start = 0
-            end = len(loads[0])
-
         self.out.log("Compiling the report table.", logging.INFO)
-        for x in loads[0][start:end]:
-            datevalue = x[0]
-            datevalue = self.inp.localize_sensor_time(base_topic['load'][0], datevalue)
+        for x in loads[0]:
+            datevalue = self.inp.localize_sensor_time(base_topic['load'][0], x[0])
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),
                 'hour': datevalue.hour,
