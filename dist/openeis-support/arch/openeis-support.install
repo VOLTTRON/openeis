@@ -14,9 +14,9 @@ post_install() {
   chown openeis:http /var/{run,log}/openeis
 
   cd /etc/openeis
-  if [[ ! -f settings.d/10-secret_key ]]; then
-    (umask 137 && echo -E "SECRET_KEY = r'$(tr -dc '[:graph:]' < /dev/urandom | tr -d "\\\\'" | head -c 50)'" > settings.d/10-secret_key)
-    chgrp openeis settings.d/10-secret_key
+  if [[ ! -f settings.d/10-secret_key.py ]]; then
+    (umask 137 && echo -E "SECRET_KEY = r'$(tr -dc '[:graph:]' < /dev/urandom | tr -d "\\\\'" | head -c 50)'" > settings.d/10-secret_key.py)
+    chgrp openeis settings.d/10-secret_key.py
   fi
 
   names="$(hostname --fqdn)"
@@ -62,7 +62,7 @@ post_remove() {
   cd /etc/openeis
   [[ ! openeis.key -ef default.key ]] || rm -f openeis.key
   [[ ! openeis.crt -ef default.crt ]] || rm -f openeis.crt
-  rm -f default.{key,crt} settings.d/10-secret_key
+  rm -f default.{key,crt} settings.d/10-secret_key.py
   rmdir --ignore-fail-on-non-empty /var/{lib,log,run}/openeis
   echo '>> Drop the database and user with the following commands:'
   echo '   sudo -H -u postgres dropdb openeis'

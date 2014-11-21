@@ -32,7 +32,7 @@ pkgver() {
 package() {
   install -Dm 644 openeis/LICENSE $pkgdir/usr/share/licenses/$_pkgname/LICENSE
   cd openeis/dist/openeis-support
-  for file in settings.d/{README,??-*} nginx/20-nginx postgresql/20-postgresql; do
+  for file in settings.d/{README,??-*.py} nginx/20-nginx.py postgresql/20-postgresql.py; do
     install -Dm 644 $file $pkgdir/etc/openeis/settings.d/${file##*/}
   done
   install -Dm 644 uwsgi/uwsgi.ini $pkgdir/etc/openeis/uwsgi.ini

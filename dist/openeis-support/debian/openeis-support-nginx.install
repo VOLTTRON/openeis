@@ -1,3 +1,3 @@
 nginx/openeis.conf etc/nginx/conf.d
-nginx/20-nginx etc/openeis/settings.d
+nginx/20-nginx.py etc/openeis/settings.d
 nginx/webserver.sh usr/share/openeis-support
