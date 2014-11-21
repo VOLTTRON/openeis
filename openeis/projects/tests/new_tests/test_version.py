@@ -25,10 +25,9 @@ def test_vcs_revision():
     vcsdir = _vcs_path()
     if vcsdir is not None:
         revision_args = ['git', 'rev-list', '--count', 'HEAD']
-        revision_subprocess = subprocess.Popen(revision_args, stdout=subprocess.PIPE, shell=True, cwd=vcsdir)
-        revision_out, revision_err = revision_subprocess.communicate()
-        revision_count = (revision_out.decode('utf-8')).strip()   # bytes/byte string, must be converted to utf-8
-    
+        revision_count = subprocess.check_output(
+                    revision_args, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8').strip()
+        print(revision_count)
         assert (int(revision_count) == vcs_revision())
 
 def test_vcs_version():
@@ -36,24 +35,18 @@ def test_vcs_version():
     vcsdir = _vcs_path()
     if vcsdir is not None:
         args = ['git', 'rev-parse', '--short', 'HEAD']
-        result = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True)
-        hash_out, hash_err = result.communicate()
-        revision_hash = (hash_out.decode('utf-8')).strip()   # bytes/byte string, must be decoded
+        revision_hash = subprocess.check_output(
+                    args, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8').strip()
         
         assert (revision_hash == vcs_version())
-
 
 def test_vcs_timestamp():
     vcsdir = _vcs_path()
     if vcsdir is not None:
         args = ['git', 'log', '-n', '1', "--pretty=format:%ci"]
-        result = subprocess.Popen(args, stdout=subprocess.PIPE, shell=True, cwd=vcsdir)
-        time_out, time_err = result.communicate()
-        time_val = (time_out.decode('utf-8')).strip()
-        time_stamp = datetime.strptime(time_val, '%Y-%m-%d %H:%M:%S %z')
-        
+        time_stamp = subprocess.check_output(
+                    args, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8').strip()
         assert (time_stamp == vcs_timestamp())
-        
 
 def test_get_version_info():
     vcsdir = _vcs_path()
