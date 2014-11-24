@@ -56,9 +56,9 @@
 '''functions for determining package version information.
 
 All available version information can be retrieved using get_version_info(),
-which returns a dictionary containing the product and VCS version
-information.  This function hides underlying VCS exceptions and can be used
-without exception handling.
+which returns a dictionary containing the product and VCS version information.
+This function hides underlying VCS exceptions and can be used without exception
+handling.
 
 product_version() returns the product version and also may be called without
 exception handling. It currently just returns __version__.
@@ -67,12 +67,12 @@ have_vcs() returns a boolean indicating whether the package is under version
 control and can be called without exception handling. It just checks for the
 existence of a .git directory where the repository root should be.
 
-All of the vcs_* functions call out to the version control executable, which
-is currently expected to be git. These functions raise
-NotUnderVersionControl if the .git directory was not found or
-VersionControlNotFound if the git executable was not found. The subprocess
-module may raise CalledProcessError if there was an error running a git
-command. These are not handled by this module.
+All of the vcs_* functions call out to the version control executable, which is
+currently expected to be git. These functions raise NotUnderVersionControl if
+the .git directory was not found or VersionControlNotFound if the git
+executable was not found. The subprocess module may raise CalledProcessError if
+there was an error running a git command. These are not handled by this module.
+The git command should be on the PATH or set in the GIT environment variable.
 '''
 
 
@@ -110,11 +110,11 @@ def _git(*args):
     '''Wrapper to make git calls.'''
     vcsdir = _vcs_path()
     if vcsdir is not None:
-        cmd = ['git']
+        cmd = [os.environ.get('GIT', 'git')]
         cmd.extend(args)
         try:
             return subprocess.check_output(
-                    cmd, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8')
+                    cmd, cwd=vcsdir, stdin=subprocess.DEVNULL).decode('utf-8')
         except FileNotFoundError:
             raise VersionControlNotFound('The git executable was not found')
     raise NotUnderVersionControl('The project is not under version control')
@@ -202,8 +202,6 @@ def get_version_info():
 
 
 if __name__ == '__main__':
-    #import pdb; pdb.set_trace()
-    print(have_vcs())
     #print(vcs_version())
     #print(vcs_timestamp())
     #print(vcs_revision())
