@@ -68,8 +68,14 @@ master branch where active development occurs. If you want the latest code
 or plan to contribute back to the project, switch to the master branch 
 using (git checkout master) or add `-b master` to the clone command above.
 
+If /var/lib/openeis is not empty, the above command will fail and the
+repository must be cloned into another directory and then the contents of that
+directory moved into /var/lib/openeis.
+
 Bootstrap OpenEIS and install extra python dependencies:
 
+   [openeis /var/lib/openeis]$ mkdir .openeis
+   [openeis /var/lib/openeis]$ ln -s /etc/openeis/settings.d .openeis/
    [openeis /var/lib/openeis]$ python3 bootstrap.py
    [openeis /var/lib/openeis]$ env/bin/pip install uwsgi psycopg2
    [openeis /var/lib/openeis]$ env/bin/openeis syncdb
