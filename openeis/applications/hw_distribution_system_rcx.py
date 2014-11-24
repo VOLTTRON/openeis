@@ -98,7 +98,7 @@ class Application(DrivenApplicationBaseClass):
                  hw_pump_vfd_threshold=70.0,
 
                  min_hwst_threshold=70.0,
-                 max_hwst_threshold=180.0, min_hwrt_threshold=70.0,
+                 max_hwst_threshold=195.0, min_hwrt_threshold=70.0,
                  max_hwrt_threshold=180.0,
                  delta_t_threshold=10.0, desired_delta_t=20.0,
 
@@ -368,7 +368,7 @@ class Application(DrivenApplicationBaseClass):
 
         output_needs = {
             'Hot_water_RCx': {
-                'datetime': OutputDescriptor('datetime', datetime_topic),
+                'datetime': OutputDescriptor('string', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
                                                        message_topic),
@@ -383,11 +383,11 @@ class Application(DrivenApplicationBaseClass):
         '''
         Check algorithm pre-quisites and assemble data set for analysis.
         '''
-#        topics = self.inp.get_topics()
-#        diagnostic_topic = topics[self.fan_status_name][0]
-#
-#        current_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
+        topics = self.inp.get_topics()
+        diagnostic_topic = topics[self.loop_dp_name][0]
 
+        current_time = self.inp.localize_sensor_time(diagnostic_topic,
+                                                     current_time)
 
         device_dict = {}
         diagnostic_result = Results()
@@ -588,7 +588,7 @@ class HW_loopdp_RCx(object):
                     color_code = 'RED'
                     energy_impact = None
                     dx_table = {
-                        'datetime': str(self.timestamp[-1]),
+                        'datetime': (str(self.timestamp[-1])).replace(' ','T'),
                         'diagnostic_name': Hot_water_RCx,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
@@ -624,7 +624,7 @@ class HW_loopdp_RCx(object):
                                       .format(name=hotwater_dx1))
 
             dx_table = {
-                'datetime': str(self.timestamp[-1]),
+                'datetime': (str(self.timestamp[-1])).replace(' ','T'),
                 'diagnostic_name': hotwater_dx1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': energy_impact,
@@ -636,7 +636,7 @@ class HW_loopdp_RCx(object):
                                   'the pump VFD command'
                                   .format(name=hotwater_dx1))
             dx_table = {
-                'datetime': str(self.timestamp[-1]),
+                'datetime': (str(self.timestamp[-1])).replace(' ','T'),
                 'diagnostic_name': hotwater_dx1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -731,7 +731,7 @@ class HW_temp_RCx(object):
                     color_code = 'RED'
                     energy_impact = None
                     dx_table = {
-                        'datetime': str(self.timestamp[-1]),
+                        'datetime': (str(self.timestamp[-1])).replace(' ','T'),
                         'diagnostic_name': Hot_water_RCx,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
@@ -771,7 +771,7 @@ class HW_temp_RCx(object):
                 energy_impact = None
 
             dx_table = {
-                'datetime': str(self.timestamp[-1]),
+                'datetime': (str(self.timestamp[-1])).replace(' ','T'),
                 'diagnostic_name': hotwater_dx3,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': energy_impact,
@@ -783,7 +783,7 @@ class HW_temp_RCx(object):
                                   'Temperature Diagnostic requires the pump '
                                   'VFD command'.format(name=hotwater_dx3))
             dx_table = {
-                'datetime': str(self.timestamp[-1]),
+                'datetime': (str(self.timestamp[-1])).replace(' ','T'),
                 'diagnostic_name': hotwater_dx3,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -818,7 +818,7 @@ class HW_temp_RCx(object):
             energy_impact = None
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': (str(self.timestamp[-1])).replace(' ','T'),
             'diagnostic_name': hotwater_dx5,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -899,7 +899,7 @@ class HW_reset_RCx(object):
             energy_impact = None
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': (str(self.timestamp[-1])).replace(' ','T'),
             'diagnostic_name': hotwater_dx4,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -934,7 +934,7 @@ class HW_reset_RCx(object):
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': (str(self.timestamp[-1])).replace(' ','T'),
             'diagnostic_name': hotwater_dx2,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
