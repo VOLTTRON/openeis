@@ -69,14 +69,17 @@ If OPENEIS_SETTINGS is not set, a search will be made for a settings.py
 file or a settings.d directory in the following directories (in the
 order given):
 
+    * $PROJDIR/.openeis (only if using venv)
     * ~/.config/openeis
     * ~/.openeis
     * ~/_openeis (Windows only)
     * %LOCALAPPDATA%/OpenEIS (Windows only)
     * %APPDATA%/OpenEIS (Windows only)
 
-If the user directory cannot be determined, /etc/openeis will be tried (except
-on Windows). If settings.py and settings.d are not found, importing
+Where $PROJDIR is the directory where the openeis source code is rooted.  It is
+calculated as follows: os.path.join(os.path.dirname(__file__), '..', '..').  If
+the user directory cannot be determined, /etc/openeis will be tried (except on
+Windows). If settings.py and settings.d are not found, importing
 openeis.server._settings will try to load openeis.local.settings and revert to
 loading openeis.server.settings.
 
@@ -140,19 +143,29 @@ def _load():
 
     del globals()['_load']
 
+    debug = print if __name__ == '__main__' else lambda *a: None
+
     try:
         path = os.path.expanduser(os.path.expandvars(
                 os.environ['OPENEIS_SETTINGS']))
     except KeyError:
-        pass
+        debug('OPENEIS_SETTINGS is not set.')
     else:
+        debug('OPENEIS_SETTINGS is set')
         if os.sep in path:
             if os.path.isdir(path):
+                debug('loading settings from directory:', path)
                 return _load_directory(path)
+            debug('loading settings from file:', path)
             return _load_file(path)
         else:
+            debug('loading settings from module:', path)
             return _load_module(path)
     paths = []
+    if sys.prefix != sys.base_prefix:
+        # executing in a virtual environment
+        paths = [os.path.normpath(os.path.join(
+                 os.path.dirname(__file__), '..', '..', '.openeis'))]
     home = os.path.expanduser('~')
     if not home or home == '/':
         if os.path.__name__ == 'posixpath':
@@ -171,16 +184,21 @@ def _load():
             paths.append(os.path.join(os.environ['APPDATA'], 'OpenEIS'))
         except KeyError:
             pass
+    debug('searching for settings in:', paths)
     for dirname in paths:
         path = os.path.join(dirname, 'settings.py')
         if os.path.exists(path):
+            debug('loading settings from file:', path)
             return _load_file(path)
         path = os.path.join(dirname, 'settings.d')
         if os.path.exists(path):
+            debug('loading settings from directory:', path)
             return _load_directory(path)
     try:
+        debug('trying to load settings from module: openeis.local.settings')
         return _load_module('..local.settings', __package__)
     except ImportError:
         pass
+    debug('loading default settings from module: openeis.server.settings')
     return _load_module('.settings', __package__)
 _load()
