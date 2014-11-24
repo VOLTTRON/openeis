@@ -71,14 +71,14 @@ order given):
 
     * ~/.config/openeis
     * ~/.openeis
-    * /etc/openeis (POSIX only)
     * ~/_openeis (Windows only)
     * %LOCALAPPDATA%/OpenEIS (Windows only)
     * %APPDATA%/OpenEIS (Windows only)
 
-If settings.py and settings.d are not found, importing
-openeis.server._settings will try to load openeis.local.settings and
-revert to loading openeis.server.settings.
+If the user directory cannot be determined, /etc/openeis will be tried (except
+on Windows). If settings.py and settings.d are not found, importing
+openeis.server._settings will try to load openeis.local.settings and revert to
+loading openeis.server.settings.
 
 A runtime configuration directory holds a list of files that will be
 exec'd in order within the context of the openeis.server._settings
@@ -154,13 +154,15 @@ def _load():
             return _load_module(path)
     paths = []
     home = os.path.expanduser('~')
-    if home != '/' and os.path.exists(home):
+    if not home or home == '/':
+        if os.path.__name__ == 'posixpath':
+            paths.append(os.path.join('/', 'etc', 'openeis'))
+    elif os.path.exists(home):
         paths.extend([os.path.join(home, '.config', 'openeis'),
                       os.path.join(home, '.openeis')])
-    if os.path.__name__ == 'posixpath':
-        paths.append(os.path.join('/', 'etc', 'openeis'))
-    else:
-        paths.append(os.path.join(home, '_openeis'))
+    if os.path.__name__ != 'posixpath':
+        if os.path.exists(home):
+            paths.append(os.path.join(home, '_openeis'))
         try:
             paths.append(os.path.join(os.environ['LOCALAPPDATA'], 'OpenEIS'))
         except KeyError:
