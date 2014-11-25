@@ -66,7 +66,7 @@ install_requires = [
         'django-rest-swagger>=0.1,<0.2',
         #'django-nose',
         'jsonschema',
-        'openeis-ui>0.1.dev70',
+        #'openeis-ui>0.1.dev70',
         # note we use both of them.  django-pytest allows the
         # runner when using openeis test
         'pytest-django',
