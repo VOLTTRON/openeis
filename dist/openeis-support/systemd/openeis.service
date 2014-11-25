@@ -1,0 +1,15 @@
+[Unit]
+Description=OpenEIS uWSGI Server
+
+[Service]
+ExecStart=/var/lib/openeis/env/bin/uwsgi --ini /etc/openeis/uwsgi.ini
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -INT $MAINPID
+KillSignal=SIGQUIT
+NotifyAccess=main
+Restart=always
+Type=notify
+User=openeis
+
+[Install]
+WantedBy=multi-user.target

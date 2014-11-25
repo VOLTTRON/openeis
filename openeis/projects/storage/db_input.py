@@ -327,7 +327,7 @@ class DatabaseInput:
                    "all" returns the aggregated value and not a query set.
                    wrap_for_merge has no effect on "all" output.
 
-        group_by_aggregation - Aggregation method to use. Defaults to Sum.
+        group_by_aggregation - Aggregation method to use. Defaults to None.
                                See https://docs.djangoproject.com/en/1.6/ref/models/querysets/#aggregation-functions
 
 

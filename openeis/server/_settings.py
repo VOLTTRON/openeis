@@ -53,118 +53,152 @@
 #
 #}}}
 
-"""
-Django settings for openeis project.
+'''A pseudo-module for advanced loading of OpenEIS settings.
 
-For more information on this file, see
-https://docs.djangoproject.com/en/1.6/topics/settings/
+Allows one to use any Python file as the Django settings module rather
+than only a module available on the path.  If the OPENEIS_SETTINGS
+environment variable is defined, it will be used and interpreted as a
+filesystem path, if the name contains a path separator, or as a python
+module name otherwise. A path may be either a file or a directory. If a
+file, it will be loaded and used as the settings module. If a directory,
+it will be considered a rutime configuration directory and handled as
+described below.  If the path or module are not found, ImportError will
+be raised
 
-For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.6/ref/settings/
-"""
+If OPENEIS_SETTINGS is not set, a search will be made for a settings.py
+file or a settings.d directory in the following directories (in the
+order given):
 
+    * $PROJDIR/.openeis (only if using venv)
+    * ~/.config/openeis
+    * ~/.openeis
+    * ~/_openeis (Windows only)
+    * %LOCALAPPDATA%/OpenEIS (Windows only)
+    * %APPDATA%/OpenEIS (Windows only)
+
+Where $PROJDIR is the directory where the openeis source code is rooted.  It is
+calculated as follows: os.path.join(os.path.dirname(__file__), '..', '..').  If
+the user directory cannot be determined, /etc/openeis will be tried (except on
+Windows). If settings.py and settings.d are not found, importing
+openeis.server._settings will try to load openeis.local.settings and revert to
+loading openeis.server.settings.
+
+A runtime configuration directory holds a list of files that will be
+exec'd in order within the context of the openeis.server._settings
+module.  Files must start with two digits followed by a hyphen and end
+with a .py extension to be included. Because they share the same global
+context, variables from earlier files may be used in subsequent files.
+The modules __path__ variable will contain a single item that is the
+path to the directory.
+'''
+
+
+import importlib.machinery
 import os
-import posixpath
-
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(__file__)
-POSIX_BASE_DIR = os.path.abspath(BASE_DIR)
-if os.path.sep != posixpath.sep:
-    POSIX_BASE_DIR = posixpath.join(*POSIX_BASE_DIR.split(os.path.sep))
-
-# Added this hack to get things working with cx_Freeze.
-_dotcount = len(__package__.split('.')) if __package__ else __name__.count('.')
-DATA_DIR = os.path.abspath(
-    os.path.join(*([BASE_DIR] + ['..']*_dotcount + ['data'])))
+import sys
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'a9sdeeed&m&^8=yt=(res$+-z7kn@pixcia+pi6^!=jk1*e*3r'
-
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-TEMPLATE_DEBUG = True
-
-ALLOWED_HOSTS = []
-
-
-# Application definition
-
-# Append to the INSTALLED_APPS imported from openeis.projects.settngs.
-INSTALLED_APPS = (
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'openeis.projects',
-    'rest_framework',
-    'rest_framework_swagger',
-    'django_pytest',
-    #'django_nose',
-    'openeis.ui',
-)
-
-MIDDLEWARE_CLASSES = (
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-)
-
-ROOT_URLCONF = 'openeis.server.urls'
+def _load_module(name, package=None):
+    '''Copy public attributes from a module into the current namespace.'''
+    assert name != __name__
+    module = importlib.import_module(name, package)
+    try:
+        names = module.__all__
+    except AttributeError:
+        names = [n for n in dir(module) if not n.startswith('_')]
+    names.extend(['__doc__', '__file__'])
+    globals().update((name, value) for name, value in vars(module).items()
+                     if name in names)
+    globals()['_source_'] = 'module', module.__name__
 
 
-# Database
-# https://docs.djangoproject.com/en/1.6/ref/settings/#databases
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'openeis.db.backends.sqlite3',
-        'NAME': os.path.join(DATA_DIR, 'openeis-db.sqlite3'),
-    }
-}
-
-# Internationalization
-# https://docs.djangoproject.com/en/1.6/topics/i18n/
-
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'America/Los_Angeles'
-USE_I18N = False
-USE_L10N = True
-USE_TZ = True
+def _load_file(path):
+    '''Load a module from file into the current namespace.'''
+    importlib.machinery.SourceFileLoader(
+            __name__, path).exec_module(sys.modules[__name__])
+    globals()['_source_'] = 'file', path
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.6/howto/static-files/
+def _load_directory(dirname):
+    '''Load modules from a directory into the current namespace.'''
+    names = [name for name in os.listdir(dirname)
+             if (name[:2].isdigit() and name[2:3] == '-' and
+                 name[-3:].lower() == '.py')]
+    names.sort()
+    used = []
+    for name in names:
+        try:
+            path = os.path.join(dirname, name)
+            with open(path) as file:
+                source = file.read()
+        except IsADirectoryError:
+            continue
+        exec(compile(source, path, 'exec'), globals(), globals())
+        used.append(name)
+    globals()['_source_'] = 'directory', (os.path.abspath(dirname), used)
 
-STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(DATA_DIR, 'static')
 
-STATICFILES_FINDERS = (
-    'django.contrib.staticfiles.finders.FileSystemFinder',
-    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-)
+def _load():
+    '''Do all the hard work and remove _load from the module.'''
 
-TEMPLATE_DIRS = (
-    # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
-    # Always use forward slashes, even on Windows.
-    # Don't forget to use absolute paths, not relative paths.
-    posixpath.join(POSIX_BASE_DIR, "templates"),
-)
+    del globals()['_load']
 
-# Setup of django_nose based upon readme at https://github.com/buchuki/django-pytest
-TEST_RUNNER = 'django_pytest.test_runner.TestRunner'
+    debug = print if __name__ == '__main__' else lambda *a: None
 
-PROTECTED_MEDIA_URL = '/files/'
-PROTECTED_MEDIA_ROOT = os.path.join(DATA_DIR, 'files')
-PROTECTED_MEDIA_METHOD = 'direct' # 'X-Sendfile', 'X-Accel-Redirect', 'direct'
-
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    try:
+        path = os.path.expanduser(os.path.expandvars(
+                os.environ['OPENEIS_SETTINGS']))
+    except KeyError:
+        debug('OPENEIS_SETTINGS is not set.')
+    else:
+        debug('OPENEIS_SETTINGS is set')
+        if os.sep in path:
+            if os.path.isdir(path):
+                debug('loading settings from directory:', path)
+                return _load_directory(path)
+            debug('loading settings from file:', path)
+            return _load_file(path)
+        else:
+            debug('loading settings from module:', path)
+            return _load_module(path)
+    paths = []
+    if sys.prefix != sys.base_prefix:
+        # executing in a virtual environment
+        paths = [os.path.normpath(os.path.join(
+                 os.path.dirname(__file__), '..', '..', '.openeis'))]
+    home = os.path.expanduser('~')
+    if not home or home == '/':
+        if os.path.__name__ == 'posixpath':
+            paths.append(os.path.join('/', 'etc', 'openeis'))
+    elif os.path.exists(home):
+        paths.extend([os.path.join(home, '.config', 'openeis'),
+                      os.path.join(home, '.openeis')])
+    if os.path.__name__ != 'posixpath':
+        if os.path.exists(home):
+            paths.append(os.path.join(home, '_openeis'))
+        try:
+            paths.append(os.path.join(os.environ['LOCALAPPDATA'], 'OpenEIS'))
+        except KeyError:
+            pass
+        try:
+            paths.append(os.path.join(os.environ['APPDATA'], 'OpenEIS'))
+        except KeyError:
+            pass
+    debug('searching for settings in:', paths)
+    for dirname in paths:
+        path = os.path.join(dirname, 'settings.py')
+        if os.path.exists(path):
+            debug('loading settings from file:', path)
+            return _load_file(path)
+        path = os.path.join(dirname, 'settings.d')
+        if os.path.exists(path):
+            debug('loading settings from directory:', path)
+            return _load_directory(path)
+    try:
+        debug('trying to load settings from module: openeis.local.settings')
+        return _load_module('..local.settings', __package__)
+    except ImportError:
+        pass
+    debug('loading default settings from module: openeis.server.settings')
+    return _load_module('.settings', __package__)
+_load()

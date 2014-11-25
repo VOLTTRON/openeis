@@ -185,28 +185,7 @@ def stage1(directory=os.path.join(_path, 'env'), prompt='(openeis)'):
     subprocess.check_call([builder.context.env_exe, __file__])
 
 
-def get_dist(name):
-    from pip.util import get_installed_distributions
-    for dist in get_installed_distributions():
-        if dist.key == name:
-            return dist
-
-
-def ensure_ui():
-    dist = get_dist('openeis-ui')
-    reinstall = dist and dist.parsed_version < ('00000000', '00000002')
-    if dist and not reinstall:
-        return
-    path = os.path.join(_path, 'lib', 'openeis-ui')
-    if os.path.exists(path):
-        if reinstall:
-            subprocess.check_call(
-                [sys.executable, '-m', 'pip', 'uninstall', '-y', 'openeis-ui'])
-        subprocess.check_call(
-                [sys.executable, '-m', 'pip', 'install', '-e', path])
-
-
-def stage2(directory=_path):
+def stage2(directory=_path, upgrade=False):
     try:
         import pip
     except ImportError:
@@ -215,9 +194,12 @@ def stage2(directory=_path):
             ensurepip.bootstrap(upgrade=True, default_pip=True)
         except ImportError:
             get_pip()
-    ensure_ui()
-    subprocess.check_call([sys.executable, '-m',
-        'pip', 'install', '--global-option', '-q', '-e', directory])
+    ui_path = os.path.join(directory, 'lib', 'openeis-ui')
+    args = [sys.executable, '-m', 'pip', 'install',
+        '--global-option', '-q', '-e', ui_path, '-e', directory]
+    if upgrade:
+        args.insert(4, '--upgrade')
+    subprocess.check_call(args)
     for names in [('data',), ('data', 'static')]:
         path = os.path.join(directory, *names)
         if not os.path.exists(path):
@@ -230,7 +212,9 @@ def main(directory=os.path.join(_path, 'env'), prompt='(openeis)'):
         sys.stderr.write('error: Python 3.3 or greater is required\n')
         sys.exit(1)
     if sys.base_prefix != sys.prefix:
-        stage2()
+        args = sys.argv[1:]
+        upgrade = {'-u', '--update', '--upgrade'} & set(sys.argv[1:])
+        stage2(upgrade=upgrade)
     else:
         stage1()
 

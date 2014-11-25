@@ -55,6 +55,7 @@
 
 # Convert GreenButton xml to csv
 import csv
+import os
 import sys
 from datetime import date
 from datetime import datetime
@@ -195,7 +196,7 @@ def Convert(input_file, output_file, debug=False):
     return rowswritten
     
 
-def process_row(node, writer, ns, debug):
+def process_row(node, writer, ns, debug=False):
     """
     method to process an xml IntervalReading node and write an individual row
     parameters: IntervalReading node, csv writer, list of namespaces, boolean debug on/off
@@ -268,9 +269,9 @@ def get_child_node_text(node, ns, node_tag, node_ns=None):
     retVal = ""
     
     childNode = node.find(lookupStr, namespaces=ns)
-    if childNode != None:
+    if childNode != None and childNode.text != None:
         retVal = childNode.text
-    elif childNode == None and node_tag in special_tags:
+    elif node_tag in special_tags:
         retVal = 0
     
     return retVal
@@ -411,7 +412,7 @@ if __name__ == "__main__":
     output_file_name = 'entry-output-{0}_{1}-{2}-{3}.csv'.format(date.today(), currentTime.hour, currentTime.minute, currentTime.second)
     
     if len(sys.argv) < 2:
-        filename = 'TestGBDataoneMonthBinnedDailyWCost.xml'
+        filename = os.path.join('..', '..', 'projects', 'fixtures', 'greenbutton', 'TestGBDataoneMonthBinnedDailyWCost.xml')
         print("No files passed. Attempting to open test file '{0}'...".format(filename))
         with open(output_file_name, 'w') as output:
             print(Convert(filename, output, True))

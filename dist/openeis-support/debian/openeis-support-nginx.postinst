@@ -6,7 +6,9 @@ set -e
 . /usr/share/debconf/confmodule
 
 do_configure() {
-  names="example.com"
+  cd /etc/openeis
+
+  names="www.example.com"
   if db_get openeis-support-nginx/server-name; then
     names="$RET"
   fi
@@ -16,25 +18,26 @@ do_configure() {
     regenerate="$RET"
   fi
 
-  subject=""
-  for name in $names; do
-    subject="$subject/CN=$name"
-  done
-
-  if [ ! -e /etc/openeis/default.crt ] || [ "$regenerate" = true ]; then
-    (umask 0037 && openssl req -x509 -nodes -days 1825 -newkey rsa:2048 -keyout /etc/openeis/default.key -out /etc/openeis/default.crt -subj "$subject")
+  if [ ! -e server.conf ] || [ "$DEBCONF_RECONFIGURE" = 1 ]; then
+    echo "server_name $names;" > server.conf
   fi
-  [ -e /etc/openeis/openeis.key ] || ln -s default.key /etc/openeis/openeis.key
-  [ -e /etc/openeis/openeis.crt ] || ln -s default.crt /etc/openeis/openeis.crt
+
+  if [ ! -e default.crt ] || [ "$regenerate" = true ]; then
+    subject=""
+    for name in $names; do
+      subject="$subject/CN=$name"
+    done
+    (umask 137 && openssl req -x509 -nodes -days 1825 -newkey rsa:2048 -keyout default.key -out default.crt -subj "$subject")
+  fi
+
+  if [ ! -e openeis.key ] || [ "$DEBCONF_RECONFIGURE" = 1 ]; then
+    ln -snf default.key openeis.key
+    ln -snf default.crt openeis.crt
+  fi
+ 
   db_fset openeis-support-nginx/server-name changed false
-  
-  if [ "$DEBCONF_RECONFIGURE" = 1 ]; then
-    sed -i 's/^\(\s*server_name\s\+\)[^;]*/\1'"$names"'/' /etc/nginx/conf.d/openeis.conf
-  else
-    sed -i 's/^\(\s*server_name\s\+\)example.com;/\1'"$names"';/' /etc/nginx/conf.d/openeis.conf
-  fi
 
-  dpkg-divert --package openeis-support-nginx --rename --divert /etc/nginx/conf.d/default.conf.nginx --add /etc/nginx/conf.d/default.conf
+  #dpkg-divert --package openeis-support-nginx --rename --divert /etc/nginx/conf.d/default.conf.nginx --add /etc/nginx/conf.d/default.conf
 }
 
 case "$1" in

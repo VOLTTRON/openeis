@@ -35,6 +35,11 @@ manually:
    http://nginx.org/en/linux_packages.html
 
 
+If the official repository has Python 3.3 or newer and Nginx 1.4 or newer,
+they will be installed automatically with the commands below (if they
+aren't already) and the above steps may be omitted.
+
+
 Now that the appropriate Python and Nginx repositories are available, the
 openeis-support packages must be built and installed:
 
@@ -43,33 +48,47 @@ openeis-support packages must be built and installed:
    $ sudo apt-get update
    $ sudo apt-get install -f
 
-openeis-support expects the openeis-repository to be checked out and built in
+openeis-support expects the openeis repository to be checked out and built in
 /var/lib/openeis. The directory is owned by openeis and has a sticky group of
-openeis. This means that any files and directories created in will have their
-group automatically set to openeis and be writable by all members of openeis.
+openeis. This means that any files and directories created in it will have
+their group automatically set to openeis and be writable by all members of
+openeis.
 
 To make ensure there are no permission issues, perform the following steps
-as theopeneis user, which was created by the openeis-support-config package:
+as the openeis user, which was created by the openeis-support-config package:
 
    $ sudo su -l -s /bin/bash openeis
 
 Check out the code into /var/lib/openeis:
 
-   [openeis /var/lib/openeis]$ git clone \
-      https://bitbucket.org/berkeleylab/openeis.git .
+   [openeis /var/lib/openeis]$ git clone https://github.com/VOLTTRON/openeis .
+
+Note that the above command clones the default branch, which may not be the
+master branch where active development occurs. If you want the latest code
+or plan to contribute back to the project, switch to the master branch 
+using (git checkout master) or add `-b master` to the clone command above.
+
+If /var/lib/openeis is not empty, the above command will fail and the
+repository must be cloned into another directory and then the contents of that
+directory moved into /var/lib/openeis.
 
 Bootstrap OpenEIS and install extra python dependencies:
 
+   [openeis /var/lib/openeis]$ mkdir .openeis
+   [openeis /var/lib/openeis]$ ln -s /etc/openeis/settings.d .openeis/
    [openeis /var/lib/openeis]$ python3 bootstrap.py
    [openeis /var/lib/openeis]$ env/bin/pip install uwsgi psycopg2
    [openeis /var/lib/openeis]$ env/bin/openeis syncdb
    [openeis /var/lib/openeis]$ env/bin/openeis linkstatic
    [openeis /var/lib/openeis]$ exit
 
-Now start the openeis service as yourself (no longer the openeis user):
+Now start the openeis service (not as the openeis user, as it lacks sudo
+privileges):
 
    $ sudo initctl start openeis
 
 And restart nginx to ensure it picks up the changes:
 
    $ sudo service nginx restart
+
+At this point the system should be serving OpenEIS.

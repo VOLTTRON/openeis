@@ -1,1 +1,1 @@
-postgresql/database.py usr/share/openeis-support/openeis/local
+postgresql/20-postgresql.py etc/openeis/settings.d

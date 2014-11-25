@@ -4,6 +4,7 @@ Priority: extra
 Maintainer: Brandon Carpenter <brandon.carpenter@pnnl.gov>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
+Homepage: https://github.com/VOLTTRON/openeis
 
 Package: openeis-support
 Architecture: all

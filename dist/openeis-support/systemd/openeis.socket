@@ -1,0 +1,8 @@
+[Unit]
+Description=OpenEIS uWSGI Server
+
+[Socket]
+ListenStream=/var/run/openeis/uwsgi.sock
+
+[Install]
+WantedBy=sockets.target

@@ -18,8 +18,10 @@ case "$1" in
     chgrp openeis /var/lib/openeis
     chmod g+rwxs /var/lib/openeis
 
-    (umask 0026; tr -dc " -~" </dev/urandom | fold -w 50 | head -n 1 > /etc/openeis/secret.key)
-    chgrp openeis /etc/openeis/secret.key
+    if [ ! -f /etc/openeis/settings.d/10-secret_key.py ]; then
+      (umask 137 && /bin/echo -E "SECRET_KEY = r'$(tr -dc '[:graph:]' < /dev/urandom | tr -d "\\\\'" | head -c 50)'" > /etc/openeis/settings.d/10-secret_key.py)
+      chgrp openeis /etc/openeis/settings.d/10-secret_key.py
+    fi
   ;;
 
   abort-upgrade|abort-remove|abort-deconfigure)

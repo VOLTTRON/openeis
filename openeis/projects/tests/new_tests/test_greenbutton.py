@@ -2,6 +2,8 @@ import datetime
 from collections import namedtuple
 
 from django.utils.timezone import utc
+import csv
+import io
 import json
 import os
 import pytest
@@ -12,7 +14,8 @@ from rest_framework import status
 from openeis.projects import views
 from .conftest import detail_view
 from openeis.server.parser.converter import Convert, split_namespace,\
-    get_uom_type
+    get_uom_type, get_currency_type, get_child_node_text, build_header_list,\
+    process_row
 
 pytestmark = pytest.mark.django_db
 
@@ -27,7 +30,8 @@ def test_TestGBDataOneYearDailyBinnedMonthly(active_user, project):
     convert_greenbutton_file(active_user, project, os.path.join('greenbutton', 'TestGBDataOneYearDailyBinnedMonthly.xml'))
 def test_BigFile(active_user, project):
     convert_greenbutton_file(active_user, project, os.path.join('greenbutton', 'cc_customer_11.xml'))
-    
+def test_malformed(active_user, project):
+    convert_greenbutton_file(active_user, project, os.path.join('greenbutton', 'TestGBDataoneMonthBinnedDailyWCost_EDITED_FOR_MALFORMED_TEST.xml'))
 
 def convert_greenbutton_file(active_user, project, fname):
     '''Tests the content negotiation of the dataset download API.'''
@@ -51,16 +55,69 @@ def convert_greenbutton_file(active_user, project, fname):
 #    print(file)
 
 def test_process_row():
-    pass
+    input_file = os.path.join(os.path.dirname(views.__file__),'fixtures/greenbutton','TestGBDataoneMonthBinnedDailyWCost.xml')
+    tree = parse(input_file)
+    root = tree.getroot()
+    csv.register_dialect('csvdialect', delimiter=',', lineterminator='\n', quoting=csv.QUOTE_NONNUMERIC)
+    # with open(os.devnull, 'w') as nullout:
+    #     writer = csv.writer(nullout, 'csvdialect')
+    output = io.StringIO()
+    writer = csv.writer(output, 'csvdialect')
+    
+    ns = {
+        'espi': "http://naesb.org/espi"
+    }
+    
+    IntervalReading = root.find('.//espi:IntervalReading', namespaces=ns)
+    assert (IntervalReading is not None)
+    
+    process_row(IntervalReading, writer, ns)
+    expected_row = '"2014-06-01 04:00:00","3600","2014-06-01 05:00:00",0.02585,"861",""'
+    written_row = (output.getvalue()).strip()
+    assert(expected_row == written_row)
+    
+    
 
 def test_build_header_list():
-    pass
+    input_file = os.path.join(os.path.dirname(views.__file__),'fixtures/greenbutton','TestGBDataoneMonthBinnedDailyWCost.xml')
+    tree = parse(input_file)
+    root = tree.getroot()
+    
+    ns = {
+        'espi': "http://naesb.org/espi"
+    }
+    
+    header_list = ['cost', 'duration', 'start', 'value']
+    headers_retrieved = build_header_list(root, ns)
+    assert(headers_retrieved == header_list)
 
 def test_get_child_node_text():
-    pass
+    input_file = os.path.join(os.path.dirname(views.__file__),'fixtures/greenbutton','TestGBDataoneMonthBinnedDailyWCost.xml')
+    tree = parse(input_file)
+    root = tree.getroot()
+    
+    ns = {
+        'espi': "http://naesb.org/espi"
+    }
+    
+    text_node = '1401595200'
+    text_retrieved = get_child_node_text(root, ns, 'start')
+    invalid_text = get_child_node_text(root, ns, 'invalid node')
+    assert(text_node == text_retrieved)
+    assert(invalid_text == "")
 
 def test_get_currency_type():
-    pass
+    input_file = os.path.join(os.path.dirname(views.__file__),'fixtures/greenbutton','TestGBDataoneMonthBinnedDailyWCost.xml')
+    tree = parse(input_file)
+    root = tree.getroot()
+    
+    ns = {
+        'espi': "http://naesb.org/espi"
+    }
+    
+    node_currency = 'US Dollar'
+    currency_retrieved = get_currency_type(root, ns)
+    assert(node_currency == currency_retrieved)
 
 def test_get_retail_customer():
     pass

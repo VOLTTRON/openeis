@@ -89,6 +89,7 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
     OutputDescriptor, ConfigDescriptor, Descriptor
 from openeis.applications import reports
 from .utils import conversion_utils as cu
+from django.db.models import Avg
 import logging
 import pytz
 
@@ -204,7 +205,9 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Starting application: heat map.", logging.INFO)
 
         self.out.log("Querying database.", logging.INFO)
-        loads = self.inp.get_query_sets('load', group_by='hour', exclude={'value':None})
+        loads = self.inp.get_query_sets('load', group_by='hour',
+                                        group_by_aggregation=Avg,
+                                        exclude={'value':None})
         
         self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
@@ -217,20 +220,9 @@ class Application(DriverApplicationBaseClass):
             )
         load_convertfactor = cu.getFactor_powertoKW(load_unit)
 
-        self.out.log("Limiting the analysis to a month.", logging.INFO)
-        # Limit the number of datapoints, have 4 weeks worth of data.
-        # 24 hours x 14 days = 336.
-        if len(loads[0]) > 336:
-            start = len(loads[0]) - 336
-            end = len(loads[0]) - 1
-        else:
-            start = 0
-            end = len(loads[0])
-
         self.out.log("Compiling the report table.", logging.INFO)
-        for x in loads[0][start:end]:
-            datevalue = x[0]
-            datevalue = self.inp.localize_sensor_time(base_topic['load'][0], datevalue)
+        for x in loads[0]:
+            datevalue = self.inp.localize_sensor_time(base_topic['load'][0], x[0])
             self.out.insert_row("Heat_Map", {
                 'date': datevalue.date(),
                 'hour': datevalue.hour,

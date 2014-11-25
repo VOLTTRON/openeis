@@ -109,7 +109,6 @@ def test_linearinterpolation_filter(one_month_dataset):
     expected = os.path.join(outputdir, "linear_interpolation_dataset_tz.csv")
     run_data_manipulation(config, expected)
 
-@pytest.mark.xfail(reason="Update to use tz correctly")    
 def test_roundoff_filter(one_month_dataset):
     
     config = ConfigParser()
@@ -120,10 +119,9 @@ def test_roundoff_filter(one_month_dataset):
     config.set("global_settings", 'config', str(filter_config))
     
     
-    expected = os.path.join(outputdir, "roundoff_dataset_2digits.csv")
+    expected = os.path.join(outputdir, "roundoff_dataset_2digits_tz.csv")
     run_data_manipulation(config, expected)
 
-@pytest.mark.xfail(reason="Update to use TZ correctly.")
 def test_all_filter(one_month_dataset):
     
     config = ConfigParser()
@@ -136,5 +134,5 @@ def test_all_filter(one_month_dataset):
              ["lbnl/bldg90/WholeBuildingPower", "RoundOff", {"places": 3}],\
              ["lbnl/bldg90/WholeBuildingGas", "Fill", {"period_seconds": 300, "drop_extra": false}]]'
     config.set("global_settings", 'config', str(filter_config))
-    expected = os.path.join(outputdir, "all_filter_dataset.csv")
+    expected = os.path.join(outputdir, "all_filter_dataset_tz.csv")
     run_data_manipulation(config, expected)

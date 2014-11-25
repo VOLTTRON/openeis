@@ -5,7 +5,7 @@ set -e
 
 case "$1" in
   purge)
-    rm -f /etc/openeis/secret.key || true
+    rm -f /etc/openeis/settings.d/10-secret_key.py || true
   ;;
 
   remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
