@@ -58,31 +58,6 @@ from openeis.core.descriptors import ConfigDescriptor, Descriptor
 from datetime import timedelta
 import abc
 
-@register_column_modifier
-class RoundOff(SimpleRuleFilter):
-    def __init__(self, places=0, **kwargs):
-        super().__init__(**kwargs)
-        self.places = places
-    def rule(self, time, value):
-        return time, round(value, self.places)
-    @classmethod
-    def get_config_parameters(cls):
-        description  = 'Number of places to round to. \n'
-        description += 'i.e. 2 will round to 1.12345 to 1.12. \n'
-        description += 'i.e. 0 will round to 123.12345 to 123. \n'
-        description += 'i.e. -2 will round to 1234.12345 to 1200.'
-        return {
-                'places': ConfigDescriptor(int, "Rounding Places",
-                                           description=description,
-                                           value_default=0)
-                }
-        
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'Rounding Filter'
-        desc = 'Round the value of a column to a specified number of places.'
-        return Descriptor(name=name, description=desc)
-
 class BaseSimpleNormalize(BaseFilter, metaclass=abc.ABCMeta):
     def __init__(self, period_seconds=60, drop_extra = True, **kwargs):
         super().__init__(**kwargs)
@@ -147,34 +122,6 @@ class BaseSimpleNormalize(BaseFilter, metaclass=abc.ABCMeta):
                                                value_default=True)
                 }
 
-@register_column_modifier    
-class LinearInterpolation(BaseSimpleNormalize):
-    def calculate_value(self, target_dt):
-        x0 = self.previous_point[0]
-        x1 = self.next_point[0]
-        if x1 <= target_dt <= x0:
-            raise RuntimeError('Tried to interpolate value during incorrect state.')
-        y0 = self.previous_point[1]
-        y1 = self.next_point[1]
-        return target_dt, y0 + ((y1-y0)*((target_dt-x0)/(x1-x0)))
-        
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'Linear Interpolation'
-        desc = 'Normalize values to a specified time period using Linear Interpolation to supply missing values.'
-        return Descriptor(name=name, description=desc)
-    
-@register_column_modifier     
-class Fill(BaseSimpleNormalize):
-    def calculate_value(self, target_dt):
-        return target_dt, self.previous_point[1]
-    
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'Fill'
-        desc = 'Normalize values to a specified time period using the most recent previous value to supply any missing values.'
-        return Descriptor(name=name, description=desc)
-    
 class BaseSimpleAggregate(BaseFilter, metaclass=abc.ABCMeta):
     def __init__(self, period_seconds=3600, round_time=False, **kwargs):
         super().__init__(**kwargs)
@@ -242,25 +189,3 @@ class BaseSimpleAggregate(BaseFilter, metaclass=abc.ABCMeta):
                                                description='Round time to nearest period, otherwise truncate time to period.',
                                                value_default=False)
                 }
-
-@register_column_modifier     
-class Sum(BaseSimpleAggregate):
-    def aggregate_values(self, target_dt, value_pairs):
-        return sum(value for _, value in value_pairs)
-    
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'Sum'
-        desc = 'Aggregate by summation.'
-        return Descriptor(name=name, description=desc) 
-    
-@register_column_modifier     
-class Average(BaseSimpleAggregate):
-    def aggregate_values(self, target_dt, value_pairs):
-        return sum(value for _, value in value_pairs)/len(value_pairs)
-    
-    @classmethod
-    def get_self_descriptor(cls):
-        name = 'Average'
-        desc = 'Aggregate by averaging.'
-        return Descriptor(name=name, description=desc)          

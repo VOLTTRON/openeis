@@ -56,7 +56,7 @@
 
 
 import abc
-
+import logging
 import pkgutil, importlib
 
 from openeis.core.descriptors import (ConfigDescriptorBaseClass,
@@ -95,5 +95,10 @@ extDict = {}
  
 for extName in _extList:
     print('Importing module: ', extName)
-    extDict[extName] = __import__(extName,globals(),locals(),[], 1)
-
+    try:
+        module = __import__(extName,globals(),locals(),[], 1)
+    except Exception as e:
+        logging.error('Module {name} cannot be imported. Reason: {ex}'.format(name=extName, ex=e))
+        continue
+    
+    extDict[extName] = module
