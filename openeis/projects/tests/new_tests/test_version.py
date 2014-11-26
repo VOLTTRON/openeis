@@ -28,7 +28,7 @@ def test_vcs_revision():
     if vcsdir is not None:
         revision_args = ['git', 'rev-list', '--count', 'HEAD']
         revision_count = subprocess.check_output(
-                    revision_args, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8').strip()
+                    revision_args, cwd=vcsdir, stdin=subprocess.DEVNULL).decode('utf-8').strip()
         print(revision_count)
         assert (int(revision_count) == vcs_revision())
 
@@ -38,7 +38,7 @@ def test_vcs_version():
     if vcsdir is not None:
         args = ['git', 'rev-parse', '--short', 'HEAD']
         revision_hash = subprocess.check_output(
-                    args, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8').strip()
+                    args, cwd=vcsdir, stdin=subprocess.DEVNULL).decode('utf-8').strip()
         
         assert (revision_hash == vcs_version())
 
@@ -47,7 +47,7 @@ def test_vcs_timestamp():
     if vcsdir is not None:
         args = ['git', 'log', '-n', '1', "--pretty=format:%ci"]
         time_stamp = subprocess.check_output(
-                    args, cwd=vcsdir, stdin=subprocess.DEVNULL, shell=True).decode('utf-8').strip()
+                    args, cwd=vcsdir, stdin=subprocess.DEVNULL).decode('utf-8').strip()
                     
         ts = dateutil.parser.parse(time_stamp)
         assert (ts == vcs_timestamp())
