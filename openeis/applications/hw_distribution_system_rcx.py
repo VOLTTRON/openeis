@@ -25,8 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
-'''
-'''
+
 This material was prepared as an account of work sponsored by an
 agency of the United States Government.  Neither the United States
 Government nor the United States Department of Energy, nor Battelle,
@@ -52,7 +51,7 @@ under Contract DE-AC05-76RL01830
 import datetime
 import logging
 import fnmatch
-from math import fabs as abs
+from math import fabs
 from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor,
                                   ConfigDescriptor,
@@ -98,7 +97,7 @@ class Application(DrivenApplicationBaseClass):
                  hw_pump_vfd_threshold=70.0,
 
                  min_hwst_threshold=70.0,
-                 max_hwst_threshold=180.0, min_hwrt_threshold=70.0,
+                 max_hwst_threshold=195.0, min_hwrt_threshold=70.0,
                  max_hwrt_threshold=180.0,
                  delta_t_threshold=10.0, desired_delta_t=20.0,
 
@@ -275,6 +274,9 @@ class Application(DrivenApplicationBaseClass):
         return Descriptor(name=name, description=desc)
 
     def data_check(self, point_dict, _name, opt_name='zyxwvutsrq'):
+        '''
+        method to verify required data is present
+        '''
         data_check = False
         point_values = []
 
@@ -340,8 +342,10 @@ class Application(DrivenApplicationBaseClass):
         '''
         report = reports.Report('Retuning Report')
 
-        report.add_element(reports.RetroCommissioningOAED(table_name='Hot_water_RCx'))
-        report.add_element(reports.RetroCommissioningAFDD(table_name='Hot_water_RCx'))
+        report.add_element(reports.RetroCommissioningOAED
+                           (table_name='Hot_water_RCx'))
+        report.add_element(reports.RetroCommissioningAFDD
+                           (table_name='Hot_water_RCx'))
 
         return [report]
 
@@ -368,7 +372,7 @@ class Application(DrivenApplicationBaseClass):
 
         output_needs = {
             'Hot_water_RCx': {
-                'datetime': OutputDescriptor('datetime', datetime_topic),
+                'datetime': OutputDescriptor('string', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
                                                        message_topic),
@@ -383,11 +387,11 @@ class Application(DrivenApplicationBaseClass):
         '''
         Check algorithm pre-quisites and assemble data set for analysis.
         '''
-#        topics = self.inp.get_topics()
-#        diagnostic_topic = topics[self.fan_status_name][0]
-#
-#        current_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
+        topics = self.inp.get_topics()
+        diagnostic_topic = topics[self.loop_dp_name][0]
 
+        current_time = self.inp.localize_sensor_time(diagnostic_topic,
+                                                     current_time)
 
         device_dict = {}
         diagnostic_result = Results()
@@ -454,7 +458,7 @@ class Application(DrivenApplicationBaseClass):
 
         time_check = datetime.timedelta(minutes=self.warm_up_time)
         if (self.warm_up_start is not None and
-           (current_time - self.warm_up_start) < time_check):
+                (current_time - self.warm_up_start) < time_check):
             diagnostic_result = self.pre_message(diagnostic_result,
                                                  current_time)
             return diagnostic_result
@@ -490,7 +494,7 @@ class Application(DrivenApplicationBaseClass):
             Application.pre_requiste_messages.append(self.pre_msg9)
 
         if (not loop_dp_values and
-           not (hws_temp_values and hwr_temp_values)):
+                not (hws_temp_values and hwr_temp_values)):
             diagnostic_result = self.pre_message(diagnostic_result,
                                                  current_time)
             return diagnostic_result
@@ -515,21 +519,27 @@ class Application(DrivenApplicationBaseClass):
         return diagnostic_result
 
     def pre_message(self, result, current_time):
+        '''
+        Generate prerequisite not met message for rcx log
+        '''
         Application.pre_msg_time.append(current_time)
-        message_check = datetime.timedelta(minutes=(self.data_window))
-        pre_check = Application.pre_msg_time[-1] - Application.pre_msg_time[0]
-        if pre_check >= message_check:
+        pre_check = ((Application.pre_msg_time[-1] -
+                      Application.pre_msg_time[0])
+                     .total_seconds()/60)
+        pre_check = pre_check if pre_check > 0.0 else 1.0
+        if pre_check >= self.data_window:
             msg_lst = [self.pre_msg1, self.pre_msg2, self.pre_msg3,
                        self.pre_msg4, self.pre_msg5, self.pre_msg6,
                        self.pre_msg7, self.pre_msg8, self.pre_msg9,
                        Application.pre_msg10, Application.pre_msg11]
             for item in msg_lst:
                 if (Application.pre_requiste_messages.count(item) >
-                   (0.25) * len(Application.pre_msg_time)):
+                        (0.25) * len(Application.pre_msg_time)):
                     result.log(item, logging.INFO)
             Application.pre_requiste_messages = []
             Application.pre_msg_time = []
         return result
+
 
 class HW_loopdp_RCx(object):
     '''
@@ -550,7 +560,7 @@ class HW_loopdp_RCx(object):
     def hw_dp_rcx(self, diagnostic_result, current_time, loop_dp_stpt_values,
                   loop_dp_values, hw_pump_vfd_values):
         '''
-        High HW loop differential pressure diagnostic
+        High HW loop differential pressure RCx
         '''
         self.hw_pump_vfd_values.append(
             sum(hw_pump_vfd_values) /
@@ -563,15 +573,16 @@ class HW_loopdp_RCx(object):
             len(loop_dp_stpt_values))
 
         self.timestamp.append(current_time)
-        elapsed_time = (self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
+                        .total_seconds()/60)
         elapsed_time = elapsed_time if elapsed_time > 0.0 else 1.0
 
         if (elapsed_time >= self.data_window and
-           len(self.timestamp) >= self.no_required_data):
+                len(self.timestamp) >= self.no_required_data):
 
             avg_loop_dp = (sum(self.loop_dp_values))/(len(self.loop_dp_values))
             if self.loop_dp_stpt_values:
-                setpoint_tracking = [abs(x-y) for
+                setpoint_tracking = [fabs(x-y) for
                                      x, y in zip(self.loop_dp_stpt_values,
                                                  self.loop_dp_values)]
 
@@ -580,15 +591,15 @@ class HW_loopdp_RCx(object):
                                       * avg_loop_dp)*100)
 
                 if setpoint_tracking > self.setpoint_allowable_deviation:
-                    diagnostic_message = ('{name}: Hot water loop '
+                    diagnostic_message = ('Hot water loop '
                                           'differential pressure is '
                                           'deviating significantly from '
-                                          'the set point.'
-                                          .format(name=Hot_water_RCx))
+                                          'the set point')
                     color_code = 'RED'
                     energy_impact = None
                     dx_table = {
-                        'datetime': str(self.timestamp[-1]),
+                        'datetime': (str(self.timestamp[-1])).
+                                    replace(' ', 'T'),
                         'diagnostic_name': Hot_water_RCx,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
@@ -612,31 +623,28 @@ class HW_loopdp_RCx(object):
             color_code = 'GREY'
             energy_impact = None
 
-            if (avg_pump_vfd > self.dp_pump_threshold):
+            if avg_pump_vfd > self.dp_pump_threshold:
                 color_code = 'RED'
-                diagnostic_message = ('{name}: The HW loop DP has been '
-                                      'detected to be too high'
-                                      .format(name=hotwater_dx1))
+                diagnostic_message = ('The HW loop DP has been '
+                                      'detected to be too high')
             else:
                 color_code = 'GREEN'
-                diagnostic_message = ('{name}: No re-tuning opportunity '
-                                      'detected for the high HW loop DP'
-                                      .format(name=hotwater_dx1))
+                diagnostic_message = ('No re-tuning opportunity '
+                                      'detected for the high HW loop DP')
 
             dx_table = {
-                'datetime': str(self.timestamp[-1]),
+                'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
                 'diagnostic_name': hotwater_dx1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': energy_impact,
                 'color_code': color_code
                 }
         else:
-            diagnostic_message = ('{name}: HW system pump VFD command was not '
+            diagnostic_message = ('HW system pump VFD command was not '
                                   'detected. High HW DP Diagnostic requires '
-                                  'the pump VFD command'
-                                  .format(name=hotwater_dx1))
+                                  'the pump VFD command')
             dx_table = {
-                'datetime': str(self.timestamp[-1]),
+                'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
                 'diagnostic_name': hotwater_dx1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -684,15 +692,18 @@ class HW_temp_RCx(object):
 
     def temp_rcx(self, diagnostic_result, current_time, hws_temp_values,
                  hwr_temp_values, hw_pump_vfd_values):
+        '''
+        hot water temperature retro-commissioning main RCx
+        '''
         limit_check = False
         for value in hws_temp_values:
             if (value < self.min_hwst_threshold or
-               value > self.max_hwst_threshold):
+                    value > self.max_hwst_threshold):
                 Application.pre_requiste_messages.append(Application.pre_msg10)
                 limit_check = True
         for value in hwr_temp_values:
             if (value < self.min_hwrt_threshold or
-               value > self.max_hwrt_threshold):
+                    value > self.max_hwrt_threshold):
                 Application.pre_requiste_messages.append(Application.pre_msg11)
                 limit_check = True
 
@@ -707,14 +718,15 @@ class HW_temp_RCx(object):
             len(hw_pump_vfd_values))
 
         self.timestamp.append(current_time)
-        elapsed_time = (self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
+        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
+                        .total_seconds()/60)
         elapsed_time = elapsed_time if elapsed_time > 0.0 else 1.0
 
         if (elapsed_time >= self.data_window and
-           len(self.timestamp) >= self.no_required_data):
+                len(self.timestamp) >= self.no_required_data):
             if self.hw_stsp_values:
                 avg_hw_stsp = sum(self.hw_stsp_values)/len(self.hw_stsp_values)
-                set_point_tracking = [abs(x-y) for
+                set_point_tracking = [fabs(x-y) for
                                       x, y in zip(self.hw_stsp_values,
                                                   self.hw_st_values)]
 
@@ -722,16 +734,16 @@ class HW_temp_RCx(object):
                                       (len(set_point_tracking)
                                        * avg_hw_stsp) * 100)
                 if set_point_tracking > self.setpoint_allowable_deviation:
-                    diagnostic_message = ('{name}: Hot water supply '
+                    diagnostic_message = ('Hot water supply '
                                           'temperature is deviating '
                                           'significantly from the hot '
                                           'water supply temperature '
-                                          'set point.'
-                                          .format(name=Hot_water_RCx))
+                                          'set point')
                     color_code = 'RED'
                     energy_impact = None
                     dx_table = {
-                        'datetime': str(self.timestamp[-1]),
+                        'datetime': (str(self.timestamp[-1])).
+                                    replace(' ', 'T'),
                         'diagnostic_name': Hot_water_RCx,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
@@ -756,34 +768,33 @@ class HW_temp_RCx(object):
                 len(self.hw_pump_vfd_values))
 
             if (avg_hwst > self.hw_st_threshold and
-               avg_pump_vfd < self.hw_pump_vfd_threshold):
-                diagnostic_message = ('{name}: Hot water supply temperature '
-                                      'set point was detected to be too high.'
-                                      .format(name=hotwater_dx3))
+                    avg_pump_vfd < self.hw_pump_vfd_threshold):
+                diagnostic_message = ('Hot water supply temperature '
+                                      'set point was detected to be too high.')
                 color_code = 'RED'
                 energy_impact = None
             else:
-                diagnostic_message = ('{name}: No Re-tuning opportunity '
+                diagnostic_message = ('No Re-tuning opportunity '
                                       'detected for the high hot water supply '
-                                      'set point diagnostic.'
-                                      .format(name=hotwater_dx3))
+                                      'set point diagnostic')
                 color_code = 'GREEN'
                 energy_impact = None
 
             dx_table = {
-                'datetime': str(self.timestamp[-1]),
+                'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
                 'diagnostic_name': hotwater_dx3,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': energy_impact,
                 'color_code': color_code
                 }
         else:
-            diagnostic_message = ('{name}: HW system pump VFD command '
+            diagnostic_message = ('HW system pump VFD command '
                                   'was not detected. The High HW Supply '
                                   'Temperature Diagnostic requires the pump '
-                                  'VFD command'.format(name=hotwater_dx3))
+                                  'VFD command')
             dx_table = {
-                'datetime': str(self.timestamp[-1]),
+                'datetime': (str(self.timestamp[-1])).
+                            replace(' ', 'T'),
                 'diagnostic_name': hotwater_dx3,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -804,21 +815,21 @@ class HW_temp_RCx(object):
         avg_delta_t = sum(diff_supply_return)/len(diff_supply_return)
 
         if (self.desired_delta_t - avg_delta_t) > self.delta_t_threshold:
-            '''Create diagnostic message for fault condition'''
-            diagnostic_message = ('{name}: Hot water loop delta-T was lower '
-                                  'than expected'.format(name=hotwater_dx5))
+            # Create diagnostic message for fault condition
+            diagnostic_message = ('Hot water loop delta-T was lower '
+                                  'than expected')
             color_code = 'RED'
             energy_impact = None
         else:
-            '''Create diagnostic message for no-fault condition'''
-            diagnostic_message = ('{name}: No re-tuning opportunity detected '
+            # Create diagnostic message for no-fault condition
+            diagnostic_message = ('No re-tuning opportunity detected '
                                   'for the low hot water loop delta-T '
-                                  'diagnostic.'.format(name=hotwater_dx5))
+                                  'diagnostic')
             color_code = 'GREEN'
             energy_impact = None
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
             'diagnostic_name': hotwater_dx5,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -883,23 +894,21 @@ class HW_reset_RCx(object):
         hw_st_condition = max(self.hw_stsp_values) - min(self.hw_stsp_values)
 
         if hw_st_condition < self.hw_reset_threshold:
-            diagnostic_message = ('{name}: No hot water temperature reset was '
+            diagnostic_message = ('No hot water temperature reset was '
                                   'detected for this system. Enable or add '
                                   'hot water reset to improve system '
-                                  'performance and save energy.'
-                                  .format(name=hotwater_dx4))
+                                  'performance and save energy')
             color_code = 'RED'
             energy_impact = None
         else:
-            diagnostic_message = ('{name}: No retuning opportunity '
+            diagnostic_message = ('No retuning opportunity '
                                   'detected for the hot water supply set '
-                                  'point reset diagnostic.'
-                                  .format(name=hotwater_dx4))
+                                  'point reset diagnostic')
             color_code = 'GREEN'
             energy_impact = None
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
             'diagnostic_name': hotwater_dx4,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -922,19 +931,18 @@ class HW_reset_RCx(object):
         color_code = 'GREY'
 
         if loop_dpst_condition < self.dp_reset_threshold:
-            diagnostic_message = ('{name}: No hot water DP reset was detected '
+            diagnostic_message = ('No hot water DP reset was detected '
                                   'for this system. Enable or add hot water '
                                   'DP reset to improve system performance '
-                                  'and save energy'.format(name=hotwater_dx2))
+                                  'and save energy')
             color_code = 'RED'
         else:
-            diagnostic_message = ('{name}: No Re-tuning opportunity detected '
-                                  'for the DP reset diagnostic.'
-                                  .format(name=hotwater_dx2))
+            diagnostic_message = ('No Re-tuning opportunity detected '
+                                  'for the DP reset diagnostic')
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
+            'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
             'diagnostic_name': hotwater_dx2,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,

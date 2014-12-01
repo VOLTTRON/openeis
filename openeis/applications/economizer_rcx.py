@@ -25,8 +25,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
-'''
-'''
+
 This material was prepared as an account of work sponsored by an
 agency of the United States Government.  Neither the United States
 Government nor the United States Department of Energy, nor Battelle,
@@ -72,7 +71,7 @@ class Application(DrivenApplicationBaseClass):
     '''
     HVAC economizer diagnostic
     '''
-    '''Diagnostic Point Names (Must match OpenEIS data-type names)'''
+    # Diagnostic Point Names (Must match OpenEIS data-type names)
     fan_status_name = 'fan_status'
     oa_temp_name = 'oa_temp'
     ma_temp_name = 'ma_temp'
@@ -175,22 +174,18 @@ class Application(DrivenApplicationBaseClass):
                                            temp_damper_threshold)
         self.econ2 = econ_correctly_on(oaf_economizing_threshold,
                                        open_damper_threshold,
-                                       self.economizer_type, data_window,
-                                       no_required_data, cfm, eer)
-        self.econ3 = econ_correctly_off(device_type, self.economizer_type,
-                                        data_window, no_required_data,
+                                       data_window, no_required_data, cfm, eer)
+        self.econ3 = econ_correctly_off(data_window, no_required_data,
                                         minimum_damper_setpoint,
                                         excess_damper_threshold,
                                         cooling_enabled_threshold,
                                         desired_oaf, cfm, eer)
-        self.econ4 = excess_oa_intake(self.economizer_type, device_type,
-                                      data_window, no_required_data,
+        self.econ4 = excess_oa_intake(data_window, no_required_data,
                                       excess_oaf_threshold,
                                       minimum_damper_setpoint,
                                       excess_damper_threshold,
                                       desired_oaf, cfm, eer)
-        self.econ5 = insufficient_oa_intake(device_type, self.economizer_type,
-                                            data_window, no_required_data,
+        self.econ5 = insufficient_oa_intake(data_window, no_required_data,
                                             ventilation_oaf_threshold,
                                             minimum_damper_setpoint,
                                             insufficient_damper_threshold,
@@ -204,166 +199,134 @@ class Application(DrivenApplicationBaseClass):
         '''
         return {
 
-            'low_supply_fan_threshold': ConfigDescriptor(float,
-                                                         'Value above which '
-                                                         'the supply fan will '
-                                                         'be considered at '
-                                                         'its minimum speed '
-                                                         '(default=20%)',
-                                                         optional=True),
-            'rated_cfm': ConfigDescriptor(float,
-                                          'Rated CFM of supply '
-                                          'fan at 100% speed '
-                                          '(default=500)',
-                                          optional=True),
-            'data_window': ConfigDescriptor(int, 'Minimum Elapsed time for '
-                                            'analysis (default=15 minutes)',
-                                            optional=True),
-            'open_damper_time': ConfigDescriptor(float, 'Delay time for '
-                                                 'steady-state conditions '
-                                                 '(default=5 minutes)',
-                                                 optional=True),
-            'no_required_data': ConfigDescriptor(int,
-                                                 'Number of required '
-                                                 'data measurements to '
-                                                 'perform diagnostic (10)',
-                                                 optional=True),
-            'mat_low_threshold': ConfigDescriptor(float,
-                                                  'Mixed-air sensor '
-                                                  'low limit (default=50F)',
-                                                  optional=True),
-            'mat_high_threshold': ConfigDescriptor(float,
-                                                   'Mixed-air sensor '
-                                                   'high limit (default=90F)',
-                                                   optional=True),
-            'rat_low_threshold': ConfigDescriptor(float,
-                                                  'Return-air sensor '
-                                                  'low limit (default=50F)',
-                                                  optional=True),
-            'rat_high_threshold': ConfigDescriptor(float,
-                                                   'Return-air sensor '
-                                                   'high limit (default=90F)',
-                                                   optional=True),
-            'oat_low_threshold': ConfigDescriptor(float,
-                                                  'Outdoor-air sensor '
-                                                  'low limit (default=30F)',
-                                                  optional=True),
-            'oat_high_threshold': ConfigDescriptor(float,
-                                                   'Outdoor-air sensor '
-                                                   'high limit (default=100F)',
-                                                   optional=True),
+            'low_supply_fan_threshold':
+            ConfigDescriptor(float,
+                             'Value above which the supply fan will be '
+                             'considered at its minimum speed (default=20%)',
+                             optional=True),
+            'rated_cfm':
+            ConfigDescriptor(float,
+                             'Rated CFM of supply fan at 100% speed '
+                             '(default=500)', optional=True),
+            'data_window':
+            ConfigDescriptor(int,
+                             'Minimum Elapsed time for analysis '
+                             '(default=15 minutes)', optional=True),
+            'open_damper_time':
+            ConfigDescriptor(float,
+                             'Delay time for steady-state conditions '
+                             '(default=5 minutes)', optional=True),
+            'no_required_data':
+            ConfigDescriptor(int,
+                             'Number of required data measurements to '
+                             'perform diagnostic (10)', optional=True),
+            'mat_low_threshold':
+            ConfigDescriptor(float,
+                             'Mixed-air sensor low limit (default=50F)',
+                             optional=True),
+            'mat_high_threshold':
+            ConfigDescriptor(float,
+                             'Mixed-air sensor high limit (default=90F)',
+                             optional=True),
+            'rat_low_threshold':
+            ConfigDescriptor(float,
+                             'Return-air sensor low limit (default=50F)',
+                             optional=True),
+            'rat_high_threshold':
+            ConfigDescriptor(float,
+                             'Return-air sensor high limit (default=90F)',
+                             optional=True),
+            'oat_low_threshold':
+            ConfigDescriptor(float,
+                             'Outdoor-air sensor low limit (default=30F)',
+                             optional=True),
+            'oat_high_threshold':
+            ConfigDescriptor(float,
+                             'Outdoor-air sensor high limit (default=100F)',
+                             optional=True),
             'temp_deadband': ConfigDescriptor(float,
                                               'Economizer control '
                                               'temperature dead-band '
                                               '(default=1F)',
                                               optional=True),
-            'minimum_damper_setpoint': ConfigDescriptor(float,
-                                                        'Minimum outdoor-air '
-                                                        'damper set point '
-                                                        '(default=20%)',
-                                                        optional=True),
-            'excess_damper_threshold': ConfigDescriptor(float,
-                                                        'Value above the '
-                                                        'minimum damper '
-                                                        'set point at which '
-                                                        'a fault will be '
-                                                        'called (default=15%)',
-                                                        optional=True),
-            'econ_hl_temp': ConfigDescriptor(float,
-                                             'High limit (HL) temperature '
-                                             'for HL type economizer '
-                                             '(default=60F)',
-                                             optional=True),
-            'cooling_enabled_threshold': ConfigDescriptor(float,
-                                                          'Amount AHU chilled '
-                                                          'water valve '
-                                                          'must be '
-                                                          'open to consider '
-                                                          'unit in cooling '
-                                                          'mode (default=5%)',
-                                                          optional=True),
-            'insufficient_damper_threshold': ConfigDescriptor(float,
-                                                              'Value below '
-                                                              'the minimum '
-                                                              'outdoor-air '
-                                                              'damper set-'
-                                                              'point at which '
-                                                              'a fault will '
-                                                              'be identified '
-                                                              '(default=15%)',
-                                                              optional=True),
-            'ventilation_oaf_threshold':  ConfigDescriptor(float,
-                                                           'The value below '
-                                                           'the desired '
-                                                           'minimum OA '
-                                                           '% where '
-                                                           'a fault will be '
-                                                           'indicated '
-                                                           '(default=5%)',
-                                                           optional=True),
-            'desired_oaf':  ConfigDescriptor(float,
-                                             'The desired minimum OA percent '
-                                             '(default=10%)', optional=True),
-            'excess_oaf_threshold':  ConfigDescriptor(float,
-                                                      'The value above the '
-                                                      'desired OA % where a '
-                                                      'fault will be '
-                                                      'indicated '
-                                                      '(default=30%)',
-                                                      optional=True),
-            'economizer_type': ConfigDescriptor(str,
-                                                'Economizer type:  <DDB> - '
-                                                'differential dry bulb <HL> - '
-                                                'High limit (default=DDB)',
-                                                optional=True),
-            'open_damper_threshold': ConfigDescriptor(float,
-                                                      'Threshold '
-                                                      'in which damper is '
-                                                      'considered open for '
-                                                      'economizing '
-                                                      '(default=80%)',
-                                                      optional=True),
-            'oaf_economizing_threshold': ConfigDescriptor(float,
-                                                          'Value below 100% '
-                                                          'in which the OA '
-                                                          'is considered '
-                                                          'insufficient for '
-                                                          'economizing '
-                                                          '(default=25%)',
-                                                          optional=True),
-            'oaf_temperature_threshold': ConfigDescriptor(float,
-                                                          'Required difference'
-                                                          ' between OAT and '
-                                                          'RAT for accurate '
-                                                          'diagnostic '
-                                                          '(default=5F)',
-                                                          optional=True),
-            'device_type': ConfigDescriptor(str,
-                                            'Device type <RTU> or <AHU> '
-                                            '(default=AHU)',
-                                            optional=True),
-            'temp_difference_threshold': ConfigDescriptor(float,
-                                                          'Threshold for '
-                                                          'detecting '
-                                                          'temperature sensor '
-                                                          'problems '
-                                                          '(default=4F)',
-                                                          optional=True),
-            'oat_mat_check': ConfigDescriptor(float,
-                                              'Temperature threshold for '
-                                              'OAT and MAT '
-                                              'consistency check for times '
-                                              'when the damper is near 100% '
-                                              'open (default=5F)',
-                                              optional=True),
-            'temp_damper_threshold': ConfigDescriptor(float,
-                                                      'Damper position to '
-                                                      'check for OAT/MAT '
-                                                      'consistency '
-                                                      '(default=90%)',
-                                                      optional=True),
-            'eer': ConfigDescriptor(float, 'AHU/RTU rated EER (default=10)',
-                                           optional=True),
+            'minimum_damper_setpoint':
+            ConfigDescriptor(float,
+                             'Minimum outdoor-air damper set point '
+                             '(default=20%)', optional=True),
+            'excess_damper_threshold':
+            ConfigDescriptor(float,
+                             'Value above the minimum damper '
+                             'set point at which a fault will be '
+                             'called (default=15%)', optional=True),
+            'econ_hl_temp':
+            ConfigDescriptor(float,
+                             'High limit (HL) temperature for HL type '
+                             'economizer (default=60F)', optional=True),
+            'cooling_enabled_threshold':
+            ConfigDescriptor(float,
+                             'Amount AHU chilled water valve '
+                             'must be open to consider unit in cooling '
+                             'mode (default=5%)', optional=True),
+            'insufficient_damper_threshold':
+            ConfigDescriptor(float,
+                             'Value below the minimum outdoor-air '
+                             'damper set-point at which a fault will '
+                             'be identified (default=15%)', optional=True),
+            'ventilation_oaf_threshold':
+            ConfigDescriptor(float,
+                             'The value below the desired minimum OA '
+                             '% where a fault will be indicated (default=5%)',
+                             optional=True),
+            'desired_oaf':
+            ConfigDescriptor(float,
+                             'The desired minimum OA percent '
+                             '(default=10%)', optional=True),
+            'excess_oaf_threshold':
+            ConfigDescriptor(float,
+                             'The value above the desired OA % where a '
+                             'fault will be indicated '
+                             '(default=30%)', optional=True),
+            'economizer_type':
+            ConfigDescriptor(str,
+                             'Economizer type:  <DDB> - differential dry bulb '
+                             '<HL> - High limit (default=DDB)', optional=True),
+            'open_damper_threshold':
+            ConfigDescriptor(float,
+                             'Threshold in which damper is considered open '
+                             'for economizing (default=80%)', optional=True),
+            'oaf_economizing_threshold':
+            ConfigDescriptor(float,
+                             'Value below 100% in which the OA is considered '
+                             'insufficient for economizing (default=25%)',
+                             optional=True),
+            'oaf_temperature_threshold':
+            ConfigDescriptor(float,
+                             'Required difference between OAT and '
+                             'RAT for accurate diagnostic (default=5F)',
+                             optional=True),
+            'device_type':
+            ConfigDescriptor(str,
+                             'Device type <RTU> or <AHU> (default=AHU)',
+                             optional=True),
+            'temp_difference_threshold':
+            ConfigDescriptor(float,
+                             'Threshold fordetecting temperature sensor '
+                             'problems (default=4F)', optional=True),
+            'oat_mat_check':
+            ConfigDescriptor(float,
+                             'Temperature threshold for OAT and MAT '
+                             'consistency check for times when the damper is '
+                             'near 100% open (default=5F)',
+                             optional=True),
+            'temp_damper_threshold':
+            ConfigDescriptor(float,
+                             'Damper position to check for OAT/MAT '
+                             'consistency (default=90%)',
+                             optional=True),
+            'eer':
+            ConfigDescriptor(float,
+                             'AHU/RTU rated EER (default=10)',
+                             optional=True),
             }
 
     @classmethod
@@ -379,28 +342,30 @@ class Application(DrivenApplicationBaseClass):
         user
         '''
         return {
-            cls.fan_status_name: InputDescriptor('SupplyFanStatus',
-                                                 'AHU Supply Fan Status',
-                                                 count_min=0),
-            cls.fan_speedcmd_name: InputDescriptor('SupplyFanSpeed',
-                                                   'AHU supply fan speed',
-                                                   count_min=0),
-            cls.oa_temp_name: InputDescriptor('OutdoorAirTemperature',
-                                              'AHU or building outdoor-air '
-                                              'temperature', count_min=1),
-            cls.ma_temp_name: InputDescriptor('MixedAirTemperature',
-                                              'AHU mixed-air temperature',
-                                              count_min=1),
-            cls.ra_temp_name: InputDescriptor('ReturnAirTemperature',
-                                              'AHU return-air temperature',
-                                              count_min=1),
-            cls.damper_signal_name: InputDescriptor('OutdoorDamperSignal',
-                                                    'AHU outdoor-air damper '
-                                                    'signal', count_min=1),
-            cls.cool_call_name: InputDescriptor('CoolingCall',
-                                                'AHU cooling coil command or '
-                                                'RTU coolcall or compressor '
-                                                'command', count_min=1)
+            cls.fan_status_name:
+            InputDescriptor('SupplyFanStatus',
+                            'AHU Supply Fan Status', count_min=0),
+            cls.fan_speedcmd_name:
+            InputDescriptor('SupplyFanSpeed',
+                            'AHU supply fan speed', count_min=0),
+            cls.oa_temp_name:
+            InputDescriptor('OutdoorAirTemperature',
+                            'AHU or building outdoor-air temperature',
+                            count_min=1),
+            cls.ma_temp_name:
+            InputDescriptor('MixedAirTemperature',
+                            'AHU mixed-air temperature',
+                            count_min=1),
+            cls.ra_temp_name:
+            InputDescriptor('ReturnAirTemperature',
+                            'AHU return-air temperature', count_min=1),
+            cls.damper_signal_name:
+            InputDescriptor('OutdoorDamperSignal', 'AHU outdoor-air damper '
+                            'signal', count_min=1),
+            cls.cool_call_name:
+            InputDescriptor('CoolingCall',
+                            'AHU cooling coil command or RTU coolcall or '
+                            'compressor command', count_min=1)
         }
 
     def reports(self):
@@ -410,9 +375,10 @@ class Application(DrivenApplicationBaseClass):
         '''
         report = reports.Report('Retuning Report')
 
-        report.add_element(reports.RetroCommissioningOAED(table_name='Economizer_RCx'))
-        report.add_element(reports.RetroCommissioningAFDD(table_name='Economizer_RCx'))
-
+        report.add_element(reports.RetroCommissioningOAED(
+            table_name='Economizer_RCx'))
+        report.add_element(reports.RetroCommissioningAFDD(
+            table_name='Economizer_RCx'))
         return [report]
 
     @classmethod
@@ -477,7 +443,7 @@ class Application(DrivenApplicationBaseClass):
                 elif value is not None:
                     fan_stat_check = True
         if (not fan_stat_check and
-           self.fan_speedcmd_name is not None):
+                self.fan_speedcmd_name is not None):
             for key, value in device_dict.items():
                 if key.startswith(self.fan_speedcmd_name):
                     fan_stat_check = True
@@ -602,12 +568,11 @@ class Application(DrivenApplicationBaseClass):
                 oatemp < (self.econ_hl_temp - self.temp_deadband))
 
         diagnostic_result = self.econ1.econ_alg1(diagnostic_result,
-                                                 cooling_call, oatemp, ratemp,
-                                                 matemp, damper_signal,
-                                                 current_time)
+                                                 oatemp, ratemp, matemp,
+                                                 damper_signal, current_time)
 
         if (temperature_sensor_dx.temp_sensor_problem is not None and
-           temperature_sensor_dx.temp_sensor_problem is False):
+                temperature_sensor_dx.temp_sensor_problem is False):
             diagnostic_result = self.econ2.econ_alg2(diagnostic_result,
                                                      cooling_call, oatemp,
                                                      ratemp, matemp,
@@ -616,21 +581,18 @@ class Application(DrivenApplicationBaseClass):
                                                      current_time,
                                                      fan_speedcmd)
             diagnostic_result = self.econ3.econ_alg3(diagnostic_result,
-                                                     cooling_call,
                                                      oatemp, ratemp,
                                                      matemp, damper_signal,
                                                      economizer_conditon,
                                                      current_time,
                                                      fan_speedcmd)
             diagnostic_result = self.econ4.econ_alg4(diagnostic_result,
-                                                     cooling_call,
                                                      oatemp, ratemp,
                                                      matemp, damper_signal,
                                                      economizer_conditon,
                                                      current_time,
                                                      fan_speedcmd)
             diagnostic_result = self.econ5.econ_alg5(diagnostic_result,
-                                                     cooling_call,
                                                      oatemp, ratemp,
                                                      matemp, damper_signal,
                                                      economizer_conditon,
@@ -644,10 +606,16 @@ class Application(DrivenApplicationBaseClass):
         return diagnostic_result
 
     def pre_message(self, result, current_time):
+        '''
+        Handle display of diagnostic pre-requisite
+        messages
+        '''
         Application.pre_msg_time.append(current_time)
-        message_check = datetime.timedelta(minutes=(self.data_window) - 1)
-        pre_check = Application.pre_msg_time[-1] - Application.pre_msg_time[0]
-        if pre_check >= message_check:
+        pre_check = ((Application.pre_msg_time[-1] -
+                      Application.pre_msg_time[0])
+                     .total_seconds()/60)
+        pre_check = pre_check if pre_check > 0.0 else 1.0
+        if pre_check >= self.data_window:
             msg_lst = [self.pre_msg1, self.pre_msg2, self.pre_msg3,
                        self.pre_msg4, self.pre_msg5, self.pre_msg6,
                        self.pre_msg7, self.pre_msg8, self.pre_msg9,
@@ -662,12 +630,10 @@ class Application(DrivenApplicationBaseClass):
 
 
 class temperature_sensor_dx(object):
-
     '''
     Air-side HVAC diagnostic to check the functionality of
     the air temperature sensors in an AHU/RTU.
     '''
-
     def __init__(self, data_window, no_required_data,
                  temp_difference_threshold, open_damper_time,
                  oat_mat_check, temp_damper_threshold):
@@ -691,17 +657,18 @@ class temperature_sensor_dx(object):
         self.oat_mat_check = float(oat_mat_check)
         self.temp_damper_threshold = float(temp_damper_threshold)
 
-    def econ_alg1(self, diagnostic_result, cooling_call, oatemp,
+    def econ_alg1(self, diagnostic_result, oatemp,
                   ratemp, matemp, damper_signal, current_time):
         '''
-        Check application pre-quisites and assemble data set for analysis.
+        Check application pre-quisites and
+        economizer conditions (Problem or No Problem).
         '''
         if (damper_signal) > self.temp_damper_threshold:
             if not self.econ_check:
                 self.econ_check = True
                 self.steady_state_start = current_time
             if ((current_time - self.steady_state_start)
-               >= self.econ_time_check):
+                    >= self.econ_time_check):
                 self.open_damper_oat.append(oatemp)
                 self.open_damper_mat.append(matemp)
         else:
@@ -712,7 +679,8 @@ class temperature_sensor_dx(object):
         self.ra_temp_values.append(ratemp)
 
         if (self.timestamp and
-           ((current_time - self.timestamp[-1]).total_seconds()/60) > 5.0):
+                ((current_time - self.timestamp[-1])
+                 .total_seconds()/60) > 5.0):
             self.econ_check = False
 
         self.timestamp.append(current_time)
@@ -762,7 +730,7 @@ class temperature_sensor_dx(object):
                                       'is fully open.')
                 color_code = 'RED'
                 dx_table = {
-                    'datetime': (str(current_time)).replace(' ','T'),
+                    'datetime': (str(current_time)).replace(' ', 'T'),
                     'diagnostic_name': econ1,
                     'diagnostic_message': diagnostic_message,
                     'energy_impact': None,
@@ -782,7 +750,7 @@ class temperature_sensor_dx(object):
 
             color_code = 'RED'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -799,7 +767,7 @@ class temperature_sensor_dx(object):
             temperature_sensor_dx.temp_sensor_problem = True
             color_code = 'RED'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -812,7 +780,7 @@ class temperature_sensor_dx(object):
             temperature_sensor_dx.temp_sensor_problem = False
             color_code = 'GREEN'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -823,7 +791,7 @@ class temperature_sensor_dx(object):
             temperature_sensor_dx.temp_sensor_problem = False
             color_code = 'GREEN'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -854,7 +822,7 @@ class econ_correctly_on(object):
     '''
 
     def __init__(self, oaf_economizing_threshold, open_damper_threshold,
-                 economizer_type, data_window, no_required_data, cfm, eer):
+                 data_window, no_required_data, cfm, eer):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -862,7 +830,6 @@ class econ_correctly_on(object):
         self.damper_signal_values = []
         self.timestamp = []
         self.output_no_run = []
-        self.economizer_type = economizer_type
         self.open_damper_threshold = float(open_damper_threshold)
         self.oaf_economizing_threshold = float(oaf_economizing_threshold)
         self.data_window = float(data_window)
@@ -883,6 +850,10 @@ class econ_correctly_on(object):
     def econ_alg2(self, diagnostic_result, cooling_call, oatemp, ratemp,
                   matemp, damper_signal, economizer_conditon, current_time,
                   fan_speedcmd):
+        '''
+        Check application pre-quisites and
+        economizer conditions (Problem or No Problem).
+        '''
         if not cooling_call:
             diagnostic_result.log('The unit is not cooling, data '
                                   'corresponding to {timestamp} will '
@@ -891,9 +862,9 @@ class econ_correctly_on(object):
                                          name=econ2), logging.DEBUG)
             self.output_no_run.append(current_time)
             if ((self.output_no_run[-1] - self.output_no_run[0]) >=
-               datetime.timedelta(minutes=(self.data_window))):
+                    datetime.timedelta(minutes=(self.data_window))):
                 diagnostic_result.log(('{name}: the unit is not cooling or '
-                                      'economizing, keep collecting data.')
+                                       'economizing, keep collecting data.')
                                       .format(name=econ2), logging.DEBUG)
                 self.output_no_run = []
             return diagnostic_result
@@ -906,9 +877,9 @@ class econ_correctly_on(object):
                                          name=econ2), logging.DEBUG)
             self.output_no_run.append(current_time)
             if ((self.output_no_run[-1] - self.output_no_run[0]) >=
-               datetime.timedelta(minutes=(self.data_window))):
+                    datetime.timedelta(minutes=(self.data_window))):
                 diagnostic_result.log(('{name}: the unit is not cooling or '
-                                      'economizing, keep collecting data.')
+                                       'economizing, keep collecting data.')
                                       .format(name=econ2), logging.DEBUG)
                 self.output_no_run = []
             return diagnostic_result
@@ -929,7 +900,7 @@ class econ_correctly_on(object):
         elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
 
         if (elapsed_time >= self.data_window and
-           len(self.timestamp) >= self.no_required_data):
+                len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.not_economizing_when_needed(
                 diagnostic_result, current_time)
         return diagnostic_result
@@ -962,10 +933,10 @@ class econ_correctly_on(object):
                 diagnostic_message = (self.alg_result_messages[2])
                 color_code = 'RED'
 
-        energy_calc = [(1.08 * spd * self.cfm * (ma - oa) / (1000.0 * self.eer)) for
-                       ma, oa, spd in zip(self.ma_temp_values,
-                                          self.oa_temp_values,
-                                          self.fan_speed_values)
+        energy_calc = [1.08 * spd * self.cfm * (ma - oa) / (1000.0 * self.eer)
+                       for ma, oa, spd in zip(self.ma_temp_values,
+                                              self.oa_temp_values,
+                                              self.fan_speed_values)
                        if (ma - oa) > 0 and color_code == 'RED']
 
         if energy_calc:
@@ -975,11 +946,11 @@ class econ_correctly_on(object):
                 (len(energy_calc) * dx_time)
 
         dx_table = {
-            'datetime': (str(current_time)).replace(' ','T'),
+            'datetime': (str(current_time)).replace(' ', 'T'),
             'diagnostic_name': econ2, 'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
-        }
+            }
         result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         result = self.clear_data(result)
@@ -1006,8 +977,7 @@ class econ_correctly_off(object):
     when it should not.
     '''
 
-    def __init__(self, device_type, economizer_type, data_window,
-                 no_required_data, minimum_damper_setpoint,
+    def __init__(self, data_window, no_required_data, minimum_damper_setpoint,
                  excess_damper_threshold, cooling_enabled_threshold,
                  desired_oaf, cfm, eer):
         self.oa_temp_values = []
@@ -1030,18 +1000,15 @@ class econ_correctly_off(object):
                                     'verify the status of the economizer.']
         self.cfm = cfm
         self.eer = float(eer)
-
-        self.device_type = device_type
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
-        self.economizer_type = economizer_type
         self.minimum_damper_setpoint = float(minimum_damper_setpoint)
         self.excess_damper_threshold = float(excess_damper_threshold)
         self.cooling_enabled_threshold = float(cooling_enabled_threshold)
         self.desired_oaf = float(desired_oaf)
 
-    def econ_alg3(self, diagnostic_result, cooling_call, oatemp, ratemp,
-                  matemp, damper_signal, economizer_conditon, current_time,
+    def econ_alg3(self, diagnostic_result, oatemp, ratemp, matemp,
+                  damper_signal, economizer_conditon, current_time,
                   fan_speedcmd):
         '''
         Check application pre-quisites and
@@ -1062,7 +1029,8 @@ class econ_correctly_off(object):
             self.ma_temp_values.append(matemp)
             self.ra_temp_values.append(ratemp)
             self.timestamp.append(current_time)
-            fan_speedcmd = fan_speedcmd/100.0 if fan_speedcmd is not None else 1.0
+            fan_speedcmd = (fan_speedcmd/100.0 if fan_speedcmd is not None
+                            else 1.0)
             self.fan_speed_values.append(fan_speedcmd)
 
         elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
@@ -1070,7 +1038,7 @@ class econ_correctly_off(object):
         elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
 
         if (elapsed_time >= self.data_window and
-           len(self.timestamp) >= self.no_required_data):
+                len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.economizing_when_not_needed(
                 diagnostic_result, current_time)
         return diagnostic_result
@@ -1085,15 +1053,15 @@ class econ_correctly_off(object):
                     if len(self.timestamp) > 1 else 1)
         desired_oaf = self.desired_oaf / 100.0
         energy_impact = None
-        energy_calc = [(1.08 * spd * self.cfm * (ma - (oa * desired_oaf +
-                                                 (ra * (1.0 - desired_oaf))))
-                        / (1000.0 * self.eer)) for ma, oa, ra, spd in
-                       zip(self.ma_temp_values,
-                           self.oa_temp_values,
-                           self.ra_temp_values,
-                           self.fan_speed_values)
-                       if (ma - (oa * desired_oaf +
-                                 (ra * (1.0 - desired_oaf)))) > 0]
+        energy_calc = [
+            (1.08 * spd * self.cfm * (ma - (oa * desired_oaf +
+                                            (ra * (1.0 - desired_oaf))))) /
+            (1000.0 * self.eer)
+            for ma, oa, ra, spd in zip(self.ma_temp_values,
+                                       self.oa_temp_values,
+                                       self.ra_temp_values,
+                                       self.fan_speed_values)
+            if (ma - (oa * desired_oaf + (ra * (1.0 - desired_oaf)))) > 0]
 
         avg_damper = sum(self.damper_signal_values) / \
             len(self.damper_signal_values)
@@ -1113,12 +1081,13 @@ class econ_correctly_off(object):
             energy_impact = (sum(energy_calc) * 60.0) / \
                 (len(energy_calc) * dx_time)
 
-        dx_table = {'datetime': (str(current_time)).replace(' ','T'),
-                    'diagnostic_name': econ3,
-                    'diagnostic_message': diagnostic_message,
-                    'energy_impact': energy_impact,
-                    'color_code': color_code
-                    }
+        dx_table = {
+            'datetime': (str(current_time)).replace(' ', 'T'),
+            'diagnostic_name': econ3,
+            'diagnostic_message': diagnostic_message,
+            'energy_impact': energy_impact,
+            'color_code': color_code
+            }
 
         result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
@@ -1145,11 +1114,9 @@ class excess_oa_intake(object):
     if an AHU/RTU bringing in excess
     outdoor air.
     '''
-
-    def __init__(self, economizer_type, device_type, data_window,
-                 no_required_data, excess_oaf_threshold,
-                 minimum_damper_setpoint, excess_damper_threshold,
-                 desired_oaf, cfm, eer):
+    def __init__(self, data_window, no_required_data, excess_oaf_threshold,
+                 minimum_damper_setpoint, excess_damper_threshold, desired_oaf,
+                 cfm, eer):
         self.oa_temp_values = []
         self.ra_temp_values = []
         self.ma_temp_values = []
@@ -1160,7 +1127,6 @@ class excess_oa_intake(object):
         '''Application thresholds (Configurable)'''
         self.cfm = cfm
         self.eer = eer
-        self.economizer_type = economizer_type
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
         self.excess_oaf_threshold = float(excess_oaf_threshold)
@@ -1168,8 +1134,8 @@ class excess_oa_intake(object):
         self.desired_oaf = float(desired_oaf)
         self.excess_damper_threshold = float(excess_damper_threshold)
 
-    def econ_alg4(self, diagnostic_result, cooling_call, oatemp, ratemp,
-                  matemp, damper_signal, economizer_conditon, current_time,
+    def econ_alg4(self, diagnostic_result, oatemp, ratemp, matemp,
+                  damper_signal, economizer_conditon, current_time,
                   fan_speedcmd):
         '''
         Check application pre-quisites and assemble
@@ -1197,7 +1163,7 @@ class excess_oa_intake(object):
         elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
 
         if (elapsed_time >= self.data_window and
-           len(self.timestamp) >= self.no_required_data):
+                len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.excess_oa(diagnostic_result, current_time)
         return diagnostic_result
 
@@ -1217,15 +1183,15 @@ class excess_oa_intake(object):
             len(self.damper_signal_values)
 
         desired_oaf = self.desired_oaf / 100.0
-        energy_calc = [(1.08 * spd * self.cfm * (ma - (oa * desired_oaf +
-                                                 (ra * (1.0 - desired_oaf))))
-                        / (1000.0 * self.eer)) for ma, oa, ra, spd in
-                       zip(self.ma_temp_values,
-                           self.oa_temp_values,
-                           self.ra_temp_values,
-                           self.fan_speed_values)
-                       if (ma - (oa * desired_oaf +
-                                 (ra * (1.0 - desired_oaf)))) > 0]
+        energy_calc = [
+            (1.08 * spd * self.cfm * (ma - (oa * desired_oaf +
+                                            (ra * (1.0 - desired_oaf))))) /
+            (1000.0 * self.eer)
+            for ma, oa, ra, spd in zip(self.ma_temp_values,
+                                       self.oa_temp_values,
+                                       self.ra_temp_values,
+                                       self.fan_speed_values)
+            if (ma - (oa * desired_oaf + (ra * (1.0 - desired_oaf)))) > 0]
         color_code = 'GREY'
         energy_impact = None
         diagnostic_message = ''
@@ -1237,7 +1203,7 @@ class excess_oa_intake(object):
             color_code = 'GREY'
             result.log(diagnostic_message, logging.INFO)
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ4,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -1285,7 +1251,7 @@ class excess_oa_intake(object):
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': (str(current_time)).replace(' ','T'),
+            'datetime': (str(current_time)).replace(' ', 'T'),
             'diagnostic_name': econ4,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -1317,8 +1283,7 @@ class insufficient_oa_intake(object):
     AHU/RTU bringing in insufficient outdoor air.
     '''
 
-    def __init__(self, device_type, economizer_type, data_window,
-                 no_required_data, ventilation_oaf_threshold,
+    def __init__(self, data_window, no_required_data, ventilation_oaf_threshold,
                  minimum_damper_setpoint, insufficient_damper_threshold,
                  desired_oaf):
 
@@ -1339,9 +1304,8 @@ class insufficient_oa_intake(object):
         self.minimum_damper_setpoint = float(minimum_damper_setpoint)
         self.desired_oaf = float(desired_oaf)
 
-    def econ_alg5(self, diagnostic_result, cooling_call, oatemp,
-                  ratemp, matemp, damper_signal, economizer_conditon,
-                  current_time):
+    def econ_alg5(self, diagnostic_result, oatemp, ratemp, matemp,
+                  damper_signal, economizer_conditon, current_time):
         '''
         Check application pre-quisites and assemble data set for analysis.
         '''
@@ -1364,7 +1328,7 @@ class insufficient_oa_intake(object):
         elapsed_time = elapsed_time if elapsed_time > 0 else 1.0
 
         if (elapsed_time >= self.data_window and
-           len(self.timestamp) >= self.no_required_data):
+                len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.insufficient_oa(
                 diagnostic_result, current_time)
         return diagnostic_result
@@ -1389,7 +1353,7 @@ class insufficient_oa_intake(object):
             color_code = 'GREY'
             result.log(diagnostic_message, logging.INFO)
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ4,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -1409,7 +1373,7 @@ class insufficient_oa_intake(object):
 
             color_code = 'RED'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -1426,7 +1390,7 @@ class insufficient_oa_intake(object):
                                   'ventilation.')
             color_code = 'RED'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -1438,7 +1402,7 @@ class insufficient_oa_intake(object):
                                   'limits.')
             color_code = 'GREEN'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ','T'),
+                'datetime': (str(current_time)).replace(' ', 'T'),
                 'diagnostic_name': econ5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
