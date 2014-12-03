@@ -146,12 +146,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         serializer = serializers.CreateFileSerializer(
                 project=project, data=request.DATA, files=request.FILES)
-        if serializer.is_valid():
-            obj = serializer.save(force_insert=True)
-            serializer = serializers.FileSerializer(
-                    instance=obj, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            if serializer.is_valid():
+                obj = serializer.save(force_insert=True)
+                serializer = serializers.FileSerializer(
+                        instance=obj, context={'request': request})
+                return Response(serializer.data, 
+                                status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, 
+                            status=status.HTTP_400_BAD_REQUEST)
+        except:
+            return Response(serializer.errors, 
+                            status=status.HTTP_400_BAD_REQUEST)
 
     @link()
     def files(self, request, *args, **kwargs):
