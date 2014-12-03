@@ -64,6 +64,8 @@ import subprocess
 import sys
 import tempfile
 
+from openeis.projects.version import get_version_info
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 # Script should always be called from the root of the repository.
 OPENEIS_SRC_DIR = os.path.abspath(os.curdir)
@@ -107,7 +109,13 @@ OUTPUT_FILE = ''
 # A temp cirectory for use during this build.
 TEMP_DIR = ''
 
-ORIG_CWD = os.getcwd()
+ORIG_CWD = os.path.abspath(os.getcwd())
+
+_vinfo = get_version_info()
+_VERSION_STRING = 'openeis-setup_{}-{}-{}'.format(_vinfo['version'],
+                                                  _vinfo['revision'],
+                                                  _vinfo['vcs_version'])
+
 
 def move_wheel(src_file):
     '''Move the src_file wheel from the current directories dist dir to wheeldir
@@ -254,6 +262,7 @@ def validate_and_setfolders(support_root, outdir):
     global cfg, OPENEIS_SRC_DIR, WORKING_DIR, NUMPY_DIR, MISC_DIR
     global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, WHEEL_DIR,CLEAN_PYTHON_DIR
 
+    outdir = os.path.abspath(outdir.replace('/', '\\'))
     print("Out directory is: "+outdir)
     support_root = os.path.abspath(support_root.replace('/', '\\'))
 
@@ -280,7 +289,7 @@ def validate_and_setfolders(support_root, outdir):
     repovers = subprocess.check_output(["git.exe", 'describe'])
 
     repovers = str(repovers).split('-')[-1][:-3]
-    OUTPUT_FILE = os.path.join(outdir, "openeis-setup-{}.exe".format(repovers))
+    OUTPUT_FILE = os.path.join(outdir, _VERSION_STRING)+'.exe'
     return True
 
 
