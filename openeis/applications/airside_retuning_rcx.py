@@ -785,34 +785,35 @@ class DuctStaticRcx(object):
                                               'too low. The duct static '
                                               'pressure has been increased '
                                               'to: ')
-                        diagnostic_message += str(duct_stpr_stpt) + ' in. w.c.'
+                        diagnostic_message += str(duct_stpr_stpt) + ' in. w.g.'
                     else:
                         result.command(
                             Application.duct_stp_stpt_cname,
                             self.max_duct_stp_stpt)
-                        diagnostic_message = ('Duct static pressure '
-                                              'set point is at maximum value '
-                                              'specified in configuration '
-                                              'file')
+                        diagnostic_message = ('The duct static pressure set '
+                                              'point is at the maximum '
+                                              'value configured by the '
+                                              'building operator.')
                 else:
-                    diagnostic_message = ('Duct static pressure set '
+                    diagnostic_message = ('The duct static pressure set '
                                           'point was detected to be too low '
-                                          'but auto-correction is not enabled')
+                                          'but auto-correction '
+                                          'is not enabled.')
 
             elif not static_override_check:
                 diagnostic_message = ('The duct static pressure was '
-                                      'detected to be too low')
+                                      'detected to be too low.')
             else:
                 diagnostic_message = ('The duct static pressure was '
                                       'detected to be too low but an operator '
                                       'override was detected. Auto-correction '
                                       'can not be performed when the static '
                                       'pressure set point or fan speed '
-                                      'command is in overrride')
+                                      'command is in overrride.')
         else:
             diagnostic_message = ('No re-tuning opportunity was '
                                   'detected during the low duct static '
-                                  'pressure diagnostic')
+                                  'pressure diagnostic.')
             color_code = 'GREEN'
 
         dx_table = {
@@ -853,35 +854,36 @@ class DuctStaticRcx(object):
                             Application.duct_stp_stpt_cname, duct_stpr_stpt)
                         diagnostic_message = ('The duct static '
                                               'pressure was detected to be '
-                                              'too high. The duct static '
-                                              'pressure has been reduced to')
-                        diagnostic_message += str(duct_stpr_stpt) + ' in. w.c.'
+                                              'too high, the duct static '
+                                              'pressure has been reduced to: ')
+                        diagnostic_message += str(duct_stpr_stpt) + ' in. w.g.'
                     else:
                         result.command(
                             Application.duct_stp_stpt_cname,
                             self.min_duct_stp_stpt)
-                        diagnostic_message = ('Duct static pressure set '
-                                              'point is at minimum value '
-                                              'specified in '
-                                              'configuration file')
+                        diagnostic_message = ('The duct static pressure set '
+                                              'point is at the minimum value '
+                                              'configured by the building '
+                                              'operator.')
                 else:
                     diagnostic_message = ('Duct static pressure set '
                                           'point was detected to be too high '
-                                          'but auto-correction is not enabled')
+                                          'but auto-correction '
+                                          'is not enabled.')
             elif not static_override_check:
                 diagnostic_message = ('The duct static pressure was '
-                                      'detected to be too high')
+                                      'detected to be too high.')
             else:
                 diagnostic_message = ('The duct static pressure was '
                                       'detected to be too high but an '
                                       'operator override was detected. '
                                       'Auto-correction can not be performed '
                                       'when the static pressure set point '
-                                      'or fan speed command is in overrride')
+                                      'or fan speed command is in overrride.')
         else:
             diagnostic_message = ('No re-tuning opportunity was '
                                   'detected during the low duct static '
-                                  'pressure diagnostic')
+                                  'pressure diagnostic.')
             color_code = 'GREEN'
 
         dx_table = {
@@ -986,7 +988,7 @@ class SupplyTempRcx(object):
                 diagnostic_message = ('Supply-air temperature is '
                                       'deviating significantly '
                                       'from the supply-air temperature '
-                                      'set point')
+                                      'set point.')
                 color_code = 'RED'
                 energy_impact = None
                 dx_table = {
@@ -1032,10 +1034,10 @@ class SupplyTempRcx(object):
                     if sat_stpt <= self.maximum_sat_stpt:
                         result.command(Application.sat_stpt_cname, sat_stpt)
                         diagnostic_message = ('The SAT has been '
-                                              'detected to be too low. '
-                                              'The SAT has been '
+                                              'detected to be too low, '
+                                              'the SAT has been '
                                               'increased to: ')
-                        diagnostic_message += str(sat_stpt) + ' deg.'
+                        diagnostic_message += str(sat_stpt) + ' deg. F'
                     else:
                         # Create diagnostic message
                         # for fault condition where
@@ -1043,7 +1045,7 @@ class SupplyTempRcx(object):
                         result.command(Application.sat_stpt_cname,
                                        self.maximum_sat_stpt)
                         diagnostic_message = ('The SAT was detected '
-                                              'to be too low, Auto-correction '
+                                              'to be too low, auto-correction '
                                               'has increased the SAT to the '
                                               'maximum configured SAT: ')
 
@@ -1054,15 +1056,15 @@ class SupplyTempRcx(object):
                     # condition without auto-correction
                     diagnostic_message = ('The SAT has been detected '
                                           'to be too low but auto-correction '
-                                          'is not enabled')
+                                          'is not enabled.')
             elif not sat_override_check:
                 diagnostic_message = ('The SAT has been detected to '
-                                      'be too low')
+                                      'be too low.')
             else:
                 diagnostic_message = ('The SAT has been detected to '
                                       'be too low but auto-correction cannot '
                                       'be performed because the SAT set-point '
-                                      'is in an override state')
+                                      'is in an override state.')
         else:
             diagnostic_message = ('No problem detected')
             color_code = 'GREEN'
@@ -1100,9 +1102,9 @@ class SupplyTempRcx(object):
                     if sat_stpt >= self.minimum_sat_stpt:
                         result.command(Application.sat_stpt_cname, sat_stpt)
                         diagnostic_message = ('The SAT has been '
-                                              'detected to be too high. The '
+                                              'detected to be too high the '
                                               'SAT has been increased to: ')
-                        diagnostic_message += str(sat_stpt)
+                        diagnostic_message += str(sat_stpt) + ' deg. F'
                     else:
                         # Create diagnostic message for fault condition
                         # where the maximum SAT has been reached
@@ -1110,24 +1112,24 @@ class SupplyTempRcx(object):
                             Application.sat_stpt_cname, self.minimum_sat_stpt)
                         diagnostic_message = ('The SAT was detected '
                                               'to be too high, '
-                                              'Auto-correction has increased '
+                                              'auto-correction has increased '
                                               'the SAT to the minimum '
                                               'configured SAT: ')
-                        diagnostic_message += str(self.minimum_sat_stpt)
+                        diagnostic_message += str(self.minimum_sat_stpt) + ' deg. F'
                 else:
                     # Create diagnostic message for fault condition
                     # without auto-correction
                     diagnostic_message = ('The SAT has been detected '
                                           'to be too high but auto-correction '
-                                          'is not enabled')
+                                          'is not enabled.')
             if not sat_override_check:
                 diagnostic_message = ('The SAT has been detected to '
-                                      'be too high')
+                                      'be too high.')
             else:
                 diagnostic_message = ('The SAT has been detected to '
                                       'be too high but auto-correction cannot '
                                       'be performed because the SAT set point '
-                                      'is in an override state')
+                                      'is in an override state.')
         else:
             diagnostic_message = ('No problem detected'
                                   .format(name=SA_TEMP_RCx2))
