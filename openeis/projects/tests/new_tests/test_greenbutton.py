@@ -119,9 +119,6 @@ def test_get_currency_type():
     currency_retrieved = get_currency_type(root, ns)
     assert(node_currency == currency_retrieved)
 
-def test_get_retail_customer():
-    pass
-
 def test_get_uom_type():
     '''Test that uom type is correctly retrieved.'''
     input_file = os.path.join(os.path.dirname(views.__file__),'fixtures/greenbutton','TestGBDataoneMonthBinnedDailyWCost.xml')
