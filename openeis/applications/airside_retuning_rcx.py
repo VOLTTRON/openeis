@@ -1358,7 +1358,7 @@ class SchedResetRcx(object):
             color_code = 'GREEN'
         dx_table = {
             'datetime': str(self.dx_time),
-            'diagnostic_name': SA_TEMP_RCx2,
+            'diagnostic_name': SA_TEMP_RCx3,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
