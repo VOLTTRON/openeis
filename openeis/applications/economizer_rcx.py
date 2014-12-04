@@ -58,12 +58,11 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
-econ1 = 'Temperature Sensor Dx'
-econ2 = 'Economizer Correctly ON Dx'
-econ3 = 'Economizer Correctly OFF Dx'
-econ4 = 'Excess Outdoor-air Intake Dx'
-econ5 = 'Insufficient Outdoor-air Intake Dx'
-time_format = '%m/%d/%Y %H:%M'
+ECON1 = 'Temperature Sensor Dx'
+ECON2 = 'Economizer Correctly ON Dx'
+ECON3 = 'Economizer Correctly OFF Dx'
+ECON4 = 'Excess Outdoor-air Intake Dx'
+ECON5 = 'Insufficient Outdoor-air Intake Dx'
 
 
 class Application(DrivenApplicationBaseClass):
@@ -310,7 +309,7 @@ class Application(DrivenApplicationBaseClass):
                              optional=True),
             'temp_difference_threshold':
             ConfigDescriptor(float,
-                             'Threshold fordetecting temperature sensor '
+                             'Threshold for detecting temperature sensor '
                              'problems (default=4F)', optional=True),
             'oat_mat_check':
             ConfigDescriptor(float,
@@ -410,7 +409,7 @@ class Application(DrivenApplicationBaseClass):
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
                                                        message_topic),
-                'energy_impact': OutputDescriptor('float', energy_impact),
+                'energy_impact': OutputDescriptor('string', energy_impact),
                 'color_code': OutputDescriptor('string', color_code)
             }
         }
@@ -423,16 +422,14 @@ class Application(DrivenApplicationBaseClass):
         '''
         device_dict = {}
         diagnostic_result = Results()
-
         topics = self.inp.get_topics()
         diagnostic_topic = topics[self.fan_status_name][0]
         current_time = self.inp.localize_sensor_time(diagnostic_topic,
                                                      current_time)
-
         for key, value in points.items():
             device_dict[key.lower()] = value
-
         fan_stat_check = False
+
         for key, value in device_dict.items():
             if key.startswith(self.fan_status_name):
                 if value is not None and not int(value):
@@ -457,7 +454,6 @@ class Application(DrivenApplicationBaseClass):
             diagnostic_result = self.pre_message(diagnostic_result,
                                                  current_time)
             return diagnostic_result
-
         damper_data = []
         oatemp_data = []
         matemp_data = []
@@ -469,42 +465,32 @@ class Application(DrivenApplicationBaseClass):
             if (key.startswith(self.damper_signal_name)
                     and value is not None):
                 damper_data.append(value)
-
             elif (key.startswith(self.oa_temp_name)
                   and value is not None):
                 oatemp_data.append(value)
-
             elif (key.startswith(self.ma_temp_name)
                   and value is not None):
                 matemp_data.append(value)
-
             elif (key.startswith(self.ra_temp_name)
                   and value is not None):
                 ratemp_data.append(value)
-
             elif (key.startswith(self.cool_call_name)
                   and value is not None):
                 cooling_data.append(value)
-
             elif (key.startswith(self.fan_speedcmd_name)
                   and value is not None):
                 fan_speedcmd_data.append(value)
 
         if not oatemp_data:
             Application.pre_requiste_messages.append(self.pre_msg3)
-
         if not ratemp_data:
             Application.pre_requiste_messages.append(self.pre_msg4)
-
         if not matemp_data:
             Application.pre_requiste_messages.append(self.pre_msg5)
-
         if not damper_data:
             Application.pre_requiste_messages.append(self.pre_msg6)
-
         if not cooling_data:
             Application.pre_requiste_messages.append(self.pre_msg7)
-
         if not (oatemp_data and ratemp_data and matemp_data and
                 damper_data and cooling_data):
             diagnostic_result = self.pre_message(diagnostic_result,
@@ -518,7 +504,6 @@ class Application(DrivenApplicationBaseClass):
         fan_speedcmd = None
         if fan_speedcmd_data:
             fan_speedcmd = sum(fan_speedcmd_data)/len(fan_speedcmd_data)
-
         limit_check = False
         if oatemp < self.oat_low_threshold or oatemp > self.oat_high_threshold:
             Application.pre_requiste_messages.append(self.pre_msg8)
@@ -529,7 +514,6 @@ class Application(DrivenApplicationBaseClass):
         if matemp < self.mat_low_threshold or matemp > self.mat_high_threshold:
             Application.pre_requiste_messages.append(self.pre_msg10)
             limit_check = True
-
         if limit_check:
             diagnostic_result = self.pre_message(diagnostic_result,
                                                  current_time)
@@ -542,7 +526,6 @@ class Application(DrivenApplicationBaseClass):
                                   .format(timestamp=str(current_time)),
                                   logging.DEBUG)
             return diagnostic_result
-
         device_type_error = False
         if self.device_type == 'ahu':
             cooling_valve = sum(cooling_data) / len(cooling_data)
@@ -557,20 +540,16 @@ class Application(DrivenApplicationBaseClass):
             diagnostic_result.log('device_type must be specified '
                                   'as "AHU" or "RTU" Check '
                                   'Configuration input.', logging.INFO)
-
         if device_type_error:
             return diagnostic_result
-
         if self.economizer_type == 'ddb':
             economizer_conditon = (oatemp < (ratemp - self.temp_deadband))
         else:
             economizer_conditon = (
                 oatemp < (self.econ_hl_temp - self.temp_deadband))
-
         diagnostic_result = self.econ1.econ_alg1(diagnostic_result,
                                                  oatemp, ratemp, matemp,
                                                  damper_signal, current_time)
-
         if (temperature_sensor_dx.temp_sensor_problem is not None and
                 temperature_sensor_dx.temp_sensor_problem is False):
             diagnostic_result = self.econ2.econ_alg2(diagnostic_result,
@@ -731,7 +710,7 @@ class temperature_sensor_dx(object):
                 color_code = 'RED'
                 dx_table = {
                     'datetime': (str(current_time)).replace(' ', 'T'),
-                    'diagnostic_name': econ1,
+                    'diagnostic_name': ECON1,
                     'diagnostic_message': diagnostic_message,
                     'energy_impact': None,
                     'color_code': color_code
@@ -751,7 +730,7 @@ class temperature_sensor_dx(object):
             color_code = 'RED'
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ1,
+                'diagnostic_name': ECON1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
@@ -768,7 +747,7 @@ class temperature_sensor_dx(object):
             color_code = 'RED'
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ1,
+                'diagnostic_name': ECON1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
@@ -781,7 +760,7 @@ class temperature_sensor_dx(object):
             color_code = 'GREEN'
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ1,
+                'diagnostic_name': ECON1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
@@ -792,7 +771,7 @@ class temperature_sensor_dx(object):
             color_code = 'GREEN'
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ1,
+                'diagnostic_name': ECON1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
@@ -859,13 +838,13 @@ class econ_correctly_on(object):
                                   'corresponding to {timestamp} will '
                                   'not be used for {name} diagnostic.'.
                                   format(timestamp=str(current_time),
-                                         name=econ2), logging.DEBUG)
+                                         name=ECON2), logging.DEBUG)
             self.output_no_run.append(current_time)
             if ((self.output_no_run[-1] - self.output_no_run[0]) >=
                     datetime.timedelta(minutes=(self.data_window))):
                 diagnostic_result.log(('{name}: the unit is not cooling or '
                                        'economizing, keep collecting data.')
-                                      .format(name=econ2), logging.DEBUG)
+                                      .format(name=ECON2), logging.DEBUG)
                 self.output_no_run = []
             return diagnostic_result
 
@@ -874,13 +853,13 @@ class econ_correctly_on(object):
                                   'economizing, data corresponding to '
                                   '{timestamp} will not be used.'.
                                   format(timestamp=str(current_time),
-                                         name=econ2), logging.DEBUG)
+                                         name=ECON2), logging.DEBUG)
             self.output_no_run.append(current_time)
             if ((self.output_no_run[-1] - self.output_no_run[0]) >=
                     datetime.timedelta(minutes=(self.data_window))):
                 diagnostic_result.log(('{name}: the unit is not cooling or '
                                        'economizing, keep collecting data.')
-                                      .format(name=econ2), logging.DEBUG)
+                                      .format(name=ECON2), logging.DEBUG)
                 self.output_no_run = []
             return diagnostic_result
 
@@ -944,10 +923,13 @@ class econ_correctly_on(object):
                 avg_step if len(energy_calc) > 1 else 1.0
             energy_impact = (sum(energy_calc) * 60.0) / \
                 (len(energy_calc) * dx_time)
+            energy_impact = '%s' % float('%.2g' % energy_impact)
+            energy_impact = str(energy_impact)
+            energy_impact = ''.join([energy_impact, ' kWh/h'])
 
         dx_table = {
             'datetime': (str(current_time)).replace(' ', 'T'),
-            'diagnostic_name': econ2, 'diagnostic_message': diagnostic_message,
+            'diagnostic_name': ECON2, 'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
             }
@@ -1080,10 +1062,13 @@ class econ_correctly_off(object):
                 avg_step if len(energy_calc) > 1 else 1.0
             energy_impact = (sum(energy_calc) * 60.0) / \
                 (len(energy_calc) * dx_time)
+            energy_impact = '%s' % float('%.2g' % energy_impact)
+            energy_impact = str(energy_impact)
+            energy_impact = ''.join([energy_impact, ' kWh/h'])
 
         dx_table = {
             'datetime': (str(current_time)).replace(' ', 'T'),
-            'diagnostic_name': econ3,
+            'diagnostic_name': ECON3,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
@@ -1204,7 +1189,7 @@ class excess_oa_intake(object):
             result.log(diagnostic_message, logging.INFO)
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ4,
+                'diagnostic_name': ECON4,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
@@ -1243,6 +1228,9 @@ class excess_oa_intake(object):
                     avg_step if len(energy_calc) > 1 else 1.0
                 energy_impact = (sum(energy_calc) * 60.0) / \
                     (len(energy_calc) * dx_time)
+                energy_impact = '%s' % float('%.2g' % energy_impact)
+                energy_impact = str(energy_impact)
+                energy_impact = ''.join([energy_impact, ' kWh/h'])
 
         elif not diagnostic_message:
             diagnostic_message = ('The calculated outdoor-air '
@@ -1252,7 +1240,7 @@ class excess_oa_intake(object):
 
         dx_table = {
             'datetime': (str(current_time)).replace(' ', 'T'),
-            'diagnostic_name': econ4,
+            'diagnostic_name': ECON4,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
@@ -1314,7 +1302,7 @@ class insufficient_oa_intake(object):
                                   'data corresponding to {timestamp}'
                                   ' will not be used for the diagnostic.'
                                   .format(timestamp=str(current_time),
-                                          name=econ5), logging.DEBUG)
+                                          name=ECON5), logging.DEBUG)
             return diagnostic_result
 
         self.oa_temp_values.append(oatemp)
@@ -1354,7 +1342,7 @@ class insufficient_oa_intake(object):
             result.log(diagnostic_message, logging.INFO)
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ4,
+                'diagnostic_name': ECON5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
@@ -1374,7 +1362,7 @@ class insufficient_oa_intake(object):
             color_code = 'RED'
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ5,
+                'diagnostic_name': ECON5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
@@ -1391,7 +1379,7 @@ class insufficient_oa_intake(object):
             color_code = 'RED'
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ5,
+                'diagnostic_name': ECON5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
@@ -1403,7 +1391,7 @@ class insufficient_oa_intake(object):
             color_code = 'GREEN'
             dx_table = {
                 'datetime': (str(current_time)).replace(' ', 'T'),
-                'diagnostic_name': econ5,
+                'diagnostic_name': ECON5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': color_code
