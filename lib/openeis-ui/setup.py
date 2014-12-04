@@ -20,8 +20,6 @@ def get_files(path):
     os.chdir(cpath)
     return file_names
 
-print("HERE DATA:",os.path.join(basepath, 'openeis', 'openeis-ui'))
-
 setup(
     name = 'openeis-ui',
     version = '0.2.dev0',
