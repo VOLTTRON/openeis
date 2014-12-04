@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "OpenEIS"
-#define MyAppVersion "0.1"
+#define MyAppVersion "0.2"
 #define MyAppPublisher "Pacific Northwest National Laboratory"
 #define MyAppURL "https://github.com/VOLTTRON/openeis/"
 
@@ -47,6 +47,7 @@ Source: "{#SrcRoot}\misc\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdi
 Filename: "{app}\python\python.exe"; Parameters: "{app}\get-pip.py"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install wheel"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install --no-index --find-links={app}\wheels -r {app}\requirements.txt"
+Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install openeis-ui --no-index --find-links={app}\wheels --pre"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install openeis --no-index --find-links={app}\wheels"
 Filename: "{app}\start-openeis.bat"; Description: "Launch application"; Flags: postinstall nowait skipifsilent unchecked
 
