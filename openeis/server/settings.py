@@ -163,12 +163,6 @@ TEMPLATE_DIRS = (
 # Setup of django_nose based upon readme at https://github.com/buchuki/django-pytest
 TEST_RUNNER = 'django_pytest.test_runner.TestRunner'
 
-# this is used to override the settings in the standalone windows installer.
-try:
-    from openeis.local.settings import *
-except:
-    pass
-
 PROTECTED_MEDIA_URL = '/files/'
 PROTECTED_MEDIA_ROOT = os.path.join(DATA_DIR, 'files')
 PROTECTED_MEDIA_METHOD = 'direct' # 'X-Sendfile', 'X-Accel-Redirect', 'direct'
