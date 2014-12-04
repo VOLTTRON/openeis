@@ -114,9 +114,15 @@ def _load_module(name, package=None):
 
 def _load_file(path):
     '''Load a module from file into the current namespace.'''
-    importlib.machinery.SourceFileLoader(
-            __name__, path).exec_module(sys.modules[__name__])
-    globals()['_source_'] = 'file', path
+    path = os.path.abspath(path)
+    name = '.'.join([__name__, '_file'])
+    module = importlib.machinery.SourceFileLoader(name, path).load_module(name)
+    attrs = globals()
+    for name in ['__name__', '__package__']:
+        module.__dict__[name] = attrs[name]
+    attrs.clear()
+    attrs.update(module.__dict__)
+    attrs['_source_'] = 'file', path
 
 
 def _load_directory(dirname):
