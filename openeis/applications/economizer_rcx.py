@@ -59,8 +59,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   reports)
 
 ECON1 = 'Temperature Sensor Dx'
-ECON2 = 'Economizer Correctly ON Dx'
-ECON3 = 'Economizer Correctly OFF Dx'
+ECON2 = 'Economizing When Unit Should Dx'
+ECON3 = 'Economizing When Unit Should Not Dx'
 ECON4 = 'Excess Outdoor-air Intake Dx'
 ECON5 = 'Insufficient Outdoor-air Intake Dx'
 
@@ -101,7 +101,7 @@ class Application(DrivenApplicationBaseClass):
                  insufficient_damper_threshold=15.0,
                  temp_damper_threshold=90.0, rated_cfm=500.0, eer=10.0,
                  **kwargs):
-        '''initialize user configurable parameters.'''
+        # initialize user configurable parameters.
         super().__init__(*args, **kwargs)
         self.fan_status_name = Application.fan_status_name
         self.oa_temp_name = Application.oa_temp_name
@@ -110,18 +110,14 @@ class Application(DrivenApplicationBaseClass):
         self.damper_signal_name = Application.damper_signal_name
         self.cool_call_name = Application.cool_call_name
         self.fan_speedcmd_name = Application.fan_speedcmd_name
-
         self.device_type = device_type.lower()
-
         self.economizer_type = economizer_type.lower()
         if self.economizer_type == 'hl':
             self.econ_hl_temp = float(econ_hl_temp)
-
         Application.pre_requiste_messages = []
         Application.pre_msg_time = []
         self.oaf_temperature_threshold = float(oaf_temperature_threshold)
-
-        '''Application thresholds (Configurable)'''
+        # Application thresholds (Configurable)
         self.data_window = float(data_window)
         no_required_data = int(no_required_data)
         self.mat_low_threshold = float(mat_low_threshold)
@@ -135,8 +131,7 @@ class Application(DrivenApplicationBaseClass):
         self.cooling_enabled_threshold = float(cooling_enabled_threshold)
         cfm = float(rated_cfm)
         eer = float(eer)
-
-        '''Pre-requisite messages'''
+        # Pre-requisite messages
         self.pre_msg1 = ('Supply fan is off, current data will '
                          'not be used for diagnostics.')
         self.pre_msg2 = ('Supply fan status data is missing '
@@ -161,11 +156,9 @@ class Application(DrivenApplicationBaseClass):
         self.pre_msg8 = ('Outside-air temperature is outside high/low '
                          'operating limits, check the functionality of '
                          'the temperature sensor.')
-
         self.pre_msg9 = ('Return-air temperature is outside high/low '
                          'operating limits, check the functionality of '
                          'the temperature sensor.')
-
         self.pre_msg10 = ('Mixed-air temperature is outside high/low '
                           'operating limits, check the functionality '
                           'of the temperature sensor.')
@@ -332,7 +325,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'Auto-RCx for for Economizer HVAC Systems'
+        name = 'Auto-RCx for Economizer HVAC Systems'
         desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
         return Descriptor(name=name, description=desc)
 

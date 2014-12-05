@@ -61,12 +61,11 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   reports)
 
 Hot_water_RCx = 'Hot Water Central Plant Diagnostics'
-hotwater_dx1 = 'High HW loop Differential Pressure Dx'
-hotwater_dx2 = 'HW loop Differential Pressure Reset Dx'
-hotwater_dx3 = 'HW loop High Supply Temperature Dx'
-hotwater_dx4 = 'HW loop Supply Temperature Reset Dx'
-hotwater_dx5 = 'HW loop Low Delta-T Dx'
-time_format = '%m/%d/%Y %H:%M'
+hotwater_dx1 = 'High Hot-water loop Differential Pressure Dx'
+hotwater_dx2 = 'No Hot-Water loop Differential Pressure Reset Dx'
+hotwater_dx3 = 'High Hot-water Loop Supply Temperature Dx'
+hotwater_dx4 = 'No Hot-Water loop Supply Temperature Reset Dx'
+hotwater_dx5 = 'Hot-Water loop Low Delta-T Dx'
 
 
 class Application(DrivenApplicationBaseClass):
@@ -270,7 +269,7 @@ class Application(DrivenApplicationBaseClass):
     def get_self_descriptor(cls):
         name = 'Auto-RCx for Hot-Water Distributions Systems'
         desc = ('Automated Retro-commissioning Diagnostics for '
-                'hot-water distribution system')
+                'hot-water distribution system.')
         return Descriptor(name=name, description=desc)
 
     def data_check(self, point_dict, _name, opt_name='zyxwvutsrq'):

@@ -67,7 +67,7 @@ DUCT_STC_RCx3 = 'No Static Pressure Reset Dx'
 SA_TEMP_RCx = 'Supply-air temperature Diagnostics'
 SA_TEMP_RCx1 = 'Low Supply-air Temperature Dx'
 SA_TEMP_RCx2 = 'High Supply-air Temperature Dx'
-SA_TEMP_RCx3 = 'Supply-air Temperature Reset Dx'
+SA_TEMP_RCx3 = 'No Supply-air Temperature Reset Dx'
 SCHED_RCx = 'Operational Schedule Dx'
 
 
@@ -405,7 +405,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'Auto-RCx for for Air Handling HVAC Systems'
+        name = 'Auto-RCx for Air Handling HVAC Systems'
         desc = 'Automated Retro-commisioning for AHUs'
         return Descriptor(name=name, description=desc)
 
@@ -479,7 +479,7 @@ class Application(DrivenApplicationBaseClass):
 
         output_needs = {
             'Airside_RCx': {
-                'datetime': OutputDescriptor('datetime', datetime_topic),
+                'datetime': OutputDescriptor('string', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
                 'diagnostic_message': OutputDescriptor('string',
                                                        message_topic),
@@ -814,7 +814,7 @@ class DuctStaticRcx(object):
                                       'override was detected. Auto-correction '
                                       'can not be performed when the static '
                                       'pressure set point or fan speed '
-                                      'command is in overrride.')
+                                      'command is in override.')
         else:
             diagnostic_message = ('No re-tuning opportunity was '
                                   'detected during the low duct static '
@@ -884,7 +884,7 @@ class DuctStaticRcx(object):
                                       'operator override was detected. '
                                       'Auto-correction can not be performed '
                                       'when the static pressure set point '
-                                      'or fan speed command is in overrride.')
+                                      'or fan speed command is in override.')
         else:
             diagnostic_message = ('No re-tuning opportunity was '
                                   'detected during the low duct static '
