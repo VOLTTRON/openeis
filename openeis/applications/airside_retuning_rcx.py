@@ -90,8 +90,6 @@ class Application(DrivenApplicationBaseClass):
     ahu_ccoil_priority = ''
     sat_stpt_priority = ''
 
-    time_format = '%m/%d/%Y %H:%M'
-
     def __init__(self, *args, no_required_data=5, data_window=15,
                  warm_up_time=30, duct_stc_retuning=0.15,
                  max_duct_stp_stpt=2.5, high_supply_fan_threshold=100.0,
@@ -301,7 +299,7 @@ class Application(DrivenApplicationBaseClass):
 
             'rht_on_threshold':
             ConfigDescriptor(float,
-                             'Value above which zone reheat is '
+                             'Value above which zone re-heat is '
                              'considered ON (default=10%)',
                              optional=True),
             'sat_retuning':
@@ -346,7 +344,7 @@ class Application(DrivenApplicationBaseClass):
                              '(default=30%)', optional=True),
             'unocc_stp_threshold':
             ConfigDescriptor(float,
-                             'AHU off static pressure deadband '
+                             'AHU off static pressure dead-band '
                              'Detects whether the duct static '
                              'pressure exceeds this '
                              'value during non-working scheduled '
@@ -505,7 +503,7 @@ class Application(DrivenApplicationBaseClass):
                                                      current_time)
         for key, value in points.items():
             device_dict[key.lower()] = value
-
+        supply_fan_off = False
         fan_stat_data = []
         fan_stat_check = False
         for key, value in device_dict.items():
@@ -517,7 +515,7 @@ class Application(DrivenApplicationBaseClass):
                     Application.pre_requiste_messages.append(self.pre_msg1)
                     diagnostic_result = self.pre_message(diagnostic_result,
                                                          current_time)
-                    return diagnostic_result
+                    supply_fan_off = True
         if not fan_stat_check and self.fan_speedcmd_name is not None:
             for key, value in device_dict.items():
                 if (key.startswith(self.fan_speedcmd_name) and
@@ -530,6 +528,7 @@ class Application(DrivenApplicationBaseClass):
                                                              current_time)
                         return diagnostic_result
                     fan_stat_data.append(1)
+                    supply_fan_off = False
         if not fan_stat_check:
             Application.pre_requiste_messages.append(self.pre_msg0)
             diagnostic_result = self.pre_message(diagnostic_result,
@@ -539,18 +538,6 @@ class Application(DrivenApplicationBaseClass):
         high_dx_condition = False
         static_override_check = False
         sat_override_check = False
-        if self.warm_up_flag:
-            self.warm_up_flag = False
-            self.warm_up_start = current_time
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
-            return diagnostic_result
-        time_check = datetime.timedelta(minutes=self.warm_up_time)
-        if (self.warm_up_start is not None and
-                (current_time - self.warm_up_start) < time_check):
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
-            return diagnostic_result
 
         for key, value in device_dict.items():
             if (self.fan_speedcmd_name is not None and
@@ -616,6 +603,26 @@ class Application(DrivenApplicationBaseClass):
             diagnostic_result = self.pre_message(diagnostic_result,
                                                  current_time)
             return diagnostic_result
+        diagnostic_result = self.sched_occ_dx.sched_rcx_alg(
+            current_time, stc_pr_data, stc_pr_sp_data,
+            sat_stpt_data, fan_stat_data, diagnostic_result)
+
+        if supply_fan_off:
+            return diagnostic_result
+
+        if self.warm_up_flag:
+            self.warm_up_flag = False
+            self.warm_up_start = current_time
+            diagnostic_result = self.pre_message(diagnostic_result,
+                                                 current_time)
+            return diagnostic_result
+
+        time_check = datetime.timedelta(minutes=self.warm_up_time)
+        if (self.warm_up_start is not None and
+                (current_time - self.warm_up_start) < time_check):
+            diagnostic_result = self.pre_message(diagnostic_result,
+                                                 current_time)
+            return diagnostic_result
         diagnostic_result = self.static_dx.duct_static(
             current_time, stc_pr_sp_data, stc_pr_data, zone_damper_data,
             static_override_check, low_dx_condition,
@@ -623,9 +630,7 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_result = self.sat_dx.sat_rcx(
             current_time, satemp_data, sat_stpt_data, rht_data,
             zone_damper_data, diagnostic_result, sat_override_check)
-        diagnostic_result = self.sched_occ_dx.sched_rcx_alg(
-            current_time, stc_pr_data, stc_pr_sp_data,
-            sat_stpt_data, fan_stat_data, diagnostic_result)
+
         return diagnostic_result
 
     def pre_message(self, result, current_time):
@@ -949,7 +954,6 @@ class SupplyTempRcx(object):
         self.sa_temp_values.append(sum(satemp_data) / len(satemp_data))
         self.rht_values.append(sum(rht_data) / len(rht_data))
         self.sat_stpt_values.append(sum(sat_stpt_data) / len(sat_stpt_data))
-
         total_damper = 0
         count_damper = 0
         total_reheat = 0
@@ -984,6 +988,7 @@ class SupplyTempRcx(object):
             set_point_tracking = (sum(set_point_tracking) /
                                   len(set_point_tracking)
                                   * avg_sat_stpt) * 100
+
             if set_point_tracking > self.setpoint_allowable_deviation:
                 diagnostic_message = ('Supply-air temperature is '
                                       'deviating significantly '
@@ -1115,7 +1120,8 @@ class SupplyTempRcx(object):
                                               'auto-correction has increased '
                                               'the SAT to the minimum '
                                               'configured SAT: ')
-                        diagnostic_message += str(self.minimum_sat_stpt) + ' deg. F'
+                        diagnostic_message += (str(self.minimum_sat_stpt) +
+                                               ' deg. F')
                 else:
                     # Create diagnostic message for fault condition
                     # without auto-correction
@@ -1220,6 +1226,21 @@ class SchedResetRcx(object):
                       sat_stpt_data,
                       fan_stat_data, diagnostic_result):
         '''Check schedule status and unit operational status.'''
+        def clear_old():
+            self.dx_time = None
+            self.sat_stpt_values = []
+            self.duct_stp_stpt_values = []
+            self.duct_stp_values = []
+            self.fan_status_values = []
+            Application.pre_requiste_messages = []
+            Application.pre_msg_time = []
+            if duct_stp_stpt_values is not None:
+                self.sat_stpt_values.append(sat_stpt_values)
+                self.duct_stp_stpt_values.append(duct_stp_stpt_values)
+            if fan_stat is not None:
+                self.fan_status_values.append(fan_stat)
+                self.duct_stp_values.append(duct_stp)
+            self.timestamp = [self.timestamp[-1]]
         fan_stat = None
         duct_stp_stpt_values = None
         active_sch = self.schedule[current_time.weekday()]
@@ -1235,12 +1256,13 @@ class SchedResetRcx(object):
             fan_stat = self.fan_status_values[-1]
             duct_stp = self.duct_stp_values[-1]
         else:
-            self.duct_stp_stpt_values.append(sum(stc_pr_sp_data) /
-                                             len(stc_pr_sp_data))
-            duct_stp_stpt_values = self.duct_stp_stpt_values[-1]
-            self.sat_stpt_values.append(sum(sat_stpt_data) /
-                                        len(sat_stpt_data))
-            sat_stpt_values = self.sat_stpt_values[-1]
+            if int(max(fan_stat_data)):
+                self.duct_stp_stpt_values.append(sum(stc_pr_sp_data) /
+                                                 len(stc_pr_sp_data))
+                duct_stp_stpt_values = self.duct_stp_stpt_values[-1]
+                self.sat_stpt_values.append(sum(sat_stpt_data) /
+                                            len(sat_stpt_data))
+                sat_stpt_values = self.sat_stpt_values[-1]
         run = False
         if self.timestamp and self.timestamp[-1].date() != current_time.date():
             self.dx_time = self.timestamp[-1].date()
@@ -1250,20 +1272,9 @@ class SchedResetRcx(object):
             diagnostic_result = self.unocc_fan_operation(diagnostic_result)
             diagnostic_result = self.no_static_pr_reset(diagnostic_result)
             diagnostic_result = self.no_sat_sp_reset(diagnostic_result)
-            self.dx_time = None
-            self.sat_stpt_values = []
-            self.duct_stp_stpt_values = []
-            self.duct_stp_values = []
-            self.fan_status_values = []
-            Application.pre_requiste_messages = []
-            Application.pre_msg_time = []
-            if duct_stp_stpt_values is not None:
-                self.sat_stpt_values.append(sat_stpt_values)
-                self.duct_stp_stpt_values.append(duct_stp_stpt_values)
-            if fan_stat is not None:
-                self.fan_status_values.append(fan_stat)
-                self.duct_stp_values.append(duct_stp)
-            self.timestamp = [self.timestamp[-1]]
+            clear_old()
+        elif run:
+            clear_old()
         return diagnostic_result
 
     def unocc_fan_operation(self, result):
@@ -1298,7 +1309,7 @@ class SchedResetRcx(object):
                                       'pressure sensor.')
                 color_code = 'GREY'
         dx_table = {
-            'datetime': self.dx_time,
+            'datetime': str(self.dx_time),
             'diagnostic_name': SCHED_RCx,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,

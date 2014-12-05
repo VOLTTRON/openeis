@@ -66,9 +66,13 @@ ECON5 = 'Insufficient Outdoor-air Intake Dx'
 
 
 class Application(DrivenApplicationBaseClass):
+    '''Application detects and corrects common operational problems for AHUs.
 
-    '''
-    HVAC economizer diagnostic
+    This application uses metered data from zones server by an AHU/RTU
+    to detect operational problems and where applicable correct these problems
+    by modifying set points.  When auto-correction cannot be applied then
+    a message detailing the diagnostic results will be made available to
+    the building operator.
     '''
     # Diagnostic Point Names (Must match OpenEIS data-type names)
     fan_status_name = 'fan_status'
@@ -97,8 +101,8 @@ class Application(DrivenApplicationBaseClass):
                  insufficient_damper_threshold=15.0,
                  temp_damper_threshold=90.0, rated_cfm=500.0, eer=10.0,
                  **kwargs):
+        '''initialize user configurable parameters.'''
         super().__init__(*args, **kwargs)
-
         self.fan_status_name = Application.fan_status_name
         self.oa_temp_name = Application.oa_temp_name
         self.ra_temp_name = Application.ra_temp_name
@@ -192,10 +196,8 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_config_parameters(cls):
-        '''
-        Generate required configuration
-        parameters with description for user
-        '''
+        '''Generate required configuration parameters with description
+        for user'''
         return {
 
             'low_supply_fan_threshold':
@@ -336,10 +338,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def required_input(cls):
-        '''
-        Generate required inputs with description for
-        user
-        '''
+        '''Generate required inputs with description for user.'''
         return {
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
@@ -368,8 +367,8 @@ class Application(DrivenApplicationBaseClass):
         }
 
     def reports(self):
-        '''
-        Called by UI to create Viz.
+        '''Called by UI to create Viz.
+
         Describe how to present output to user
         '''
         report = reports.Report('Retuning Report')
@@ -382,8 +381,8 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def output_format(cls, input_object):
-        '''
-        Called when application is staged.
+        '''Called when application is staged.
+
         Output will have the date-time and  error-message.
         '''
         result = super().output_format(input_object)
@@ -417,8 +416,12 @@ class Application(DrivenApplicationBaseClass):
         return result
 
     def run(self, current_time, points):
-        '''
-        Check application pre-quisites and assemble data set for analysis.
+        '''Main run method that is called by the DrivenBaseClass.
+
+        run receives a dictionary of data 'points' and an associated timestamp
+        for the data current_time'.  run then passes the appropriate data to
+        each diagnostic when calling
+        the diagnostic message.
         '''
         device_dict = {}
         diagnostic_result = Results()
@@ -585,9 +588,9 @@ class Application(DrivenApplicationBaseClass):
         return diagnostic_result
 
     def pre_message(self, result, current_time):
-        '''
-        Handle display of diagnostic pre-requisite
-        messages
+        '''Handle reporting of diagnostic pre-requisite messages.
+
+        Report to user when conditions are not favorable for a diagnostic.
         '''
         Application.pre_msg_time.append(current_time)
         pre_check = ((Application.pre_msg_time[-1] -
@@ -609,9 +612,11 @@ class Application(DrivenApplicationBaseClass):
 
 
 class temperature_sensor_dx(object):
-    '''
-    Air-side HVAC diagnostic to check the functionality of
-    the air temperature sensors in an AHU/RTU.
+    '''Air-side HVAC temperature sensor diagnostic for AHU/RTU systems.
+
+    temperature_sensor_dx uses metered data from a BAS or controller to
+    diagnose if any of the temperature sensors for an AHU/RTU are accurate and
+    reliable.
     '''
     def __init__(self, data_window, no_required_data,
                  temp_difference_threshold, open_damper_time,
@@ -638,10 +643,7 @@ class temperature_sensor_dx(object):
 
     def econ_alg1(self, diagnostic_result, oatemp,
                   ratemp, matemp, damper_signal, current_time):
-        '''
-        Check application pre-quisites and
-        economizer conditions (Problem or No Problem).
-        '''
+        '''Check app. pre-quisites and assemble data set for analysis.'''
         if (damper_signal) > self.temp_damper_threshold:
             if not self.econ_check:
                 self.econ_check = True
@@ -793,13 +795,11 @@ class temperature_sensor_dx(object):
 
 
 class econ_correctly_on(object):
+    '''Air-side HVAC economizer diagnostic for AHU/RTU systems.
 
+    econ_correctly_on uses metered data from a BAS or controller to diagnose
+    if an AHU/RTU is economizing when it should.
     '''
-    Air-side HVAC diagnostic to check
-    if an AHU/RTU is not economizing
-    when it should.
-    '''
-
     def __init__(self, oaf_economizing_threshold, open_damper_threshold,
                  data_window, no_required_data, cfm, eer):
         self.oa_temp_values = []
@@ -829,10 +829,7 @@ class econ_correctly_on(object):
     def econ_alg2(self, diagnostic_result, cooling_call, oatemp, ratemp,
                   matemp, damper_signal, economizer_conditon, current_time,
                   fan_speedcmd):
-        '''
-        Check application pre-quisites and
-        economizer conditions (Problem or No Problem).
-        '''
+        '''Check app. pre-quisites and assemble data set for analysis.'''
         if not cooling_call:
             diagnostic_result.log('The unit is not cooling, data '
                                   'corresponding to {timestamp} will '
@@ -885,9 +882,7 @@ class econ_correctly_on(object):
         return diagnostic_result
 
     def not_economizing_when_needed(self, result, current_time):
-        '''
-        If the detected problems(s) are
-        consistent then generate a fault
+        '''If the detected problems(s) are consistent then generate a fault
         message(s).
         '''
         oaf = [(m - r) / (o - r) for o, r, m in zip(self.oa_temp_values,
@@ -940,7 +935,7 @@ class econ_correctly_on(object):
 
     def clear_data(self, diagnostic_result):
         '''
-        reinitialize class insufficient_oa data
+        reinitialize class insufficient_oa data.
         '''
         self.damper_signal_values = []
         self.oa_temp_values = []
@@ -952,11 +947,10 @@ class econ_correctly_on(object):
 
 
 class econ_correctly_off(object):
+    '''Air-side HVAC economizer diagnostic for AHU/RTU systems.
 
-    '''
-    Air-side HVAC diagnostic to
-    check if an AHU/RTU is economizing
-    when it should not.
+    econ_correctly_off uses metered data from a BAS or controller to diagnose
+    if an AHU/RTU is economizing when it should not.
     '''
 
     def __init__(self, data_window, no_required_data, minimum_damper_setpoint,
@@ -972,7 +966,7 @@ class econ_correctly_off(object):
         self.fan_speed_values = []
         self.timestamp = []
 
-        '''Application result messages'''
+        # Application result messages
         self.alg_result_messages = ['The outdoor-air damper should be '
                                     'at the minimum position but is '
                                     'significantly above that value.',
@@ -992,10 +986,7 @@ class econ_correctly_off(object):
     def econ_alg3(self, diagnostic_result, oatemp, ratemp, matemp,
                   damper_signal, economizer_conditon, current_time,
                   fan_speedcmd):
-        '''
-        Check application pre-quisites and
-        economizer conditions (Problem or No Problem).
-        '''
+        '''Check app. pre-quisites and assemble data set for analysis.'''
         if economizer_conditon:
             diagnostic_result.log(''.join([self.alg_result_messages[2],
                                            (' Data corresponding to '
@@ -1026,8 +1017,7 @@ class econ_correctly_off(object):
         return diagnostic_result
 
     def economizing_when_not_needed(self, result, current_time):
-        '''
-        If the detected problems(s)
+        '''If the detected problems(s)
         are consistent then generate a
         fault message(s).
         '''
@@ -1093,11 +1083,10 @@ class econ_correctly_off(object):
 
 
 class excess_oa_intake(object):
+    ''' Air-side HVAC ventilation diagnostic.
 
-    '''
-    Air-side HVAC diagnostic to check
-    if an AHU/RTU bringing in excess
-    outdoor air.
+    excess_oa_intake uses metered data from a controller or
+    BAS to diagnose when an AHU/RTU is providing excess outdoor air.
     '''
     def __init__(self, data_window, no_required_data, excess_oaf_threshold,
                  minimum_damper_setpoint, excess_damper_threshold, desired_oaf,
@@ -1109,7 +1098,7 @@ class excess_oa_intake(object):
         self.cool_call_values = []
         self.timestamp = []
         self.fan_speed_values = []
-        '''Application thresholds (Configurable)'''
+        # Application thresholds (Configurable)
         self.cfm = cfm
         self.eer = eer
         self.data_window = float(data_window)
@@ -1122,10 +1111,7 @@ class excess_oa_intake(object):
     def econ_alg4(self, diagnostic_result, oatemp, ratemp, matemp,
                   damper_signal, economizer_conditon, current_time,
                   fan_speedcmd):
-        '''
-        Check application pre-quisites and assemble
-        data set for analysis.
-        '''
+        '''Check app. pre-quisites and assemble data set for analysis.'''
 
         if economizer_conditon:
             diagnostic_result.log('The unit may be economizing, '
@@ -1153,9 +1139,8 @@ class excess_oa_intake(object):
         return diagnostic_result
 
     def excess_oa(self, result, current_time):
-        '''
-        If the detected problems(s) are
-        consistent then generate a fault message(s).
+        '''If the detected problems(s) are
+        consistent generate a fault message(s).
         '''
         avg_step = ((self.timestamp[-1] - self.timestamp[0]).total_seconds()/60
                     if len(self.timestamp) > 1 else 1)
@@ -1252,9 +1237,7 @@ class excess_oa_intake(object):
         return result
 
     def clear_data(self, diagnostic_result):
-        '''
-        reinitialize class insufficient_oa data
-        '''
+        '''reinitialize class insufficient_oa data.'''
         self.damper_signal_values = []
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -1265,15 +1248,15 @@ class excess_oa_intake(object):
 
 
 class insufficient_oa_intake(object):
+    ''' Air-side HVAC ventilation diagnostic.
 
-    '''
-    Air-side HVAC diagnostic to check if an
-    AHU/RTU bringing in insufficient outdoor air.
+    insufficient_oa_intake uses metered data from a controller or
+    BAS to diagnose when an AHU/RTU is providing inadequate ventilation.
     '''
 
-    def __init__(self, data_window, no_required_data, ventilation_oaf_threshold,
-                 minimum_damper_setpoint, insufficient_damper_threshold,
-                 desired_oaf):
+    def __init__(self, data_window, no_required_data,
+                 ventilation_oaf_threshold, minimum_damper_setpoint,
+                 insufficient_damper_threshold, desired_oaf):
 
         self.oa_temp_values = []
         self.ra_temp_values = []
@@ -1294,9 +1277,7 @@ class insufficient_oa_intake(object):
 
     def econ_alg5(self, diagnostic_result, oatemp, ratemp, matemp,
                   damper_signal, economizer_conditon, current_time):
-        '''
-        Check application pre-quisites and assemble data set for analysis.
-        '''
+        '''Check app. pre-quisites and assemble data set for analysis.'''
         if economizer_conditon:
             diagnostic_result.log('{name}: The unit may be economizing, '
                                   'data corresponding to {timestamp}'
@@ -1322,9 +1303,8 @@ class insufficient_oa_intake(object):
         return diagnostic_result
 
     def insufficient_oa(self, result, current_time):
-        '''
-        If the detected problems(s) are
-        consistent then generate a fault message(s).
+        '''If the detected problems(s) are
+        consistent generate a fault message(s).
         '''
         oaf = [(m - r) / (o - r) for o, r, m in zip(self.oa_temp_values,
                                                     self.ra_temp_values,
@@ -1405,9 +1385,7 @@ class insufficient_oa_intake(object):
         return result
 
     def clear_data(self, diagnostic_result):
-        '''
-        reinitialize class insufficient_oa data
-        '''
+        '''reinitialize class insufficient_oa data.'''
         self.damper_signal_values = []
         self.oa_temp_values = []
         self.ra_temp_values = []
