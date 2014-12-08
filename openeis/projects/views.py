@@ -95,6 +95,7 @@ from openeis.applications import get_algorithm_class
 from openeis.applications import _applicationDict as apps
 from openeis.filters.apply_filter import apply_filter_config
 from openeis.filters import column_modifiers
+from xml.etree.ElementTree import ParseError
 _logger = logging.getLogger(__name__)
 
 
@@ -155,8 +156,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
                                 status=status.HTTP_201_CREATED)
             return Response(serializer.errors, 
                             status=status.HTTP_400_BAD_REQUEST)
-        except:
-            return Response(serializer.errors, 
+        except ParseError:
+            return Response('Parse Error: Invalid File Format', 
                             status=status.HTTP_400_BAD_REQUEST)
 
     @link()
