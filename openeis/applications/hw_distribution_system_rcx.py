@@ -61,11 +61,11 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   reports)
 
 Hot_water_RCx = 'Hot Water Central Plant Diagnostics'
-hotwater_dx1 = 'High Hot-water loop Differential Pressure Dx'
-hotwater_dx2 = 'No Hot-Water loop Differential Pressure Reset Dx'
-hotwater_dx3 = 'High Hot-water Loop Supply Temperature Dx'
-hotwater_dx4 = 'No Hot-Water loop Supply Temperature Reset Dx'
-hotwater_dx5 = 'Hot-Water loop Low Delta-T Dx'
+hotwater_dx1 = 'High HW loop Differential Pressure Dx'
+hotwater_dx2 = 'HW loop Differential Pressure Reset Dx'
+hotwater_dx3 = 'HW Loop High Supply Temperature Dx'
+hotwater_dx4 = 'HW loop Supply Temperature Reset Dx'
+hotwater_dx5 = 'HW loop Low Delta-T Dx'
 
 
 class Application(DrivenApplicationBaseClass):
@@ -86,10 +86,10 @@ class Application(DrivenApplicationBaseClass):
     def __init__(self, *args,
                  min_dp_threshold=2.5,
                  max_dp_threshold=50.0,
-                 data_window=180, dp_reset_threshold=10.0,
-                 no_required_data=50,
+                 data_window=1, dp_reset_threshold=10.0,
+                 no_required_data=1,
                  setpoint_allowable_deviation=10.0,
-                 warm_up_time=30,
+                 warm_up_time=1,
                  dp_pump_threshold=45.0,
 
                  hw_st_threshold=120.0,
@@ -187,6 +187,11 @@ class Application(DrivenApplicationBaseClass):
                                                  'operational differential '
                                                  'pressure (default=2.5 psi)',
                                                  optional=True),
+            'no_required_data':
+            ConfigDescriptor(int,
+                             'Number of required data measurements to '
+                             'perform diagnostic',
+                             optional=True),
             'max_dp_threshold': ConfigDescriptor(float,
                                                  'Hot water loop maximum '
                                                  'operational differential '
@@ -360,13 +365,14 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_topic = topics[cls.loop_dp_name][0]
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
-        datetime_topic = '/'.join(output_topic_base+['hotwater_dx', 'date'])
-        message_topic = '/'.join(output_topic_base+['hotwater_dx', 'message'])
-        diagnostic_name = '/'.join(output_topic_base+['hotwater_dx',
-                                                      'diagnostic_name'])
-        energy_impact = '/'.join(output_topic_base+['hotwater_dx',
+        datetime_topic = '/'.join(output_topic_base+['Hot_water_RCx', 'date'])
+        message_topic = '/'.join(output_topic_base+['Hot_water_RCx',
+                                                    'message'])
+        diagnostic_name = '/'.join(output_topic_base+['Hot_water_RCx',
+                                                      'Hot_water_RCx'])
+        energy_impact = '/'.join(output_topic_base+['Hot_water_RCx',
                                                     'energy_impact'])
-        color_code = '/'.join(output_topic_base+['hotwater_dx',
+        color_code = '/'.join(output_topic_base+['Hot_water_RCx',
                                                  'color_code'])
 
         output_needs = {
@@ -492,8 +498,8 @@ class Application(DrivenApplicationBaseClass):
         if not hwr_temp_values:
             Application.pre_requiste_messages.append(self.pre_msg9)
 
-        if (not loop_dp_values and
-                not (hws_temp_values and hwr_temp_values)):
+        if not (loop_dp_values and hws_temp_values and hwr_temp_values and
+                hw_pump_vfd_values):
             diagnostic_result = self.pre_message(diagnostic_result,
                                                  current_time)
             return diagnostic_result
@@ -597,8 +603,7 @@ class HW_loopdp_RCx(object):
                     color_code = 'RED'
                     energy_impact = None
                     dx_table = {
-                        'datetime': (str(self.timestamp[-1])).
-                                    replace(' ', 'T'),
+                        'datetime': str(self.timestamp[-1]),
                         'diagnostic_name': Hot_water_RCx,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
@@ -632,7 +637,7 @@ class HW_loopdp_RCx(object):
                                       'detected for the high HW loop DP')
 
             dx_table = {
-                'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
+                'datetime': str(self.timestamp[-1]),
                 'diagnostic_name': hotwater_dx1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': energy_impact,
@@ -643,7 +648,7 @@ class HW_loopdp_RCx(object):
                                   'detected. High HW DP Diagnostic requires '
                                   'the pump VFD command')
             dx_table = {
-                'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
+                'datetime': str(self.timestamp[-1]),
                 'diagnostic_name': hotwater_dx1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -741,8 +746,7 @@ class HW_temp_RCx(object):
                     color_code = 'RED'
                     energy_impact = None
                     dx_table = {
-                        'datetime': (str(self.timestamp[-1])).
-                                    replace(' ', 'T'),
+                        'datetime': str(self.timestamp[-1]),
                         'diagnostic_name': Hot_water_RCx,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
@@ -780,7 +784,7 @@ class HW_temp_RCx(object):
                 energy_impact = None
 
             dx_table = {
-                'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
+                'datetime': str(self.timestamp[-1]),
                 'diagnostic_name': hotwater_dx3,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': energy_impact,
@@ -792,8 +796,7 @@ class HW_temp_RCx(object):
                                   'Temperature Diagnostic requires the pump '
                                   'VFD command')
             dx_table = {
-                'datetime': (str(self.timestamp[-1])).
-                            replace(' ', 'T'),
+                'datetime': str(self.timestamp[-1]),
                 'diagnostic_name': hotwater_dx3,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -828,7 +831,7 @@ class HW_temp_RCx(object):
             energy_impact = None
 
         dx_table = {
-            'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
+            'datetime': str(self.timestamp[-1]),
             'diagnostic_name': hotwater_dx5,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -907,7 +910,7 @@ class HW_reset_RCx(object):
             energy_impact = None
 
         dx_table = {
-            'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
+            'datetime': str(self.timestamp[-1]),
             'diagnostic_name': hotwater_dx4,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -941,7 +944,7 @@ class HW_reset_RCx(object):
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': (str(self.timestamp[-1])).replace(' ', 'T'),
+            'datetime': str(self.timestamp[-1]),
             'diagnostic_name': hotwater_dx2,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
