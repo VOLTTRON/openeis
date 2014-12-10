@@ -60,12 +60,13 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
-Hot_water_RCx = 'Hot Water Central Plant Diagnostics'
-hotwater_dx1 = 'High HW loop Differential Pressure Dx'
-hotwater_dx2 = 'HW loop Differential Pressure Reset Dx'
-hotwater_dx3 = 'HW Loop High Supply Temperature Dx'
-hotwater_dx4 = 'HW loop Supply Temperature Reset Dx'
-hotwater_dx5 = 'HW loop Low Delta-T Dx'
+HOT_WATER_RCX1 = 'HW Differential Pressure Control Loop Dx'
+HOT_WATER_RCX2 = 'HW Supply Temperature Control Loop Dx'
+HOTWATER_DX1 = 'HW loop High Differential Pressure Dx'
+HOTWATER_DX2 = 'HW loop Differential Pressure Reset Dx'
+HOTWATER_DX3 = 'HW loop High Supply Temperature Dx'
+HOTWATER_DX4 = 'HW loop Supply Temperature Reset Dx'
+HOTWATER_DX5 = 'HW loop Low Delta-T Dx'
 
 
 class Application(DrivenApplicationBaseClass):
@@ -604,7 +605,7 @@ class HW_loopdp_RCx(object):
                     energy_impact = None
                     dx_table = {
                         'datetime': str(self.timestamp[-1]),
-                        'diagnostic_name': Hot_water_RCx,
+                        'diagnostic_name': HOT_WATER_RCX1,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
                         'color_code': color_code
@@ -638,7 +639,7 @@ class HW_loopdp_RCx(object):
 
             dx_table = {
                 'datetime': str(self.timestamp[-1]),
-                'diagnostic_name': hotwater_dx1,
+                'diagnostic_name': HOTWATER_DX1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': energy_impact,
                 'color_code': color_code
@@ -649,7 +650,7 @@ class HW_loopdp_RCx(object):
                                   'the pump VFD command')
             dx_table = {
                 'datetime': str(self.timestamp[-1]),
-                'diagnostic_name': hotwater_dx1,
+                'diagnostic_name': HOTWATER_DX1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': 'GREY'
@@ -747,7 +748,7 @@ class HW_temp_RCx(object):
                     energy_impact = None
                     dx_table = {
                         'datetime': str(self.timestamp[-1]),
-                        'diagnostic_name': Hot_water_RCx,
+                        'diagnostic_name': HOT_WATER_RCX2,
                         'diagnostic_message': diagnostic_message,
                         'energy_impact': energy_impact,
                         'color_code': color_code
@@ -785,7 +786,7 @@ class HW_temp_RCx(object):
 
             dx_table = {
                 'datetime': str(self.timestamp[-1]),
-                'diagnostic_name': hotwater_dx3,
+                'diagnostic_name': HOTWATER_DX3,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': energy_impact,
                 'color_code': color_code
@@ -797,7 +798,7 @@ class HW_temp_RCx(object):
                                   'VFD command')
             dx_table = {
                 'datetime': str(self.timestamp[-1]),
-                'diagnostic_name': hotwater_dx3,
+                'diagnostic_name': HOTWATER_DX3,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
                 'color_code': 'GREY'
@@ -832,7 +833,7 @@ class HW_temp_RCx(object):
 
         dx_table = {
             'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': hotwater_dx5,
+            'diagnostic_name': HOTWATER_DX5,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
@@ -911,7 +912,7 @@ class HW_reset_RCx(object):
 
         dx_table = {
             'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': hotwater_dx4,
+            'diagnostic_name': HOTWATER_DX4,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
@@ -945,7 +946,7 @@ class HW_reset_RCx(object):
 
         dx_table = {
             'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': hotwater_dx2,
+            'diagnostic_name': HOTWATER_DX2,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
