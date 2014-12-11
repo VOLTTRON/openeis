@@ -196,7 +196,7 @@ class Application(DrivenApplicationBaseClass):
             'max_dp_threshold': ConfigDescriptor(float,
                                                  'Hot water loop maximum '
                                                  'operational differential '
-                                                 'pressure (default=25.0 psi)',
+                                                 'pressure (default=50.0 psi)',
                                                  optional=True),
             'warm_up_time':
             ConfigDescriptor(int,
