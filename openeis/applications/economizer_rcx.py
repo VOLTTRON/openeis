@@ -83,23 +83,23 @@ class Application(DrivenApplicationBaseClass):
     cool_call_name = 'cool_call'
     fan_speedcmd_name = 'fan_speedcmd'
 
-    def __init__(self, *args, economizer_type=None, econ_hl_temp=None,
-                 device_type=None, temp_deadband=None,
-                 data_window=None, no_required_data=None,
-                 open_damper_time=None,
-                 low_supply_fan_threshold=None,
-                 mat_low_threshold=None, mat_high_threshold=None,
-                 oat_low_threshold=None, oat_high_threshold=None,
-                 rat_low_threshold=None, rat_high_threshold=None,
-                 temp_difference_threshold=None, oat_mat_check=None,
-                 open_damper_threshold=None, oaf_economizing_threshold=None,
-                 oaf_temperature_threshold=None,
-                 cooling_enabled_threshold=None,
-                 minimum_damper_setpoint=None, excess_damper_threshold=None,
-                 excess_oaf_threshold=None, desired_oaf=None,
-                 ventilation_oaf_threshold=None,
-                 insufficient_damper_threshold=None,
-                 temp_damper_threshold=None, rated_cfm=None, eer=None,
+    def __init__(self, *args, economizer_type='DDB', econ_hl_temp=65.0,
+                 device_type='AHU', temp_deadband=1.0,
+                 data_window=30, no_required_data=20,
+                 open_damper_time=5,
+                 low_supply_fan_threshold=20.0,
+                 mat_low_threshold=50.0, mat_high_threshold=90.0,
+                 oat_low_threshold=30.0, oat_high_threshold=100.0,
+                 rat_low_threshold=50.0, rat_high_threshold=90.0,
+                 temp_difference_threshold=4.0, oat_mat_check=5.0,
+                 open_damper_threshold=90.0, oaf_economizing_threshold=25.0,
+                 oaf_temperature_threshold=4.0,
+                 cooling_enabled_threshold=5.0,
+                 minimum_damper_setpoint=15.0, excess_damper_threshold=20.0,
+                 excess_oaf_threshold=20.0, desired_oaf=10.0,
+                 ventilation_oaf_threshold=5.0,
+                 insufficient_damper_threshold=15.0,
+                 temp_damper_threshold=90.0, rated_cfm=1000.0, eer=10.0,
                  **kwargs):
         # initialize user configurable parameters.
         super().__init__(*args, **kwargs)
@@ -211,7 +211,7 @@ class Application(DrivenApplicationBaseClass):
             'rated_cfm':
             ConfigDescriptor(float,
                              'Rated CFM of supply fan at 100% speed (CFM)',
-                             value_default=500),
+                             value_default=1000.0),
             'mat_low_threshold':
             ConfigDescriptor(float,
                              'Mixed-air temperature sensor low limit (F)',
@@ -243,12 +243,12 @@ class Application(DrivenApplicationBaseClass):
             'minimum_damper_setpoint':
             ConfigDescriptor(float,
                              'Minimum outdoor-air damper set point (%)',
-                             value_default=20.0),
+                             value_default=15.0),
             'excess_damper_threshold':
             ConfigDescriptor(float,
                              'Value above the minimum damper '
                              'set point at which a fault will be '
-                             'called(%)', value_default=15.0),
+                             'called(%)', value_default=20.0),
             'econ_hl_temp':
             ConfigDescriptor(float,
                              'High limit (HL) temperature for HL type '
