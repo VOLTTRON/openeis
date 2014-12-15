@@ -168,6 +168,7 @@ class Application(DrivenApplicationBaseClass):
         '''Generate required configuration
         parameters with description for user
         '''
+        dgr_sym = u'\N{DEGREE SIGN}'
         return {
             'data_window': ConfigDescriptor(int, 'Minimum Elapsed time for '
                                             'analysis (minutes)',
@@ -215,14 +216,16 @@ class Application(DrivenApplicationBaseClass):
             'hwst_reset_threshold':
                 ConfigDescriptor(float,
                                  'HW supply temperature threshold to detect '
-                                 'HW supply temperature reset (F)',
+                                 'HW supply temperature reset ({drg}F)'
+                                 .format(drg=dgr_sym),
                                  value_default=10.0),
 
             'hw_st_threshold':
                 ConfigDescriptor(float,
                                  'HW supply temperature threshold to detect '
                                  'if the HW supply temperature is too '
-                                 'high (F)', value_default=120.0),
+                                 'high ({drg}F)'.format(drg=dgr_sym),
+                                 value_default=120.0),
             'hw_pump_vfd_threshold':
                 ConfigDescriptor(float,
                                  'HW loop pump VFD command threshold used to '
@@ -232,32 +235,38 @@ class Application(DrivenApplicationBaseClass):
             'min_hwst_threshold':
                 ConfigDescriptor(float,
                                  'Minimum allowable operational HW '
-                                 'supply temperature (F)',
+                                 'supply temperature ({drg}F)'
+                                 .format(drg=dgr_sym),
                                  value_default=125.0),
             'max_hwst_threshold':
                 ConfigDescriptor(float, 'Maximum allowable operational '
-                                 'HW supply temperature (F)',
+                                 'HW supply temperature ({drg}F)'
+                                 .format(drg=dgr_sym),
                                  value_default=190.0),
             'min_hwrt_threshold':
                 ConfigDescriptor(float,
                                  'Minimum allowable operational '
-                                 'HW return temperature (F)',
+                                 'HW return temperature ({drg}F)'
+                                 .format(drg=dgr_sym),
                                  value_default=115.0),
             'max_hwrt_threshold':
                 ConfigDescriptor(float,
                                  'Maximum allowable operational '
-                                 'HW return temperature (F)',
+                                 'HW return temperature ({drg}F)'
+                                 .format(drg=dgr_sym),
                                  value_default=180.0),
             'desired_delta_t':
                 ConfigDescriptor(float,
                                  'Desired delta-T (difference between HWS '
-                                 'and HWR temperatures (F))',
+                                 'and HWR temperatures ({drg}F)'
+                                 .format(drg=dgr_sym),
                                  value_default=20.0),
             'delta_t_threshold':
                 ConfigDescriptor(float,
                                  'Band around desired delta-T where '
                                  'where delat-T is considered '
-                                 'OK (F)', value_default=10.0)
+                                 'OK ({drg}F)'.format(drg=dgr_sym),
+                                 value_default=10.0)
             }
 
     @classmethod

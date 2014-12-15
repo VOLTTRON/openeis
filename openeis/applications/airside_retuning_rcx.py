@@ -90,8 +90,8 @@ class Application(DrivenApplicationBaseClass):
     ahu_ccoil_priority = ''
     sat_stpt_priority = ''
 
-    def __init__(self, *args, no_required_data=10, data_window=15,
-                 warm_up_time=30, duct_stc_retuning=0.15,
+    def __init__(self, *args, no_required_data=1, data_window=1,
+                 warm_up_time=0, duct_stc_retuning=0.15,
                  max_duct_stp_stpt=2.5, high_supply_fan_threshold=100.0,
                  zone_high_damper_threshold=90.0,
                  zone_low_damper_threshold=10.0, min_duct_stp_stpt=0.5,
@@ -195,6 +195,7 @@ class Application(DrivenApplicationBaseClass):
         Generate required configuration
         parameters with description for user
         '''
+        dgr_sym = u'\N{DEGREE SIGN}'
         return {
             'data_window':
             ConfigDescriptor(int,
@@ -277,14 +278,14 @@ class Application(DrivenApplicationBaseClass):
                              value_default=0.25),
             'reheat_valve_threshold':
             ConfigDescriptor(float,
-                             'Zone reheat valve threshold for SAT '
-                             'Dx, compared to average zone '
-                             'reheat valve (%)',
+                             'Zone re-heat valve threshold for SAT '
+                             'RCx, compared to average zone '
+                             're-heat valve (%)',
                              value_default=50.0),
             'percent_reheat_threshold':
             ConfigDescriptor(float,
                              ('Threshold for average percent of zones '
-                              'where terminal box reheat is ON (%)'),
+                              'where terminal box re-heat is ON (%)'),
                              value_default=25.0),
             'maximum_sat_stpt':
             ConfigDescriptor(float,
@@ -292,9 +293,9 @@ class Application(DrivenApplicationBaseClass):
                              'auto-correction  is enabled, '
                              'i.e., the set point chosen by the '
                              'diagnostic will never exceed '
-                             'this value (F)',
+                             'this value ({drg}F)'
+                             .format(drg=dgr_sym),
                              value_default=75.0),
-
             'rht_on_threshold':
             ConfigDescriptor(float,
                              'Value above which zone re-heat is '
@@ -302,18 +303,16 @@ class Application(DrivenApplicationBaseClass):
                              value_default=10.0),
             'sat_retuning':
             ConfigDescriptor(float,
-                             ('Decrement of supply-air '
-                              'temperature set point during '
-                              'auto-correction (F)'),
+                             'Decrement of supply-air temperature set '
+                             'point during auto-correction ({drg}F)'
+                             .format(drg=dgr_sym),
                              value_default=1.0),
-
             'sat_high_damper_threshold':
             ConfigDescriptor(float,
                              'High zone damper threshold for '
                              'high supply-air temperature '
                              'auto-correct RCx (%)',
                              value_default=30),
-
             'percent_damper_threshold':
             ConfigDescriptor(float,
                              'Threshold for the average % of zone '
@@ -327,13 +326,13 @@ class Application(DrivenApplicationBaseClass):
                              'is enabled, i.e., '
                              'the set point chosen by the '
                              'diagnostic will never exceed this value '
-                             '(F)',
+                             '({drg}F)'.format(drg=dgr_sym),
                              value_default=50.0),
             'sat_reset_threshold':
             ConfigDescriptor(float,
                              'Threshold difference required '
                              'to detect a supply-air temperature '
-                             'set point reset (F)',
+                             'set point reset ({drg}F)'.format(drg=dgr_sym),
                              value_default=3.0),
 
             'unocc_time_threshold':
@@ -414,7 +413,7 @@ class Application(DrivenApplicationBaseClass):
         return {
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
-                            'AHU Supply Fan Status', count_min=1),
+                            'AHU Supply fan status', count_min=1),
             cls.fan_speedcmd_name:
             InputDescriptor('SupplyFanSpeed',
                             'AHU supply fan speed', count_min=0),
@@ -781,20 +780,29 @@ class DuctStaticRcx(object):
                     if duct_stpr_stpt <= self.max_duct_stp_stpt:
                         result.command(
                             Application.duct_stp_stpt_cname, duct_stpr_stpt)
+                        duct_stpr_stpt = '%s' % float('%.2g' % duct_stpr_stpt)
+                        duct_stpr_stpt = str(duct_stpr_stpt)
+                        duct_stpr_stpt = ''.join([duct_stpr_stpt,
+                                                  ' in. w.g.'])
                         diagnostic_message = ('The duct static '
                                               'pressure was detected to be '
                                               'too low. The duct static '
                                               'pressure has been increased '
-                                              'to: ')
-                        diagnostic_message += str(duct_stpr_stpt) + ' in. w.g.'
+                                              'to: {val}'
+                                              .format(val=duct_stpr_stpt))
                     else:
                         result.command(
                             Application.duct_stp_stpt_cname,
                             self.max_duct_stp_stpt)
+                        duct_stpr_stpt = '%s' % float('%.2g' % self.max_duct_stp_stpt)
+                        duct_stpr_stpt = str(duct_stpr_stpt)
+                        duct_stpr_stpt = ''.join([duct_stpr_stpt,
+                                                  ' in. w.g.'])
                         diagnostic_message = ('The duct static pressure set '
                                               'point is at the maximum '
                                               'value configured by the '
-                                              'building operator.')
+                                              'building operator: {val})'
+                                              .format(val=duct_stpr_stpt))
                 else:
                     diagnostic_message = ('The duct static pressure set '
                                           'point was detected to be too low '
@@ -853,19 +861,29 @@ class DuctStaticRcx(object):
                     if duct_stpr_stpt >= self.min_duct_stp_stpt:
                         result.command(
                             Application.duct_stp_stpt_cname, duct_stpr_stpt)
+                        duct_stpr_stpt = '%s' % float('%.2g' % duct_stpr_stpt)
+                        duct_stpr_stpt = str(duct_stpr_stpt)
+                        duct_stpr_stpt = ''.join([duct_stpr_stpt,
+                                                  ' in. w.g.'])
                         diagnostic_message = ('The duct static '
                                               'pressure was detected to be '
-                                              'too high, the duct static '
-                                              'pressure has been reduced to: ')
-                        diagnostic_message += str(duct_stpr_stpt) + ' in. w.g.'
+                                              'too high. The duct static '
+                                              'pressure set point has been '
+                                              'reduced to: {val}'
+                                              .format(val=duct_stpr_stpt))
                     else:
                         result.command(
                             Application.duct_stp_stpt_cname,
                             self.min_duct_stp_stpt)
+                        duct_stpr_stpt = '%s' % float('%.2g' % self.min_duct_stp_stpt)
+                        duct_stpr_stpt = str(duct_stpr_stpt)
+                        duct_stpr_stpt = ''.join([duct_stpr_stpt,
+                                                  ' in. w.g.'])
                         diagnostic_message = ('The duct static pressure set '
                                               'point is at the minimum value '
                                               'configured by the building '
-                                              'operator.')
+                                              'operator: {val})'
+                                              .format(val=duct_stpr_stpt))
                 else:
                     diagnostic_message = ('Duct static pressure set '
                                           'point was detected to be too high '
@@ -922,7 +940,6 @@ class SupplyTempRcx(object):
         self.reheat = []
         self.percent_in_reheat = []
         self.percent_damper = []
-
         # Common RCx parameters
         self.data_window = float(data_window)
         self.no_required_data = no_required_data
@@ -930,11 +947,10 @@ class SupplyTempRcx(object):
         self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
         self.rht_on_threshold = float(rht_on_threshold)
         self.percent_reheat_threshold = float(percent_reheat_threshold)
-
+        self.dgr_sym = u'\N{DEGREE SIGN}'
         # Low SAT RCx thresholds
         self.reheat_valve_threshold = float(reheat_valve_threshold)
         self.maximum_sat_stpt = float(maximum_sat_stpt)
-
         # High SAT RCx thresholds
         self.high_damper_threshold = float(high_damper_threshold)
         self.percent_damper_threshold = float(percent_damper_threshold)
@@ -1031,24 +1047,30 @@ class SupplyTempRcx(object):
                     # condition with auto-correction
                     if sat_stpt <= self.maximum_sat_stpt:
                         result.command(Application.sat_stpt_cname, sat_stpt)
+                        sat_stpt = '%s' % float('%.2g' % sat_stpt)
+                        sat_stpt = str(sat_stpt)
                         diagnostic_message = ('The SAT has been '
-                                              'detected to be too low, '
-                                              'the SAT has been '
-                                              'increased to: ')
-                        diagnostic_message += str(sat_stpt) + ' deg. F'
+                                              'detected to be too low. '
+                                              'The SAT set point has been '
+                                              'increased to: {val}{drg}F'
+                                              .format(drg=self.dgr_sym,
+                                                      val=sat_stpt))
                     else:
                         # Create diagnostic message
                         # for fault condition where
                         # the maximum SAT has been reached
                         result.command(Application.sat_stpt_cname,
                                        self.maximum_sat_stpt)
+                        sat_stpt = '%s' % float('%.2g' % self.maximum_sat_stpt)
+                        sat_stpt = str(sat_stpt)
                         diagnostic_message = ('The SAT was detected '
-                                              'to be too low, auto-correction '
-                                              'has increased the SAT to the '
-                                              'maximum configured SAT: ')
-
-                        diagnostic_message += (str(self.maximum_sat_stpt)
-                                               + ' deg. F')
+                                              'to be too low. Auto-correction '
+                                              'has increased the SAT set '
+                                              'point to the maximum '
+                                              'configured SAT set point: '
+                                              '{val}{drg}F)'
+                                              .format(drg=self.dgr_sym,
+                                                      val=sat_stpt))
                 else:
                     # Create diagnostic message for fault
                     # condition without auto-correction
@@ -1099,29 +1121,35 @@ class SupplyTempRcx(object):
                     # with auto-correction
                     if sat_stpt >= self.minimum_sat_stpt:
                         result.command(Application.sat_stpt_cname, sat_stpt)
-                        diagnostic_message = ('The SAT has been '
-                                              'detected to be too high the '
-                                              'SAT has been increased to: ')
-                        diagnostic_message += str(sat_stpt) + ' deg. F'
+                        sat_stpt = '%s' % float('%.2g' % sat_stpt)
+                        sat_stpt = str(sat_stpt)
+                        diagnostic_message = ('The SAT has been detected to '
+                                              'be too high. The SAT set point '
+                                              'has been increased to: '
+                                              '{val}{drg}F'
+                                              .format(drg=self.dgr_sym,
+                                                      val=sat_stpt))
                     else:
                         # Create diagnostic message for fault condition
                         # where the maximum SAT has been reached
                         result.command(
                             Application.sat_stpt_cname, self.minimum_sat_stpt)
+                        sat_stpt = '%s' % float('%.2g' % self.minimum_sat_stpt)
+                        sat_stpt = str(sat_stpt)
                         diagnostic_message = ('The SAT was detected '
                                               'to be too high, '
                                               'auto-correction has increased '
                                               'the SAT to the minimum '
-                                              'configured SAT: ')
-                        diagnostic_message += (str(self.minimum_sat_stpt) +
-                                               ' deg. F')
+                                              'configured SAT: {val}{drg}F'
+                                              .format(drg=self.dgr_sym,
+                                                      val=sat_stpt))
                 else:
                     # Create diagnostic message for fault condition
                     # without auto-correction
                     diagnostic_message = ('The SAT has been detected '
                                           'to be too high but auto-correction '
                                           'is not enabled.')
-            if not sat_override_check:
+            elif not sat_override_check:
                 diagnostic_message = ('The SAT has been detected to '
                                       'be too high.')
             else:
@@ -1130,7 +1158,7 @@ class SupplyTempRcx(object):
                                       'be performed because the SAT set point '
                                       'is in an override state.')
         else:
-            diagnostic_message = ('No problem detected'
+            diagnostic_message = ('No problem detected.'
                                   .format(name=SA_TEMP_RCx2))
             color_code = 'GREEN'
         dx_table = {

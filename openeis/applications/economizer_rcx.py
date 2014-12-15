@@ -190,6 +190,7 @@ class Application(DrivenApplicationBaseClass):
     def get_config_parameters(cls):
         '''Generate required configuration parameters with description
         for user'''
+        dgr_sym = u'\N{DEGREE SIGN}'
         return {
             'data_window':
             ConfigDescriptor(int,
@@ -214,31 +215,38 @@ class Application(DrivenApplicationBaseClass):
                              value_default=1000.0),
             'mat_low_threshold':
             ConfigDescriptor(float,
-                             'Mixed-air temperature sensor low limit (F)',
+                             'Mixed-air temperature sensor low limit ({drg}F)'
+                             .format(drg=dgr_sym),
                              value_default=50.0),
             'mat_high_threshold':
             ConfigDescriptor(float,
-                             'Mixed-air temperature sensor high limit (F)',
+                             'Mixed-air temperature sensor high limit ({drg}F)'
+                             .format(drg=dgr_sym),
                              value_default=90.0),
             'rat_low_threshold':
             ConfigDescriptor(float,
-                             'Return-air temperature sensor low limit (F)',
+                             'Return-air temperature sensor low limit ({drg}F)'
+                             .format(drg=dgr_sym),
                              value_default=50),
             'rat_high_threshold':
             ConfigDescriptor(float,
-                             'Return-air temperature sensor high limit (F)',
+                             'Return-air temperature sensor high limit '
+                             '({drg}F)'.format(drg=dgr_sym),
                              value_default=90.0),
             'oat_low_threshold':
             ConfigDescriptor(float,
-                             'Outdoor-air temperature sensor low limit (F)',
+                             'Outdoor-air temperature sensor low limit '
+                             '({drg}F)'.format(drg=dgr_sym),
                              value_default=30.0),
             'oat_high_threshold':
             ConfigDescriptor(float,
-                             'Outdoor-air temperature sensor high limit (F)',
+                             'Outdoor-air temperature sensor high limit '
+                             '({drg}F)'.format(drg=dgr_sym),
                              value_default=100.0),
             'temp_deadband': ConfigDescriptor(float,
                                               'Economizer control '
-                                              'temperature dead-band (F)',
+                                              'temperature dead-band ({drg}F)'
+                                              .format(drg=dgr_sym),
                                               value_default=1.0),
             'minimum_damper_setpoint':
             ConfigDescriptor(float,
@@ -252,7 +260,8 @@ class Application(DrivenApplicationBaseClass):
             'econ_hl_temp':
             ConfigDescriptor(float,
                              'High limit (HL) temperature for HL type '
-                             'economizer (default=60F)', value_default=60.0),
+                             'economizer ({drg}F)'.format(drg=dgr_sym),
+                             value_default=60.0),
             'cooling_enabled_threshold':
             ConfigDescriptor(float,
                              'Amount AHU chilled water valve '
@@ -307,7 +316,7 @@ class Application(DrivenApplicationBaseClass):
             ConfigDescriptor(float,
                              'Temperature threshold for OAT and MAT '
                              'consistency check for times when the damper is '
-                             'near 100% open (F)',
+                             'near 100% open ({drg}F)'.format(drg=dgr_sym),
                              value_default=5.0),
             'temp_damper_threshold':
             ConfigDescriptor(float,
