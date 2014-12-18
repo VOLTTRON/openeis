@@ -66,7 +66,7 @@ ECON5 = 'Insufficient Outdoor-air Intake Dx'
 
 
 class Application(DrivenApplicationBaseClass):
-    '''Application detects and corrects common operational problems for AHUs.
+    '''Application to detect and correct operational problems for AHUs/RTUs.
 
     This application uses metered data from zones server by an AHU/RTU
     to detect operational problems and where applicable correct these problems
@@ -95,11 +95,11 @@ class Application(DrivenApplicationBaseClass):
                  open_damper_threshold=90.0, oaf_economizing_threshold=25.0,
                  oaf_temperature_threshold=4.0,
                  cooling_enabled_threshold=5.0,
-                 minimum_damper_setpoint=20, excess_damper_threshold=20.0,
+                 minimum_damper_setpoint=15.0, excess_damper_threshold=20.0,
                  excess_oaf_threshold=20.0, desired_oaf=10.0,
                  ventilation_oaf_threshold=5.0,
                  insufficient_damper_threshold=15.0,
-                 temp_damper_threshold=90.0, rated_cfm=500.0, eer=10.0,
+                 temp_damper_threshold=90.0, rated_cfm=1000.0, eer=10.0,
                  **kwargs):
         # initialize user configurable parameters.
         super().__init__(*args, **kwargs)
@@ -162,7 +162,6 @@ class Application(DrivenApplicationBaseClass):
         self.pre_msg10 = ('Mixed-air temperature is outside high/low '
                           'operating limits, check the functionality '
                           'of the temperature sensor.')
-
         self.econ1 = temperature_sensor_dx(data_window, no_required_data,
                                            temp_difference_threshold,
                                            open_damper_time,
@@ -191,136 +190,143 @@ class Application(DrivenApplicationBaseClass):
     def get_config_parameters(cls):
         '''Generate required configuration parameters with description
         for user'''
+        dgr_sym = u'\N{DEGREE SIGN}'
         return {
-
-            'low_supply_fan_threshold':
-            ConfigDescriptor(float,
-                             'Value above which the supply fan will be '
-                             'considered at its minimum speed (default=20%)',
-                             optional=True),
-            'rated_cfm':
-            ConfigDescriptor(float,
-                             'Rated CFM of supply fan at 100% speed '
-                             '(default=500)', optional=True),
             'data_window':
             ConfigDescriptor(int,
                              'Minimum Elapsed time for analysis '
-                             '(default=15 minutes)', optional=True),
+                             '(minutes)', value_default=30),
             'open_damper_time':
             ConfigDescriptor(float,
                              'Delay time for steady-state conditions '
-                             '(default=5 minutes)', optional=True),
+                             '(minutes)', value_default=5),
             'no_required_data':
             ConfigDescriptor(int,
                              'Number of required data measurements to '
-                             'perform diagnostic (10)', optional=True),
+                             'perform diagnostic', value_default=20),
+            'low_supply_fan_threshold':
+            ConfigDescriptor(float,
+                             'Value above which the supply fan will be '
+                             'considered at its minimum speed (%)',
+                             value_default=20.0),
+            'rated_cfm':
+            ConfigDescriptor(float,
+                             'Rated CFM of supply fan at 100% speed (CFM)',
+                             value_default=1000.0),
             'mat_low_threshold':
             ConfigDescriptor(float,
-                             'Mixed-air sensor low limit (default=50F)',
-                             optional=True),
+                             'Mixed-air temperature sensor low limit ({drg}F)'
+                             .format(drg=dgr_sym),
+                             value_default=50.0),
             'mat_high_threshold':
             ConfigDescriptor(float,
-                             'Mixed-air sensor high limit (default=90F)',
-                             optional=True),
+                             'Mixed-air temperature sensor high limit ({drg}F)'
+                             .format(drg=dgr_sym),
+                             value_default=90.0),
             'rat_low_threshold':
             ConfigDescriptor(float,
-                             'Return-air sensor low limit (default=50F)',
-                             optional=True),
+                             'Return-air temperature sensor low limit ({drg}F)'
+                             .format(drg=dgr_sym),
+                             value_default=50),
             'rat_high_threshold':
             ConfigDescriptor(float,
-                             'Return-air sensor high limit (default=90F)',
-                             optional=True),
+                             'Return-air temperature sensor high limit '
+                             '({drg}F)'.format(drg=dgr_sym),
+                             value_default=90.0),
             'oat_low_threshold':
             ConfigDescriptor(float,
-                             'Outdoor-air sensor low limit (default=30F)',
-                             optional=True),
+                             'Outdoor-air temperature sensor low limit '
+                             '({drg}F)'.format(drg=dgr_sym),
+                             value_default=30.0),
             'oat_high_threshold':
             ConfigDescriptor(float,
-                             'Outdoor-air sensor high limit (default=100F)',
-                             optional=True),
+                             'Outdoor-air temperature sensor high limit '
+                             '({drg}F)'.format(drg=dgr_sym),
+                             value_default=100.0),
             'temp_deadband': ConfigDescriptor(float,
                                               'Economizer control '
-                                              'temperature dead-band '
-                                              '(default=1F)',
-                                              optional=True),
+                                              'temperature dead-band ({drg}F)'
+                                              .format(drg=dgr_sym),
+                                              value_default=1.0),
             'minimum_damper_setpoint':
             ConfigDescriptor(float,
-                             'Minimum outdoor-air damper set point '
-                             '(default=20%)', optional=True),
+                             'Minimum outdoor-air damper set point (%)',
+                             value_default=15.0),
             'excess_damper_threshold':
             ConfigDescriptor(float,
                              'Value above the minimum damper '
                              'set point at which a fault will be '
-                             'called (default=15%)', optional=True),
+                             'called(%)', value_default=20.0),
             'econ_hl_temp':
             ConfigDescriptor(float,
                              'High limit (HL) temperature for HL type '
-                             'economizer (default=60F)', optional=True),
+                             'economizer ({drg}F)'.format(drg=dgr_sym),
+                             value_default=60.0),
             'cooling_enabled_threshold':
             ConfigDescriptor(float,
                              'Amount AHU chilled water valve '
                              'must be open to consider unit in cooling '
-                             'mode (default=5%)', optional=True),
+                             'mode (%)', value_default=5.0),
             'insufficient_damper_threshold':
             ConfigDescriptor(float,
                              'Value below the minimum outdoor-air '
                              'damper set-point at which a fault will '
-                             'be identified (default=15%)', optional=True),
+                             'be identified (%)', value_default=15.0),
             'ventilation_oaf_threshold':
             ConfigDescriptor(float,
                              'The value below the desired minimum OA '
-                             '% where a fault will be indicated (default=5%)',
-                             optional=True),
+                             '% where a fault will be indicated (%)',
+                             value_default=5.0),
             'desired_oaf':
             ConfigDescriptor(float,
                              'The desired minimum OA percent '
-                             '(default=10%)', optional=True),
+                             '(%)', value_default=10.0),
             'excess_oaf_threshold':
             ConfigDescriptor(float,
                              'The value above the desired OA % where a '
                              'fault will be indicated '
-                             '(default=30%)', optional=True),
+                             '(%)', value_default=30.0),
             'economizer_type':
             ConfigDescriptor(str,
                              'Economizer type:  <DDB> - differential dry bulb '
-                             '<HL> - High limit (default=DDB)', optional=True),
+                             '<HL> - High limit', value_default='DDB'),
             'open_damper_threshold':
             ConfigDescriptor(float,
                              'Threshold in which damper is considered open '
-                             'for economizing (default=80%)', optional=True),
+                             'for economizing (%)', value_default=75.0),
             'oaf_economizing_threshold':
             ConfigDescriptor(float,
                              'Value below 100% in which the OA is considered '
-                             'insufficient for economizing (default=25%)',
-                             optional=True),
+                             'insufficient for economizing (%)',
+                             value_default=25.0),
             'oaf_temperature_threshold':
             ConfigDescriptor(float,
                              'Required difference between OAT and '
-                             'RAT for accurate diagnostic (default=5F)',
-                             optional=True),
+                             'RAT for accurate diagnostic (F)',
+                             value_default=5.0),
             'device_type':
             ConfigDescriptor(str,
                              'Device type <RTU> or <AHU> (default=AHU)',
-                             optional=True),
+                             value_default='AHU'),
             'temp_difference_threshold':
             ConfigDescriptor(float,
                              'Threshold for detecting temperature sensor '
-                             'problems (default=4F)', optional=True),
+                             'problems (F)', value_default=4.0),
             'oat_mat_check':
             ConfigDescriptor(float,
                              'Temperature threshold for OAT and MAT '
                              'consistency check for times when the damper is '
-                             'near 100% open (default=5F)',
-                             optional=True),
+                             'near 100% open ({drg}F)'.format(drg=dgr_sym),
+                             value_default=5.0),
             'temp_damper_threshold':
             ConfigDescriptor(float,
                              'Damper position to check for OAT/MAT '
-                             'consistency (default=90%)',
-                             optional=True),
+                             'consistency (%)',
+                             value_default=90.0),
             'eer':
             ConfigDescriptor(float,
-                             'AHU/RTU rated EER (default=10)',
-                             optional=True),
+                             'AHU/RTU rated EER',
+                             value_default=10.0),
             }
 
     @classmethod
@@ -335,7 +341,7 @@ class Application(DrivenApplicationBaseClass):
         return {
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
-                            'AHU Supply Fan Status', count_min=0),
+                            'AHU Supply Fan Status', count_min=1),
             cls.fan_speedcmd_name:
             InputDescriptor('SupplyFanSpeed',
                             'AHU supply fan speed', count_min=0),
@@ -704,7 +710,7 @@ class temperature_sensor_dx(object):
                                       'is fully open.')
                 color_code = 'RED'
                 dx_table = {
-                    'datetime': (str(current_time)).replace(' ', 'T'),
+                    'datetime': str(current_time),
                     'diagnostic_name': ECON1,
                     'diagnostic_message': diagnostic_message,
                     'energy_impact': None,
@@ -724,7 +730,7 @@ class temperature_sensor_dx(object):
 
             color_code = 'RED'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -741,7 +747,7 @@ class temperature_sensor_dx(object):
             temperature_sensor_dx.temp_sensor_problem = True
             color_code = 'RED'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -754,7 +760,7 @@ class temperature_sensor_dx(object):
             temperature_sensor_dx.temp_sensor_problem = False
             color_code = 'GREEN'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -765,7 +771,7 @@ class temperature_sensor_dx(object):
             temperature_sensor_dx.temp_sensor_problem = False
             color_code = 'GREEN'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON1,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -916,7 +922,7 @@ class econ_correctly_on(object):
             energy_impact = ''.join([energy_impact, ' kWh/h'])
 
         dx_table = {
-            'datetime': (str(current_time)).replace(' ', 'T'),
+            'datetime': str(current_time),
             'diagnostic_name': ECON2, 'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
             'color_code': color_code
@@ -1050,7 +1056,7 @@ class econ_correctly_off(object):
             energy_impact = ''.join([energy_impact, ' kWh/h'])
 
         dx_table = {
-            'datetime': (str(current_time)).replace(' ', 'T'),
+            'datetime': str(current_time),
             'diagnostic_name': ECON3,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -1166,7 +1172,7 @@ class excess_oa_intake(object):
             color_code = 'GREY'
             result.log(diagnostic_message, logging.INFO)
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON4,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -1217,7 +1223,7 @@ class excess_oa_intake(object):
             color_code = 'GREEN'
 
         dx_table = {
-            'datetime': (str(current_time)).replace(' ', 'T'),
+            'datetime': str(current_time),
             'diagnostic_name': ECON4,
             'diagnostic_message': diagnostic_message,
             'energy_impact': energy_impact,
@@ -1314,7 +1320,7 @@ class insufficient_oa_intake(object):
             color_code = 'GREY'
             result.log(diagnostic_message, logging.INFO)
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -1334,7 +1340,7 @@ class insufficient_oa_intake(object):
 
             color_code = 'RED'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -1351,7 +1357,7 @@ class insufficient_oa_intake(object):
                                   'ventilation.')
             color_code = 'RED'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,
@@ -1363,7 +1369,7 @@ class insufficient_oa_intake(object):
                                   'limits.')
             color_code = 'GREEN'
             dx_table = {
-                'datetime': (str(current_time)).replace(' ', 'T'),
+                'datetime': str(current_time),
                 'diagnostic_name': ECON5,
                 'diagnostic_message': diagnostic_message,
                 'energy_impact': None,

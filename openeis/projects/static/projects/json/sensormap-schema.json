@@ -221,6 +221,7 @@
                                 "PumpStatus",
                                 "HeatingCall",
                                 "SupplyFanStatus",
+                                "TerminalBoxFanStatus",
                                 "LightingStatus",
                                 "HVACStatus"
                             ]
@@ -315,7 +316,7 @@
                                 "MixedAirTemperatureSetPoint",
                                 "OutdoorAirTemperature",
                                 "ReturnAirTemperature",
-                                "ZoneSetpoint",
+                                "ZoneTemperatureSetPoint",
                                 "ZoneTemperature",
                                 "SupplyWaterTemperature", 
                                 "ReturnWaterTemperature",
