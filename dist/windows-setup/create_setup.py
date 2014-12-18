@@ -251,7 +251,10 @@ def make_requirements():
             lines += l
 
     open(MISC_DIR.replace('/','\\')+"\\requirements.txt", 'w').write(lines)
-
+    cversion = '{}-{}-{}'.format(_vinfo['version'],
+                                                  _vinfo['revision'],
+                                                  _vinfo['vcs_version'])
+    open(MISC_DIR.replace('/','\\')+"\\version.cfg", 'w').write(cversion)
     # now build all of the wheels for the requirements file
     ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
 
@@ -285,10 +288,6 @@ def validate_and_setfolders(support_root, outdir):
     if not os.path.exists(outdir):
         os.makedirs(outdir)
 
-    # parses the short version num from the returned string.
-    repovers = subprocess.check_output(["git.exe", 'describe'])
-
-    repovers = str(repovers).split('-')[-1][:-3]
     OUTPUT_FILE = os.path.join(outdir, _VERSION_STRING)+'.exe'
     return True
 
