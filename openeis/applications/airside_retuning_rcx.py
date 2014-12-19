@@ -129,29 +129,25 @@ class Application(DrivenApplicationBaseClass):
                          'SAT set point.')
         # Point names (Configurable)
         self.fan_status_name = Application.fan_status_name
-        self.zone_reheat_name = Application.zone_reheat_name
-        self.zone_damper_name = Application.zone_damper_name
-        self.fan_speedcmd_name = Application.fan_speedcmd_name
+        self.duct_stp_stpt_name = Application.duct_stp_stpt_name
         self.duct_stp_name = Application.duct_stp_name
         self.sa_temp_name = Application.sa_temp_name
+        self.sat_stpt_name = Application.sat_stpt_name
         Application.sat_stpt_cname = Application.sat_stpt_name
         Application.duct_stp_stpt_cname = Application.duct_stp_stpt_name
         # Optional points
         self.override_state = 'AUTO'
         if Application.fan_speedcmd_name is not None:
-            Application.fan_speedcmd_name = \
-                Application.fan_speedcmd_name.lower()
+            self.fan_speedcmd_name = Application.fan_speedcmd_name.lower()
         else:
-            Application.fan_speedcmd_name = None
-        Application.fan_speedcmd_priority = \
-            Application.fan_speedcmd_priority.lower()
-        Application.duct_stp_stpt_priority = \
-            Application.duct_stp_stpt_priority.lower()
-        Application.ahu_ccoil_priority = Application.ahu_ccoil_priority.lower()
-        Application.sat_stpt_priority = Application.sat_stpt_priority.lower()
+            self.fan_speedcmd_name = None
+        self.fan_speedcmd_priority = Application.fan_speedcmd_priority.lower()
+        self.duct_stp_stpt_priority = Application.duct_stp_stpt_priority.lower()
+        self.ahu_ccoil_priority = Application.ahu_ccoil_priority.lower()
+        self.sat_stpt_priority = Application.sat_stpt_priority.lower()
         # Zone Parameters
-        Application.zone_damper_name = Application.zone_damper_name.lower()
-        Application.zone_reheat_name = Application.zone_reheat_name.lower()
+        self.zone_damper_name = Application.zone_damper_name.lower()
+        self.zone_reheat_name = Application.zone_reheat_name.lower()
         # Application thresholds (Configurable)
         self.data_window = float(data_window)
         self.low_supply_fan_threshold = float(low_supply_fan_threshold)
@@ -505,7 +501,7 @@ class Application(DrivenApplicationBaseClass):
             if key.startswith(self.fan_status_name) and value is not None:
                 fan_stat_check = True
                 fan_stat_data.append(value)
-                if int(value) == 0:
+                if not value:
                     self.warm_up_flag = True
                     Application.pre_requiste_messages.append(self.pre_msg1)
                     diagnostic_result = self.pre_message(diagnostic_result,
@@ -775,8 +771,8 @@ class DuctStaticRcx(object):
             if (avg_duct_stpr_stpt is not None and
                     not static_override_check):
                 if self.auto_correctflag:
-                    duct_stpr_stpt = avg_duct_stpr_stpt + \
-                        self.duct_stc_retuning
+                    duct_stpr_stpt = (avg_duct_stpr_stpt +
+                                      self.duct_stc_retuning)
                     if duct_stpr_stpt <= self.max_duct_stp_stpt:
                         result.command(
                             Application.duct_stp_stpt_cname, duct_stpr_stpt)
@@ -791,9 +787,8 @@ class DuctStaticRcx(object):
                                               'to: {val}'
                                               .format(val=duct_stpr_stpt))
                     else:
-                        result.command(
-                            Application.duct_stp_stpt_cname,
-                            self.max_duct_stp_stpt)
+                        result.command(Application.duct_stp_stpt_cname,
+                                       self.max_duct_stp_stpt)
                         duct_stpr_stpt = '%s' % float('%.2g' % self.max_duct_stp_stpt)
                         duct_stpr_stpt = str(duct_stpr_stpt)
                         duct_stpr_stpt = ''.join([duct_stpr_stpt,
@@ -958,8 +953,8 @@ class SupplyTempRcx(object):
         self.sat_retuning = float(sat_retuning)
 
     def sat_rcx(self, current_time, satemp_data, sat_stpt_data,
-                rht_data, zone_damper_data,
-                diagnostic_result, sat_override_check):
+                rht_data, zone_damper_data, diagnostic_result,
+                sat_override_check):
         '''Check supply-air temperature RCx pre-requisites
         and assemble the supply-air temperature analysis data set.
         '''
@@ -1200,6 +1195,7 @@ class SchedResetRcx(object):
         self.duct_stp_stpt_values = []
         self.sat_stpt_values = []
         self.timestamp = []
+        self.sched_time = []
         self.dx_time = None
         self.monday_sch = re.sub('[:;]', ',', monday_sch)
         self.monday_sch = [int(item) for item in (x.strip()
@@ -1255,6 +1251,7 @@ class SchedResetRcx(object):
             self.fan_status_values = []
             Application.pre_requiste_messages = []
             Application.pre_msg_time = []
+            self.sched_time = []
             if duct_stp_stpt_values is not None:
                 self.sat_stpt_values.append(sat_stpt_values)
                 self.duct_stp_stpt_values.append(duct_stp_stpt_values)
@@ -1277,6 +1274,7 @@ class SchedResetRcx(object):
             self.fan_status_values.append(int(max(fan_stat_data)))
             fan_stat = self.fan_status_values[-1]
             duct_stp = self.duct_stp_values[-1]
+            self.sched_time.append(current_time)
         else:
             if int(max(fan_stat_data)):
                 self.duct_stp_stpt_values.append(sum(stc_pr_sp_data) /
@@ -1296,6 +1294,18 @@ class SchedResetRcx(object):
             diagnostic_result = self.no_sat_sp_reset(diagnostic_result)
             clear_old()
         elif run:
+            diagnostic_message = ('Inconclusive diagnostic, '
+                                  'insufficient data to perform RCx.')
+            color_code = 'GREY'
+            energy_impact = None
+            dx_table = {
+                'datetime': self.dx_time,
+                'diagnostic_name': SCHED_RCx,
+                'diagnostic_message': diagnostic_message,
+                'energy_impact': energy_impact,
+                'color_code': color_code
+            }
+            diagnostic_result.insert_table_row('Airside_RCx', dx_table)
             clear_old()
         return diagnostic_result
 
@@ -1330,14 +1340,15 @@ class SchedResetRcx(object):
                                       'check the functionality of the '
                                       'pressure sensor.')
                 color_code = 'GREY'
-        dx_table = {
-            'datetime': str(self.dx_time),
-            'diagnostic_name': SCHED_RCx,
-            'diagnostic_message': diagnostic_message,
-            'energy_impact': energy_impact,
-            'color_code': color_code
-        }
-        result.insert_table_row('Airside_RCx', dx_table)
+        for item in self.sched_time:
+            dx_table = {
+                'datetime': str(item),
+                'diagnostic_name': SCHED_RCx,
+                'diagnostic_message': diagnostic_message,
+                'energy_impact': energy_impact,
+                'color_code': color_code
+                }
+            result.insert_table_row('Airside_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
         return result
 
