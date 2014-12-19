@@ -52,6 +52,7 @@
 # under Contract DE-AC05-76RL01830
 #
 #}}}
+# from numpy.f2py.__version__ import version_info
 
 '''functions for determining package version information.
 
@@ -197,7 +198,17 @@ def get_version_info():
         _version_info['updated'] = vcs_timestamp()
         _version_info['revision'] = vcs_revision()
     except (NotUnderVersionControl, VersionControlNotFound):
-        pass
+        filepath = os.path.expanduser('~\\.openeis\\version.cfg')
+        try:
+            filehandle = open(filepath, 'r')
+            versionstr = filehandle.read()
+            versionparsed = versionstr.strip().split('-')
+            if(len(versionparsed) == 3):
+                _version_info['vcs_version'] = versionparsed[0]
+                _version_info['updated'] = versionparsed[1]
+                _version_info['revision'] = versionparsed[2]
+        except (FileNotFoundError):
+            versionstr = 'setup'
     return _version_info
 
 

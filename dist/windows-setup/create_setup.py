@@ -286,6 +286,7 @@ def validate_and_setfolders(support_root, outdir):
         os.makedirs(WORKING_DIR)
 
     if not os.path.exists(outdir):
+        shutil.rmtree(outdir, ignore_errors=True)
         os.makedirs(outdir)
 
     OUTPUT_FILE = os.path.join(outdir, _VERSION_STRING)+'.exe'
