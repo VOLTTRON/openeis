@@ -1,13 +1,17 @@
 
-import os
-import re
-import sys
-import tarfile
-import zipfile
-
 from distutils.command.build import build as _build
 from distutils.errors import DistutilsOptionError
 from distutils import log
+import html.parser
+import os
+import posixpath
+import re
+import sys
+import tarfile
+import threading
+import urllib.parse
+import urllib.request
+import zipfile
 
 try:
     from wheel.bdist_wheel import bdist_wheel as _bdist_wheel
@@ -25,9 +29,104 @@ else:
 from setuptools import setup
 
 
-_accept_re = re.compile(r'^pgsql(?:/(?:(?:bin|lib|include|share/postgresql)(?:/.*)?)?)?$', re.I)
-_reject_re = re.compile(r'(^|/)\.\.(/|$)')
-_accept = lambda name: _accept_re.match(name) and not _reject_re.search(name)
+_PSQL_BINARY_DOWNLOAD_URL = ('http://www.enterprisedb.com/'
+                             'products-services-training/pgbindownload')
+_PSQL_BINARY_DOWNLOAD_RE = re.compile(
+    r'^/postgresql-[0-9-]+-binaries-(\w+)(?:\?.*)?$')
+
+
+def urlhead(url, *handlers):
+    opener = urllib.request.build_opener(*handlers)
+    request = urllib.request.Request(url, method='HEAD')
+    return opener.open(request)
+
+
+def get_download_url(front_url):
+    cookie_handler = urllib.request.HTTPCookieProcessor()
+    response = urlhead(front_url, cookie_handler)
+    assert response.status == 200
+    for cookie in cookie_handler.cookiejar:
+        if cookie.name == 'downloadFile':
+            return urllib.parse.unquote(cookie.value)
+
+
+def get_front_urls(plat_name, url=_PSQL_BINARY_DOWNLOAD_URL):
+    platform = {'linux-i386': 'linux32', 'linux-x86_64': 'linux64',
+                'win32': 'windows32', 'win-amd64': 'windows64',
+                'darwin': 'osx'}[plat_name]
+    links = []
+    class LinkParser(html.parser.HTMLParser):
+        def handle_starttag(self, tag, attrs):
+            if tag == 'a':
+                for name, value in attrs:
+                    if name == 'href':
+                        match = _PSQL_BINARY_DOWNLOAD_RE.match(value)
+                        if match and match.group(1).lower() == platform:
+                            links.append(value)
+                        break
+    parser = LinkParser()
+    with urllib.request.urlopen(url) as response:
+        parser.feed(response.read().decode('utf-8'))
+    parts = urllib.parse.urlsplit(url)
+    for i, link in enumerate(links):
+        links[i] = urllib.parse.urlunsplit(
+            parts[:2] + urllib.parse.urlsplit(link)[2:])
+    return links
+
+
+def get_download_urls(front_urls, threadcount=None):
+    front_urls = list(enumerate(front_urls))
+    if not threadcount:
+        threadcount = len(front_urls)
+    download_urls = []
+    def fetch_url():
+        while True:
+            try:
+                index, url = front_urls.pop()
+            except IndexError:
+                return
+            download_urls.append((index, get_download_url(url)))
+    threads = []
+    for i in range(threadcount):
+        thread = threading.Thread(target=fetch_url, daemon=True)
+        thread.start()
+        threads.append(thread)
+    for thread in threads:
+        thread.join()
+    download_urls.sort()
+    return [url for i, url in download_urls]
+
+
+def get_latest_url(plat_name):
+    front_urls = get_front_urls(plat_name)
+    download_urls = get_download_urls(front_urls[:1])
+    return download_urls[0]
+
+
+def download_archive(url, path):
+    with urllib.request.urlopen(url) as response, \
+            open(path, 'wb') as archive:
+        while True:
+            buf = response.read(4096)
+            if not buf:
+                break
+            archive.write(buf)
+
+
+def same_size(url, path):
+    response = urlhead(url)
+    if response.status == 200:
+        size = response.headers.get('Content-Length')
+        return size == os.stat(path).st_size
+
+
+_ACCEPT_RE = re.compile(
+    r'^pgsql(?:/(?:(?:bin|lib|include|share/postgresql)(?:/.*)?)?)?$', re.I)
+_REJECT_RE = re.compile(r'(^|/)\.\.(/|$)')
+
+
+def _accept(name):
+    return _ACCEPT_RE.match(name) and not _REJECT_RE.search(name)
 
 
 def _unpack_tarfile(archive, destdir):
@@ -98,25 +197,49 @@ class build(_build):
         super().initialize_options()
         self.archive = None
 
-    #def finalize_options(self):
-    #    super().finalize_options()
-    #    self.archive
+    def finalize_options(self):
+        super().finalize_options()
+        if self.archive:
+            self._parse_archive()
+        self.distribution.is_pure = lambda *args: False
+
+    def _parse_archive(self):
+        basename = os.path.basename(self.archive)
+        re.match(r'^postgresql-(\d+(?:\.\d+)+(?:-\d+)?)-(.*)-binaries'
+                 r'\.(?:tar\.gz|zip)$', basename, re.I)
+        if not match:
+            raise DistutilsOptionError(
+                '{} is not a valid postgresql archive'.format(self.archive))
+        version, plat = match.groups()
+        version = '-'.join([version.replace('-', '.'),
+                            self.distribution.get_version()])
+        platform = {'linux': 'linux-i386', 'linux-x64': 'linux-x86_64',
+                    'windows': 'win32', 'windows-x64': 'win-amd64',
+                    'osx': 'darwin'}[plat]
+        self.distribution.metadata.version = version
+        self.distribution.tag = ('py2.py3', 'none', platform.replace('-', '_'))
+        self.plat_name = platform
 
     def run(self):
         #import pdb; pdb.set_trace()
-        if self.archive is None:
-            raise DistutilsOptionError("Don't know which archive to extract; use -a/--archive option")
-        match = re.search(r'(?:^|{})postgresql-(\d+(?:\.\d+)+(?:-\d+)?)-(.*)-binaries\.(?:tar\.gz|zip)$'.format(re.escape(os.sep)), self.archive, re.I)
-        if not match:
-            raise DistutilsOptionError('{} is not a valid postgresql archive'.format(self.archive))
-        version, platform = match.groups()
-        version = version.replace('-', '.') + '-' + self.distribution.get_version()
-        platform = {'linux': 'linux-i386', 'linux-x64': 'linux-x86_64',
-                    'windows': 'win32', 'windows-x64': 'win-amd64',
-                    'osx': 'darwin'}[platform]
-        self.distribution.metadata.version = version
-        self.distribution.is_pure = lambda *args: False
-        self.distribution.tag = ('py2.py3', 'none', platform.replace('-', '_'))
+        if not self.archive:
+            #raise DistutilsOptionError(
+            #    "Don't know which archive to extract; use -a/--archive option")
+            log.info('PostgreSQL binary archive not given; finding latest '
+                     'release from %s', _PSQL_BINARY_DOWNLOAD_URL)
+            url = get_latest_url(self.plat_name)
+            parts = urllib.parse.urlsplit(url)
+            path = os.path.join(self.build_temp,
+                                posixpath.basename(parts.path))
+            if os.path.exists(path):
+                if same_size(url, path):
+                    log.info('skipping download of existing file %s', path)
+            else:
+                log.info('downloading %s to %s', url, self.build_temp)
+                os.makedirs(self.build_temp, exist_ok=True)
+                download_archive(url, path)
+            self.archive = path
+            self._parse_archive()
         unpack(self.archive, self.build_lib)
         super().run()
 
