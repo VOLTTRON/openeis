@@ -1,6 +1,8 @@
 
+from distutils.core import Command
 from distutils.command.build import build as _build
 from distutils.errors import DistutilsOptionError
+from distutils.util import get_platform
 from distutils import log
 import html.parser
 import os
@@ -19,6 +21,12 @@ except ImportError:
     commands = {}
 else:
     class bdist_wheel(_bdist_wheel):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.distribution.is_pure = lambda *args: False
+        def finalize_options(self):
+            super().finalize_options()
+            self.root_is_purelib = False
         def get_tag(self):
             tag = getattr(self.distribution, 'tag', None)
             if tag:
@@ -185,23 +193,67 @@ def unpack(archive_path, destdir):
         raise ValueError('unknown archive format')
 
 
-class build(_build):
-    user_options = _build.user_options + [
-        ('archive=', 'a', 'archive containing PostgreSQL'),
+class download(Command):
+
+    description = 'download PostgreSQL binary archive'
+
+    user_options = [
+        ('build-temp=', 't',
+         'temporary build directory'),
+        ('force', 'f',
+         'overwrite existing archive'),
+        ('plat-name=', 'p',
+         "platform name to build for, if supported "
+         "(default: %s)" % get_platform()),
     ]
 
-    #boolean_options = ['compile', 'force']
-    #negative_opt = {'no-compile' : 'compile'}
+    boolean_options = ['force']
 
     def initialize_options(self):
-        super().initialize_options()
-        self.archive = None
+        self.build_temp = None
+        self.plat_name = None
+        self.force = False
 
     def finalize_options(self):
-        super().finalize_options()
-        if self.archive:
-            self._parse_archive()
-        self.distribution.is_pure = lambda *args: False
+        self.set_undefined_options('build',
+                                   ('build_temp', 'build_temp'),
+                                   ('plat_name', 'plat_name'))
+
+    def run(self):
+        log.info('PostgreSQL binary archive not given; finding latest '
+                 'release from %s', _PSQL_BINARY_DOWNLOAD_URL)
+        url = get_latest_url(self.plat_name)
+        parts = urllib.parse.urlsplit(url)
+        path = os.path.join(self.build_temp, posixpath.basename(parts.path))
+        if self.force or not os.path.exists(path):
+            log.info('downloading %s to %s', url, self.build_temp)
+            os.makedirs(self.build_temp, exist_ok=True)
+            download_archive(url, path)
+        else:
+            log.info('skipping download of existing file %s', path)
+        self.path = path
+
+commands['download'] = download
+
+
+class extract(Command):
+    
+    description = 'extract PostgreSQL binary archive into build'
+
+    user_options = _build.user_options + [
+        ('archive=', 'a',
+         'archive containing PostgreSQL'),
+        ('build-platlib=', None,
+         "build directory for platform-specific distributions"),
+    ]
+
+    def initialize_options(self):
+        self.archive = None
+        self.build_lib = None
+
+    def finalize_options(self):
+        self.set_undefined_options('build',
+                                   ('build_lib', 'build_lib'))
 
     def _parse_archive(self):
         basename = os.path.basename(self.archive)
@@ -221,27 +273,22 @@ class build(_build):
         self.plat_name = platform
 
     def run(self):
-        #import pdb; pdb.set_trace()
         if not self.archive:
-            #raise DistutilsOptionError(
-            #    "Don't know which archive to extract; use -a/--archive option")
-            log.info('PostgreSQL binary archive not given; finding latest '
-                     'release from %s', _PSQL_BINARY_DOWNLOAD_URL)
-            url = get_latest_url(self.plat_name)
-            parts = urllib.parse.urlsplit(url)
-            path = os.path.join(self.build_temp,
-                                posixpath.basename(parts.path))
-            if os.path.exists(path):
-                if same_size(url, path):
-                    log.info('skipping download of existing file %s', path)
-            else:
-                log.info('downloading %s to %s', url, self.build_temp)
-                os.makedirs(self.build_temp, exist_ok=True)
-                download_archive(url, path)
-            self.archive = path
-            self._parse_archive()
+            self.run_command('download')
+            self.archive = self.distribution.get_command_obj('download').path
         unpack(self.archive, self.build_lib)
-        super().run()
+
+commands['extract'] = extract
+
+
+class build(_build):
+    sub_commands = _build.sub_commands + [('extract', None)]
+
+    def finalize_options(self):
+        build_lib = self.build_lib
+        super().finalize_options()
+        if build_lib is None:
+            self.build_lib = self.build_platlib
 
 commands['build'] = build
 
