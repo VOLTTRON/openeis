@@ -641,8 +641,6 @@
             "sensor_name": "HotWaterValvePosition",
             "unit_type": "dimensionless",
             "default_aggregation": "average",
-            "default_fill": "repeat",
-            "default_aggregation": "average",
             "default_fill": "repeat"
         },
         "DischargeAirTemperatureSetPoint": {
@@ -692,7 +690,7 @@
             "default_fill": "repeat"
         },
         "FirstStageCooling": {
-            "data_type": "bollean",
+            "data_type": "boolean",
             "sensor_name": "FirstStageCooling",
             "sensor_type": "FirstStageCooling",
             "unit_type": "unitless",
