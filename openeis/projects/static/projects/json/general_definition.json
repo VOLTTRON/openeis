@@ -663,7 +663,9 @@
             "data_type": "float",
             "unit_type": "dimensionless",
             "sensor_name": "OutdoorDamperSignal",
-            "sensor_type": "OutdoorDamperSignal"
+            "sensor_type": "OutdoorDamperSignal",
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "LoopDifferentialPressure": {
             "data_type": "float",
@@ -845,6 +847,14 @@
             "data_type": "boolean",
             "sensor_type": "BoilerStatus",
             "sensor_name": "BoilerStatus",
+            "unit_type": "unitless",
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
+        },
+        "ChillerStatus": {
+            "data_type": "boolean",
+            "sensor_type": "ChillerStatus",
+            "sensor_name": "ChillerStatus",
             "unit_type": "unitless",
             "default_aggregation": "Average",
             "default_fill": "RepeatPrevious"
