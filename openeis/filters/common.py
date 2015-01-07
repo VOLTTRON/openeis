@@ -70,47 +70,51 @@ class BaseSimpleNormalize(BaseFilter, metaclass=abc.ABCMeta):
         def generator():
             try:
                 iterator = iter(self.parent)
-                self.previous_point = self.next_point = next(iterator)                
+                self.previous_point = self.next_point = next(iterator)
                 self.current_dt = self.find_starting_dt(self.previous_point[0])
                 while True:
                     while self.next_point[0] <= self.current_dt:
                         self.previous_point = self.next_point
                         self.next_point = next(iterator)
-                        
-                        if (not self.drop_extra and 
+
+                        if (not self.drop_extra and
                             self.previous_point[0] != self.current_dt):
                             yield self.previous_point
-                        
+
                     if self.previous_point[0] == self.current_dt:
                         yield self.previous_point
                     else:
                         yield self.calculate_value(self.current_dt)
-                    
+
                     self.current_dt += self.period
             except StopIteration:
                 pass
         return generator()
-    
+
+    @classmethod
+    def filter_type(cls):
+        return "fill"
+
     @abc.abstractclassmethod
     def calculate_value(self, target_dt):
         pass
-    
+
     def find_starting_dt(self, dt):
         midnight = dt.replace(hour=0, minute=0, second=0, microsecond=0)
         seconds_from_midnight = (dt-midnight).total_seconds()
         period_seconds = self.period.total_seconds()
-        
-        offset = seconds_from_midnight %  period_seconds    
-        
+
+        offset = seconds_from_midnight %  period_seconds
+
         if not offset:
             return dt
-        
+
         previous_in_seconds = seconds_from_midnight // period_seconds
         next_in_seconds = previous_in_seconds + period_seconds
-        
+
         from_midnight =  timedelta(seconds=next_in_seconds)
         return midnight + from_midnight
-    
+
     @classmethod
     def get_config_parameters(cls):
         return {
@@ -136,49 +140,53 @@ class BaseSimpleAggregate(BaseFilter, metaclass=abc.ABCMeta):
         def generator():
             try:
                 iterator = iter(self.parent)
-                current_point = next(iterator) 
+                current_point = next(iterator)
             except StopIteration:
-                return       
-                    
+                return
+
             self.init_current_dt(current_point[0])
             value_pairs = [current_point]
-            
+
             for dt, value in iterator:
                 if not self.update_dt(dt):
-                    value_pairs.append((dt, value))    
+                    value_pairs.append((dt, value))
                 else:
                     yield self.old_dt, self.aggregate_values(self.old_dt, value_pairs)
                     value_pairs.clear()
-                    value_pairs.append((dt, value)) 
-                    
+                    value_pairs.append((dt, value))
+
             if value_pairs:
                 yield self.current_dt, self.aggregate_values(self.current_dt, value_pairs)
-            
+
         return generator()
-    
+
+    @classmethod
+    def filter_type(cls):
+        return "aggregation"
+
     @abc.abstractclassmethod
     def aggregate_values(self, target_dt, value_pairs):
         pass
-    
+
     def update_dt(self, dt):
         self.old_dt = self.current_dt
-        
+
         if self.round_time:
             while self.current_dt + self.half_period <= dt:
-                self.current_dt += self.period            
+                self.current_dt += self.period
         else:
             while self.current_dt + self.period <= dt:
                 self.current_dt += self.period
-                
+
         return self.old_dt != self.current_dt
-    
+
     def init_current_dt(self, dt):
         self.current_dt = dt.replace(hour=0, minute=0, second=0, microsecond=0)
         self.update_dt(dt)
         #Make sure old_dt it correct after init.
         self.old_dt = self.current_dt
-    
-    
+
+
     @classmethod
     def get_config_parameters(cls):
         return {

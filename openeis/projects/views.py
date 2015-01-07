@@ -152,12 +152,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 obj = serializer.save(force_insert=True)
                 serializer = serializers.FileSerializer(
                         instance=obj, context={'request': request})
-                return Response(serializer.data, 
+                return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, 
+            return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
         except ParseError:
-            return Response('Parse Error: Invalid File Format', 
+            return Response('Parse Error: Invalid File Format',
                             status=status.HTTP_400_BAD_REQUEST)
 
     @link()
@@ -746,17 +746,17 @@ class DataSetViewSet(viewsets.ModelViewSet):
                         result['extra_rows'].append(row)
                         d[col_index] = True
         return Response(result)
-    
+
     @action(methods=['POST'],
             serializer_class=serializers.DataSetManipulateSerializer,
             permission_classes=permission_classes)
     def manipulate(self, request, *args, **kargs):
-        
+
         def _iter_data(sensordata):
             for data in sensordata:
                 if data.value is not None:
                     yield data.time, data.value
-        
+
         #request_data = "{\"config\": [[\"pnnl/isb2/OutdoorAirTemperature\", \"LinearInterpolation\", \
         #{\"period_seconds\": 300, \"drop_extra\": false}],[\"pnnl/isb2/OutdoorAirTemperature\", \"RoundOff\", {\"places\": 2}]]}";
         #config_string = json.loads(request_data)
@@ -765,16 +765,16 @@ class DataSetViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             dataset_id = self.get_object().id
             config = serializer.object['config']
-            
+
             result = apply_filter_config(dataset_id,config)
             if isinstance(result,list):
                 print('Errors:')
                 return Response(errors, status.HTTP_400_BAD_REQUEST)
             return Response(result)
-        
+
         else:
             return Response("Not a valid config", status.HTTP_400_BAD_REQUEST)
-            
+
 
 
 def preview_ingestion(datamap, input_files, count=15):
@@ -801,7 +801,7 @@ def preview_ingestion(datamap, input_files, count=15):
         '''Given a list of _iter_rows() generators, iteratively collect
         the next lowest timestamp and use it to merge matching rows from
         each file. Basically turns two streams like this:
-        
+
                       STREAM 1                          STREAM 2
                   time          c1.1  c1.2          time          c2.1  c2.2
           ====================  ====  ====  ====================  ====  ====
@@ -919,27 +919,30 @@ class ApplicationViewSet(viewsets.ViewSet):
         '''Return list of applications with inputs and parameters.'''
         app_list = []
         for app_id, app in apps.items():
-            app_list.append(serializers.ApplicationSerializer(app).data)
-            app_list[-1]['id'] = app_id
+            data = serializers.ApplicationSerializer(app).data
+            app_list.append(data)
+            data['id'] = app_id
             if app.get_self_descriptor():
-                app_list[-1]['name'] = app.get_self_descriptor().name
-                app_list[-1]['description'] = app.get_self_descriptor().description
+                data['name'] = app.get_self_descriptor().name
+                data['description'] = app.get_self_descriptor().description
         return Response(app_list)
-    
+
 
 class FilterViewSet(viewsets.ViewSet):
     permission_classes = (permissions.IsAuthenticated,)
-    
+
     def list(self, request, *args, **kargs):
         '''Return list of filters with parameters.'''
         filter_list = []
         for filter_id, filter_ in column_modifiers.items():
             # Filter has __iter__ method, many has to be set as False otherwise it will crash
-            filter_list.append(serializers.ConfigurableObjectSerializer(filter_, many=False).data)
-            filter_list[-1]['id'] = filter_id
+            data = serializers.ConfigurableObjectSerializer(filter_, many=False).data
+            filter_list.append(data)
+            data['id'] = filter_id
+            data['type'] = filter_.filter_type()
             if filter_.get_self_descriptor():
-                filter_list[-1]['name'] = filter_.get_self_descriptor().name
-                filter_list[-1]['description'] = filter_.get_self_descriptor().description
+                data['name'] = filter_.get_self_descriptor().name
+                data['description'] = filter_.get_self_descriptor().description
         return Response(filter_list)
 
 

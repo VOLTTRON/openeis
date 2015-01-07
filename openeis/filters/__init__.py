@@ -67,32 +67,41 @@ class BaseFilter(SelfDescriptorBaseClass,
                  metaclass=abc.ABCMeta):
     def __init__(self, parent=None):
         self.parent = parent
-        
+
     @abc.abstractmethod
     def __iter__(self):
         pass
-    
+
+    @classmethod
+    @abc.abstractmethod
+    def filter_type(cls):
+        pass
+
 class SimpleRuleFilter(BaseFilter, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def rule(self, time, value):
         """Must return time, value pair."""
-    
+
     def __iter__(self):
         def generator():
             for dt, value in self.parent:
                 yield self.rule(dt, value)
         return generator()
-    
+
+    @classmethod
+    def filter_type(cls):
+        return "other"
+
 column_modifiers = {}
 
 def register_column_modifier(klass):
     column_modifiers[klass.__name__] = klass
     return klass
- 
+
 _extList = [name for _, name, _ in pkgutil.iter_modules(__path__)]
 
 extDict = {}
- 
+
 for extName in _extList:
     print('Importing module: ', extName)
     try:
@@ -100,5 +109,5 @@ for extName in _extList:
     except Exception as e:
         logging.error('Module {name} cannot be imported. Reason: {ex}'.format(name=extName, ex=e))
         continue
-    
+
     extDict[extName] = module
