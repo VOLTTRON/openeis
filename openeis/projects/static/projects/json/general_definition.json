@@ -713,11 +713,13 @@
             "default_aggregation": "Average",
             "default_fill": "LinearInterpolation"
         },
-        "TerminalBoxFanStatus": {
+        "SupplyFanStatus": {
             "data_type": "float",
             "sensor_name": "TerminalBoxFanStatus",
             "sensor_type": "TerminalBoxFanStatus",
-            "unit_type": "unitless"
+            "unit_type": "unitless",
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "TerminalBoxFanStatus": {
             "data_type": "boolean",
@@ -884,6 +886,22 @@
             "unit_type": "unitless",
             "sensor_name": "EconomizerMode",
             "sensor_type": "EconomizerMode",
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
+        },
+        "FirstStageAuxilaryHeat": {
+            "data_type": "boolean",
+            "unit_type": "unitless",
+            "sensor_name": "FirstStageAuxilaryHeat",
+            "sensor_type": "FirstStageAuxilaryHeat",
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
+        },
+        "SecondStageAuxilaryHeat": {
+            "data_type": "boolean",
+            "unit_type": "unitless",
+            "sensor_name": "SecondStageAuxilaryHeat",
+            "sensor_type": "SecondStageAuxilaryHeat",
             "default_aggregation": "Some",
             "default_fill": "RepeatPrevious"
         },
