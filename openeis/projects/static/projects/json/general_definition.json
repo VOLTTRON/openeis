@@ -715,8 +715,8 @@
         },
         "SupplyFanStatus": {
             "data_type": "float",
-            "sensor_name": "TerminalBoxFanStatus",
-            "sensor_type": "TerminalBoxFanStatus",
+            "sensor_name": "SupplyFanStatus",
+            "sensor_type": "SupplyFanStatus",
             "unit_type": "unitless",
             "default_aggregation": "Some",
             "default_fill": "RepeatPrevious"
