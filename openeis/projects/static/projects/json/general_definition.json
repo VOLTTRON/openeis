@@ -640,404 +640,432 @@
             "sensor_type": "HotWaterValvePosition",
             "sensor_name": "HotWaterValvePosition",
             "unit_type": "dimensionless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "DischargeAirTemperatureSetPoint": {
             "data_type": "float",
             "sensor_type": "DischargeAirTemperatureSetPoint",
             "sensor_name": "DischargeAirTemperatureSetPoint",
             "unit_type": "temperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "TotalPower": {
             "data_type": "float",
             "unit_type": "power",
             "sensor_name": "TotalPower",
             "sensor_type": "TotalPower",
-            "default_aggregation": "average",
-            "default_fill": "linear_interpolation"
+            "default_aggregation": "Average",
+            "default_fill": "LinearInterpolation"
         },
         "OutdoorDamperSignal": {
             "data_type": "float",
             "unit_type": "dimensionless",
             "sensor_name": "OutdoorDamperSignal",
-            "sensor_type": "OutdoorDamperSignal"
+            "sensor_type": "OutdoorDamperSignal",
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "LoopDifferentialPressure": {
             "data_type": "float",
             "sensor_type": "LoopDifferentialPressure",
             "sensor_name": "LoopDifferentialPressure",
             "unit_type": "pressure",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "LoopDifferentialPressureSetPoint": {
             "data_type": "float",
             "sensor_type": "LoopDifferentialPressureSetPoint",
             "sensor_name": "LoopDifferentialPressureSetPoint",
             "unit_type": "pressure",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "OutdoorAirRelativeHumidity": {
             "data_type": "float",
             "sensor_name": "OutdoorAirRelativeHumidity",
             "sensor_type": "OutdoorAirRelativeHumidity",
             "unit_type": "dimensionless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "FirstStageCooling": {
             "data_type": "boolean",
             "sensor_name": "FirstStageCooling",
             "sensor_type": "FirstStageCooling",
             "unit_type": "unitless",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "CoolingCall": {
             "data_type": "boolean",
             "sensor_type": "CoolingCall",
             "sensor_name": "CoolingCall",
             "unit_type": "dimensionless",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "SupplyFanPower": {
             "unit_type": "power",
             "sensor_name": "SupplyFanPower",
             "sensor_type": "SupplyFanPower",
             "data_type": "float",
-            "default_aggregation": "average",
-            "default_fill": "linear_interpolation"
+            "default_aggregation": "Average",
+            "default_fill": "LinearInterpolation"
         },
-        "TerminalBoxFanStatus": {
+        "SupplyFanStatus": {
             "data_type": "float",
-            "sensor_name": "TerminalBoxFanStatus",
-            "sensor_type": "TerminalBoxFanStatus",
-            "unit_type": "unitless"
+            "sensor_name": "SupplyFanStatus",
+            "sensor_type": "SupplyFanStatus",
+            "unit_type": "unitless",
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "TerminalBoxFanStatus": {
             "data_type": "boolean",
             "sensor_name": "TerminalBoxFanStatus",
             "sensor_type": "TerminalBoxFanStatus",
             "unit_type": "unitless",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "PreHeatValvePosition": {
             "data_type": "float",
             "sensor_type": "PreHeatValvePosition",
             "sensor_name": "PreHeatValvePosition",
             "unit_type": "dimensionless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "OccupancyMode": {
             "data_type": "boolean",
             "sensor_name": "OccupancyMode",
             "sensor_type": "OccupancyMode",
             "unit_type": "unitless",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "CondenserFanPower": {
             "data_type": "float",
             "sensor_name": "CondenserFanPower",
             "sensor_type": "CondenserFanPower",
             "unit_type": "power",
-            "default_aggregation": "average",
-            "default_fill": "linear_interpolation"
+            "default_aggregation": "Average",
+            "default_fill": "LinearInterpolation"
         },
         "DuctStaticPressureSetPoint": {
             "data_type": "float",
             "sensor_type": "DuctStaticPressureSetPoint",
             "sensor_name": "DuctStaticPressureSetPoint",
             "unit_type": "pressure",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "MixedAirRelativeHumidity": {
             "data_type": "float",
             "sensor_name": "MixedAirRelativeHumidity",
             "sensor_type": "MixedAirRelativeHumidity",
             "unit_type": "dimensionless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "TerminalBoxDamperCommand": {
             "data_type": "float",
             "sensor_type": "TerminalBoxDamperCommand",
             "sensor_name": "TerminalBoxDamperCommand",
             "unit_type": "dimensionless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "SecondStageCooling": {
             "data_type": "boolean",
             "sensor_name": "SecondStageCooling",
             "sensor_type": "SecondStageCooling",
             "unit_type": "unitless",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "ZoneTemperature": {
             "data_type": "float",
             "unit_type": "temperature",
             "sensor_name": "ZoneTemperature",
             "sensor_type": "ZoneTemperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "SupplyFanSpeed": {
             "data_type": "float",
             "unit_type": "dimensionless",
             "sensor_name": "SupplyFanSpeed",
             "sensor_type": "SupplyFanSpeed",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "DischargeAirTemperature": {
             "data_type": "float",
             "unit_type": "temperature",
             "sensor_name": "DischargeAirTemperature",
             "sensor_type": "DischargeAirTemperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "ReturnAirTemperature": {
             "data_type": "float",
             "unit_type": "temperature",
             "sensor_name": "ReturnAirTemperature",
             "sensor_type": "ReturnAirTemperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "DischargeAirRelativeHumidity": {
             "data_type": "float",
             "unit_type": "dimensionless",
             "sensor_name": "DischargeAirRelativeHumidity",
             "sensor_type": "DischargeAirRelativeHumidity",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "SecondStageHeating": {
             "data_type": "boolean",
             "unit_type": "unitless",
             "sensor_name": "SecondStageHeating",
             "sensor_type": "SecondStageHeating",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "WholeBuildingGas": {
             "data_type": "float",
             "unit_type": "energy",
             "sensor_name": "WholeBuildingGas",
             "sensor_type": "WholeBuildingGas",
-            "default_aggregation": "sum",
-            "default_fill": "linear_interpolation"
+            "default_aggregation": "Sum",
+            "default_fill": "LinearInterpolation"
         },
         "BoilerStatus": {
             "data_type": "boolean",
             "sensor_type": "BoilerStatus",
             "sensor_name": "BoilerStatus",
             "unit_type": "unitless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
+        },
+        "ChillerStatus": {
+            "data_type": "boolean",
+            "sensor_type": "ChillerStatus",
+            "sensor_name": "ChillerStatus",
+            "unit_type": "unitless",
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "ChilledWaterValvePosition": {
             "data_type": "float",
             "sensor_type": "ChilledWaterValvePosition",
             "sensor_name": "ChilledWaterValvePosition",
             "unit_type": "dimensionless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "FirstStageHeating": {
             "data_type": "boolean",
             "unit_type": "unitless",
             "sensor_name": "FirstStageHeating",
             "sensor_type": "FirstStageHeating",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "PumpStatus": {
             "data_type": "boolean",
             "sensor_type": "PumpStatus",
             "sensor_name": "PumpStatus",
             "unit_type": "unitless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "OutdoorAirTemperature": {
             "data_type": "float",
             "unit_type": "temperature",
             "sensor_name": "OutdoorAirTemperature",
             "sensor_type": "OutdoorAirTemperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "EconomizerMode": {
             "data_type": "boolean",
             "unit_type": "unitless",
             "sensor_name": "EconomizerMode",
             "sensor_type": "EconomizerMode",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
+        },
+        "FirstStageAuxilaryHeat": {
+            "data_type": "boolean",
+            "unit_type": "unitless",
+            "sensor_name": "FirstStageAuxilaryHeat",
+            "sensor_type": "FirstStageAuxilaryHeat",
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
+        },
+        "SecondStageAuxilaryHeat": {
+            "data_type": "boolean",
+            "unit_type": "unitless",
+            "sensor_name": "SecondStageAuxilaryHeat",
+            "sensor_type": "SecondStageAuxilaryHeat",
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "ZoneTemperatureSetPoint": {
             "data_type": "float",
             "unit_type": "temperature",
             "sensor_name": "ZoneTemperatureSetPoint",
             "sensor_type": "ZoneTemperatureSetPoint",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "SupplyWaterTemperature": {
             "data_type": "float",
             "sensor_type": "SupplyWaterTemperature",
             "sensor_name": "SupplyWaterTemperature",
             "unit_type": "temperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "SupplyWaterTemperatureSetPoint": {
             "data_type": "float",
             "sensor_type": "SupplyWaterTemperatureSetPoint",
             "sensor_name": "SupplyWaterTemperatureSetPoint",
             "unit_type": "temperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "TerminalBoxReheatValvePosition": {
             "data_type": "float",
             "sensor_type": "TerminalBoxReheatValvePosition",
             "sensor_name": "TerminalBoxReheatValvePosition",
             "unit_type": "dimensionless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "DuctStaticPressure": {
             "data_type": "float",
             "sensor_type": "DuctStaticPressure",
             "sensor_name": "DuctStaticPressure",
             "unit_type": "pressure",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "ReturnWaterTemperature": {
             "data_type": "float",
             "sensor_type": "ReturnWaterTemperature",
             "sensor_name": "ReturnWaterTemperature",
             "unit_type": "temperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "CommpressorCommand": {
             "data_type": "boolean",
             "sensor_type": "CommpressorCommand",
             "sensor_name": "CommpressorCommand",
             "unit_type": "unitless",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "MixedAirTemperature": {
             "data_type": "float",
             "unit_type": "temperature",
             "sensor_name": "MixedAirTemperature",
             "sensor_type": "MixedAirTemperature",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "MixedAirTemperatureSetPoint": {
             "data_type": "float",
             "unit_type": "temperature",
             "sensor_name": "MixedAirTemperatureSetPoint",
             "sensor_type": "MixedAirTemperatureSetPoint",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "ReturnAirRelativeHumidity": {
             "data_type": "float",
             "unit_type": "dimensionless",
             "sensor_name": "ReturnAirRelativeHumidity",
             "sensor_type": "ReturnAirRelativeHumidity",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "HeatingCall": {
             "data_type": "boolean",
             "sensor_type": "HeatingCall",
             "sensor_name": "HeatingCall",
             "unit_type": "unitless",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "PumpVFDCommand": {
             "data_type": "float",
             "sensor_type": "PumpVFDCommand",
             "sensor_name": "PumpVFDCommand",
             "unit_type": "dimensionless",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "WholeBuildingElectricity": {
             "data_type": "float",
             "unit_type": "energy",
             "sensor_name": "WholeBuildingElectricity",
             "sensor_type": "WholeBuildingElectricity",
-            "default_aggregation": "sum",
-            "default_fill": "linear_interpolation"
+            "default_aggregation": "Sum",
+            "default_fill": "LinearInterpolation"
         },
         "LightingStatus": {
             "data_type": "boolean",
             "unit_type": "unitless",
             "sensor_name": "LightingStatus",
             "sensor_type": "LightingStatus",
-            "default_aggregation": "some",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Some",
+            "default_fill": "RepeatPrevious"
         },
         "HVACStatus": {
             "data_type": "integer",
             "unit_type": "unitless",
             "sensor_name": "HVACStatus",
             "sensor_type": "HVACStatus",
-            "default_aggregation": "none",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "None",
+            "default_fill": "RepeatPrevious"
         },
         "EnergyTariff": {
             "data_type": "float",
             "unit_type": "tariff",
             "sensor_name": "EnergyTariff",
             "sensor_type": "EnergyTariff",
-            "default_aggregation": "average",
-            "default_fill": "repeat_previous"
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
         },
         "ElectricEnergy": {
             "data_type": "float",
             "unit_type": "energy",
             "sensor_name": "ElectricEnergy",
             "sensor_type": "ElectricEnergy",
-            "default_aggregation": "sum",
-            "default_fill": "linear_interpolation"
+            "default_aggregation": "Sum",
+            "default_fill": "LinearInterpolation"
         },
         "NaturalGasEnergy": {
             "data_type": "float",
             "unit_type": "energy",
             "sensor_name": "NaturalGasEnergy",
             "sensor_type": "NaturalGasEnergy",
-            "default_aggregation": "sum",
-            "default_fill": "linear_interpolation"
+            "default_aggregation": "Sum",
+            "default_fill": "LinearInterpolation"
         },
         "WholeBuildingPower": {
             "data_type": "float",
             "unit_type": "power",
             "sensor_name": "WholeBuildingPower",
             "sensor_type": "WholeBuildingPower",
-            "default_aggregation": "average",
-            "default_fill": "linear_interpolation"
+            "default_aggregation": "Average",
+            "default_fill": "LinearInterpolation"
         }
     }
 }
