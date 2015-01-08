@@ -145,18 +145,18 @@ class BaseSimpleAggregate(BaseFilter, metaclass=abc.ABCMeta):
                 return
 
             self.init_current_dt(current_point[0])
-            value_pairs = [current_point]
+            value_list = [current_point]
 
             for dt, value in iterator:
                 if not self.update_dt(dt):
-                    value_pairs.append((dt, value))
+                    value_list.append((dt, value))
                 else:
-                    yield self.old_dt, self.aggregate_values(self.old_dt, value_pairs)
-                    value_pairs.clear()
-                    value_pairs.append((dt, value))
+                    yield self.old_dt, self.aggregate_values(self.old_dt, value_list)
+                    value_list.clear()
+                    value_list.append((dt, value))
 
-            if value_pairs:
-                yield self.current_dt, self.aggregate_values(self.current_dt, value_pairs)
+            if value_list:
+                yield self.current_dt, self.aggregate_values(self.current_dt, value_list)
 
         return generator()
 
@@ -165,7 +165,7 @@ class BaseSimpleAggregate(BaseFilter, metaclass=abc.ABCMeta):
         return "aggregation"
 
     @abc.abstractclassmethod
-    def aggregate_values(self, target_dt, value_pairs):
+    def aggregate_values(self, target_dt, value_list):
         pass
 
     def update_dt(self, dt):
