@@ -1050,6 +1050,7 @@ class SupplyTempRcx(object):
                                               'increased to: {val}{drg}F'
                                               .format(drg=self.dgr_sym,
                                                       val=sat_stpt))
+                        diagnostic_message = diagnostic_message.encode("utf-8")
                     else:
                         # Create diagnostic message
                         # for fault condition where
@@ -1066,6 +1067,7 @@ class SupplyTempRcx(object):
                                               '{val}{drg}F)'
                                               .format(drg=self.dgr_sym,
                                                       val=sat_stpt))
+                        diagnostic_message = diagnostic_message.encode("utf-8")
                 else:
                     # Create diagnostic message for fault
                     # condition without auto-correction
@@ -1124,6 +1126,7 @@ class SupplyTempRcx(object):
                                               '{val}{drg}F'
                                               .format(drg=self.dgr_sym,
                                                       val=sat_stpt))
+                        diagnostic_message = diagnostic_message.encode("utf-8")
                     else:
                         # Create diagnostic message for fault condition
                         # where the maximum SAT has been reached
@@ -1138,6 +1141,7 @@ class SupplyTempRcx(object):
                                               'configured SAT: {val}{drg}F'
                                               .format(drg=self.dgr_sym,
                                                       val=sat_stpt))
+                        diagnostic_message = diagnostic_message.encode("utf-8")
                 else:
                     # Create diagnostic message for fault condition
                     # without auto-correction
