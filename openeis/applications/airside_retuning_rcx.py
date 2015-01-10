@@ -1047,10 +1047,16 @@ class SupplyTempRcx(object):
                         diagnostic_message = ('The SAT has been '
                                               'detected to be too low. '
                                               'The SAT set point has been '
-                                              'increased to: {val}{drg}F'
-                                              .format(drg=self.dgr_sym,
-                                                      val=sat_stpt))
-                        diagnostic_message = diagnostic_message.encode("utf-8")
+                                              'increased to: {val} F'
+                                              .format(val=sat_stpt))
+
+#                         diagnostic_message = ('The SAT has been '
+#                                               'detected to be too low. '
+#                                               'The SAT set point has been '
+#                                               'increased to: {val}{drg}F'
+#                                               .format(drg=self.dgr_sym,
+#                                                       val=sat_stpt))
+#                         diagnostic_message = diagnostic_message.encode("utf-8")
                     else:
                         # Create diagnostic message
                         # for fault condition where
@@ -1064,10 +1070,14 @@ class SupplyTempRcx(object):
                                               'has increased the SAT set '
                                               'point to the maximum '
                                               'configured SAT set point: '
-                                              '{val}{drg}F)'
-                                              .format(drg=self.dgr_sym,
-                                                      val=sat_stpt))
-                        diagnostic_message = diagnostic_message.encode("utf-8")
+                                              '{val} F)'.format(val=sat_stpt))
+#                         diagnostic_message = ('The SAT has been '
+#                                               'detected to be too low. '
+#                                               'The SAT set point has been '
+#                                               'increased to: {val}{drg}F'
+#                                               .format(drg=self.dgr_sym,
+#                                                       val=sat_stpt))
+#                         diagnostic_message = diagnostic_message.encode("utf-8")
                 else:
                     # Create diagnostic message for fault
                     # condition without auto-correction
@@ -1123,10 +1133,14 @@ class SupplyTempRcx(object):
                         diagnostic_message = ('The SAT has been detected to '
                                               'be too high. The SAT set point '
                                               'has been increased to: '
-                                              '{val}{drg}F'
-                                              .format(drg=self.dgr_sym,
-                                                      val=sat_stpt))
-                        diagnostic_message = diagnostic_message.encode("utf-8")
+                                              '{val} F'.format(val=sat_stpt))
+#                         diagnostic_message = ('The SAT has been detected to '
+#                                               'be too high. The SAT set point '
+#                                               'has been increased to: '
+#                                               '{val}{drg}F'
+#                                               .format(drg=self.dgr_sym,
+#                                                       val=sat_stpt))
+#                         diagnostic_message = diagnostic_message.encode("utf-8")
                     else:
                         # Create diagnostic message for fault condition
                         # where the maximum SAT has been reached
@@ -1138,10 +1152,16 @@ class SupplyTempRcx(object):
                                               'to be too high, '
                                               'auto-correction has increased '
                                               'the SAT to the minimum '
-                                              'configured SAT: {val}{drg}F'
-                                              .format(drg=self.dgr_sym,
-                                                      val=sat_stpt))
-                        diagnostic_message = diagnostic_message.encode("utf-8")
+                                              'configured SAT: {val} F'
+                                              .format(val=sat_stpt))
+#                         diagnostic_message = ('The SAT was detected '
+#                                               'to be too high, '
+#                                               'auto-correction has increased '
+#                                               'the SAT to the minimum '
+#                                               'configured SAT: {val}{drg}F'
+#                                               .format(drg=self.dgr_sym,
+#                                                       val=sat_stpt))
+#                         diagnostic_message = diagnostic_message.encode("utf-8")
                 else:
                     # Create diagnostic message for fault condition
                     # without auto-correction
