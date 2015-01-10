@@ -127,7 +127,7 @@ class Application(DriverApplicationBaseClass):
             operating_days_list.append(int(daysint))
 
         holiday_list = []
-        if holidays != []:
+        if holidays:
             for dates in holidays.split(','):
                 holiday_list.append(dt.datetime.strptime(dates.strip(),'%Y-%m-%d').date())
         hour_int = []
@@ -142,7 +142,7 @@ class Application(DriverApplicationBaseClass):
         self.electricity_cost = electricity_cost
 
     @classmethod
-    def get_self_descriptor(cls):    
+    def get_self_descriptor(cls):
         name = 'Sensor Suitcase: HVAC'
         desc = 'RCx sensor suitcase diagnostics is used to identify problems in\
                 the operation and performance of packaged HVAC roof-top units (RTUs)\
@@ -155,7 +155,7 @@ class Application(DriverApplicationBaseClass):
                 and non-use of the RTU economizer when outdoor conditions\
                 allow for ‘free cooling’. '
         return Descriptor(name=name, description=desc)
-        
+
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
@@ -301,7 +301,8 @@ class Application(DriverApplicationBaseClass):
         datetime_HVACStatus = []
         for line in merged_temperatures_status:
             # Convert datetime str to datetime obj
-            datetimeObj = dt.datetime.strptime(line['time'],'%Y-%m-%d %H:%M')
+#             datetimeObj = dt.datetime.strptime(line['time'],'%Y-%m-%d %H:%M')
+            datetimeObj = line['time']
 
             # Convert ZAT
             if zat_unit == 'celcius':
