@@ -427,7 +427,7 @@
     "energy":{
         "btu":{
             "key":"btu",
-            "value":"BTU"
+            "value":"Btu"
         },
         "calorie":{
             "key":"calorie",
@@ -455,7 +455,7 @@
         },
         "kilobtu":{
             "key":"kilobtu",
-            "value":"kBTU"
+            "value":"kBtu"
         },
         "kilojoule":{
             "key":"kilojoule",
@@ -467,8 +467,8 @@
         },
         "megabtu":{
             "key":"megabtu",
-            "other":"MMBTU",
-            "value":"MBTU"
+            "other":"MMBtu",
+            "value":"MBtu"
         },
         "megajoule":{
             "key":"megajoule",
@@ -502,7 +502,7 @@
         },
         "kilobtu_per_square_foot":{
             "key":"kilobtu_per_square_foot",
-            "value":"kBTU/ft\u00b2"
+            "value":"kBtu/ft\u00b2"
         },
         "kilowatt_hours_per_square_foot":{
             "key":"kilowatt_hours_per_square_foot",
@@ -514,7 +514,7 @@
         },
         "megabtu_per_square_foot":{
             "key":"megabtu_per_square_foot",
-            "value":"MBTU/ft\u00b2"
+            "value":"MBtu/ft\u00b2"
         },
         "megajoules_per_square_foot":{
             "key":"megajoules_per_square_foot",
@@ -528,7 +528,7 @@
     "enthalpy":{
         "btu_per_pound":{
             "key":"btu_per_pound",
-            "value":"BTU/lb"
+            "value":"Btu/lb"
         },
         "btus_per_pound_dry_air":{
             "key":"btus_per_pound_dry_air",
@@ -610,7 +610,7 @@
         },
         "per_hour":{
             "key":"per_hour",
-            "value":"/h"
+            "value":"/hr"
         },
         "per_minute":{
             "key":"per_minute",
@@ -638,7 +638,7 @@
     "heating rate":{
         "degrees_celsius_per_hour":{
             "key":"degrees_celsius_per_hour",
-            "value":"\u00b0C/h"
+            "value":"\u00b0C/hr"
         },
         "degrees_celsius_per_minute":{
             "key":"degrees_celsius_per_minute",
@@ -646,7 +646,7 @@
         },
         "degrees_fahrenheit_per_hour":{
             "key":"degrees_fahrenheit_per_hour",
-            "value":"\u00b0F/h"
+            "value":"\u00b0F/hr"
         },
         "degrees_fahrenheit_per_minute":{
             "key":"degrees_fahrenheit_per_minute",
@@ -654,7 +654,7 @@
         },
         "degrees_kelvin_per_hour":{
             "key":"degrees_kelvin_per_hour",
-            "value":"K/h"
+            "value":"K/hr"
         },
         "degrees_kelvin_per_minute":{
             "key":"degrees_kelvin_per_minute",
@@ -804,7 +804,7 @@
         },
         "kilograms_per_hour":{
             "key":"kilograms_per_hour",
-            "value":"kg/h"
+            "value":"kg/hr"
         },
         "kilograms_per_minute":{
             "key":"kilograms_per_minute",
@@ -816,11 +816,11 @@
         },
         "metric_tons_per_hour":{
             "key":"metric_tons_per_hour",
-            "value":"ton/h"
+            "value":"ton/hr"
         },
         "pounds_per_hour":{
             "key":"pounds_per_hour",
-            "value":"lb/h"
+            "value":"lb/hr"
         },
         "pounds_per_minute":{
             "key":"pounds_per_minute",
@@ -840,7 +840,7 @@
     "power":{
         "btus_per_hour":{
             "key":"btus_per_hour",
-            "value":"BTU/h"
+            "value":"Btu/hr"
         },
         "foot_pounds_per_second":{
             "key":"foot_pounds_per_second",
@@ -856,15 +856,15 @@
         },
         "joules_per_hour":{
             "key":"joules_per_hour",
-            "value":"J/h"
+            "value":"J/hr"
         },
         "kilobtus_per_hour":{
             "key":"kilobtus_per_hour",
-            "value":"kBTU/h"
+            "value":"kBtu/hr"
         },
         "kilojoules_per_hour":{
             "key":"kilojoules_per_hour",
-            "value":"kJ/h"
+            "value":"kJ/hr"
         },
         "kilowatt":{
             "key":"kilowatt",
@@ -872,7 +872,7 @@
         },
         "megajoules_per_hour":{
             "key":"megajoules_per_hour",
-            "value":"MJ/h"
+            "value":"MJ/hr"
         },
         "megawatt":{
             "key":"megawatt",
@@ -894,7 +894,7 @@
     "power by area":{
         "kilobtus_per_hour_per_square_foot":{
             "key":"kilobtus_per_hour_per_square_foot",
-            "value":"kBTU/h/ft\u00b2"
+            "value":"kBtu/hr/ft\u00b2"
         },
         "kilowatts_per_square_foot":{
             "key":"kilowatts_per_square_foot",
@@ -1118,7 +1118,7 @@
         },
         "kilometers_per_hour":{
             "key":"kilometers_per_hour",
-            "value":"km/h"
+            "value":"km/hr"
         },
         "kilometers_per_second":{
             "key":"kilometers_per_second",
@@ -1130,7 +1130,7 @@
         },
         "meters_per_hour":{
             "key":"meters_per_hour",
-            "value":"m/h"
+            "value":"m/hr"
         },
         "meters_per_minute":{
             "key":"meters_per_minute",
@@ -1226,7 +1226,7 @@
         },
         "cubic_meters_per_hour":{
             "key":"cubic_meters_per_hour",
-            "value":"m\u00b3/h"
+            "value":"m\u00b3/hr"
         },
         "cubic_meters_per_minute":{
             "key":"cubic_meters_per_minute",
@@ -1250,7 +1250,7 @@
         },
         "liters_per_hour":{
             "key":"liters_per_hour",
-            "value":"L/h"
+            "value":"L/hr"
         },
         "liters_per_minute":{
             "key":"liters_per_minute",
