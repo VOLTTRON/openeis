@@ -123,7 +123,7 @@ class Application(DriverApplicationBaseClass):
             operating_days_list.append(int(daysint))
 
         holiday_list = []
-        if holidays != []:
+        if holidays:
             for dates in holidays.split(','):
                 holiday_list.append(dt.datetime.strptime(dates.strip(),'%Y-%m-%d').date())
         hour_int = []
@@ -133,12 +133,12 @@ class Application(DriverApplicationBaseClass):
         self.operating_sched = [hour_int,
                                 operating_days_list,
                                 holiday_list]
-        
+
         self.building_area = building_area
         self.electricity_cost = electricity_cost
-        
+
     @classmethod
-    def get_self_descriptor(cls):    
+    def get_self_descriptor(cls):
         name = 'Sensor Suitcase: Lighting'
         desc = 'RCx sensor suitcase diagnostics is used to identify problems in\
                 the operation and performance of lighting systems in small\
@@ -146,7 +146,7 @@ class Application(DriverApplicationBaseClass):
                 that are common to this class of buildings, specifically,\
                 excessive lighting during the day-time and after-hours periods. '
         return Descriptor(name=name, description=desc)
-        
+
     @classmethod
     def get_config_parameters(cls):
         # Called by UI
@@ -159,7 +159,7 @@ class Application(DriverApplicationBaseClass):
             "operating_days": ConfigDescriptor(str, "List the weekdays when building is operated: \n (1 = Monday, 7 = Sunday), separated by commas"),
             "holidays": ConfigDescriptor(str, "List the holidays (YYYY-MM-DD) in the dataset, separated by commas.", optional=True),
             }
-    
+
     @classmethod
     def required_input(cls):
         # Called by UI
