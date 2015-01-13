@@ -696,7 +696,7 @@
             "sensor_name": "FirstStageCooling",
             "sensor_type": "FirstStageCooling",
             "unit_type": "unitless",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "CoolingCall": {
@@ -704,7 +704,7 @@
             "sensor_type": "CoolingCall",
             "sensor_name": "CoolingCall",
             "unit_type": "dimensionless",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "SupplyFanPower": {
@@ -720,7 +720,7 @@
             "sensor_name": "SupplyFanStatus",
             "sensor_type": "SupplyFanStatus",
             "unit_type": "unitless",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "TerminalBoxFanStatus": {
@@ -728,7 +728,7 @@
             "sensor_name": "TerminalBoxFanStatus",
             "sensor_type": "TerminalBoxFanStatus",
             "unit_type": "unitless",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "PreHeatValvePosition": {
@@ -744,7 +744,7 @@
             "sensor_name": "OccupancyMode",
             "sensor_type": "OccupancyMode",
             "unit_type": "unitless",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "CondenserFanPower": {
@@ -784,7 +784,7 @@
             "sensor_name": "SecondStageCooling",
             "sensor_type": "SecondStageCooling",
             "unit_type": "unitless",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "ZoneTemperature": {
@@ -832,7 +832,7 @@
             "unit_type": "unitless",
             "sensor_name": "SecondStageHeating",
             "sensor_type": "SecondStageHeating",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "WholeBuildingGas": {
@@ -872,7 +872,7 @@
             "unit_type": "unitless",
             "sensor_name": "FirstStageHeating",
             "sensor_type": "FirstStageHeating",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "PumpStatus": {
@@ -896,7 +896,7 @@
             "unit_type": "unitless",
             "sensor_name": "EconomizerMode",
             "sensor_type": "EconomizerMode",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "FirstStageAuxilaryHeat": {
@@ -904,7 +904,7 @@
             "unit_type": "unitless",
             "sensor_name": "FirstStageAuxilaryHeat",
             "sensor_type": "FirstStageAuxilaryHeat",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "SecondStageAuxilaryHeat": {
@@ -912,7 +912,7 @@
             "unit_type": "unitless",
             "sensor_name": "SecondStageAuxilaryHeat",
             "sensor_type": "SecondStageAuxilaryHeat",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "ZoneTemperatureSetPoint": {
@@ -968,7 +968,7 @@
             "sensor_type": "CommpressorCommand",
             "sensor_name": "CommpressorCommand",
             "unit_type": "unitless",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "MixedAirTemperature": {
@@ -1000,7 +1000,7 @@
             "sensor_type": "HeatingCall",
             "sensor_name": "HeatingCall",
             "unit_type": "unitless",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "PumpVFDCommand": {
@@ -1024,7 +1024,7 @@
             "unit_type": "unitless",
             "sensor_name": "LightingStatus",
             "sensor_type": "LightingStatus",
-            "default_aggregation": "Some",
+            "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
         "HVACStatus": {
@@ -1032,7 +1032,7 @@
             "unit_type": "unitless",
             "sensor_name": "HVACStatus",
             "sensor_type": "HVACStatus",
-            "default_aggregation": "None",
+            "default_aggregation": "NotAny",
             "default_fill": "RepeatPrevious"
         },
         "EnergyTariff": {
