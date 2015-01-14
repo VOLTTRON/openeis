@@ -109,7 +109,7 @@ class BaseSimpleNormalize(BaseFilter, metaclass=abc.ABCMeta):
         if not offset:
             return dt
 
-        previous_in_seconds = seconds_from_midnight // period_seconds
+        previous_in_seconds = seconds_from_midnight - offset
         next_in_seconds = previous_in_seconds + period_seconds
 
         from_midnight =  timedelta(seconds=next_in_seconds)
