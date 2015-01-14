@@ -75,7 +75,6 @@
             "MixedAirRelativeHumidity",
             "MixedAirTemperature",
             "MixedAirTemperatureSetPoint",
-            "MixedAirTemperatureSetPoint",
             "NaturalGasEnergy",
             "OccupancyMode",
             "OutdoorAirRelativeHumidity",
