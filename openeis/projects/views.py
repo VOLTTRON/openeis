@@ -745,6 +745,9 @@ class DataSetViewSet(viewsets.ModelViewSet):
                     if d[col_index] == False and row[col_index] is not None:
                         result['extra_rows'].append(row)
                         d[col_index] = True
+                        for col_index,col_value in  enumerate(row):
+                            if d[col_index] == False and col_value is not None:
+                                d[col_index] = True
         return Response(result)
 
     @action(methods=['POST'],
