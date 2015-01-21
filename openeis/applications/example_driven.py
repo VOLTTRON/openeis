@@ -58,7 +58,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor,
                                   ConfigDescriptor,
                                   Results,
-                                  Descriptor)
+                                  Descriptor,
+                                  reports)
 
 import logging
 
@@ -155,13 +156,15 @@ class Application(DrivenApplicationBaseClass):
         # Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
-
-
-        display elements is a list of display objects specifying viz and columns for that viz
         """
-        display_elements = []
+        report = reports.Report('Report for Example Driven Application')
 
-        return display_elements
+        text_blurb = reports.TextBlurb(text="Sample Text Blurb.")
+        report.add_element(text_blurb)
+
+        report_list = [report]
+
+        return report_list
 
     def run(self, time, inputs):
         results = Results()
