@@ -1277,14 +1277,6 @@ class insufficient_oa_intake(object):
     def econ_alg5(self, diagnostic_result, oatemp, ratemp, matemp,
                   damper_signal, economizer_conditon, current_time):
         '''Check app. pre-quisites and assemble data set for analysis.'''
-        if economizer_conditon:
-            diagnostic_result.log('{name}: The unit may be economizing, '
-                                  'data corresponding to {timestamp}'
-                                  ' will not be used for the diagnostic.'
-                                  .format(timestamp=str(current_time),
-                                          name=ECON5), logging.DEBUG)
-            return diagnostic_result
-
         self.oa_temp_values.append(oatemp)
         self.ra_temp_values.append(ratemp)
         self.ma_temp_values.append(matemp)
