@@ -302,7 +302,7 @@ class Application(DrivenApplicationBaseClass):
             'oaf_temperature_threshold':
             ConfigDescriptor(float,
                              'Required difference between OAT and '
-                             'RAT for accurate diagnostic (F)',
+                             'RAT for accurate diagnostic ({drg}F)',
                              value_default=5.0),
             'device_type':
             ConfigDescriptor(str,
@@ -311,7 +311,7 @@ class Application(DrivenApplicationBaseClass):
             'temp_difference_threshold':
             ConfigDescriptor(float,
                              'Threshold for detecting temperature sensor '
-                             'problems (F)', value_default=4.0),
+                             'problems ({drg}F)', value_default=4.0),
             'oat_mat_check':
             ConfigDescriptor(float,
                              'Temperature threshold for OAT and MAT '
