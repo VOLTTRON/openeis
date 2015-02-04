@@ -116,11 +116,10 @@ class Application(DrivenApplicationBaseClass):
     
     @classmethod
     def required_input(cls):
-        results = super()
         return {
                     'OAT':InputDescriptor('OutdoorAirTemperature','Outdoor Temp', count_max=None),
-                    'load':InputDescriptor('WholeBuildingEnergy','Building Load'),
-                    'natgas':InputDescriptor('NaturalGas','Natural Gas usage')
+                    'load':InputDescriptor('WholeBuildingElectricity','Building Load'),
+                    'natgas':InputDescriptor('NaturalGasEnergy','Natural Gas usage')
                 }
 
     @classmethod

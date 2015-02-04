@@ -174,7 +174,6 @@ class Application(DriverApplicationBaseClass):
                                         group_by_aggregation=Avg,
                                         exclude={'value':None})
         
-        self.out.log("Getting unit conversions.", logging.INFO)
         base_topic = self.inp.get_topics()
 
         self.out.log("Compiling the report table.", logging.INFO)
