@@ -154,8 +154,11 @@ class DatabaseOutputFile(DatabaseOutput):
            }
         '''
         super().__init__(analysis, output_map)
-        
+
         self.temp_dir = tempfile.mkdtemp()
+
+        if console_output:
+            print("Temp folder for results file:", self.temp_dir)
 
         self.output_names = {}
         for table_name, table_description in output_map.items():
@@ -182,6 +185,8 @@ class DatabaseOutputFile(DatabaseOutput):
         self.file_table_map = {}
         for table_name, topics in output_map.items():
             csv_file = posixpath.join(self.temp_dir,self.file_prefix+'_'+table_name+'.csv')
+            if console_output:
+                print("Created results file:", csv_file)
             f = open(csv_file,'w', newline='')
             self.csv_table_map[table_name] = csv.DictWriter(f, topics.keys())
             self.csv_table_map[table_name].writeheader()
@@ -213,10 +218,10 @@ class DatabaseOutputFile(DatabaseOutput):
                 dict_writer.writerow(row_data)
             fd = self.file_table_map[table_name]
             fd.close()
-        
+
         self._logger.removeHandler(self.file_handler)
         self.file_handler.close()
-        
+
 class DatabaseOutputZip(DatabaseOutputFile):
     def __init__(self, analysis, output_map, config_dict):
 
@@ -229,8 +234,8 @@ class DatabaseOutputZip(DatabaseOutputFile):
     def close(self):
         super().close()
         self.writeToZip()
-        
-    
+
+
     def getZipFileName(self):
         analysis_folder = '/'.join((DATA_DIR, 'files','analysis'))
         if os.path.exists(analysis_folder) == False:
@@ -238,21 +243,21 @@ class DatabaseOutputZip(DatabaseOutputFile):
 
         zip_file = analysis_folder+'/'+str(self.analysis_id)+'.zip'
         return zip_file
-        
+
 
     def writeToZip(self):
         print('Writing Debug zip file.')
-        
+
         zip_file = self.getZipFileName()
         with ZipFile(zip_file, 'w') as myzip:
 
-            
+
             for table_name in self.csv_table_map:
                 csv_file = posixpath.join(self.temp_dir,self.file_prefix +'_'+table_name+'.csv')
                 print(os.path.abspath(csv_file))
                 myzip.write(csv_file, arcname=self.file_prefix +'_'+table_name+'.csv')
                 #os.remove(csv_file)
-            
+
             log_file = posixpath.join(self.temp_dir, self.file_prefix+".log")
             myzip.write(log_file, arcname = self.file_prefix+".log")
             #os.remove(log_file)
@@ -263,9 +268,9 @@ class DatabaseOutputZip(DatabaseOutputFile):
             jsonarray = json.dumps(d)
             config_file = self.file_prefix+'.json'
             myzip.writestr(config_file,jsonarray)
-    
+
     def appenFileToZip(self, filename, filecontents):
-        
+
         zip_file = self.getZipFileName()
         with ZipFile(zip_file, 'a') as myzip:
              myzip.writestr(filename,filecontents)
