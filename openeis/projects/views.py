@@ -144,6 +144,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
             permission_classes=permission_classes)
     def add_file(self, request, *args, **kwargs):
         '''Always set the owning project when adding files.'''
+#         print( request.DATA, request.FILES)
+        print(request.FILES)
         project = self.get_object()
         serializer = serializers.CreateFileSerializer(
                 project=project, data=request.DATA, files=request.FILES)
@@ -154,9 +156,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
                         instance=obj, context={'request': request})
                 return Response(serializer.data,
                                 status=status.HTTP_201_CREATED)
+            print(serializer.errors)
             return Response(serializer.errors,
                             status=status.HTTP_400_BAD_REQUEST)
-        except ParseError:
+        except ParseError as e:
+            print(e)
             return Response('Parse Error: Invalid File Format',
                             status=status.HTTP_400_BAD_REQUEST)
 
@@ -610,6 +614,45 @@ def perform_ingestion(ingest, batch_size=999, report_interval=1000):
         ingest.save()
         _ingest_processes.pop(ingest.id, None)
 
+class DataSetAppendViewSet(viewsets.ViewSet):
+    def append(self, request):
+        print(request.DATA)
+        point_data = request.DATA
+        print(point_data)
+        ds = models.SensorIngest.objects.get(pk=point_data["dataset_id"])
+        print (ds)
+
+        sensors = []
+        for name in point_data['point_map'].keys():
+            # Loop over data and append to correct dataset(ingst)
+            sensor, created = models.Sensor.objects.get_or_create(
+                            map=ds.map, name=name)
+
+            sensors.append((sensor, sensor.data_class))
+
+        for sensor in sensors:
+            for key, data in point_data['point_map'].items():
+                for realdata in data:
+                    obj = models.FloatSensorData(ingest=ds, sensor=sensor[0], time=datetime.datetime.now(),
+                                      value=realdata[1])
+                    obj.save()
+#
+#         for (sensor, cls), column in zip(sensors, row.columns[1:]):
+#             obj = cls(ingest=ingest, sensor=sensor, time=time,
+#                                       value=column)
+#             objects.append(obj)
+
+        return Response(request.DATA)
+
+#     model = models.SensorIngest
+#     permission_classes = (permissions.IsAuthenticated, IsProjectOwner)
+
+#     def get_serializer_class(self):
+# #         if self.action=='manipulate':
+# #             return serializers.DataSetManipulateSerializer
+#         if self.request.method == 'PUT':
+#             return serializers.SensorIngestAppendSerializer
+#         return serializers.SensorIngestSerializer
 
 class DataSetViewSet(viewsets.ModelViewSet):
     model = models.SensorIngest
