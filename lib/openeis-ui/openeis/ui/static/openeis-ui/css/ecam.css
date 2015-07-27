@@ -1,0 +1,199 @@
+
+.noselect {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+* {
+  padding: 0;
+  margin: 0;
+}
+a {
+  text-decoration: none;
+}
+#main {
+  width: 100%;
+}
+#header {
+  margin: auto;
+  height: 50px;
+  border-bottom: 1px solid #4e4e4e;
+  line-height: 3;
+  text-align: center;
+}
+#content {
+  margin-top: 15px;
+  padding: 0 22px;
+}
+.tabs-menu {
+  height: 30px;
+  float: left;
+  clear: both;
+  width: 100%;
+  position: relative;
+}
+
+.tabs-menu li {
+  line-height: 30px;
+  float: left;
+  margin-right: 10px;
+  background-color: #ccc;
+  border-top: 1px solid #d4d4d1;
+  border-right: 1px solid #d4d4d1;
+  border-left: 1px solid #d4d4d1;
+  list-style: none;
+  border-radius: 10px 10px 0px 0px;
+}
+
+.tabs-menu li.current {
+  position: relative;
+  background-color: #fff;
+  border-bottom: 1px solid #fff;
+  z-index: 5;
+}
+
+.tabs-menu li a {
+  padding: 0 140px;
+  text-transform: uppercase;
+  color: #000000;
+  text-decoration: none;
+}
+
+.tabs-menu .current a {
+  color: #2e7da3;
+  text-decoration: underline;
+}
+
+.tab {
+  border: 1px solid #d4d4d1;
+  background-color: #fff;
+  float: left;
+  margin-bottom: 20px;
+  width: 99%;
+}
+
+.tab-content {
+  padding: 20px;
+  /*display: none;*/
+}
+
+#tab-1 {
+  display: block;
+}
+#btn_upload, #btn_viewResult, #btn_return, #btn_submittask {
+  width: 100px;
+  height: 25px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+#upload_file {
+  width: 30%;
+  border: 1px solid;
+  border-radius: 2px;
+}
+form {
+  padding: 15px;
+}
+.row {
+  text-align: center;
+  height: 40px;
+}
+table thead {
+  background-color: #D0D0D0;
+}
+tr:nth-child(even) td {
+  background: #EAEAEA;
+}
+tr:nth-child(odd) td {
+  background: #FEFEFE;
+}
+select#read_file {
+  width: 35%;
+  height: 25px;
+  border-radius: 5px;
+}
+#loading {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 6;
+  width: 100%;
+  height: 100%;
+  background-color: #000;
+  opacity: 0.75;
+  display: none;
+  -webkit-opacity: 0.5;
+  -moz-opacity: 0.5;
+  -ms-opacity: 0.5;
+  -o-opacity: 0.5;
+  -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+  filter: alpha(opacity=50);
+}
+.img_loader {
+  z-index: 7;
+  display: none;
+  margin: auto;
+}
+#btn_viewResult {
+}
+
+
+.rickshaw_graph .detail .x_label { display: none }
+.rickshaw_graph .detail .item { line-height: 1.4; padding: 0.5em }
+.detail_swatch { float: right; display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 0 }
+.rickshaw_graph .detail .date { color: #a0a0a0 }
+
+.hidden {
+  visibility: hidden;
+}
+.rs-chart-container {
+  border-radius: 3px;
+  border-width: 1px;
+  border-style: outset;
+}
+
+.rs-chart-container .rs-chart-area {
+  height: 250px;
+  margin: 20px 10px 20px 10px;
+}
+.rs-chart-container .rs-chart-area.time-series {
+  height: 300px;
+  margin: 20px 10px 20px 10px;
+}
+
+.rs-chart-container .rs-chart {
+  display: inline-block;
+  width: 600px;
+}
+.rs-chart-container .rs-y-axis {
+  display: inline-block;
+  height: 250px;
+  width: 40px;
+}
+.rs-chart-container .rs-y-axis2 {
+  display: inline-block;
+  height: 250px;
+  width: 40px;
+}
+.rs-chart-container .rs-legend {
+  width: 220px;
+  padding-bottom: 10px;
+  float: right;
+  overflow: hidden;
+}
+
+.rs-chart-container .title {
+  background-color: #d3d3d3;
+  font-weight: bold;
+  line-height: 1.5em;
+  padding-left: 10px;
+  cursor: pointer;
+}
+
+.rs-chart-container .rs-slider {
+  padding-left: 44px; //same as y-axis width
+}
