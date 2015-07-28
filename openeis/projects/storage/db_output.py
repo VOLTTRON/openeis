@@ -52,8 +52,6 @@
 # under Contract DE-AC05-76RL01830
 #
 #}}}
-from setuptools.tests.test_sdist import posix
-
 '''
 Created on Apr 28, 2014
 
