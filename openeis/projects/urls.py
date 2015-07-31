@@ -100,6 +100,11 @@ api_urls = list(router.urls)
 api_urls.append(url(r'^datasets/preview$',
                     views.DataSetPreviewViewSet.as_view({'post': 'preview'}),
                     name='datasets-preview'))
+
+api_urls.append(url(r'^datasets/append$',
+                    views.DataSetAppendViewSet.as_view({'put': 'append'}),
+                    name='datasets-append'))
+
 router = DefaultRouter(trailing_slash=False)
 router.register(r'datasets', views.DataSetViewSet)
 api_urls.extend(router.urls)
