@@ -50,6 +50,8 @@ under Contract DE-AC05-76RL01830
 '''
 import datetime
 import logging
+import re
+from openeis.applications.utils import conversion_utils as cu
 from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor,
                                   ConfigDescriptor,
@@ -85,7 +87,7 @@ class Application(DrivenApplicationBaseClass):
 
     def __init__(self, *args, economizer_type='DDB', econ_hl_temp=65.0,
                  device_type='AHU', temp_deadband=1.0,
-                 data_window=30, no_required_data=20,
+                 data_window=60, no_required_data=20,
                  open_damper_time=5,
                  low_supply_fan_threshold=20.0,
                  mat_low_threshold=50.0, mat_high_threshold=90.0,
@@ -103,13 +105,6 @@ class Application(DrivenApplicationBaseClass):
                  **kwargs):
         # initialize user configurable parameters.
         super().__init__(*args, **kwargs)
-        self.fan_status_name = Application.fan_status_name
-        self.oa_temp_name = Application.oa_temp_name
-        self.ra_temp_name = Application.ra_temp_name
-        self.ma_temp_name = Application.ma_temp_name
-        self.damper_signal_name = Application.damper_signal_name
-        self.cool_call_name = Application.cool_call_name
-        self.fan_speedcmd_name = Application.fan_speedcmd_name
         self.device_type = device_type.lower()
         self.economizer_type = economizer_type.lower()
         if self.economizer_type == 'hl':
@@ -266,7 +261,9 @@ class Application(DrivenApplicationBaseClass):
             ConfigDescriptor(float,
                              'Amount AHU chilled water valve '
                              'must be open to consider unit in cooling '
-                             'mode (%)', value_default=5.0),
+                             'mode (%).  If device is an RTU set to 1.0 '
+                             '(cooling status)',
+                              value_default=5.0),
             'insufficient_damper_threshold':
             ConfigDescriptor(float,
                              'Value below the minimum outdoor-air '
@@ -311,7 +308,8 @@ class Application(DrivenApplicationBaseClass):
             'temp_difference_threshold':
             ConfigDescriptor(float,
                              'Threshold for detecting temperature sensor '
-                             'problems ({drg}F)', value_default=4.0),
+                             'problems ({drg}F)'.format(drg=dgr_sym),
+                             value_default=4.0),
             'oat_mat_check':
             ConfigDescriptor(float,
                              'Temperature threshold for OAT and MAT '
@@ -428,6 +426,13 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_topic = topics[self.fan_status_name][0]
         current_time = self.inp.localize_sensor_time(diagnostic_topic,
                                                      current_time)
+        base_topic = self.inp.get_topics()
+        meta_topics = self.inp.get_topics_meta()
+        unit_dict = {
+            self.oa_temp_name: meta_topics[self.oa_temp_name][base_topic[self.oa_temp_name][0]]['unit'],
+            self.ma_temp_name: meta_topics[self.ma_temp_name][base_topic[self.ma_temp_name][0]]['unit'],
+            self.ra_temp_name: meta_topics[self.ra_temp_name][base_topic[self.ra_temp_name][0]]['unit']
+        }
         for key, value in points.items():
             device_dict[key.lower()] = value
         fan_stat_check = False
@@ -499,11 +504,29 @@ class Application(DrivenApplicationBaseClass):
                                                  current_time)
             return diagnostic_result
 
+        if 'celcius' or 'kelvin' in unit_dict.values:
+            if unit_dict[self.oa_temp_name] == 'celcius':
+                oatemp_data = cu.convertCelciusToFahrenheit(oatemp_data)
+            elif unit_dict[self.oa_temp_name] == 'kelvin':
+                oatemp_data = cu.convertKelvinToCelcius(
+                    cu.convertCelciusToFahrenheit(oatemp_data))
+            if unit_dict[self.ma_temp_name] == 'celcius':
+                matemp_data = cu.convertCelciusToFahrenheit(matemp_data)
+            elif unit_dict[self.ma_temp_name] == 'kelvin':
+                matemp_data = cu.convertKelvinToCelcius(
+                    cu.convertCelciusToFahrenheit(matemp_data))
+            if unit_dict[self.ra_temp_name] == 'celcius':
+                ratemp_data = cu.convertCelciusToFahrenheit(ratemp_data)
+            elif unit_dict[self.ra_temp_name] == 'kelvin':
+                ratemp_data = cu.convertKelvinToCelcius(
+                    cu.convertCelciusToFahrenheit(ratemp_data))
+
         oatemp = (sum(oatemp_data) / len(oatemp_data))
         ratemp = (sum(ratemp_data) / len(ratemp_data))
         matemp = (sum(matemp_data) / len(matemp_data))
         damper_signal = (sum(damper_data) / len(damper_data))
         fan_speedcmd = None
+
         if fan_speedcmd_data:
             fan_speedcmd = sum(fan_speedcmd_data)/len(fan_speedcmd_data)
         limit_check = False
