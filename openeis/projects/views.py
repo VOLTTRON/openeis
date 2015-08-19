@@ -619,29 +619,31 @@ class DataSetAppendViewSet(viewsets.ViewSet):
     def append(self, request):
         print(request.DATA)
         point_data = request.DATA
-        print(point_data)
+        #pprint(point_data)
         ds = models.SensorIngest.objects.get(pk=point_data["dataset_id"])
-        print (ds)
-
+        
         sensors = []
         for name in point_data['point_map'].keys():
             # Loop over data and append to correct dataset(ingst)
-            sensor, created = models.Sensor.objects.get_or_create(
-                            map=ds.map, name=name)
-
+            # Don't create the sensor if it doesn't exist already.
+            sensor = models.Sensor.objects.get(map=ds.map, name=name)       
             sensors.append((sensor, sensor.data_class))
-
-        for sensor in sensors:
+        
+        
+        # NOTE: sensors are tuples with the sensor object at sensor[0] and the datatype
+        #       as sensor[1]
+        for sensor_tuple in sensors:
             for key, data in point_data['point_map'].items():
-                for realdata in data:
-                    obj = models.FloatSensorData(ingest=ds, sensor=sensor[0], time=datetime.datetime.now(),
-                                      value=realdata[1])
-                    obj.save()
-#
-#         for (sensor, cls), column in zip(sensors, row.columns[1:]):
-#             obj = cls(ingest=ingest, sensor=sensor, time=time,
-#                                       value=column)
-#             objects.append(obj)
+                sensor = sensor_tuple[0]
+                data_class = sensor_tuple[1]
+                
+                if sensor.name == key:
+                    for realdata in data:
+                        obj = data_class(ingest=ds, sensor=sensor, 
+                                                     time=realdata[0], value=realdata[1])
+                        #obj = models.FloatSensorData(ingest=ds, sensor=sensor, 
+                        #                             time=realdata[0], value=realdata[1])                        
+                        obj.save()
 
         return Response(request.DATA)
 
