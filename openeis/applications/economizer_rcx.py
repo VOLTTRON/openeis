@@ -84,10 +84,16 @@ class Application(DrivenApplicationBaseClass):
     damper_signal_name = 'damper_signal'
     cool_call_name = 'cool_call'
     fan_speedcmd_name = 'fan_speedcmd'
-
-    def __init__(self, *args, economizer_type='DDB', econ_hl_temp=65.0,
+    timestamp = 'date'
+    oaf_name = 'oa_fraction'
+    cc_valve_name = 'cc_valve_pos'
+    da_temp_name = 'da_temp'
+    da_temp_setpoint_name = 'da_temp_setpoint'
+    #TODO: temp set data_window=1 to test
+    def __init__(self, *args, building_name=None,
+                 economizer_type='DDB', econ_hl_temp=65.0,
                  device_type='AHU', temp_deadband=1.0,
-                 data_window=60, no_required_data=20,
+                 data_window=1, no_required_data=20,
                  open_damper_time=5,
                  low_supply_fan_threshold=20.0,
                  mat_low_threshold=50.0, mat_high_threshold=90.0,
@@ -105,6 +111,14 @@ class Application(DrivenApplicationBaseClass):
                  **kwargs):
         # initialize user configurable parameters.
         super().__init__(*args, **kwargs)
+        self.default_building_name_used = False
+
+        if building_name is None:
+            building_name = "None supplied"
+            self.default_building_name_used = True
+
+        self.building_name = building_name
+
         self.device_type = device_type.lower()
         self.economizer_type = economizer_type.lower()
         if self.economizer_type == 'hl':
@@ -329,7 +343,7 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'Auto-RCx for Economizer HVAC Systems'
+        name = 'Auto-RCx/Ecam for Economizer HVAC Systems'
         desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
         return Descriptor(name=name, description=desc)
 
@@ -339,7 +353,7 @@ class Application(DrivenApplicationBaseClass):
         return {
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
-                            'AHU Supply Fan Status', count_min=1),
+                            'AHU Supply Fan Status', count_min=0),
             cls.fan_speedcmd_name:
             InputDescriptor('SupplyFanSpeed',
                             'AHU supply fan speed', count_min=0),
@@ -356,11 +370,25 @@ class Application(DrivenApplicationBaseClass):
                             'AHU return-air temperature', count_min=1),
             cls.damper_signal_name:
             InputDescriptor('OutdoorDamperSignal', 'AHU outdoor-air damper '
-                            'signal', count_min=1),
+                            'signal', count_min=0),
             cls.cool_call_name:
             InputDescriptor('CoolingCall',
                             'AHU cooling coil command or RTU coolcall or '
-                            'compressor command', count_min=1)
+                            'compressor command', count_min=0),
+
+
+            cls.da_temp_name:
+            InputDescriptor('DischargeAirTemperature',
+                            'AHU discharge-air temperature', count_min=0),
+            cls.da_temp_setpoint_name:
+            InputDescriptor('DischargeAirTemperatureSetPoint',
+                            'AHU discharge-air temperature setpoint', count_min=0),
+            cls.cc_valve_name:
+            #InputDescriptor('CoolCoilValvePosition',
+            InputDescriptor('ChilledWaterValvePosition', #temporary
+                            'AHU cooling coil valve position',
+                            count_min=0)
+
         }
 
     def reports(self):
@@ -370,9 +398,9 @@ class Application(DrivenApplicationBaseClass):
         '''
         report = reports.Report('Retuning Report')
 
-        report.add_element(reports.RetroCommissioningOAED(
-            table_name='Economizer_RCx'))
-        report.add_element(reports.RetroCommissioningAFDD(
+        # report.add_element(reports.RetroCommissioningOAED(
+        #     table_name='Economizer_RCx'))
+        report.add_element(reports.RetroCommissioningAFDDEcam(
             table_name='Economizer_RCx'))
         return [report]
 
@@ -385,11 +413,11 @@ class Application(DrivenApplicationBaseClass):
         result = super().output_format(input_object)
 
         topics = input_object.get_topics()
-        diagnostic_topic = topics[cls.fan_status_name][0]
+        diagnostic_topic = topics[cls.oa_temp_name][0]
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
         datetime_topic = '/'.join(output_topic_base +
-                                  ['Economizer_RCx', 'date'])
+                                  ['Economizer_RCx', cls.timestamp])
         message_topic = '/'.join(output_topic_base +
                                  ['Economizer_RCx', 'message'])
         diagnostic_name = '/'.join(output_topic_base +
@@ -398,19 +426,40 @@ class Application(DrivenApplicationBaseClass):
                                  ['Economizer_RCx', 'energy_impact'])
         color_code = '/'.join(output_topic_base +
                               ['Economizer_RCx', 'color_code'])
-
+        oat_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.oa_temp_name])
+        mat_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.ma_temp_name])
+        rat_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.ra_temp_name])
+        dat_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.da_temp_name])
+        datstpt_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.da_temp_setpoint_name])
+        fsp_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.fan_speedcmd_name])
+        fst_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.fan_status_name])
+        od_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.damper_signal_name])
+        ccv_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.cc_valve_name])
+        oaf_topic = '/'.join(output_topic_base+['Economizer_RCx', cls.oaf_name])
         output_needs = {
             'Economizer_RCx': {
                 'datetime': OutputDescriptor('string', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
-                'diagnostic_message': OutputDescriptor('string',
-                                                       message_topic),
+                'diagnostic_message': OutputDescriptor('string', message_topic),
                 'energy_impact': OutputDescriptor('string', energy_impact),
-                'color_code': OutputDescriptor('string', color_code)
+                'color_code': OutputDescriptor('string', color_code),
+                'OutdoorAirTemperature': OutputDescriptor('float', oat_topic),
+                'MixedAirTemperature': OutputDescriptor('float', mat_topic),
+                'ReturnAirTemperature': OutputDescriptor('float', rat_topic),
+                'DischargeAirTemperature': OutputDescriptor('float', dat_topic),
+                'DischargeAirTemperatureSetPoint': OutputDescriptor('float', datstpt_topic),
+                'SupplyFanStatus': OutputDescriptor('float', fst_topic),
+                'SupplyFanSpeed': OutputDescriptor('float', fsp_topic),
+                'OutdoorDamper': OutputDescriptor('float', od_topic),
+                'CCV': OutputDescriptor('float', ccv_topic),
+                'OutdoorAirFraction': OutputDescriptor('float', oaf_topic)
             }
         }
+
         result.update(output_needs)
         return result
+
+
 
     def run(self, current_time, points):
         '''Main run method that is called by the DrivenBaseClass.
@@ -422,8 +471,30 @@ class Application(DrivenApplicationBaseClass):
         '''
         device_dict = {}
         diagnostic_result = Results()
+
+        # ecam_data = {
+        #     'datetime': str(current_time),
+        #     'OutdoorAirTemperature': 70,
+        #     'MixedAirTemperature': 70,
+        #     'ReturnAirTemperature': 70,
+        #     'DischargeAirTemperature': None,
+        #     'DischargeAirTemperatureSetPoint': None,
+        #     'SupplyFanStatus': None,
+        #     'SupplyFanSpeed': None,
+        #     'OutdoorDamper': None,
+        #     'CCV': None,
+        #     'OutdoorAirFraction': None,
+        #     'diagnostic_name': '',
+        #     'diagnostic_message': '',
+        #     'energy_impact': '',
+        #     'color_code': ''
+        # }
+        # diagnostic_result.insert_table_row('Economizer_RCx', ecam_data)
+        # return diagnostic_result
+
+
         topics = self.inp.get_topics()
-        diagnostic_topic = topics[self.fan_status_name][0]
+        diagnostic_topic = topics[self.oa_temp_name][0]
         current_time = self.inp.localize_sensor_time(diagnostic_topic,
                                                      current_time)
         base_topic = self.inp.get_topics()
@@ -433,41 +504,25 @@ class Application(DrivenApplicationBaseClass):
             self.ma_temp_name: meta_topics[self.ma_temp_name][base_topic[self.ma_temp_name][0]]['unit'],
             self.ra_temp_name: meta_topics[self.ra_temp_name][base_topic[self.ra_temp_name][0]]['unit']
         }
+        if len(base_topic[self.da_temp_name]) > 0:
+            unit_dict[self.da_temp_name] = meta_topics[self.da_temp_name][base_topic[self.da_temp_name][0]]['unit']
+        if len(base_topic[self.da_temp_setpoint_name]) > 0:
+            unit_dict[self.da_temp_setpoint_name] = \
+                meta_topics[self.da_temp_setpoint_name][base_topic[self.da_temp_setpoint_name][0]]['unit']
+
         for key, value in points.items():
             device_dict[key.lower()] = value
-        fan_stat_check = False
 
-        for key, value in device_dict.items():
-            if key.startswith(self.fan_status_name):
-                if value is not None and not int(value):
-                    Application.pre_requiste_messages.append(self.pre_msg1)
-                    diagnostic_result = self.pre_message(diagnostic_result,
-                                                         current_time)
-                    return diagnostic_result
-                elif value is not None:
-                    fan_stat_check = True
-        if (not fan_stat_check and
-                self.fan_speedcmd_name is not None):
-            for key, value in device_dict.items():
-                if key.startswith(self.fan_speedcmd_name):
-                    fan_stat_check = True
-                    if value < self.low_supply_fan_threshold:
-                        Application.pre_requiste_messages.append(self.pre_msg1)
-                        diagnostic_result = self.pre_message(diagnostic_result,
-                                                             current_time)
-                        return diagnostic_result
-        if not fan_stat_check:
-            Application.pre_requiste_messages.append(self.pre_msg2)
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
-            return diagnostic_result
         damper_data = []
         oatemp_data = []
         matemp_data = []
         ratemp_data = []
         cooling_data = []
         fan_speedcmd_data = []
-
+        datemp_data = []
+        datemp_stpt_data = []
+        ccv_data = []
+        fan_status_data = []
         for key, value in device_dict.items():
             if (key.startswith(self.damper_signal_name)
                     and value is not None):
@@ -487,6 +542,18 @@ class Application(DrivenApplicationBaseClass):
             elif (key.startswith(self.fan_speedcmd_name)
                   and value is not None):
                 fan_speedcmd_data.append(value)
+            elif (key.startswith(self.da_temp_name) #DAT
+                  and value is not None):
+                datemp_data.append(value)
+            elif (key.startswith(self.da_temp_setpoint_name) #DAT Setpoint
+                  and value is not None):
+                datemp_stpt_data.append(value)
+            elif (key.startswith(self.cc_valve_name) #CoolCoilValvePos
+                  and value is not None):
+                ccv_data.append(value)
+            elif (key.startswith(self.fan_status_name) #Fan status
+                  and value is not None):
+                fan_status_data.append(value)
 
         if not oatemp_data:
             Application.pre_requiste_messages.append(self.pre_msg3)
@@ -494,14 +561,9 @@ class Application(DrivenApplicationBaseClass):
             Application.pre_requiste_messages.append(self.pre_msg4)
         if not matemp_data:
             Application.pre_requiste_messages.append(self.pre_msg5)
-        if not damper_data:
-            Application.pre_requiste_messages.append(self.pre_msg6)
-        if not cooling_data:
-            Application.pre_requiste_messages.append(self.pre_msg7)
-        if not (oatemp_data and ratemp_data and matemp_data and
-                damper_data and cooling_data):
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
+
+
+        if not (oatemp_data and ratemp_data and matemp_data):
             return diagnostic_result
 
         if 'celcius' or 'kelvin' in unit_dict.values:
@@ -510,25 +572,118 @@ class Application(DrivenApplicationBaseClass):
             elif unit_dict[self.oa_temp_name] == 'kelvin':
                 oatemp_data = cu.convertKelvinToCelcius(
                     cu.convertCelciusToFahrenheit(oatemp_data))
+            #if self.ma_temp_name in unit_dict:
             if unit_dict[self.ma_temp_name] == 'celcius':
                 matemp_data = cu.convertCelciusToFahrenheit(matemp_data)
             elif unit_dict[self.ma_temp_name] == 'kelvin':
                 matemp_data = cu.convertKelvinToCelcius(
                     cu.convertCelciusToFahrenheit(matemp_data))
-            if unit_dict[self.ra_temp_name] == 'celcius':
-                ratemp_data = cu.convertCelciusToFahrenheit(ratemp_data)
-            elif unit_dict[self.ra_temp_name] == 'kelvin':
-                ratemp_data = cu.convertKelvinToCelcius(
-                    cu.convertCelciusToFahrenheit(ratemp_data))
+            if self.ra_temp_name in unit_dict:
+                if unit_dict[self.ra_temp_name] == 'celcius':
+                    ratemp_data = cu.convertCelciusToFahrenheit(ratemp_data)
+                elif unit_dict[self.ra_temp_name] == 'kelvin':
+                    ratemp_data = cu.convertKelvinToCelcius(
+                        cu.convertCelciusToFahrenheit(ratemp_data))
+            if self.da_temp_name in unit_dict:
+                if unit_dict[self.da_temp_name] == 'celcius':
+                    datemp_data = cu.convertCelciusToFahrenheit(datemp_data)
+                elif unit_dict[self.da_temp_name] == 'kelvin':
+                    datemp_data = cu.convertKelvinToCelcius(
+                        cu.convertCelciusToFahrenheit(datemp_data))
+            if self.da_temp_setpoint_name in unit_dict:
+                if unit_dict[self.da_temp_setpoint_name] == 'celcius':
+                    datemp_stpt_data = cu.convertCelciusToFahrenheit(datemp_stpt_data)
+                elif unit_dict[self.da_temp_setpoint_name] == 'kelvin':
+                    datemp_stpt_data = cu.convertKelvinToCelcius(
+                        cu.convertCelciusToFahrenheit(datemp_stpt_data))
+
 
         oatemp = (sum(oatemp_data) / len(oatemp_data))
-        ratemp = (sum(ratemp_data) / len(ratemp_data))
         matemp = (sum(matemp_data) / len(matemp_data))
-        damper_signal = (sum(damper_data) / len(damper_data))
-        fan_speedcmd = None
-
+        ratemp = (sum(ratemp_data) / len(ratemp_data))
+        oaf = (matemp - ratemp) / (oatemp - ratemp)
+        datemp = datemp_stpt = None
+        fanstatus = fan_speedcmd = ccv = None
+        damper_signal = None
+        # if matemp_data:
+        #     matemp = (sum(matemp_data) / len(matemp_data))
+        if datemp_data:
+            datemp = (sum(datemp_data) / len(datemp_data))
+        if datemp_stpt_data:
+            datemp_stpt = (sum(datemp_stpt_data) / len(datemp_stpt_data))
+        if fan_status_data:
+            fanstatus = (sum(fan_status_data) / len(fan_status_data))
         if fan_speedcmd_data:
-            fan_speedcmd = sum(fan_speedcmd_data)/len(fan_speedcmd_data)
+            fan_speedcmd = (sum(fan_speedcmd_data) / len(fan_speedcmd_data))
+        if len(damper_data) > 0:
+            damper_signal = (sum(damper_data) / len(damper_data))
+        if ccv_data:
+            ccv = (sum(ccv_data) / len(ccv_data))
+
+        ecam_data = {
+            'datetime': str(current_time),
+            'OutdoorAirTemperature': oatemp,
+            'MixedAirTemperature': matemp,
+            'ReturnAirTemperature': ratemp,
+            'OutdoorAirFraction': oaf,
+            'DischargeAirTemperature': None if datemp is None else datemp,
+            'DischargeAirTemperatureSetPoint': None if datemp_stpt is None else datemp_stpt,
+            'SupplyFanStatus': None if fanstatus is None else fanstatus,
+            'SupplyFanSpeed': None if fan_speedcmd is None else fan_speedcmd,
+            'OutdoorDamper': None if damper_signal is None else damper_signal,
+            'CCV': None if ccv is None else ccv,
+            'diagnostic_name': None,
+            'diagnostic_message': None,
+            'energy_impact': None,
+            'color_code': None
+        }
+        # merged = merge_ecam_data({}, ecam_data)
+        # for key, value in merged.items():
+        #     print(key, value)
+        # return insert_ecam_data(diagnostic_result, {}, ecam_data)
+
+        ####Start Economizer Rcx######
+        if not damper_data:
+            Application.pre_requiste_messages.append(self.pre_msg6)
+        if not cooling_data:
+            Application.pre_requiste_messages.append(self.pre_msg7)
+
+        if not (oatemp_data and ratemp_data and matemp_data and
+                damper_data and cooling_data):
+            diagnostic_result = self.pre_message(diagnostic_result, current_time)
+            #diagnostic_result.insert_table_row('Economizer_RCx', ecam_data)
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
+
+        fan_stat_check = False
+        for key, value in device_dict.items():
+            if key.startswith(self.fan_status_name):
+                if value is not None and not int(value):
+                    Application.pre_requiste_messages.append(self.pre_msg1)
+                    diagnostic_result = self.pre_message(diagnostic_result,
+                                                         current_time)
+                    return insert_ecam_data(diagnostic_result, {}, ecam_data)
+                elif value is not None:
+                    fan_stat_check = True
+        if (not fan_stat_check and
+                self.fan_speedcmd_name is not None):
+            for key, value in device_dict.items():
+                if key.startswith(self.fan_speedcmd_name):
+                    fan_stat_check = True
+                    if value < self.low_supply_fan_threshold:
+                        Application.pre_requiste_messages.append(self.pre_msg1)
+                        diagnostic_result = self.pre_message(diagnostic_result,
+                                                             current_time)
+                        return insert_ecam_data(diagnostic_result, {}, ecam_data)
+        if not fan_stat_check:
+            Application.pre_requiste_messages.append(self.pre_msg2)
+            diagnostic_result = self.pre_message(diagnostic_result,
+                                                 current_time)
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
+
+        #damper_signal = (sum(damper_data) / len(damper_data))
+        #fan_speedcmd = None
+        #if fan_speedcmd_data:
+        #    fan_speedcmd = sum(fan_speedcmd_data)/len(fan_speedcmd_data)
         limit_check = False
         if oatemp < self.oat_low_threshold or oatemp > self.oat_high_threshold:
             Application.pre_requiste_messages.append(self.pre_msg8)
@@ -542,7 +697,7 @@ class Application(DrivenApplicationBaseClass):
         if limit_check:
             diagnostic_result = self.pre_message(diagnostic_result,
                                                  current_time)
-            return diagnostic_result
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
 
         if abs(oatemp - ratemp) < self.oaf_temperature_threshold:
             diagnostic_result.log('OAT and RAT are too close, economizer '
@@ -550,7 +705,7 @@ class Application(DrivenApplicationBaseClass):
                                   'corresponding to: {timestamp} '
                                   .format(timestamp=str(current_time)),
                                   logging.DEBUG)
-            return diagnostic_result
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
         device_type_error = False
         if self.device_type == 'ahu':
             cooling_valve = sum(cooling_data) / len(cooling_data)
@@ -566,7 +721,7 @@ class Application(DrivenApplicationBaseClass):
                                   'as "AHU" or "RTU" Check '
                                   'Configuration input.', logging.INFO)
         if device_type_error:
-            return diagnostic_result
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
         if self.economizer_type == 'ddb':
             economizer_conditon = (oatemp < (ratemp - self.temp_deadband))
         else:
@@ -574,7 +729,7 @@ class Application(DrivenApplicationBaseClass):
                 oatemp < (self.econ_hl_temp - self.temp_deadband))
         diagnostic_result = self.econ1.econ_alg1(diagnostic_result,
                                                  oatemp, ratemp, matemp,
-                                                 damper_signal, current_time)
+                                                 damper_signal, current_time, ecam_data)
         if (temperature_sensor_dx.temp_sensor_problem is not None and
                 temperature_sensor_dx.temp_sensor_problem is False):
             diagnostic_result = self.econ2.econ_alg2(diagnostic_result,
@@ -583,30 +738,41 @@ class Application(DrivenApplicationBaseClass):
                                                      damper_signal,
                                                      economizer_conditon,
                                                      current_time,
-                                                     fan_speedcmd)
+                                                     fan_speedcmd,
+                                                     ecam_data)
             diagnostic_result = self.econ3.econ_alg3(diagnostic_result,
                                                      oatemp, ratemp,
                                                      matemp, damper_signal,
                                                      economizer_conditon,
                                                      current_time,
-                                                     fan_speedcmd)
+                                                     fan_speedcmd,
+                                                     ecam_data)
             diagnostic_result = self.econ4.econ_alg4(diagnostic_result,
                                                      oatemp, ratemp,
                                                      matemp, damper_signal,
                                                      economizer_conditon,
                                                      current_time,
-                                                     fan_speedcmd)
+                                                     fan_speedcmd,
+                                                     ecam_data)
             diagnostic_result = self.econ5.econ_alg5(diagnostic_result,
                                                      oatemp, ratemp,
                                                      matemp, damper_signal,
                                                      economizer_conditon,
-                                                     current_time)
+                                                     current_time,
+                                                     ecam_data)
         else:
-            diagnostic_result = self.econ2.clear_data(diagnostic_result)
-            diagnostic_result = self.econ3.clear_data(diagnostic_result)
-            diagnostic_result = self.econ4.clear_data(diagnostic_result)
-            diagnostic_result = self.econ5.clear_data(diagnostic_result)
+            # diagnostic_result = self.econ2.clear_data(diagnostic_result)
+            # diagnostic_result = self.econ3.clear_data(diagnostic_result)
+            # diagnostic_result = self.econ4.clear_data(diagnostic_result)
+            # diagnostic_result = self.econ5.clear_data(diagnostic_result)
+            self.damper_signal_values = []
+            self.oa_temp_values = []
+            self.ra_temp_values = []
+            self.ma_temp_values = []
+            self.fan_speed_values = []
+            self.timestamp = []
             temperature_sensor_dx.temp_sensor_problem = None
+
         return diagnostic_result
 
     def pre_message(self, result, current_time):
@@ -632,6 +798,16 @@ class Application(DrivenApplicationBaseClass):
             Application.pre_msg_time = []
         return result
 
+
+def insert_ecam_data(diagnostic_result, data, ecam_data):
+        merged_data = merge_ecam_data(data, ecam_data)
+        diagnostic_result.insert_table_row('Economizer_RCx', merged_data)
+        return diagnostic_result
+
+def merge_ecam_data(data, ecam_data):
+    merged_data = ecam_data.copy()
+    merged_data.update(data)
+    return merged_data
 
 class temperature_sensor_dx(object):
     '''Air-side HVAC temperature sensor diagnostic for AHU/RTU systems.
@@ -664,7 +840,7 @@ class temperature_sensor_dx(object):
         self.temp_damper_threshold = float(temp_damper_threshold)
 
     def econ_alg1(self, diagnostic_result, oatemp,
-                  ratemp, matemp, damper_signal, current_time):
+                  ratemp, matemp, damper_signal, current_time, ecam_data):
         '''Check app. pre-quisites and assemble data set for analysis.'''
         if (damper_signal) > self.temp_damper_threshold:
             if not self.econ_check:
@@ -694,10 +870,11 @@ class temperature_sensor_dx(object):
         if (elapsed_time >= self.data_window and
                 len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.temperature_sensor_dx(
-                diagnostic_result, current_time)
+                diagnostic_result, current_time, ecam_data)
+
         return diagnostic_result
 
-    def temperature_sensor_dx(self, result, current_time):
+    def temperature_sensor_dx(self, result, current_time, ecam_data):
         '''
         If the detected problems(s) are
         consistent then generate a fault message(s).
@@ -740,7 +917,8 @@ class temperature_sensor_dx(object):
                     'color_code': color_code
                 }
                 result.log(diagnostic_message, logging.INFO)
-                result.insert_table_row('Economizer_RCx', dx_table)
+                #result.insert_table_row('Economizer_RCx', dx_table)
+                result = insert_ecam_data(result, dx_table, ecam_data)
             self.open_damper_oat = []
             self.open_damper_mat = []
 
@@ -800,8 +978,9 @@ class temperature_sensor_dx(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
+        #result.insert_table_row('Economizer_RCx', dx_table)
+        result = insert_ecam_data(result, dx_table, ecam_data)
         result = self.clear_data(result)
         return result
 
@@ -850,7 +1029,7 @@ class econ_correctly_on(object):
 
     def econ_alg2(self, diagnostic_result, cooling_call, oatemp, ratemp,
                   matemp, damper_signal, economizer_conditon, current_time,
-                  fan_speedcmd):
+                  fan_speedcmd, ecam_data):
         '''Check app. pre-quisites and assemble data set for analysis.'''
         if not cooling_call:
             diagnostic_result.log('The unit is not cooling, data '
@@ -865,7 +1044,8 @@ class econ_correctly_on(object):
                                        'economizing, keep collecting data.')
                                       .format(name=ECON2), logging.DEBUG)
                 self.output_no_run = []
-            return diagnostic_result
+            #return diagnostic_result
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
 
         if not economizer_conditon:
             diagnostic_result.log('{name}: Conditions are not favorable for '
@@ -880,7 +1060,8 @@ class econ_correctly_on(object):
                                        'economizing, keep collecting data.')
                                       .format(name=ECON2), logging.DEBUG)
                 self.output_no_run = []
-            return diagnostic_result
+            #return diagnostic_result
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
 
         self.oa_temp_values.append(oatemp)
         self.ma_temp_values.append(matemp)
@@ -900,10 +1081,10 @@ class econ_correctly_on(object):
         if (elapsed_time >= self.data_window and
                 len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.not_economizing_when_needed(
-                diagnostic_result, current_time)
+                diagnostic_result, current_time, ecam_data)
         return diagnostic_result
 
-    def not_economizing_when_needed(self, result, current_time):
+    def not_economizing_when_needed(self, result, current_time, ecam_data):
         '''If the detected problems(s) are consistent then generate a fault
         message(s).
         '''
@@ -950,8 +1131,9 @@ class econ_correctly_on(object):
             'energy_impact': energy_impact,
             'color_code': color_code
             }
-        result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
+        #result.insert_table_row('Economizer_RCx', dx_table)
+        result = insert_ecam_data(result, dx_table, ecam_data)
         result = self.clear_data(result)
         return result
 
@@ -1007,7 +1189,7 @@ class econ_correctly_off(object):
 
     def econ_alg3(self, diagnostic_result, oatemp, ratemp, matemp,
                   damper_signal, economizer_conditon, current_time,
-                  fan_speedcmd):
+                  fan_speedcmd, ecam_data):
         '''Check app. pre-quisites and assemble data set for analysis.'''
         if economizer_conditon:
             diagnostic_result.log(''.join([self.alg_result_messages[2],
@@ -1017,7 +1199,7 @@ class econ_correctly_off(object):
                                             .format(tstamp=str
                                                     (current_time)))]),
                                   logging.DEBUG)
-            return diagnostic_result
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
         else:
             self.damper_signal_values.append(damper_signal)
             self.oa_temp_values.append(oatemp)
@@ -1035,10 +1217,10 @@ class econ_correctly_off(object):
         if (elapsed_time >= self.data_window and
                 len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.economizing_when_not_needed(
-                diagnostic_result, current_time)
+                diagnostic_result, current_time, ecam_data)
         return diagnostic_result
 
-    def economizing_when_not_needed(self, result, current_time):
+    def economizing_when_not_needed(self, result, current_time, ecam_data):
         '''If the detected problems(s)
         are consistent then generate a
         fault message(s).
@@ -1086,8 +1268,9 @@ class econ_correctly_off(object):
             'color_code': color_code
             }
 
-        result.insert_table_row('Economizer_RCx', dx_table)
+        #result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
+        result = insert_ecam_data(result, dx_table, ecam_data)
         result = self.clear_data(result)
         return result
 
@@ -1132,7 +1315,7 @@ class excess_oa_intake(object):
 
     def econ_alg4(self, diagnostic_result, oatemp, ratemp, matemp,
                   damper_signal, economizer_conditon, current_time,
-                  fan_speedcmd):
+                  fan_speedcmd, ecam_data):
         '''Check app. pre-quisites and assemble data set for analysis.'''
 
         if economizer_conditon:
@@ -1141,7 +1324,8 @@ class excess_oa_intake(object):
                                   'will not be used for this diagnostic.'.
                                   format(timestamp=str(current_time)),
                                   logging.DEBUG)
-            return diagnostic_result
+            return insert_ecam_data(diagnostic_result, {}, ecam_data)
+            #return diagnostic_result
 
         self.damper_signal_values.append(damper_signal)
         self.oa_temp_values.append(oatemp)
@@ -1157,10 +1341,10 @@ class excess_oa_intake(object):
 
         if (elapsed_time >= self.data_window and
                 len(self.timestamp) >= self.no_required_data):
-            diagnostic_result = self.excess_oa(diagnostic_result, current_time)
+            diagnostic_result = self.excess_oa(diagnostic_result, current_time, ecam_data)
         return diagnostic_result
 
-    def excess_oa(self, result, current_time):
+    def excess_oa(self, result, current_time, ecam_data):
         '''If the detected problems(s) are
         consistent generate a fault message(s).
         '''
@@ -1201,7 +1385,8 @@ class excess_oa_intake(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-            result.insert_table_row('Economizer_RCx', dx_table)
+            #result.insert_table_row('Economizer_RCx', dx_table)
+            result = insert_ecam_data(result, dx_table, ecam_data)
             result = self.clear_data(result)
             return result
 
@@ -1252,9 +1437,9 @@ class excess_oa_intake(object):
             'energy_impact': energy_impact,
             'color_code': color_code
         }
-        result.insert_table_row('Economizer_RCx', dx_table)
+        #result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
-
+        result = insert_ecam_data(result, dx_table, ecam_data)
         result = self.clear_data(result)
         return result
 
@@ -1298,7 +1483,7 @@ class insufficient_oa_intake(object):
         self.desired_oaf = float(desired_oaf)
 
     def econ_alg5(self, diagnostic_result, oatemp, ratemp, matemp,
-                  damper_signal, economizer_conditon, current_time):
+                  damper_signal, economizer_conditon, current_time, ecam_data):
         '''Check app. pre-quisites and assemble data set for analysis.'''
         self.oa_temp_values.append(oatemp)
         self.ra_temp_values.append(ratemp)
@@ -1313,10 +1498,10 @@ class insufficient_oa_intake(object):
         if (elapsed_time >= self.data_window and
                 len(self.timestamp) >= self.no_required_data):
             diagnostic_result = self.insufficient_oa(
-                diagnostic_result, current_time)
+                diagnostic_result, current_time, ecam_data)
         return diagnostic_result
 
-    def insufficient_oa(self, result, current_time):
+    def insufficient_oa(self, result, current_time, ecam_data):
         '''If the detected problems(s) are
         consistent generate a fault message(s).
         '''
@@ -1341,7 +1526,8 @@ class insufficient_oa_intake(object):
                 'energy_impact': None,
                 'color_code': color_code
             }
-            result.insert_table_row('Economizer_RCx', dx_table)
+            #result.insert_table_row('Economizer_RCx', dx_table)
+            result = insert_ecam_data(result, dx_table, ecam_data)
             result = self.clear_data(result)
             return result
 
@@ -1362,7 +1548,8 @@ class insufficient_oa_intake(object):
                 'color_code': color_code
             }
             result.log(diagnostic_message, logging.INFO)
-            result.insert_table_row('Economizer_RCx', dx_table)
+            #result.insert_table_row('Economizer_RCx', dx_table)
+            result = insert_ecam_data(result, dx_table, ecam_data)
             result = self.clear_data(result)
             return result
 
@@ -1391,8 +1578,9 @@ class insufficient_oa_intake(object):
                 'color_code': color_code
             }
 
-        result.insert_table_row('Economizer_RCx', dx_table)
+        #result.insert_table_row('Economizer_RCx', dx_table)
         result.log(diagnostic_message, logging.INFO)
+        result = insert_ecam_data(result, dx_table, ecam_data)
         Application.pre_msg_time = []
         Application.pre_requiste_messages = []
         result = self.clear_data(result)
