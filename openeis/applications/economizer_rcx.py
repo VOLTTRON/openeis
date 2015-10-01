@@ -601,7 +601,16 @@ class Application(DrivenApplicationBaseClass):
         oatemp = (sum(oatemp_data) / len(oatemp_data))
         matemp = (sum(matemp_data) / len(matemp_data))
         ratemp = (sum(ratemp_data) / len(ratemp_data))
-        oaf = (matemp - ratemp) / (oatemp - ratemp)
+        denominator = oatemp - ratemp
+        if denominator == 0:
+            oaf = 0
+        else:
+            oaf = (matemp - ratemp) / (oatemp - ratemp)
+        if oaf > 1:
+            oaf = 1
+        if oaf < 0:
+            oaf = 0
+
         datemp = datemp_stpt = None
         fanstatus = fan_speedcmd = ccv = None
         damper_signal = None
