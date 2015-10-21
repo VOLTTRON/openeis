@@ -1,0 +1,56 @@
+INTRODUCTION
+
+These utility scripts are useful for downloading numpy and scipy Windows
+superpack installers and converting them to wheels suitable for installing into
+a virtual environment using pip.
+
+
+REQUIREMENTS
+
+Python packages:
+
+  wheel
+  setuptools (pkg_resources)
+
+Utilities:
+
+  7z (7zip)
+
+
+USAGE
+
+Download:
+
+Use getsuperpack.py script to download either numpy or scipy installers.
+
+  python getsuperpack.py numpy|scipy [VERSION]
+
+The script will automatically grab the latest version of the package compatible
+with the version of Python used to execute the script. An optional version
+number may be provided as a second argument to force downloading of a
+particular version. Use the -l option to fetch and print a list of available
+versions. Other options are available and may be displayed using the --help
+option.
+
+There is also an undocumented option, --no-filter, that will list or fetch
+packages regardless of their compatibility with the current Python. This option
+is useful for fetching Windows packages from Linux or OS-X.
+
+Convert:
+
+Use superpack2wheel.py to convert the Windows executable (.exe) installer to a
+Python wheel (.whl) archive.
+
+  python superpack2wheel.py INSTALLER
+
+Simply provide the executable, downloaded with getsuperpack.py or via a web
+browser, and a wheel file will be generated next to the executable. The sse3
+version is extracted by default, but sse2 and nosse wheels can be extracted
+using the --sse2 and --nosse options. Use the --help option for usage details,
+including other helpful options.
+
+Install:
+
+Install extracted wheel files using pip.
+
+  pip install WHEEL
