@@ -1,5 +1,5 @@
 
-from distutils.core import Command
+from distutils.core import Command, setup
 from distutils.command.build import build as _build
 from distutils.errors import DistutilsOptionError
 from distutils.util import get_platform
@@ -21,9 +21,6 @@ except ImportError:
     commands = {}
 else:
     class bdist_wheel(_bdist_wheel):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.distribution.is_pure = lambda *args: False
         def finalize_options(self):
             super().finalize_options()
             self.root_is_purelib = False
@@ -33,8 +30,6 @@ else:
                 return tag
             return super().get_tag()
     commands = {'bdist_wheel': bdist_wheel}
-
-from setuptools import setup
 
 
 _PSQL_BINARY_DOWNLOAD_URL = ('http://www.enterprisedb.com/'
@@ -60,7 +55,7 @@ def get_download_url(front_url):
 
 def get_front_urls(plat_name, url=_PSQL_BINARY_DOWNLOAD_URL):
     platform = {'linux-i386': 'linux32', 'linux-x86_64': 'linux64',
-                'win32': 'windows32', 'win-amd64': 'windows64',
+                'win32': 'win32', 'win-amd64': 'win64',
                 'darwin': 'osx'}[plat_name]
     links = []
     class LinkParser(html.parser.HTMLParser):
@@ -128,6 +123,25 @@ def same_size(url, path):
         return size == os.stat(path).st_size
 
 
+def find_files(path):
+    names = []
+    lastdir = os.getcwd()
+    os.chdir(path)
+    try:
+        _, dirs, _ = next(os.walk('.'))
+        dirs.sort(reverse=True)
+        while dirs:
+            dirname = dirs.pop()
+            for dirpath, dirnames, filenames in os.walk(dirname):
+                names.extend(os.path.join(dirpath, name)
+                             for name in filenames)
+                dirnames.sort(reverse=True)
+                dirs.extend(dirnames)
+    finally:
+        os.chdir(lastdir)
+    return names
+
+
 _ACCEPT_RE = re.compile(
     r'^pgsql(?:/(?:(?:bin|lib|include|share/postgresql)(?:/.*)?)?)?$', re.I)
 _REJECT_RE = re.compile(r'(^|/)\.\.(/|$)')
@@ -140,12 +154,13 @@ def _accept(name):
 def _unpack_tarfile(archive, destdir):
     symlinks = set()
     for item in archive:
+        # Skip files not matching our accept pattern
         if not _accept(item.name):
             log.debug('skipping %s', item.name)
             continue
         if item.issym():
-            linkname = os.path.normpath(os.path.join(
-                    os.path.dirname(item.name), item.linkname))
+            linkname = os.path.normpath(
+                os.path.join(os.path.dirname(item.name), item.linkname))
             if not _accept(linkname):
                 log.debug('skipping %s symlinked to %s', item.name, linkname)
         path = os.path.join(destdir, item.name)
@@ -236,29 +251,48 @@ class download(Command):
 commands['download'] = download
 
 
-class extract(Command):
+class build(_build):
     
     description = 'extract PostgreSQL binary archive into build'
 
-    user_options = _build.user_options + [
+    user_options = [
         ('archive=', 'a',
          'archive containing PostgreSQL'),
-        ('build-platlib=', None,
-         "build directory for platform-specific distributions"),
-    ]
+    ] + _build.user_options
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.distribution.is_pure = lambda *args: False
 
     def initialize_options(self):
         self.archive = None
-        self.build_lib = None
+        super().initialize_options()
 
     def finalize_options(self):
-        self.set_undefined_options('build',
-                                   ('build_lib', 'build_lib'))
+        if self.archive:
+            self._parse_archive()
+        if self.plat_name is None:
+            self.plat_name = get_platform()
+        plat_specifier = ".%s-%s" % (self.plat_name, sys.version[0:3])
+
+        self.build_purelib = None
+        self.build_platlib = os.path.join(self.build_base,
+                                          'lib' + plat_specifier)
+        self.build_lib = self.build_platlib
+
+        if self.build_temp is None:
+            self.build_temp = os.path.join(self.build_base,
+                                           'temp' + plat_specifier)
+        if self.build_scripts is None:
+            self.build_scripts = os.path.join(self.build_base,
+                                              'scripts-' + sys.version[0:3])
+        if self.executable is None:
+            self.executable = os.path.normpath(sys.executable)
 
     def _parse_archive(self):
         basename = os.path.basename(self.archive)
-        re.match(r'^postgresql-(\d+(?:\.\d+)+(?:-\d+)?)-(.*)-binaries'
-                 r'\.(?:tar\.gz|zip)$', basename, re.I)
+        match = re.match(r'^postgresql-(\d+(?:\.\d+)+(?:-\d+)?)-(.*)-binaries'
+                         r'\.(?:tar\.gz|zip)$', basename, re.I)
         if not match:
             raise DistutilsOptionError(
                 '{} is not a valid postgresql archive'.format(self.archive))
@@ -268,27 +302,19 @@ class extract(Command):
         platform = {'linux': 'linux-i386', 'linux-x64': 'linux-x86_64',
                     'windows': 'win32', 'windows-x64': 'win-amd64',
                     'osx': 'darwin'}[plat]
+        self.plat_name = platform
         self.distribution.metadata.version = version
         self.distribution.tag = ('py2.py3', 'none', platform.replace('-', '_'))
-        self.plat_name = platform
 
     def run(self):
+        dist = self.distribution
         if not self.archive:
             self.run_command('download')
-            self.archive = self.distribution.get_command_obj('download').path
+            self.archive = dist.get_command_obj('download').path
+            self._parse_archive()
         unpack(self.archive, self.build_lib)
-
-commands['extract'] = extract
-
-
-class build(_build):
-    sub_commands = _build.sub_commands + [('extract', None)]
-
-    def finalize_options(self):
-        build_lib = self.build_lib
-        super().finalize_options()
-        if build_lib is None:
-            self.build_lib = self.build_platlib
+        dist.package_data['pgsql'] = find_files(os.path.join(self.build_lib, 'pgsql'))
+        dist.have_run['build_py'] = True
 
 commands['build'] = build
 
@@ -302,14 +328,5 @@ if __name__ == '__main__':
         author_email = 'brandon.carpenter@pnnl.gov',
         url = 'http://www.pnnl.gov',
         packages = ['pgsql'],
-        #packages = find_packages(),
-        #install_requires = install_requires,
-        #entry_points = '''
-        #    [console_scripts]
-        #    openeis = openeis.server.manage:main
-        #''',
-        #package_data = {
-        #    'openeis.projects': [ os.path.join('static', x) for x in get_files(os.path.join(basepath, 'openeis', 'projects', 'static'))]
-        #}
         cmdclass=commands,
     )
