@@ -246,7 +246,10 @@
                                 "TerminalBoxReheatValvePosition",
                                 "ChilledWaterValvePosition",
                                 "PumpVFDCommand",
-                                "SupplyFanSpeed"
+                                "SupplyFanSpeed",
+                                "ReturnFanSpeed",
+                                "CoolingCoilValvePosition",
+                                "HeatingCoilValvePosition"
                             ]
                         },
                         "unit": {"$ref": "#/definitions/units/dimensionless"}

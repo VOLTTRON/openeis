@@ -96,6 +96,21 @@ def get_sensors(datamap_id, topics):
     mapdef = models.DataMap.objects.get(pk=datamap_id)
     datamap = mapdef.map
     for topic in topics:
+        # if "All" in topic:
+        #     topic = topic[:topic.index("/All")]
+        #     first_meta = datamap['sensors'][topic]
+        #     if 'type' in first_meta:
+        #         for k, v in datamap['sensors'].items():
+        #             if 'type' in v:
+        #                 if v['type'] == first_meta['type']:
+        #                     meta = v
+        #                     sensor = mapdef.sensors.get(name=k)
+        #                     def get_queryset():
+        #                         return sensor.data
+        #                     result.append((meta, get_queryset))
+        #     else:
+        #         raise "The 'All' option does not support meta without type"
+        # else:
         meta = datamap['sensors'][topic]
         # XXX: Augment metadata by adding general definition properties
         if 'type' in meta:
@@ -120,17 +135,28 @@ class DatabaseInput:
         '''
 
         self.topic_map = topic_map.copy()
-
         self.dataset_id = dataset_id
-
         self.data_map = {}
         self.sensor_meta_map = {}
+        self.topic_meta = {}
+        mapdef = models.DataMap.objects.get(pk=datamap_id)
+        self.map_defintion = mapdef.map
+
+        for input_name, topics in self.topic_map.items():
+            for topic in topics:
+                if "All" in topic:
+                    topic = topic[:topic.index("/All")]
+                    self.topic_map[input_name] = []
+                    first_meta = self.map_defintion['sensors'][topic]
+                    if 'type' in first_meta:
+                        for k, v in self.map_defintion['sensors'].items():
+                            if 'type' in v:
+                                if v['type'] == first_meta['type']:
+                                    self.topic_map[input_name].append(k)
+        #{'zonetemp': ['ZoneBuilding/AHU1/Zone3/ZoneTemperature', 'ZoneBuilding/AHU1/Zone2/ZoneTemperature'],
+        # 'fan_airflow': [], 'occupancy': [], 'zone_temp_setpoint': [], 'damper_position': []}
         for input_name, topics in self.topic_map.items():
             self.data_map[input_name] = tuple(get_sensors(datamap_id,x)[0] for x in topics)
-
-        self.topic_meta = {}
-
-        self.map_defintion = models.DataMap.objects.get(pk=datamap_id).map
 
         for input_name, topics in self.topic_map.items():
             self.topic_meta[input_name] = {}

@@ -545,7 +545,7 @@ class Application(DrivenApplicationBaseClass):
             elif (key.startswith(self.da_temp_name) #DAT
                   and value is not None):
                 datemp_data.append(value)
-            elif (key.startswith(self.da_temp_setpoint_name) #DAT Setpoint
+            elif (key.startswith(self.da_temp_setpoint_name) #DAT SetPoint
                   and value is not None):
                 datemp_stpt_data.append(value)
             elif (key.startswith(self.cc_valve_name) #CoolCoilValvePos
@@ -605,12 +605,11 @@ class Application(DrivenApplicationBaseClass):
         if denominator == 0:
             oaf = 0
         else:
-            oaf = (matemp - ratemp) / (oatemp - ratemp)
+            oaf = (matemp - ratemp) / denominator
         if oaf > 1:
             oaf = 1
-        if oaf < 0:
+        elif oaf < 0:
             oaf = 0
-
         datemp = datemp_stpt = None
         fanstatus = fan_speedcmd = ccv = None
         damper_signal = None

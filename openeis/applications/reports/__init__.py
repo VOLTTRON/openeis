@@ -187,6 +187,16 @@ class Ecam(ReportElement):
         super().__init__(**kwargs)
         self.table_name = table_name
 
+class AhuEcam(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+
+class HWPlantViz(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+
 if __name__ == '__main__':
 
     report = Report("This is a report description")

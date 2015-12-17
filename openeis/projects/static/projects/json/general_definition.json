@@ -92,7 +92,10 @@
             "TerminalBoxReheatValvePosition",
             "TotalPower",
             "ZoneTemperature",
-            "ZoneTemperatureSetPoint"
+            "ZoneTemperatureSetPoint",
+            "ReturnFanSpeed",
+            "CoolingCoilValvePosition",
+            "HeatingCoilValvePosition"
         ],
         "child_list": [
             "Zone"
@@ -154,7 +157,10 @@
             "TerminalBoxReheatValvePosition",
             "TotalPower",
             "ZoneTemperature",
-            "ZoneTemperatureSetPoint"
+            "ZoneTemperatureSetPoint",
+            "ReturnFanSpeed",
+            "CoolingCoilValvePosition",
+            "HeatingCoilValvePosition"
         ],
         "child_list": [
             "Zone"
@@ -802,6 +808,14 @@
             "default_aggregation": "Average",
             "default_fill": "RepeatPrevious"
         },
+        "ReturnFanSpeed": {
+            "data_type": "float",
+            "unit_type": "dimensionless",
+            "sensor_name": "ReturnFanSpeed",
+            "sensor_type": "ReturnFanSpeed",
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
+        },
         "DischargeAirTemperature": {
             "data_type": "float",
             "unit_type": "temperature",
@@ -862,6 +876,22 @@
             "data_type": "float",
             "sensor_type": "ChilledWaterValvePosition",
             "sensor_name": "ChilledWaterValvePosition",
+            "unit_type": "dimensionless",
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
+        },
+        "CoolingCoilValvePosition": {
+            "data_type": "float",
+            "sensor_type": "CoolingCoilValvePosition",
+            "sensor_name": "CoolingCoilValvePosition",
+            "unit_type": "dimensionless",
+            "default_aggregation": "Average",
+            "default_fill": "RepeatPrevious"
+        },
+        "HeatingCoilValvePosition": {
+            "data_type": "float",
+            "sensor_type": "HeatingCoilValvePosition",
+            "sensor_name": "HeatingCoilValvePosition",
             "unit_type": "dimensionless",
             "default_aggregation": "Average",
             "default_fill": "RepeatPrevious"
