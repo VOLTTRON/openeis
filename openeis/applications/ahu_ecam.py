@@ -394,6 +394,8 @@ class Application(DrivenApplicationBaseClass):
                 oaf = 1
             elif oaf < 0:
                 oaf = 0
+            oaf *= 100
+
         if return_fan_speedcmd_data:
             return_fan_speedcmd = (sum(return_fan_speedcmd_data) / len(return_fan_speedcmd_data))
         if occ_data:
