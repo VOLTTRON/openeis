@@ -151,14 +151,14 @@ class Application(DrivenApplicationBaseClass):
             InputDescriptor('SupplyFanStatus',
                             'AHU Supply Fan Status', count_min=0),
             cls.cc_valve_name:
-            #InputDescriptor('CoolCoilValvePosition',
-            InputDescriptor('ChilledWaterValvePosition', #temporary
+            InputDescriptor('CoolingCoilValvePosition',
+            #InputDescriptor('ChilledWaterValvePosition', #temporary
                             'AHU cooling coil valve position',
                             count_min=0),
             cls.hc_valve_name:
-            #InputDescriptor('HeatCoilValvePosition',
-            InputDescriptor('ChilledWaterValvePosition', #temporary
-                            'AHU cooling coil valve position',
+            InputDescriptor('HeatingCoilValvePosition',
+            #InputDescriptor('ChilledWaterValvePosition', #temporary
+                            'AHU heating coil valve position',
                             count_min=0),
             cls.da_temp_name:
             InputDescriptor('DischargeAirTemperature',
@@ -320,7 +320,6 @@ class Application(DrivenApplicationBaseClass):
                 staticpressure_sp_data.append(value)
 
         if not oatemp_data:
-            Application.pre_requiste_messages.append(self.pre_msg3)
             return result
 
         if 'celcius' or 'kelvin' in unit_dict.values:

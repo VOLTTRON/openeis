@@ -151,8 +151,6 @@ class Application(DrivenApplicationBaseClass):
         '''
         result = super().output_format(input_object)
         topics = input_object.get_topics()
-        print("topic")
-        print(topics)
 
         output_needs = {
             cls.table_name: {
@@ -161,10 +159,11 @@ class Application(DrivenApplicationBaseClass):
         }
 
         for zone_topic in cls.zone_topics:
-            for i, topic in enumerate(topics[zone_topic], start=1):
-                topic_parts = topic.split('/')
-                zone = topic_parts[2]
-                output_needs[cls.table_name][zone_topic + cls.sep + zone] = OutputDescriptor('float', '')
+            if zone_topic in topics.keys():
+                for i, topic in enumerate(topics[zone_topic], start=1):
+                    topic_parts = topic.split('/')
+                    zone = topic_parts[-2]
+                    output_needs[cls.table_name][zone_topic + cls.sep + zone] = OutputDescriptor('float', '')
 
         # for topic in topics[cls.zone_temp_name]:
         #     topic_parts = topic.split('/')
@@ -204,7 +203,6 @@ class Application(DrivenApplicationBaseClass):
             Main run method that is called by the DrivenBaseClass.
             points ex: [{'zonetemp_1':72.0,'zonetemp_2':69.2}]
         """
-        print(points)
         result = Results()
         topics = self.inp.get_topics()
         topic = topics[self.zone_temp_name][0]
@@ -213,18 +211,12 @@ class Application(DrivenApplicationBaseClass):
         out_data = {
             'datetime': str(current_time)
         }
-        # i = 1
-        # for topic in topics[self.zone_temp_name]:
-        #     topic_parts = topic.split('/')
-        #     zone = topic_parts[2]
-        #     out_data[self.zone_temp_name + self.sep + zone] = points[self.zone_temp_name + '_' + str(i)]
-        #     i += 1
-        print(self.zone_topics)
         for zone_topic in self.zone_topics:
-            for i, topic in enumerate(topics[zone_topic], start=1):
-                topic_parts = topic.split('/')
-                zone = topic_parts[2]
-                out_data[zone_topic + self.sep + zone] = points[zone_topic + '_' + str(i)]
+            if zone_topic in topics.keys():
+                for i, topic in enumerate(topics[zone_topic], start=1):
+                    topic_parts = topic.split('/')
+                    zone = topic_parts[-2] #the second last item
+                    out_data[zone_topic + self.sep + zone] = points[zone_topic + '_' + str(i)]
 
         result.insert_table_row(self.table_name, out_data)
         return result

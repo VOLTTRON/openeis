@@ -89,6 +89,7 @@ class Command(BaseCommand):
             verbosity = int(verbosity)
 
             config = ConfigParser()
+            config.optionxform = str #set config file to case sensitive
 
             config.read(args[0])
 

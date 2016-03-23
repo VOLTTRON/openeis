@@ -384,8 +384,7 @@ class Application(DrivenApplicationBaseClass):
             InputDescriptor('DischargeAirTemperatureSetPoint',
                             'AHU discharge-air temperature setpoint', count_min=0),
             cls.cc_valve_name:
-            #InputDescriptor('CoolCoilValvePosition',
-            InputDescriptor('ChilledWaterValvePosition', #temporary
+            InputDescriptor('CoolingCoilValvePosition',
                             'AHU cooling coil valve position',
                             count_min=0)
 
@@ -492,7 +491,6 @@ class Application(DrivenApplicationBaseClass):
         # diagnostic_result.insert_table_row('Economizer_RCx', ecam_data)
         # return diagnostic_result
 
-
         topics = self.inp.get_topics()
         diagnostic_topic = topics[self.oa_temp_name][0]
         current_time = self.inp.localize_sensor_time(diagnostic_topic,
@@ -524,6 +522,7 @@ class Application(DrivenApplicationBaseClass):
         ccv_data = []
         fan_status_data = []
         for key, value in device_dict.items():
+            #print("{0} {1}".format(key, value))
             if (key.startswith(self.damper_signal_name)
                     and value is not None):
                 damper_data.append(value)
@@ -542,12 +541,12 @@ class Application(DrivenApplicationBaseClass):
             elif (key.startswith(self.fan_speedcmd_name)
                   and value is not None):
                 fan_speedcmd_data.append(value)
+            elif (key.startswith(self.da_temp_setpoint_name) #da_temp_setpoint is longer so it goes before da_setpoint
+                  and value is not None):
+                datemp_stpt_data.append(value)
             elif (key.startswith(self.da_temp_name) #DAT
                   and value is not None):
                 datemp_data.append(value)
-            elif (key.startswith(self.da_temp_setpoint_name) #DAT SetPoint
-                  and value is not None):
-                datemp_stpt_data.append(value)
             elif (key.startswith(self.cc_valve_name) #CoolCoilValvePos
                   and value is not None):
                 ccv_data.append(value)
