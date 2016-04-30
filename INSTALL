@@ -1,7 +1,7 @@
 Requirements
 ============
 
-Python version 3.3 (or greater) is required because in it was introduced the
+Python version >=3.3 and <=3.4.3 is required because in it was introduced the
 venv package (for creating virtual environments), implicit namespace packaging,
 and improved import machinery which are all used by OpenEIS.
 

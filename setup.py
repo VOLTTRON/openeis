@@ -60,7 +60,7 @@ import os
 install_requires = [
         'python-dateutil',
         'django>=1.6,<1.7',
-        'django-filter',
+        'django-filter>=0.8,<0.9',
         #'django-guardian',
         'djangorestframework>=2.3,<2.4',
         'django-rest-swagger>=0.1,<0.2',
