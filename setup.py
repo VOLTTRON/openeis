@@ -72,19 +72,20 @@ install_requires = [
         'pytest-django',
         'django-pytest',
         'pytz',
-        'pytest-django'
+        'pytest-django',
+        'workalendar'
 ]
 
 basepath = os.path.dirname(os.path.abspath(__file__))
 
 def get_files(path):
     '''Recursivly walks a directory returning list of files'''
-    
+
     file_names = []
     abspath = os.path.abspath(path)
     origpath = os.getcwd()
     os.chdir(path)
-    
+
     # the walk needs to be relatative to the currently changed
     # directory. So that it is put into the package correctly.
     for root, dirs, files in os.walk('.', topdown=False):
@@ -92,11 +93,12 @@ def get_files(path):
             if '__pycache__' not in root:
                 file_names.append(os.path.join(root, name)) #(os.path.join(root, name)))
     os.chdir(origpath)
-    
+
     return file_names
 
 if sys.platform != 'win32':
     install_requires.append('numpy')
+    install_requires.append('scipy')
 
 setup(
     name = 'openeis',

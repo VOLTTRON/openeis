@@ -88,7 +88,7 @@ from openeis.applications import DriverApplicationBaseClass, InputDescriptor,  \
 from openeis.applications import reports
 from openeis.applications.utils import conversion_utils as cu
 import logging
-
+import workalendar.usa
 
 class Application(DriverApplicationBaseClass):
 
@@ -145,18 +145,25 @@ class Application(DriverApplicationBaseClass):
         output_topic_base = load_topic_parts[: -1]
         time_topic = '/'.join(output_topic_base+['timeseries', 'time'])
         load_topic = '/'.join(output_topic_base+['timeseries', 'load'])
+        daytype_topic = '/'.join(output_topic_base+['timeseries', 'daytype'])
 
         # Work with topics["OAT"][0] to get building topic
         output_needs = {
             'Load_Profiling': {
-                'timestamp':OutputDescriptor('string', time_topic),
-                'load':OutputDescriptor('float', load_topic)
+                'datetime':OutputDescriptor('string', time_topic),
+                'load':OutputDescriptor('float', load_topic),
+                'daytype': OutputDescriptor('string', daytype_topic)
                 }
             }
         return output_needs
 
-
     def reports(self):
+        report = reports.Report('Load Profile Report')
+        report.add_element(reports.LoadProfile(
+            table_name='Load_Profiling'))
+        return [report]
+
+    def reports1(self):
         #Called by UI to create Viz
         """Describe how to present output to user
         Display this viz with these columns from this table
@@ -223,17 +230,39 @@ class Application(DriverApplicationBaseClass):
         self.out.log("Reducing the records to two weeks.", logging.INFO)
         # Note: Limit the number of datapoints, have 2 weeks worth of data.
         # 24 hours x 14 days = 336.
-        if len(load_by_hour) > 336:
-            start = len(load_by_hour) - 336
-            end = len(load_by_hour) - 1
-        else:
-            start = 0
-            end = len(load_by_hour)
+        # if len(load_by_hour) > 336:
+        #     start = len(load_by_hour) - 336
+        #     end = len(load_by_hour) - 1
+        # else:
+        #     start = 0
+        #     end = len(load_by_hour)
 
         self.out.log("Compiling the report table.", logging.INFO)
-        for x in load_by_hour[start:end]:
+        #for x in load_by_hour[start:end]:
+        cal = workalendar.usa.UnitedStates()
+        values = []
+        prev_local_time = None
+        for i, x in enumerate(load_by_hour):
             local_time = self.inp.localize_sensor_time(base_topic['load'][0], x[0])
-            self.out.insert_row("Load_Profiling", {
-                'timestamp': local_time,
-                'load': x[1]*load_convertfactor
+            if (i==0) or (local_time == prev_local_time):
+                values.append(x[1])
+                prev_local_time = local_time
+
+            if (i==len(load_by_hour)-1) or (local_time != prev_local_time):
+                daytype = 'W' #weekdays: [0,4]
+                if prev_local_time.weekday() == 5:
+                    daytype = 'Sat'
+                if prev_local_time.weekday() == 6:
+                    daytype = 'Sun'
+                if cal.is_holiday(prev_local_time):
+                    daytype = 'H'
+                value = sum(values)/len(values)
+                #print(prev_local_time.strftime('%m/%d/%Y %H:%M:%S') + "   " + daytype + "      " + str(value))
+                self.out.insert_row("Load_Profiling", {
+                    'datetime': prev_local_time,
+                    'load': value*load_convertfactor,
+                    'daytype': daytype
                 })
+                values = [x[1]]
+                prev_local_time = local_time
+

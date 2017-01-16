@@ -180,7 +180,7 @@ class DatabaseInput:
             'timezone' in self.map_defintion['sensors'][base]['attributes'].keys()):
             tz = pytz.timezone(self.map_defintion['sensors'][base]['attributes']['timezone'])
         else:
-            _logger.warning(("No timezone for sensor", sensor_topic))
+            #_logger.warning(("No timezone for sensor", sensor_topic))
             tz = pytz.UTC
             
         return tz

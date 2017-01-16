@@ -158,6 +158,10 @@ class HeatMap(ReportElement):
         self.y_label = y_label
         self.z_label = z_label
 
+class LoadProfile(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
 
 class RetroCommissioningOAED(ReportElement):
     def __init__(self, table_name, **kwargs):
@@ -166,6 +170,27 @@ class RetroCommissioningOAED(ReportElement):
 
 
 class RetroCommissioningAFDD(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+
+class RxStaticPressure(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+class RxSupplyTemp(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+class RxOperationSchedule(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+class SetpointDetector(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+class ScheduleDetector(ReportElement):
     def __init__(self, table_name, **kwargs):
         super().__init__(**kwargs)
         self.table_name = table_name
