@@ -128,7 +128,7 @@ def get_pip():
     import shutil
     import tempfile
     from urllib.request import urlopen
-    pip_url = 'https://raw.github.com/pypa/pip/master/contrib/get-pip.py'
+    pip_url = 'https://bootstrap.pypa.io/get-pip.py'
     print('Downloading get-pip.py')
     tmpdir = tempfile.mkdtemp()
     try:
