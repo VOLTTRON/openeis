@@ -58,6 +58,8 @@ import sys
 import os
 
 install_requires = [
+        # This will be installed after the bootstrap. 'ephem',
+        # This will be installed after the bootstrap. 'workalendar',
         'python-dateutil',
         'django>=1.6,<1.7',
         'django-filter>=0.8,<0.9',
@@ -72,8 +74,7 @@ install_requires = [
         'pytest-django',
         'django-pytest',
         'pytz',
-        'pytest-django',
-        'workalendar'
+        'pytest-django'
 ]
 
 basepath = os.path.dirname(os.path.abspath(__file__))
