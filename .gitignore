@@ -21,3 +21,7 @@ __pycache__/
 /dist/openeis-support/arch/src/
 /dist/openeis-support/arch/openeis-support-*.tar.xz
 /.openeis/
+artifacts/
+openeis/build/
+openeis/dist/
+lib/
