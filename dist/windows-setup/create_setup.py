@@ -99,12 +99,15 @@ MISC_DIR = cfg['MISC_DIR'].replace('/', '\\')
 # be obtained through innoextractor program from the internet.
 INNO_SETUP_DIR = cfg['INNO_SETUP_DIR'].replace('/', '\\')
 
+
 OUTPUT_FILE = ''
 
 # A temp cirectory for use during this build.
 TEMP_DIR = ''
 
 ORIG_CWD = os.path.abspath(os.getcwd())
+
+OPENEIS_SETUP_SUPPORT_DIR = ''
 
 _vinfo = get_version_info()
 _VERSION_STRING = 'openeis-setup_{}-{}-{}'.format(_vinfo['version'],
@@ -271,16 +274,25 @@ def make_requirements():
 
     # now build all of the wheels for the requirements file
     ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
+    
+    # TODO Do this better! so that this isn't hard coded!
+    numpy_source = "{}\wheels\{}".format(OPENEIS_SETUP_SUPPORT_DIR, "numpy-1.12.0+mkl-cp34-cp34m-win32.whl")
+    scipy_source = "{}\wheels\{}".format(OPENEIS_SETUP_SUPPORT_DIR, "scipy-0.18.1-cp34-cp34m-win32.whl")
+    shutil.copy(numpy_source, WHEEL_DIR)
+    shutil.copy(scipy_source, WHEEL_DIR)
 
 
 def validate_and_setfolders(support_root, outdir):
 
-    global cfg, OPENEIS_SRC_DIR, WORKING_DIR, MISC_DIR
+    global cfg, OPENEIS_SRC_DIR, WORKING_DIR, MISC_DIR, LEGACY_WHEELS
     global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, PRE_BUILT_WHEELS, WHEEL_DIR,CLEAN_PYTHON_DIR
+    global OPENEIS_SETUP_SUPPORT_DIR
 
     outdir = os.path.abspath(outdir.replace('/', '\\'))
     print("Out directory is: "+outdir)
     support_root = os.path.abspath(support_root.replace('/', '\\'))
+    
+    OPENEIS_SETUP_SUPPORT_DIR = support_root
 
     WORKING_DIR = tempfile.mkdtemp()
 
