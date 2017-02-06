@@ -103,7 +103,7 @@ if sys.platform != 'win32':
 
 setup(
     name = 'openeis',
-    version = '0.1',
+    version = '2.5',
     description = 'Open Energy Information System (OpenEIS) server.',
     author = 'Bora Akyol',
     author_email = 'bora@pnnl.gov',

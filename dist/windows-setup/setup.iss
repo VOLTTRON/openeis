@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "OpenEIS"
-#define MyAppVersion "0.2"
+#define MyAppVersion "2.5"
 #define MyAppPublisher "Pacific Northwest National Laboratory"
 #define MyAppURL "https://github.com/VOLTTRON/openeis/"
 
