@@ -89,7 +89,7 @@ __all__ = ['NotUnderVersionControl', 'VersionControlNotFound',
            'CalledProcessError', 'have_vcs', 'product_version', 'vcs_revision',
            'vcs_version', 'vcs_timestamp', 'get_version_info']
 
-__version__ = '0.2'
+__version__ = '2.5'
 
 
 class NotUnderVersionControl(Exception):
