@@ -248,6 +248,10 @@ def make_requirements():
 
     if not os.path.exists('env/Scripts/pip.exe'):
         raise Exception('must be called from root directory of the openeis project.')
+    # wheelhouse = WHEEL_DIR.replace('/','\\')
+    # We install wheel here so we can use it below.
+    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'install', 'wheel']) #{}\\wheel-0.24.0-py2.py3-none-any.whl'.format(wheelhouse)])
+    print("Wheel installed: {}".format(ret))
     reqfile = MISC_DIR.replace('/','\\')+"\\requirements.txt"
     print("REQ FILE: "+reqfile)
     ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(reqfile, 'w'))
