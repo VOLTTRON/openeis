@@ -11,7 +11,7 @@ Getting the Source Code
 
 The best way to get the source code is with Git:
 
-  git clone https://bitbucket.org/berkeleylab/openeis.git
+  git clone https://github.com/VOLTTRON/openeis.git
 
 
 Building

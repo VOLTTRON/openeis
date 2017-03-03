@@ -54,8 +54,8 @@
 #}}}
 
 
-''' Automation file for building openeis installer for distribution.
-'''
+""" Automation file for building openeis installer for distribution.
+"""
 import json
 import os
 import posixpath
@@ -73,7 +73,8 @@ OPENEIS_SRC_DIR = os.path.abspath(os.curdir)
 cfg = {}
 
 for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR',
-              'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
+          'WHEEL_DIR', 'INNO_SETUP_DIR', 'MISC_DIR',
+          'PRE_BUILT_WHEELS'):
     cfg[x] = ''
 
 
@@ -89,12 +90,6 @@ WORKING_DIR = cfg['WORKING_DIR'].replace('/', '\\')
 # don't need to re download things from the internet.
 WHEEL_DIR = ''
 
-# A folder that contains a numpy and numpy dist egg info file.
-# This folder needs to be suitable for droping directly into
-# the site-packages directory of the python distributed by
-# openeis
-NUMPY_DIR= cfg['NUMPY_DIR'].replace('/', '\\')
-
 # Misc directory that will get copied to the root directory
 # of the installed application when installing on the client
 # machine.
@@ -104,6 +99,7 @@ MISC_DIR = cfg['MISC_DIR'].replace('/', '\\')
 # be obtained through innoextractor program from the internet.
 INNO_SETUP_DIR = cfg['INNO_SETUP_DIR'].replace('/', '\\')
 
+
 OUTPUT_FILE = ''
 
 # A temp cirectory for use during this build.
@@ -111,33 +107,48 @@ TEMP_DIR = ''
 
 ORIG_CWD = os.path.abspath(os.getcwd())
 
+OPENEIS_SETUP_SUPPORT_DIR = ''
+
 _vinfo = get_version_info()
 _VERSION_STRING = 'openeis-setup_{}-{}-{}'.format(_vinfo['version'],
                                                   _vinfo['revision'],
                                                   _vinfo['vcs_version'])
 
+# def build_exe():
+#     print('building exe using spec file: {}'.format(cfg.spec_file))
+#     cwd = os.getcwd()
+#     try:
+#         os.chdir(cfg.ece_server_dir)
+#         do_call(['pyinstaller', '--onefile', '--clean', '--noconsole', # '--windowed',
+#                  '--icon', cfg.icon_file,
+#                  "{}".format('ece-app.py')])
+#     finally:
+#         os.chdir(cwd)
+
 
 def move_wheel(src_file):
-    '''Move the src_file wheel from the current directories dist dir to wheeldir
+    """Move the src_file wheel from the current directories dist dir to wheeldir
 
     Requires that the cwd is in the same location as it was during the creation
     of the wheel.
-'''
+    """
     if os.path.exists(os.path.join(WHEEL_DIR, src_file)):
         os.remove(os.path.join(WHEEL_DIR, src_file))
     shutil.move(os.path.join('dist', src_file),
                              os.path.join(WHEEL_DIR, src_file))
 
+
 def cleanup():
     if os.path.exists('build'):
         shutil.rmtree('build')
 
+
 def build_wheels():
-    '''Builds the openeis and openeis-ui wheels, puts them in WHEEL_DIR
+    """Builds the openeis and openeis-ui wheels, puts them in WHEEL_DIR
 
     This assumes that the executing python has bee activated with
     a bootstrapped python.
-'''
+    """
     try:
         os.chdir(os.path.join(OPENEIS_SRC_DIR))
         if os.path.exists('build'):
@@ -149,7 +160,6 @@ def build_wheels():
         for f in os.listdir('dist'):
             if f[-3:] == 'whl':
                 move_wheel(f)
-
 
         os.chdir(os.path.join(OPENEIS_SRC_DIR, 'lib', 'openeis-ui'))
         if os.path.exists('build'):
@@ -163,9 +173,10 @@ def build_wheels():
     finally:
         os.chdir(ORIG_CWD)
 
+
 def move_to_working_dir():
     print("move_to_working_dir")
-    tocopy=(CLEAN_PYTHON_DIR, NUMPY_DIR, WHEEL_DIR)
+    tocopy=(CLEAN_PYTHON_DIR, WHEEL_DIR)
     try:
         setup_file = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                                   'setup.iss'))
@@ -174,15 +185,11 @@ def move_to_working_dir():
         os.makedirs(WORKING_DIR)
         os.chdir(WORKING_DIR)
 
-
         shutil.copytree(CLEAN_PYTHON_DIR, "python")
-        shutil.copytree(NUMPY_DIR, "numpy")
         shutil.copytree(WHEEL_DIR, "wheels")
         shutil.copytree(MISC_DIR, "misc")
 
-
         shutil.copy(setup_file, 'setup.iss')
-
 
         data = open('setup.iss').read()
         for x in ('WORKING_DIR',):
@@ -204,17 +211,18 @@ def make_installer():
 
         file_created = os.path.abspath(os.path.join('Output', 'setup.exe'))
 
-        if (os.path.exists(OUTPUT_FILE)):
+        if os.path.exists(OUTPUT_FILE):
             os.remove(OUTPUT_FILE)
         print("Moving file {} to {}".format(file_created, OUTPUT_FILE))
         shutil.move(file_created, OUTPUT_FILE)
     finally:
         os.chdir(ORIG_CWD)
 
+
 def make_setup():
     print("Configuration for setup:")
     for x in ('CLEAN_PYTHON_DIR', 'WORKING_DIR', 'OPENEIS_SRC_DIR',
-              'WHEEL_DIR', 'NUMPY_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
+              'WHEEL_DIR', 'INNO_SETUP_DIR', 'MISC_DIR'):
         print("{}->{}".format(x, eval(x)))
     make_requirements()
     build_wheels()
@@ -222,8 +230,9 @@ def make_setup():
     make_installer()
     cleanup()
 
+
 def rename_dirs(src_dir, working_dir):
-    '''Allow caller to change the source dir and working dir'''
+    """Allow caller to change the source dir and working dir"""
     global cfg, OPENEIS_SRC_DIR, WORKING_DIR
     OPENEIS_SRC_DIR = cfg['OPENEIS_SRC_DIR'] = src_dir.replace('\\','/')
     WORKING_DIR = cfg['WORKING_DIR'] = working_dir.replace('\\','/')
@@ -236,18 +245,25 @@ def rename_dirs(src_dir, working_dir):
         sys.stderr.write('invalid src dir {}\n'.format(WORKING_DIR))
         sys.exit(500)
 
+
 def make_requirements():
     global MISC_DIR, WHEEL_DIR
 
     if not os.path.exists('env/Scripts/pip.exe'):
         raise Exception('must be called from root directory of the openeis project.')
+    # wheelhouse = WHEEL_DIR.replace('/','\\')
+    # We install wheel here so we can use it below.
+    ret = subprocess.check_call([r'env\Scripts\pip.exe', 'install', 'wheel']) #{}\\wheel-0.24.0-py2.py3-none-any.whl'.format(wheelhouse)])
+    print("Wheel installed: {}".format(ret))
     reqfile = MISC_DIR.replace('/','\\')+"\\requirements.txt"
     print("REQ FILE: "+reqfile)
     ret = subprocess.check_call([r'env\Scripts\pip.exe', 'freeze'], stdout=open(reqfile, 'w'))
     lines = ''
     for l in open(MISC_DIR.replace('/','\\')+"\\requirements.txt"):
-        # Don't include libs thata aren't in pypi numpy is explicitly handled differently
-        if not l.startswith("-e") and not l.startswith('openeis') and not l.startswith('numpy'):
+        # Don't include libs that aren't in pypi.
+        # We have included our numpy and scipy wheels in the repo.
+        if not l.startswith("-e") and not l.startswith('openeis') and not \
+                l.startswith('numpy') and not l.startswith('scipy'):
             lines += l
 
     open(MISC_DIR.replace('/','\\')+"\\requirements.txt", 'w').write(lines)
@@ -255,26 +271,35 @@ def make_requirements():
                                                   _vinfo['revision'],
                                                   _vinfo['vcs_version'])
     open(MISC_DIR.replace('/','\\')+"\\version.cfg", 'w').write(cversion)
+
     # now build all of the wheels for the requirements file
     ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
-
+    
+    # TODO Do this better! so that this isn't hard coded!
+    numpy_source = "{}\wheels\{}".format(OPENEIS_SETUP_SUPPORT_DIR, "numpy-1.12.0+mkl-cp34-cp34m-win32.whl")
+    scipy_source = "{}\wheels\{}".format(OPENEIS_SETUP_SUPPORT_DIR, "scipy-0.18.1-cp34-cp34m-win32.whl")
+    shutil.copy(numpy_source, WHEEL_DIR)
+    shutil.copy(scipy_source, WHEEL_DIR)
 
 
 def validate_and_setfolders(support_root, outdir):
 
-    global cfg, OPENEIS_SRC_DIR, WORKING_DIR, NUMPY_DIR, MISC_DIR
-    global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, WHEEL_DIR,CLEAN_PYTHON_DIR
+    global cfg, OPENEIS_SRC_DIR, WORKING_DIR, MISC_DIR, LEGACY_WHEELS
+    global INNO_SETUP_DIR, OUTPUT_FILE, TEMP_DIR, PRE_BUILT_WHEELS, WHEEL_DIR,CLEAN_PYTHON_DIR
+    global OPENEIS_SETUP_SUPPORT_DIR
 
     outdir = os.path.abspath(outdir.replace('/', '\\'))
     print("Out directory is: "+outdir)
     support_root = os.path.abspath(support_root.replace('/', '\\'))
+    
+    OPENEIS_SETUP_SUPPORT_DIR = support_root
 
     WORKING_DIR = tempfile.mkdtemp()
 
     INNO_SETUP_DIR = os.path.join(support_root, 'extracted_inno_setup')
     MISC_DIR = os.path.join(support_root, 'misc')
     CLEAN_PYTHON_DIR = os.path.join(support_root, 'python-fresh')
-    NUMPY_DIR = os.path.join(support_root, 'numpy1.8.2')
+    PRE_BUILT_WHEELS = os.path.join(support_root, 'pre-built-wheels')
 
     WORKING_DIR = os.path.join(TEMP_DIR, 'build')
     WHEEL_DIR = os.path.join(TEMP_DIR, 'wheels')
@@ -294,7 +319,7 @@ def validate_and_setfolders(support_root, outdir):
 
 
 def show_help():
-    help = '''
+    help = """
     python create_setup.py support_dir outdir
 
     support_dir    The directory wheere the support fiels from the
@@ -302,9 +327,8 @@ def show_help():
 
     outdir         The path to the output dir.  The command git describe
                    will be used to generate unique names.
-'''
+"""
     sys.stdout.write(help)
-
 
 
 if __name__ == '__main__':
