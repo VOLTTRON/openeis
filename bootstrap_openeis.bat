@@ -13,6 +13,7 @@ SET OPENEIS=env\Scripts\openeis.exe
 :: These are extra things that we want to be installed and either are
 :: available from PyPi or we have in our windows support folder.
 
+%ENVPIP% install wheel
 %ENVPIP% install workalendar
 %ENVPIP% install pytest-django
 %ENVPIP% install dist/windows-support/pre-built-wheels/numpy-1.12.0+mkl-cp34-cp34m-win32.whl
