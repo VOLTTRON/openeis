@@ -17,7 +17,7 @@ The best way to get the source code is with Git:
 Building
 ========
 
-Execute the bootstrap.py script with the desired version of Python (>= 3.3).
+Execute the bootstrap.py script with Python 3.3 or Python 3.4
 
   On Windows:
 

@@ -163,6 +163,11 @@ class LoadProfile(ReportElement):
         super().__init__(**kwargs)
         self.table_name = table_name
 
+class LoadProfileRx(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
+
 class RetroCommissioningOAED(ReportElement):
     def __init__(self, table_name, **kwargs):
         super().__init__(**kwargs)
