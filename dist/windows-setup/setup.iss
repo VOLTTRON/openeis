@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "OpenEIS"
-#define MyAppVersion "0.2"
+#define MyAppVersion "2.5"
 #define MyAppPublisher "Pacific Northwest National Laboratory"
 #define MyAppURL "https://github.com/VOLTTRON/openeis/"
 
@@ -39,7 +39,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
 Source: "{#SrcRoot}\python\*"; DestDir: "{app}\python"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
 Source: "{#SrcRoot}\wheels\*"; DestDir: "{app}\wheels"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
-Source: "{#SrcRoot}\numpy\*"; DestDir: "{app}\python\Lib\site-packages"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
+; Source: "{#SrcRoot}\numpy\*"; DestDir: "{app}\python\Lib\site-packages"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
 ; Source: "{#SrcRoot}\openeis\*"; DestDir: "{app}\openeis"; Flags: ignoreversion recursesubdirs
 Source: "{#SrcRoot}\misc\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs; Excludes: "*__pycache__*"
 
@@ -47,8 +47,11 @@ Source: "{#SrcRoot}\misc\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdi
 Filename: "{app}\python\python.exe"; Parameters: "{app}\get-pip.py"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install wheel"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install --no-index --find-links={app}\wheels -r {app}\requirements.txt"
+Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install numpy --no-index --find-links={app}\wheels"
+Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install scipy --no-index --find-links={app}\wheels"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install openeis-ui --no-index --find-links={app}\wheels --pre"
 Filename: "{app}\python\Scripts\pip.exe"; Parameters: "install openeis --no-index --find-links={app}\wheels"
+
 Filename: "{app}\start-openeis.bat"; Description: "Launch application"; Flags: postinstall nowait skipifsilent unchecked
 
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
