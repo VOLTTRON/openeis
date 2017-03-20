@@ -108,6 +108,7 @@ class Application(DrivenApplicationBaseClass):
                  ventilation_oaf_threshold=5.0,
                  insufficient_damper_threshold=15.0,
                  temp_damper_threshold=90.0, rated_cfm=1000.0, eer=10.0,
+                 sensitivity=1.0,
                  **kwargs):
         # initialize user configurable parameters.
         super().__init__(*args, **kwargs)
@@ -140,6 +141,36 @@ class Application(DrivenApplicationBaseClass):
         self.cooling_enabled_threshold = float(cooling_enabled_threshold)
         cfm = float(rated_cfm)
         eer = float(eer)
+
+        if sensitivity == 0.0:
+            # low sensitivity
+            temp_difference_threshold = float(temp_difference_threshold) * 1.5
+            oat_mat_check = float(oat_mat_check) * 1.5
+            open_damper_threshold = float(open_damper_threshold) * 1.5
+            excess_damper_threshold = float(excess_damper_threshold) * 1.5
+            oaf_economizing_threshold= float(oaf_economizing_threshold) * 1.5
+            excess_oaf_threshold = float(minimum_damper_setpoint) * 1.5
+            insufficient_damper_threshold = float(minimum_damper_setpoint) * 0.5
+        elif sensitivity == 2.0:
+            # high sensitivity
+            temp_difference_threshold = float(temp_difference_threshold) * 0.5
+            oat_mat_check = float(oat_mat_check) * 0.5
+            open_damper_threshold = float(open_damper_threshold) * 0.5
+            excess_damper_threshold = float(excess_damper_threshold) * 0.5
+            oaf_economizing_threshold= float(oaf_economizing_threshold) * 0.5
+            excess_oaf_threshold = float(minimum_damper_setpoint) * 0.5
+            insufficient_damper_threshold = float(minimum_damper_setpoint) * 1.5
+        else:
+            # Normal sensitivtyy
+            temp_difference_threshold = float(temp_difference_threshold)
+            oat_mat_check = float(oat_mat_check)
+            open_damper_threshold = float(open_damper_threshold)
+            excess_damper_threshold = float(excess_damper_threshold)
+            oaf_economizing_threshold = float(oaf_economizing_threshold)
+            excess_oaf_threshold = float(minimum_damper_setpoint)
+            insufficient_damper_threshold = float(minimum_damper_setpoint)
+
+
         # Pre-requisite messages
         self.pre_msg1 = ('Supply fan is off, current data will '
                          'not be used for diagnostics.')
@@ -339,6 +370,11 @@ class Application(DrivenApplicationBaseClass):
             ConfigDescriptor(float,
                              'AHU/RTU rated EER',
                              value_default=10.0),
+            'sensitivity':
+                ConfigDescriptor(float,
+                                 'Sensitivity: values can be 0.0 (low sensitivity), '
+                                 '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
+                                 value_default='1.0')
             }
 
     @classmethod

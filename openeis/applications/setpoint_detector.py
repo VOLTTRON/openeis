@@ -123,7 +123,7 @@ class Application(DrivenApplicationBaseClass):
         return {
             cls.fan_status_name:
                 InputDescriptor('SupplyFanStatus',
-                                'Supply fan status', count_min=1),
+                                'Supply fan status', count_min=0),
             cls.zone_temp_name:
                 InputDescriptor('ZoneTemperature',
                                 'Zone temperature', count_min=1)
@@ -176,7 +176,7 @@ class Application(DrivenApplicationBaseClass):
         device_dict = {}
         diagnostic_result = Results()
         topics = self.inp.get_topics()
-        diagnostic_topic = topics[self.fan_status_name][0]
+        diagnostic_topic = topics[self.zone_temp_name][0]
         current_time = self.inp.localize_sensor_time(diagnostic_topic,
                                                      current_time)
         for key, value in points.items():
@@ -190,8 +190,10 @@ class Application(DrivenApplicationBaseClass):
             if key.startswith(self.zone_temp_name) and value is not None:
                 zone_temp_data.append(value)
 
-        fanstat = (sum(fan_stat_data) / len(fan_stat_data))
         zonetemp = (sum(zone_temp_data) / len(zone_temp_data))
+        fanstat = None
+        if len(fan_stat_data)>0:
+            fanstat = (sum(fan_stat_data) / len(fan_stat_data))
         diagnostic_result = self.setpoint_detector.on_new_data(current_time, fanstat, zonetemp, diagnostic_result)
         return diagnostic_result
 
@@ -385,11 +387,11 @@ class SetPointDetector(object):
         self.startup = True
         self.available = []
 
-    def get_output_obj(self, datetime, type=type_data,
+    def get_output_obj(self, datetime, rec_type=type_data,
                        FanStatus=-9999, ZoneTemp=-9999, ZoneTempSp=-9999,
                        peak_valley=-9999, note=''):
         return {
-            'type': type,
+            'type': rec_type,
             'datetime': datetime,
             'FanStatus': FanStatus,
             'ZoneTemperature': ZoneTemp,

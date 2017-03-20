@@ -107,7 +107,7 @@ class Application(DrivenApplicationBaseClass):
                  monday_sch='6:30;18:30', tuesday_sch='6:30;18:30',
                  wednesday_sch='6:30;18:30', thursday_sch='6:30;18:30',
                  friday_sch='6:30;18:30', saturday_sch='0:00;0:00',
-                 sunday_sch='0:00;0:00',holiday_sch='0:00;0:00', **kwargs):
+                 sunday_sch='0:00;0:00',holiday_sch='0:00;0:00', sensitivity=1.0,  **kwargs):
         super().__init__(*args, **kwargs)
         Application.pre_requiste_messages = []
         Application.pre_msg_time = []
@@ -128,6 +128,51 @@ class Application(DrivenApplicationBaseClass):
                          'terminal-box reheat-valve-positions (all zones).')
         self.pre_msg7 = ('Missing required data for diagnostic: '
                          'SAT set point.')
+
+        if sensitivity == 0.0:
+            # low sensitivity
+            zone_high_damper_threshold = float(zone_high_damper_threshold) * 1.5
+            zone_low_damper_threshold = float(zone_low_damper_threshold) * 1.5
+            stcpr_reset_threshold = float(stpr_reset_threshold) * 1.5
+
+            sat_reset_threshold = float(sat_reset_threshold) * 1.5
+            sat_high_damper_threshold= float(sat_high_damper_threshold) * 1.5
+            percent_damper_threshold = float(percent_damper_threshold) * 1.5
+            percent_reheat_threshold= float(percent_reheat_threshold) * 1.5
+            reheat_valve_threshold = float(reheat_valve_threshold) * 1.5
+
+            unocc_stp_threshold= float(unocc_stp_threshold) * 1.5
+            unocc_time_threshold= float(unocc_time_threshold) * 1.5
+
+        elif sensitivity == 2.0:
+            # high sensitivity
+            zone_high_damper_threshold = float(zone_high_damper_threshold) * 0.5
+            zone_low_damper_threshold = float(zone_low_damper_threshold) * 0.5
+            stcpr_reset_threshold = float(stpr_reset_threshold) * 0.5
+
+            sat_reset_threshold = float(sat_reset_threshold) * 0.5
+            sat_high_damper_threshold= float(sat_high_damper_threshold) * 0.5
+            percent_damper_threshold = float(percent_damper_threshold) * 0.5
+            percent_reheat_threshold= float(percent_reheat_threshold) * 0.5
+            reheat_valve_thrshold = float(reheat_valve_threshold) * 0.5
+
+            unocc_stp_threshold= float(unocc_stp_threshold) * 0.5
+            unocc_time_threshold= float(unocc_time_threshold) * 0.5
+        else:
+            # Normal sensitivity
+            zone_high_damper_threshold = float(zone_high_damper_threshold)
+            zone_low_damper_threshold = float(zone_low_damper_threshold)
+            stcpr_reset_threshold = float(stpr_reset_threshold)
+
+            sat_reset_threshold = float(sat_reset_threshold)
+            sat_high_damper_threshold= float(sat_high_damper_threshold)
+            percent_damper_threshold = float(percent_damper_threshold)
+            percent_reheat_threshold= float(percent_reheat_threshold)
+            reheat_valve_threshold = float(reheat_valve_threshold)
+
+            unocc_stp_threshold= float(unocc_stp_threshold)
+            unocc_time_threshold= float(unocc_time_threshold)
+
         # Point names (Configurable)
         self.fan_status_name = Application.fan_status_name
         self.duct_stp_stpt_name = Application.duct_stp_stpt_name
@@ -279,7 +324,12 @@ class Application(DrivenApplicationBaseClass):
                                  'Used to detect the '
                                  'time when the supply fan should '
                                  'be operational (unoccupied)',
-                                 value_default='0:00;0:00')
+                                 value_default='0:00;0:00'),
+            'sensitivity':
+                ConfigDescriptor(float,
+                                 'Sensitivity: values can be 0.0 (low sensitivity), '
+                                 '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
+                                 value_default='1.0')
             }
 
     @classmethod

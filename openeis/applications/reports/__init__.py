@@ -194,6 +194,10 @@ class ScheduleDetector(ReportElement):
     def __init__(self, table_name, **kwargs):
         super().__init__(**kwargs)
         self.table_name = table_name
+class CyclingDetector(ReportElement):
+    def __init__(self, table_name, **kwargs):
+        super().__init__(**kwargs)
+        self.table_name = table_name
 
 class RetroCommissioningAFDDEcam(ReportElement):
     def __init__(self, table_name, **kwargs):
