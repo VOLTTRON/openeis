@@ -25,3 +25,4 @@ artifacts/
 openeis/build/
 openeis/dist/
 lib/
+node_modules/
