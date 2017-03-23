@@ -374,7 +374,7 @@ class Application(DrivenApplicationBaseClass):
                 ConfigDescriptor(float,
                                  'Sensitivity: values can be 0.0 (low sensitivity), '
                                  '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
-                                 value_default='1.0')
+                                 value_default=1.0)
             }
 
     @classmethod
@@ -389,7 +389,7 @@ class Application(DrivenApplicationBaseClass):
         return {
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
-                            'AHU Supply Fan Status', count_min=0),
+                            'AHU Supply Fan Status (require for Dx)', count_min=0),
             cls.fan_speedcmd_name:
             InputDescriptor('SupplyFanSpeed',
                             'AHU supply fan speed', count_min=0),
@@ -405,14 +405,12 @@ class Application(DrivenApplicationBaseClass):
             InputDescriptor('ReturnAirTemperature',
                             'AHU return-air temperature', count_min=1),
             cls.damper_signal_name:
-            InputDescriptor('OutdoorDamperSignal', 'AHU outdoor-air damper '
-                            'signal', count_min=0),
+            InputDescriptor('OutdoorDamperSignal',
+                            'AHU outdoor-air damper signal (require for Dx)', count_min=0),
             cls.cool_call_name:
             InputDescriptor('CoolingCall',
                             'AHU cooling coil command or RTU coolcall or '
-                            'compressor command', count_min=0),
-
-
+                            'compressor command (integer, require for Dx)', count_min=0),
             cls.da_temp_name:
             InputDescriptor('DischargeAirTemperature',
                             'AHU discharge-air temperature', count_min=0),

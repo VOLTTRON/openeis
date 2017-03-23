@@ -297,7 +297,7 @@ class Application(DrivenApplicationBaseClass):
                 ConfigDescriptor(float,
                                  'Sensitivity: values can be 0.0 (low sensitivity), '
                                  '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
-                                 value_default='1.0')
+                                 value_default=1.0)
 
             }
 

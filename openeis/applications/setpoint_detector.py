@@ -146,7 +146,7 @@ class Application(DrivenApplicationBaseClass):
         '''
         result = super().output_format(input_object)
         topics = input_object.get_topics()
-        topic = topics[cls.fan_status_name][0]
+        topic = topics[cls.zone_temp_name][0]
         topic_parts = topic.split('/')
         output_topic_base = topic_parts[:-1]
         type_topic  = '/'.join(output_topic_base + ['SetpointDetector', cls.type])

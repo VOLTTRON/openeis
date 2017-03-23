@@ -148,7 +148,7 @@ class Application(DrivenApplicationBaseClass):
         '''
         result = super().output_format(input_object)
         topics = input_object.get_topics()
-        topic = topics[cls.fanstatus_name][0]
+        topic = topics[cls.zonetemperature_name][0]
         topic_parts = topic.split('/')
         output_topic_base = topic_parts[:-1]
 
