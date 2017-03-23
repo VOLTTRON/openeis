@@ -389,7 +389,7 @@ class Application(DrivenApplicationBaseClass):
         return {
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
-                            'AHU Supply Fan Status (require for Dx)', count_min=0),
+                            'AHU Supply Fan Status (required for Dx)', count_min=0),
             cls.fan_speedcmd_name:
             InputDescriptor('SupplyFanSpeed',
                             'AHU supply fan speed', count_min=0),
@@ -406,11 +406,11 @@ class Application(DrivenApplicationBaseClass):
                             'AHU return-air temperature', count_min=1),
             cls.damper_signal_name:
             InputDescriptor('OutdoorDamperSignal',
-                            'AHU outdoor-air damper signal (require for Dx)', count_min=0),
+                            'AHU outdoor-air damper signal (required for Dx)', count_min=0),
             cls.cool_call_name:
             InputDescriptor('CoolingCall',
                             'AHU cooling coil command or RTU coolcall or '
-                            'compressor command (integer, require for Dx)', count_min=0),
+                            'compressor command (integer, required for Dx)', count_min=0),
             cls.da_temp_name:
             InputDescriptor('DischargeAirTemperature',
                             'AHU discharge-air temperature', count_min=0),
