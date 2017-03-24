@@ -276,8 +276,8 @@ def make_requirements():
     ret = subprocess.check_call(['env\Scripts\pip.exe', 'wheel', '--wheel-dir='+WHEEL_DIR.replace('/','\\'), '-r', MISC_DIR.replace('/','\\')+'\\requirements.txt'])
     
     # TODO Do this better! so that this isn't hard coded!
-    numpy_source = "{}\wheels\{}".format(OPENEIS_SETUP_SUPPORT_DIR, "numpy-1.12.0+mkl-cp34-cp34m-win32.whl")
-    scipy_source = "{}\wheels\{}".format(OPENEIS_SETUP_SUPPORT_DIR, "scipy-0.18.1-cp34-cp34m-win32.whl")
+    numpy_source = "{}\wheels\{}".format(OPENEIS_SETUP_SUPPORT_DIR, "numpy-1.11.3+mkl-cp34-cp34m-win_amd64.whl")
+    scipy_source = "{}\wheels\{}".format(OPENEIS_SETUP_SUPPORT_DIR, "scipy-0.19.0-cp34-cp34m-win_amd64.whl")
     shutil.copy(numpy_source, WHEEL_DIR)
     shutil.copy(scipy_source, WHEEL_DIR)
 

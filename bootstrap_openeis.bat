@@ -16,8 +16,8 @@ SET OPENEIS=env\Scripts\openeis.exe
 %ENVPIP% install wheel
 %ENVPIP% install workalendar
 %ENVPIP% install pytest-django
-%ENVPIP% install dist/windows-support/pre-built-wheels/numpy-1.12.0+mkl-cp34-cp34m-win32.whl
-%ENVPIP% install dist/windows-support/pre-built-wheels/scipy-0.18.1-cp34-cp34m-win32.whl
+%ENVPIP% install dist/windows-support/pre-built-wheels/numpy-1.11.3+mkl-cp34-cp34m-win_amd64.whl
+%ENVPIP% install dist/windows-support/pre-built-wheels/scipy-0.19.0-cp34-cp34m-win_amd64.whl
 :: %ENVPIP% install pandas
 
 %ENVPIP% install pytest-django
