@@ -136,12 +136,12 @@ class Application(DrivenApplicationBaseClass):
         topic = topics[cls.zone_temp_name][0]
         topic_parts = topic.split('/')
         output_topic_base = topic_parts[:-1]
-        ts_topic = '/'.join(output_topic_base + ['SheculeDetector', cls.timestamp])
-        zonetemp_topic = '/'.join(output_topic_base + ['SheculeDetector', cls.zone_temp_name])
-        status_topic = '/'.join(output_topic_base + ['SheculeDetector', cls.status_name])
+        ts_topic = '/'.join(output_topic_base + ['ScheduleDetector', cls.timestamp])
+        zonetemp_topic = '/'.join(output_topic_base + ['ScheduleDetector', cls.zone_temp_name])
+        status_topic = '/'.join(output_topic_base + ['ScheduleDetector', cls.status_name])
 
         output_needs = {
-            'SheculeDetector': {
+            'ScheduleDetector': {
                 'datetime': OutputDescriptor('string', ts_topic),
                 'ZoneTemperature': OutputDescriptor('float', zonetemp_topic),
                 'schedule': OutputDescriptor('integer', status_topic)
@@ -181,15 +181,10 @@ def z_normalization(time_series, data_mean, std_dev):
 
 def paa_transform(ts, n_pieces):
     splitted = np.array_split(ts, n_pieces)  ## along columns as we want
-    return np.asarray(map(lambda xs: xs.mean(axis=0), splitted))
+    return np.array([items[0] for items in splitted])
 
 
 def sax_transform(ts, alphabet, data_mean, std_dev):
-    print(ts)
-    print(alphabet)
-    print(data_mean)
-    print(std_dev)
-
     n_pieces = ts[0].size
     alphabet_sz = len(alphabet)
     thresholds = norm.ppf(np.linspace(1. / alphabet_sz, 1 - 1. / alphabet_sz, alphabet_sz - 1))
@@ -264,12 +259,12 @@ class ScheduleDetection(object):
         if self.timestamp_array:
             check_run = self.check_run_status(current_time, self.no_required_data)
         if check_run:
-            status_array = self.timeseries_to_sax()
-            for idx, val in enumerate(self.timestamp_array):
+            ts_arr, data_arr, status_arr = self.timeseries_to_sax()
+            for idx, val in enumerate(ts_arr):
                 row = {
-                    'datetime': val,
-                    'ZoneTemperature': self.data_array[idx],
-                    'schedule': status_array[idx]
+                    'datetime': ts_arr[idx],
+                    'ZoneTemperature': data_arr[idx],
+                    'schedule': status_arr[idx]
                 }
                 diagnostic_result.insert_table_row('ScheduleDetector', row)
             self.initialize()
@@ -290,7 +285,7 @@ class ScheduleDetection(object):
         if timestamp_array[0].weekday() == 6:
             self.weekly_reset()
 
-        return status_array
+        return timestamp_array, data_array, status_array
 
 
     def _resample(self):
