@@ -48,9 +48,12 @@ PACIFIC NORTHWEST NATIONAL LABORATORY
 operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 '''
-import datetime
 import logging
 import math
+from datetime import timedelta as td
+from copy import deepcopy
+import dateutil.tz
+from numpy import mean
 from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor,
                                   ConfigDescriptor,
@@ -59,15 +62,134 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
-DUCT_STC_RCx = 'Duct Static Pressure Control Loop Diagnostics'
-DUCT_STC_RCx1 = 'Low Duct Static Pressure Dx'
-DUCT_STC_RCx2 = 'High Duct Static Pressure Dx'
-DUCT_STC_RCx3 = 'No Static Pressure Reset Dx'
-SA_TEMP_RCx = 'Supply-air temperature Control Loop Dx'
-SA_TEMP_RCx1 = 'Low Supply-air Temperature Dx'
-SA_TEMP_RCx2 = 'High Supply-air Temperature Dx'
-SA_TEMP_RCx3 = 'No Supply-air Temperature Reset Dx'
-SCHED_RCx = 'Operational Schedule Dx'
+DUCT_STC_RCX = 'Duct Static Pressure Set Point Control Loop Dx'
+DUCT_STC_RCX1 = 'Low Duct Static Pressure Dx'
+DUCT_STC_RCX2 = 'High Duct Static Pressure Dx'
+DUCT_STC_RCX3 = 'No Static Pressure Reset Dx'
+
+
+DX = '/diagnostic message'
+
+STCPR_NAME = 'StcPr_ACCx_State'
+SATEMP_NAME = 'Satemp_ACCx_State'
+SCHED_NAME = 'Sched_ACCx_State'
+ST = 'state'
+DATA = '/data/'
+
+CORRECT_STC_PR = 'suggested duct static pressure set point'
+STCPR_VALIDATE = 'Duct Static Pressure ACCx'
+STCPR_VAL_FILE_TOKEN = 'stcpr-rcx'
+SATEMP_VAL_FILE_TOKEN = 'satemp-rcx'
+RESET_VAL_FILE_TOKEN = 'reset-schedule'
+
+STCPR_POINT_NAME = 'duct static pressure'
+SAT_POINT_NAME = 'supply-air temperature'
+
+SA_VALIDATE = 'Supply-air Temperature ACCx'
+
+RESET_FILE_TOKEN = 'reset'
+SCHEDULE_FILE_TOKEN = 'schedule'
+
+"""Common functions used across multiple algorithms."""
+
+def create_table_key(table_name, timestamp):
+    return '&'.join([table_name, timestamp.isoformat()])
+
+
+def check_date(current_time, timestamp_array):
+    """
+    Check current timestamp with previous timestamp
+    to verify that there are no large missing data gaps.
+    """
+    if not timestamp_array:
+        return False
+    if current_time.date() != timestamp_array[-1].date():
+        if (timestamp_array[-1].date() + td(days=1) != current_time.date() or
+                (timestamp_array[-1].hour != 23 and current_time.hour == 0)):
+            return True
+        return False
+
+
+def validation_builder(validate, dx_name, data_tag):
+    data = {}
+    for key, value in validate.items():
+        tag = dx_name + data_tag + key
+        data.update({tag: value})
+    return data
+
+
+def check_run_status(timestamp_array, current_time, no_required_data, minimum_diagnostic_time=None):
+    """
+    The diagnostics run at a regular interval (some minimum elapsed amount of time) and have a
+       minimum data count requirement (each time series of data must contain some minimum number
+       of points).
+       ARGS:
+            timestamp_array(list(datetime)): ordered array of timestamps associated with building
+                data.
+            no_required_data(integer):  The minimum number of measurements for each time series used
+                in the analysis.
+    """
+    def minimum_data():
+        if len(timestamp_array) < no_required_data:
+            return None
+        return True
+    if minimum_diagnostic_time is not None:
+        sampling_interval = (timestamp_array[-1] - timestamp_array[0])/len(timestamp_array)
+        required_time = (timestamp_array[-1] - timestamp_array[0]) + sampling_interval
+        if required_time >= minimum_diagnostic_time:
+            return minimum_data()
+        return False
+    if timestamp_array and timestamp_array[-1].hour != current_time.hour:
+        return minimum_data()
+    return False
+
+
+def setpoint_control_check(setpoint_array, point_array, allowable_deviation,
+                           dx_name, dx_tag, token, token_offset, current_time):
+    """Verify that point is tracking well with set point.
+        ARGS:
+            setpoint_array (list(floats):
+    """
+    average_setpoint = None
+    setpoint_array = [float(pt) for pt in setpoint_array if pt != 0]
+    if setpoint_array:
+        average_setpoint = sum(setpoint_array)/len(setpoint_array)
+        zipper = (setpoint_array, point_array)
+        stpt_tracking = [abs(x - y) for x, y in zip(*zipper)]
+        stpt_tracking = (sum(stpt_tracking)/len(stpt_tracking))/average_setpoint*100
+
+        if stpt_tracking > allowable_deviation:
+            # color_code = 'red'
+            msg = ('{pt} is deviating significantly '
+                   'from the {pt} set point.'.format(pt=token))
+            dx_msg = 1.1 + token_offset
+            color_code = 'RED'
+            # dx_table = {dx_name + dx_tag: dx_msg}
+        else:
+            # color_code = 'green'
+            msg = 'No problem detected.'
+            dx_msg = 0.0 + token_offset
+            color_code = 'GREEN'
+            # dx_table = {dx_name + dx_tag: dx_msg}
+    else:
+        # color_code = 'grey'
+        msg = ('{} set point data is not available. '
+               'The Set Point Control Loop Diagnostic'
+               'requires set point '
+               'data.'.format(token))
+        dx_msg = 2.2 + token_offset
+        color_code = 'GREY'
+        # dx_table = {dx_name + dx_tag: dx_msg}
+
+    dx_table = {
+        'datetime': str(current_time),
+        'diagnostic_name': DUCT_STC_RCX,
+        'diagnostic_message': msg,
+        'energy_impact': None,
+        'color_code': color_code
+    }
+
+    return average_setpoint, dx_table
 
 
 class Application(DrivenApplicationBaseClass):
@@ -84,92 +206,29 @@ class Application(DrivenApplicationBaseClass):
     sat_stpt_name = 'sat_stpt'
     duct_stp_stpt_name = 'duct_stp_stpt'
 
-    fan_speedcmd_priority = ''
-    duct_stp_stpt_priority = ''
-    ahu_ccoil_priority = ''
-    sat_stpt_priority = ''
-
     def __init__(self, *args, no_required_data=1, data_window=1,
                  warm_up_time=0, duct_stc_retuning=0.15,
                  max_duct_stp_stpt=2.5, high_supply_fan_threshold=100.0,
                  zone_high_damper_threshold=90.0,
                  zone_low_damper_threshold=10.0, min_duct_stp_stpt=0.5,
                  hdzone_damper_threshold=30.0, low_supply_fan_threshold=20.0,
-                 setpoint_allowable_deviation=10.0, stpr_reset_threshold=0.25,
-                 percent_reheat_threshold=25.0, rht_on_threshold=10.0,
-                 sat_reset_threshold=5.0, sat_high_damper_threshold=80.0,
-                 percent_damper_threshold=50.0,
-                 minimum_sat_stpt=50.0, sat_retuning=1.0,
-                 reheat_valve_threshold=50.0, maximum_sat_stpt=75.0,
-                 unocc_time_threshold=30.0, unocc_stp_threshold=0.2,
-                 monday_sch='6:30;18:30', tuesday_sch='6:30;18:30',
-                 wednesday_sch='6:30;18:30', thursday_sch='6:30;18:30',
-                 friday_sch='6:30;18:30', saturday_sch='0:00;0:00',
-                 sunday_sch='0:00;0:00',sensitivity = 1.0, **kwargs):
+                 setpoint_allowable_deviation=10.0, sensitivity=1.0,
+                 stpr_reset_threshold=0.25, **kwargs):
         super().__init__(*args, **kwargs)
-        Application.pre_requiste_messages = []
-        Application.pre_msg_time = []
-        no_required_data = int(no_required_data)
-        # Pre-requisite messages
-        self.pre_msg0 = ('Fan Status is not available, '
-                         'could not verify system is ON.')
-        self.pre_msg1 = ('Supply fan is off, current data will '
-                         'not be used for diagnostics.')
-        self.pre_msg2 = ('Missing required data for diagnostic:  '
-                         'duct static pressure.')
-        self.pre_msg3 = ('Missing required data for diagnostic:  '
-                         'duct static pressure set point')
-        self.pre_msg4 = ('Missing required data for diagnostic:  '
-                         'terminal-box damper-position (all zones).')
-        self.pre_msg5 = ('Missing required data for diagnostic: SAT.')
-        self.pre_msg6 = ('Missing required data for diagnostic: '
-                         'terminal-box reheat-valve-positions (all zones).')
-        self.pre_msg7 = ('Missing required data for diagnostic: '
-                         'SAT set point.')
-
         if sensitivity == 0.0:
             # low sensitivity
             zone_high_damper_threshold = float(zone_high_damper_threshold) * 1.5
             zone_low_damper_threshold = float(zone_low_damper_threshold) * 1.5
-            stcpr_reset_threshold = float(stpr_reset_threshold) * 1.5
-
-            sat_reset_threshold = float(sat_reset_threshold) * 1.5
-            sat_high_damper_threshold= float(sat_high_damper_threshold) * 1.5
-            percent_damper_threshold = float(percent_damper_threshold) * 1.5
-            percent_reheat_threshold= float(percent_reheat_threshold) * 1.5
-            reheat_valve_threshold = float(reheat_valve_threshold) * 1.5
-
-            unocc_stp_threshold= float(unocc_stp_threshold) * 1.5
-            unocc_time_threshold= float(unocc_time_threshold) * 1.5
 
         elif sensitivity == 2.0:
             # high sensitivity
             zone_high_damper_threshold = float(zone_high_damper_threshold) * 0.5
             zone_low_damper_threshold = float(zone_low_damper_threshold) * 0.5
-            stcpr_reset_threshold = float(stpr_reset_threshold) * 0.5
 
-            sat_reset_threshold = float(sat_reset_threshold) * 0.5
-            sat_high_damper_threshold= float(sat_high_damper_threshold) * 0.5
-            percent_damper_threshold = float(percent_damper_threshold) * 0.5
-            percent_reheat_threshold= float(percent_reheat_threshold) * 0.5
-            reheat_valve_threshold = float(reheat_valve_threshold) * 0.5
-
-            unocc_stp_threshold= float(unocc_stp_threshold) * 0.5
-            unocc_time_threshold= float(unocc_time_threshold) * 0.5
         else:
             # Normal sensitivtyy
             zone_high_damper_threshold = float(zone_high_damper_threshold)
             zone_low_damper_threshold = float(zone_low_damper_threshold)
-            stcpr_reset_threshold = float(stpr_reset_threshold)
-
-            sat_reset_threshold = float(sat_reset_threshold)
-            sat_high_damper_threshold = float(sat_high_damper_threshold)
-            percent_damper_threshold = float(percent_damper_threshold)
-            percent_reheat_threshold = float(percent_reheat_threshold)
-            reheat_valve_threshold = float(reheat_valve_threshold)
-
-            unocc_stp_threshold= float(unocc_stp_threshold)
-            unocc_time_threshold= float(unocc_time_threshold)
 
         # Point names (Configurable)
         self.fan_status_name = Application.fan_status_name
@@ -177,21 +236,17 @@ class Application(DrivenApplicationBaseClass):
         self.duct_stp_name = Application.duct_stp_name
         self.sa_temp_name = Application.sa_temp_name
         self.sat_stpt_name = Application.sat_stpt_name
-        Application.sat_stpt_cname = Application.sat_stpt_name
-        Application.duct_stp_stpt_cname = Application.duct_stp_stpt_name
-        # Optional points
-        self.override_state = 'AUTO'
+
+        duct_stp_stpt_cname = Application.duct_stp_stpt_name
         if Application.fan_speedcmd_name is not None:
             self.fan_speedcmd_name = Application.fan_speedcmd_name.lower()
         else:
             self.fan_speedcmd_name = None
-        self.fan_speedcmd_priority = Application.fan_speedcmd_priority.lower()
-        self.duct_stp_stpt_priority = Application.duct_stp_stpt_priority.lower()
-        self.ahu_ccoil_priority = Application.ahu_ccoil_priority.lower()
-        self.sat_stpt_priority = Application.sat_stpt_priority.lower()
-        # Zone Parameters
+
+        # Zone Points
         self.zone_damper_name = Application.zone_damper_name.lower()
         self.zone_reheat_name = Application.zone_reheat_name.lower()
+
         # Application thresholds (Configurable)
         self.data_window = float(data_window)
         self.low_supply_fan_threshold = float(low_supply_fan_threshold)
@@ -200,17 +255,12 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_time = int(warm_up_time)
         self.warm_up_start = None
         auto_correctflag = True
-        self.static_dx = DuctStaticRcx(data_window, no_required_data,
-                                       auto_correctflag,
-                                       setpoint_allowable_deviation,
-                                       max_duct_stp_stpt,
-                                       duct_stc_retuning,
-                                       zone_high_damper_threshold,
-                                       zone_low_damper_threshold,
-                                       hdzone_damper_threshold,
-                                       min_duct_stp_stpt,
-                                       stpr_reset_threshold)
-
+        analysis = "Airside_RCx"
+        self.static_dx = DuctStaticRcx(no_required_data, auto_correctflag, setpoint_allowable_deviation,
+                                       max_duct_stp_stpt, duct_stc_retuning, zone_high_damper_threshold,
+                                       zone_low_damper_threshold, hdzone_damper_threshold,
+                                       min_duct_stp_stpt, stpr_reset_threshold, analysis,
+                                       duct_stp_stpt_cname)
 
     @classmethod
     def get_config_parameters(cls):
@@ -286,19 +336,18 @@ class Application(DrivenApplicationBaseClass):
                              'Allowable deviation from set points '
                              'before a fault message is generated '
                              '(%)', value_default=10.0),
+            'sensitivity':
+            ConfigDescriptor(float,
+                             'Sensitivity: values can be 0.0 (low sensitivity), '
+                             '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
+                             value_default=1.0),
             'stpr_reset_threshold':
             ConfigDescriptor(float,
                              ('Required difference between minimum and '
                               'maximum duct static pressure set point '
                               'detecting a duct static pressure '
                               'set point reset (inch w.g.)'),
-                             value_default=0.25),
-            'sensitivity':
-                ConfigDescriptor(float,
-                                 'Sensitivity: values can be 0.0 (low sensitivity), '
-                                 '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
-                                 value_default=1.0)
-
+                             value_default=0.25)
             }
 
     @classmethod
@@ -309,10 +358,10 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def required_input(cls):
-        '''
+        """
         Generate required inputs with description for
         user.
-        '''
+        """
         return {
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
@@ -333,9 +382,10 @@ class Application(DrivenApplicationBaseClass):
             }
 
     def reports(self):
-        '''Called by UI to assemble information for creation of the diagnostic
+        """
+        Called by UI to assemble information for creation of the diagnostic
         visualization.
-        '''
+        """
         report = reports.Report('Retuning Report')
         # report.add_element(reports.RetroCommissioningOAED(
         #     table_name='Airside_RCx'))
@@ -345,32 +395,27 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def output_format(cls, input_object):
-        '''Describes how the output or results will be formatted
+        """
+        Describes how the output or results will be formatted
         Output will have the date-time, error-message, color-code,
         and energy impact.
-        '''
+        """
         result = super().output_format(input_object)
         topics = input_object.get_topics()
         diagnostic_topic = topics[cls.fan_status_name][0]
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
-        datetime_topic = '/'.join(output_topic_base + ['Airside_RCx',
-                                                       'date'])
-        message_topic = '/'.join(output_topic_base + ['Airside_RCx',
-                                                      'message'])
-        diagnostic_name = '/'.join(output_topic_base + ['Airside_RCx',
-                                                        ' diagnostic_name'])
-        energy_impact = '/'.join(output_topic_base + ['Airside_RCx',
-                                                      'energy_impact'])
-        color_code = '/'.join(output_topic_base + ['Airside_RCx',
-                                                   'color_code'])
+        datetime_topic = '/'.join(output_topic_base + ['Airside_RCx', 'date'])
+        message_topic = '/'.join(output_topic_base + ['Airside_RCx', 'message'])
+        diagnostic_name = '/'.join(output_topic_base + ['Airside_RCx', ' diagnostic_name'])
+        energy_impact = '/'.join(output_topic_base + ['Airside_RCx', 'energy_impact'])
+        color_code = '/'.join(output_topic_base + ['Airside_RCx', 'color_code'])
 
         output_needs = {
             'Airside_RCx': {
                 'datetime': OutputDescriptor('string', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
-                'diagnostic_message': OutputDescriptor('string',
-                                                       message_topic),
+                'diagnostic_message': OutputDescriptor('string', message_topic),
                 'energy_impact': OutputDescriptor('float', energy_impact),
                 'color_code': OutputDescriptor('string', color_code)
                 }
@@ -379,449 +424,388 @@ class Application(DrivenApplicationBaseClass):
         return result
 
     def run(self, current_time, points):
-        '''Check application pre-quisites and assemble analysis data set.
+        """
+        Check application pre-quisites and assemble analysis data set.
         Receives mapped data from the DrivenBaseClass.  Filters non-relevent
         data and assembles analysis data set for diagnostics.
-        '''
+        """
+        # topics = self.inp.get_topics()
+        # diagnostic_topic = topics[self.fan_status_name][0]
+        # cur_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
+        try:
+            local_tz = dateutil.tz.tzlocal()
+        except:
+            local_tz = dateutil.tz.tzutc()
+        cur_time = current_time.astimezone(local_tz)
         device_dict = {}
         diagnostic_result = Results()
-        topics = self.inp.get_topics()
-        diagnostic_topic = topics[self.fan_status_name][0]
-        current_time = self.inp.localize_sensor_time(diagnostic_topic,
-                                                     current_time)
-        for key, value in points.items():
-            device_dict[key.lower()] = value
+        fan_status_data = []
         supply_fan_off = False
-        fan_stat_data = []
-        fan_stat_check = False
-        for key, value in device_dict.items():
-            if key.startswith(self.fan_status_name) and value is not None:
-                fan_stat_check = True
-                fan_stat_data.append(value)
-                if not value:
-                    self.warm_up_flag = True
-                    Application.pre_requiste_messages.append(self.pre_msg1)
-                    diagnostic_result = self.pre_message(diagnostic_result,
-                                                         current_time)
+        low_dx_cond = False
+        high_dx_cond = False
+
+        for key, value in points.items():
+            point_device = [_name.lower() for _name in key.split('&')]
+            if point_device[0] not in device_dict:
+                device_dict[point_device[0]] = [(point_device[1], value)]
+            else:
+                device_dict[point_device[0]].append((point_device[1], value))
+
+        if self.fan_status_name in device_dict:
+            fan_status = device_dict[self.fan_status_name]
+            fan_status = [point[1] for point in fan_status]
+            fan_status = [status for status in fan_status if status is not None]
+            if fan_status:
+                fan_status_data.append(min(fan_status))
+                if not int(fan_status_data[0]):
                     supply_fan_off = True
-        if not fan_stat_check and self.fan_speedcmd_name is not None:
-            for key, value in device_dict.items():
-                if (key.startswith(self.fan_speedcmd_name) and
-                        value is not None):
-                    fan_stat_check = True
-                    if value < self.low_supply_fan_threshold:
-                        self.warm_up_flag = True
-                        Application.pre_requiste_messages.append(self.pre_msg1)
-                        diagnostic_result = self.pre_message(diagnostic_result,
-                                                             current_time)
-                        return diagnostic_result
-                    fan_stat_data.append(1)
-                    supply_fan_off = False
-        if not fan_stat_check:
-            Application.pre_requiste_messages.append(self.pre_msg0)
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
-            return diagnostic_result
-        low_dx_condition = False
-        high_dx_condition = False
-        static_override_check = False
+                    self.warm_up_flag = True
 
+        if self.fan_speedcmd_name in device_dict:
+            fan_speed = device_dict[self.fan_speedcmd_name]
+            fan_speed = mean([point[1] for point in fan_speed])
+            if self.fan_status_name is None:
+                if not int(fan_speed):
+                    supply_fan_off = True
+                    self.warm_up_flag = True
+                fan_status_data.append(bool(int(fan_speed)))
 
-        for key, value in device_dict.items():
-            if (self.fan_speedcmd_name is not None and
-                    self.fan_speedcmd_name in key):
-                if (value is not None and
-                        value > self.high_supply_fan_threshold):
-                    low_dx_condition = True
-                elif (value is not None and
-                      value < self.low_supply_fan_threshold):
-                    high_dx_condition = True
-            if self.fan_speedcmd_priority in key:
-                if value == self.override_state:
-                    static_override_check = True
-            if self.duct_stp_stpt_priority in key:
-                if value == self.override_state:
-                    static_override_check = True
+            if fan_speed > self.high_supply_fan_threshold:
+                low_dx_cond = True
+            elif fan_speed < self.low_supply_fan_threshold:
+                high_dx_cond = True
 
         stc_pr_data = []
-        stc_pr_sp_data = []
-        zone_damper_data = []
-        satemp_data = []
-        rht_data = []
-        sat_stpt_data = []
+        stcpr_sp_data = []
+        zn_dmpr_data = []
+
+        def data_builder(value_tuple, point_name):
+            value_list = []
+            for item in value_tuple:
+                value_list.append(item[1])
+            return value_list
+
         for key, value in device_dict.items():
-            if (key.startswith(self.duct_stp_stpt_name) and
-                    value is not None):
-                stc_pr_sp_data.append(value)
-            elif (key.startswith(self.duct_stp_name) and
-                  value is not None):
-                stc_pr_data.append(value)
-            elif (key.startswith(self.zone_damper_name) and
-                  value is not None):
-                zone_damper_data.append(value)
+            data_name = key
+            if value is None:
+                continue
+            if data_name == self.duct_stp_stpt_name:
+                stcpr_sp_data = data_builder(value, data_name)
+            elif data_name == self.duct_stp_name:
+                stc_pr_data = data_builder(value, data_name)
+            elif data_name == self.zone_damper_name:
+                zn_dmpr_data = data_builder(value, data_name)
+        missing_data = []
 
         if not stc_pr_data:
-            Application.pre_requiste_messages.append(self.pre_msg2)
-        if not stc_pr_sp_data:
-            Application.pre_requiste_messages.append(self.pre_msg3)
-        if not zone_damper_data:
-            Application.pre_requiste_messages.append(self.pre_msg4)
-        if not (stc_pr_data and zone_damper_data and stc_pr_sp_data):
+            missing_data.append(self.duct_stp_name)
+        if not stcpr_sp_data:
+            diagnostic_result.log('Duct static pressure set point data is '
+                                  'missing. This will limit the effectiveness of '
+                                  'the duct static pressure diagnostics.')
+        if not zn_dmpr_data:
+            missing_data.append(self.zone_damper_name)
+        if not fan_status:
+            missing_data.append(self.fan_status_name)
+        if missing_data:
+            raise Exception('Missing required data: {}'.format(missing_data))
             return diagnostic_result
 
-        # diagnostic_result = self.sched_occ_dx.sched_rcx_alg(
-        #     current_time, stc_pr_data, stc_pr_sp_data,
-        #     sat_stpt_data, fan_stat_data, diagnostic_result)
 
         if supply_fan_off:
+            diagnostic_result.log('Supply fan is off. Data will not be used for '
+                                  'retuning diagnostics.')
             return diagnostic_result
-
         if self.warm_up_flag:
             self.warm_up_flag = False
-            self.warm_up_start = current_time
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
+            self.warm_up_start = cur_time
             return diagnostic_result
-
-        time_check = datetime.timedelta(minutes=self.warm_up_time)
-        if (self.warm_up_start is not None and
-                (current_time - self.warm_up_start) < time_check):
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
+        time_check = td(minutes=self.warm_up_time)
+        if self.warm_up_start is not None and (cur_time - self.warm_up_start) < time_check:
+            diagnostic_result.log('Unit may be in warm-up. Data will not be analyzed.')
             return diagnostic_result
-        diagnostic_result = self.static_dx.duct_static(
-            current_time, stc_pr_sp_data, stc_pr_data, zone_damper_data,
-            static_override_check, low_dx_condition,
-            high_dx_condition, diagnostic_result)
-
-
+        dx_status, diagnostic_result = self.static_dx.duct_static(cur_time, stcpr_sp_data, stc_pr_data,
+                                                                  zn_dmpr_data, low_dx_cond, high_dx_cond,
+                                                                  diagnostic_result)
         return diagnostic_result
-
-    def pre_message(self, result, current_time):
-        '''Add meaningful output based to results table if analysis
-        cannot be run.
-        '''
-        Application.pre_msg_time.append(current_time)
-        pre_check = ((Application.pre_msg_time[-1] -
-                      Application.pre_msg_time[0])
-                     .total_seconds()/60)
-        pre_check = pre_check if pre_check > 0.0 else 1.0
-        if pre_check >= self.data_window:
-            msg_lst = [self.pre_msg0, self.pre_msg1, self.pre_msg2,
-                       self.pre_msg3, self.pre_msg4, self.pre_msg5,
-                       self.pre_msg6, self.pre_msg7]
-            for item in msg_lst:
-                if (Application.pre_requiste_messages.count(item) >
-                        (0.25) * len(Application.pre_msg_time)):
-                    result.log(item, logging.DEBUG)
-            Application.pre_requiste_messages = []
-            Application.pre_msg_time = []
-        return result
-
 
 class DuctStaticRcx(object):
-    '''Air-side HVAC Self-Correcting Diagnostic: Detect and correct
+    """
+    Air-side HVAC Self-Correcting Diagnostic: Detect and correct
     duct static pressure problems.
-    '''
-    def __init__(self, data_window, no_required_data, auto_correctflag,
-                 setpoint_allowable_deviation,
-                 max_duct_stp_stpt, duct_stc_retuning,
-                 zone_high_damper_threshold,
-                 zone_low_damper_threshold,
-                 hdzone_damper_threshold, min_duct_stp_stpt,
-                 stpr_reset_threshold):
-        self.zone_damper_values = []
-        self.duct_stp_stpt_values = []
-        self.duct_stp_values = []
-        self.timestamp = []
-        self.data_window = float(data_window)
-        self.no_required_data = no_required_data
-        self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
-        self.max_duct_stp_stpt = float(max_duct_stp_stpt)
-        self.duct_stc_retuning = float(duct_stc_retuning)
-        self.zone_high_damper_threshold = float(zone_high_damper_threshold)
-        self.zone_low_damper_threshold = float(zone_low_damper_threshold)
-        self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
-        self.auto_correctflag = auto_correctflag
-        self.min_duct_stp_stpt = float(min_duct_stp_stpt)
-        self.hdzone_damper_threshold = float(hdzone_damper_threshold)
+    """
+
+    def __init__(self, no_req_data, auto_correct_flag, stpt_allowable_dev,
+                 max_stcpr_stpt, stcpr_retuning, zone_high_dmpr_threshold,
+                 zone_low_dmpr_threshold, hdzn_dmpr_thr, min_stcpr_stpt,
+                 stpr_reset_threshold, analysis, stcpr_stpt_cname):
+        # Initialize data arrays
+        self.table_key = None
+        self.file_key = None
+        self.zn_dmpr_arr = []
+        self.stcpr_stpt_arr = []
+        self.stcpr_stpt_reset = []
+        self.stcpr_arr = []
+        self.timestamp_arr = []
+        self.timestamp_reset = []
+        self.data = {}
+        self.dx_table = {}
+        self.dx_time = None
+
+        # Initialize configurable thresholds
+        self.analysis = analysis + '-' + STCPR_VAL_FILE_TOKEN
+        self.file_name_id = analysis + '-' + STCPR_VAL_FILE_TOKEN
+        self.stcpr_stpt_cname = stcpr_stpt_cname
+        self.no_req_data = no_req_data
+        self.stpt_allowable_dev = float(stpt_allowable_dev)
+        self.max_stcpr_stpt = float(max_stcpr_stpt)
+        self.stcpr_retuning = float(stcpr_retuning)
+        self.zone_high_dmpr_threshold = float(zone_high_dmpr_threshold)
+        self.zone_low_dmpr_threshold = float(zone_low_dmpr_threshold)
+        self.sp_allowable_dev = float(stpt_allowable_dev)
+        self.auto_correct_flag = auto_correct_flag
+        self.min_stcpr_stpt = float(min_stcpr_stpt)
+        self.hdzn_dmpr_thr = float(hdzn_dmpr_thr)
         self.stpr_reset_threshold = float(stpr_reset_threshold)
+        self.token_offset = 0.0
 
-    def duct_static(self, current_time, stc_pr_sp_data, stc_pr_data,
-                    zone_dmpr_data, static_override_check, low_dx_condition,
-                    high_dx_condition, diagnostic_result):
-        '''Check duct static pressure RCx pre-requisites
-        and assemble the duct static pressure analysis data set.
-        '''
-        if low_dx_condition:
-            diagnostic_result.log(('The supply fan is running at '
-                                   'nearly 100% of full speed, data '
-                                   'corresponding to {timestamp} will not be '
-                                   'used for diagnostic'.
-                                   format(timestamp=str(current_time)),
-                                   logging.DEBUG))
-            return diagnostic_result
-        if high_dx_condition:
-            diagnostic_result.log(('The supply fan is running at '
-                                   ' the minimum speed, data corresponding '
-                                   'to {timestamp} will not be used for '
-                                   'diagnostic'.
-                                   format(timestamp=str(current_time)),
-                                   logging.DEBUG))
-            return diagnostic_result
-        self.duct_stp_values.append(sum(stc_pr_data)/len(stc_pr_data))
-        self.zone_damper_values.append(sum(zone_dmpr_data)/len(zone_dmpr_data))
-        self.timestamp.append(current_time)
+        self.low_msg = ('The supply fan is running at nearly 100% of full '
+                        'speed, data corresponding to {} will not be used.')
+        self.high_msg = ('The supply fan is running at the minimum speed, '
+                         'data corresponding to {} will not be used.')
 
-        self.duct_stp_stpt_values.append(
-            sum(stc_pr_sp_data) / len(stc_pr_sp_data))
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
-                        .total_seconds()/60)
-        elapsed_time = elapsed_time if elapsed_time > 0.0 else 1.0
+    def reinitialize(self):
+        """Reinitialize data arrays"""
+        self.table_key = None
+        self.file_key = None
+        self.zn_dmpr_arr = []
+        self.stcpr_stpt_arr = []
+        self.stcpr_arr = []
+        self.timestamp_arr = []
+        self.data = {}
+        self.dx_table = {}
 
-        if (elapsed_time >= self.data_window and
-                len(self.timestamp) >= self.no_required_data):
-            avg_duct_stpr_stpt = (sum(
-                self.duct_stp_stpt_values) / len(self.duct_stp_stpt_values))
+    def duct_static(self, current_time, stcpr_stpt_data, stcpr_data,
+                    zn_dmpr_data, low_dx_cond, high_dx_cond, dx_result):
+        """
+        Check duct static pressure RCx pre-requisites and assemble the
+        duct static pressure analysis data set.
+        """
+        dx_status = 0
+        if check_date(current_time, self.timestamp_arr):
+            dx_status = 0
+            self.reinitialize()
+            return dx_status, dx_result
 
-            if avg_duct_stpr_stpt > 0 and avg_duct_stpr_stpt < 10.0:
-                set_point_tracking = [abs(x - y) for
-                                      x, y in zip(self.duct_stp_values,
-                                                  self.duct_stp_stpt_values)]
+        if low_dx_cond:
+            dx_result.log(self.low_msg.format(current_time), logging.DEBUG)
+            return dx_status, dx_result
+        if high_dx_cond:
+            dx_result.log(self.high_msg.format(current_time), logging.DEBUG)
+            return dx_status, dx_result
 
-                set_point_tracking = (sum(set_point_tracking) /
-                                      (len(set_point_tracking)
-                                       * avg_duct_stpr_stpt)*100)
-                if set_point_tracking > self.setpoint_allowable_deviation:
-                    diagnostic_message = ('The duct static '
-                                          'pressure is deviating from its '
-                                          'set point significantly.')
-                    color_code = 'RED'
-                    energy_impact = None
-                    dx_table = {
-                        'datetime': str(self.timestamp[-1]),
-                        'diagnostic_name': DUCT_STC_RCx,
-                        'diagnostic_message': diagnostic_message,
-                        'energy_impact': energy_impact,
-                        'color_code': color_code
-                    }
-                    diagnostic_result.insert_table_row('Airside_RCx', dx_table)
-                    diagnostic_result.log(diagnostic_message, logging.INFO)
+        run_status = check_run_status(self.timestamp_arr, current_time, self.no_req_data)
 
-            diagnostic_result = self.no_static_pr_reset(diagnostic_result)
-            diagnostic_result = self.low_ductstatic_pr(diagnostic_result,
-                                                       static_override_check)
-            diagnostic_result = self.high_ductstatic_pr(diagnostic_result,
-                                                        static_override_check)
+        if run_status is None:
+            dx_result.log('{}: Current analysis data set has insufficient data '
+                          'to produce a valid diagnostic result.'.format(STCPR_VALIDATE, logging.DEBUG))
+            self.reinitialize()
+            return dx_status, dx_result
+        dx_status = 1
+        if run_status:
+            self.table_key = create_table_key(self.analysis, self.timestamp_arr[-1])
+            avg_stcpr_stpt, dx_table = setpoint_control_check(self.stcpr_stpt_arr, self.stcpr_arr,
+                                                              self.stpt_allowable_dev, DUCT_STC_RCX, DX,
+                                                              STCPR_POINT_NAME, self.token_offset,
+                                                              self.timestamp_arr[-1])
 
-        return diagnostic_result
+            dx_result.insert_table_row('Airside_RCx', dx_table)
+            dx_result = self.low_stcpr_dx(dx_result, avg_stcpr_stpt)
+            dx_result = self.high_stcpr_dx(dx_result, avg_stcpr_stpt)
+            # dx_result.insert_table_row(self.table_key, self.dx_table)
+            dx_result.log('{}: Running diagnostics.'.format(STCPR_VALIDATE, logging.DEBUG))
+            dx_status = 2
+            self.reinitialize()
 
-    def low_ductstatic_pr(self, result, static_override_check):
-        '''Diagnostic to identify and correct low duct static pressure
+        if self.timestamp_reset and self.timestamp_reset[-1].date() != current_time.date():
+            self.dx_time = self.timestamp_reset[-1]
+            if len(self.stcpr_stpt_reset) >= self.no_req_data:
+                dx_result = self.no_static_pr_reset(dx_result)
+            else:
+                dx_table = {
+                    'datetime': str(self.dx_time),
+                    'diagnostic_name': DUCT_STC_RCX3,
+                    'diagnostic_message': 'Insufficient data for conclusive diagnostic.',
+                    'energy_impact': None,
+                    'color_code': 'GREY'
+                }
+                dx_result.insert_table_row('Airside_RCx', dx_table)
+            self.stcpr_stpt_reset = []
+            self.timestamp_reset = []
+
+        dx_result.log('{}: Collecting and aggregating data.'.format(STCPR_VALIDATE, logging.DEBUG))
+        self.stcpr_stpt_arr.append(mean(stcpr_data))
+        self.stcpr_arr.append(mean(stcpr_stpt_data))
+        self.stcpr_stpt_reset.append(mean(stcpr_stpt_data))
+        self.zn_dmpr_arr.append(mean(zn_dmpr_data))
+        self.timestamp_arr.append(current_time)
+        self.timestamp_reset.append(current_time)
+        return dx_status, dx_result
+
+    def low_stcpr_dx(self, dx_result, avg_stcpr_stpt):
+        """
+        Diagnostic to identify and correct low duct static pressure
         (correction by modifying duct static pressure set point).
-        '''
-        zone_damper_temp = self.zone_damper_values
-        zone_damper_temp.sort(reverse=False)
-        zone_damper_lowtemp = zone_damper_temp[
-            :int(math.ceil(len(self.zone_damper_values)*0.5))
-            if len(self.zone_damper_values) != 1 else 1]
-        zone_damper_lowavg = (
-            sum(zone_damper_lowtemp) / len(zone_damper_lowtemp))
+        """
+        zn_dmpr = deepcopy(self.zn_dmpr_arr)
+        zn_dmpr.sort(reverse=False)
+        zone_dmpr_lowtemp = zn_dmpr[:int(math.ceil(len(self.zn_dmpr_arr) * 0.5)) if len(self.zn_dmpr_arr) != 1 else 1]
+        zn_dmpr_low_avg = mean(zone_dmpr_lowtemp)
 
-        zone_damper_hightemp = (
-            zone_damper_temp[
-                int(math.ceil(len(self.zone_damper_values)*0.5)) - 1
-                if len(self.zone_damper_values) != 1 else 0:])
+        zone_dmpr_hightemp = zn_dmpr[int(math.ceil(len(self.zn_dmpr_arr) * 0.5)) - 1 if len(self.zn_dmpr_arr) != 1 else 0:]
+        zn_dmpr_high_avg = mean(zone_dmpr_hightemp)
 
-        zone_damper_highavg = (
-            sum(zone_damper_hightemp) / len(zone_damper_hightemp))
-        energy_impact = None
-
-        avg_duct_stpr_stpt = None
-        if self.duct_stp_stpt_values:
-            avg_duct_stpr_stpt = (sum(self.duct_stp_stpt_values) /
-                                  len(self.duct_stp_stpt_values))
-
-        if (zone_damper_highavg > self.zone_high_damper_threshold
-                and zone_damper_lowavg > self.zone_low_damper_threshold):
+        if zn_dmpr_high_avg > self.zone_high_dmpr_threshold and zn_dmpr_low_avg > self.zone_low_dmpr_threshold:
             color_code = 'RED'
-            if (avg_duct_stpr_stpt is not None and
-                    not static_override_check):
-                if self.auto_correctflag:
-                    duct_stpr_stpt = (avg_duct_stpr_stpt +
-                                      self.duct_stc_retuning)
-                    if duct_stpr_stpt <= self.max_duct_stp_stpt:
-                        result.command(
-                            Application.duct_stp_stpt_cname, duct_stpr_stpt)
-                        duct_stpr_stpt = '%s' % float('%.2g' % duct_stpr_stpt)
-                        duct_stpr_stpt = str(duct_stpr_stpt)
-                        duct_stpr_stpt = ''.join([duct_stpr_stpt,
-                                                  ' in. w.g.'])
-                        diagnostic_message = ('The duct static '
-                                              'pressure was detected to be '
-                                              'too low. The duct static '
-                                              'pressure has been increased '
-                                              'to: {val}'
-                                              .format(val=duct_stpr_stpt))
-                    else:
-                        result.command(Application.duct_stp_stpt_cname,
-                                       self.max_duct_stp_stpt)
-                        duct_stpr_stpt = '%s' % float('%.2g' % self.max_duct_stp_stpt)
-                        duct_stpr_stpt = str(duct_stpr_stpt)
-                        duct_stpr_stpt = ''.join([duct_stpr_stpt,
-                                                  ' in. w.g.'])
-                        diagnostic_message = ('The duct static pressure set '
-                                              'point is at the maximum '
-                                              'value configured by the '
-                                              'building operator: {val})'
-                                              .format(val=duct_stpr_stpt))
+            if avg_stcpr_stpt is None:
+                # Create diagnostic message for fault
+                # when duct static pressure set point
+                # is not available.
+                msg = ('The duct static pressure set point has been '
+                       'detected to be too low but but supply-air'
+                       'temperature set point data is not available.')
+                # dx_msg = 14.1
+            elif self.auto_correct_flag:
+                auto_correct_stcpr_stpt = avg_stcpr_stpt + self.stcpr_retuning
+                if auto_correct_stcpr_stpt <= self.max_stcpr_stpt:
+                    dx_result.command(self.stcpr_stpt_cname, auto_correct_stcpr_stpt)
+                    new_stcpr_stpt = '%s' % float('%.2g' % auto_correct_stcpr_stpt)
+                    new_stcpr_stpt = new_stcpr_stpt + ' in. w.g.'
+                    msg = ('The duct static pressure was detected to be '
+                           'too low. The duct static pressure has been '
+                           'increased to: {}'.format(new_stcpr_stpt))
+                    # dx_msg = 11.1
                 else:
-                    diagnostic_message = ('The duct static pressure set '
-                                          'point was detected to be too low '
-                                          'but auto-correction '
-                                          'is not enabled.')
-
-            elif not static_override_check:
-                diagnostic_message = ('The duct static pressure was '
-                                      'detected to be too low.')
+                    dx_result.command(self.stcpr_stpt_cname, self.max_stcpr_stpt)
+                    new_stcpr_stpt = '%s' % float('%.2g' % self.max_stcpr_stpt)
+                    new_stcpr_stpt = new_stcpr_stpt + ' in. w.g.'
+                    msg = ('The duct static pressure set point is at the '
+                           'maximum value configured by the building operator: {}'
+                           .format(new_stcpr_stpt))
+                    # dx_msg = 12.1
             else:
-                diagnostic_message = ('The duct static pressure was '
-                                      'detected to be too low but an operator '
-                                      'override was detected. Auto-correction '
-                                      'can not be performed when the static '
-                                      'pressure set point or fan speed '
-                                      'command is in override.')
+                msg = ('The duct static pressure set point was detected '
+                       'to be too low but auto-correction is not enabled.')
+                # dx_msg = 13.1
         else:
-            diagnostic_message = ('No re-tuning opportunity was '
-                                  'detected during the low duct static '
-                                  'pressure diagnostic.')
+            msg = ('No re-tuning opportunity was detected during the low duct '
+                   'static pressure diagnostic.')
             color_code = 'GREEN'
+            # dx_msg = 10.0
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': DUCT_STC_RCx1,
-            'diagnostic_message': diagnostic_message,
-            'energy_impact': energy_impact,
+            'datetime': str(self.timestamp_arr[-1]),
+            'diagnostic_name': DUCT_STC_RCX1,
+            'diagnostic_message': msg,
+            'energy_impact': None,
             'color_code': color_code
         }
 
-        result.insert_table_row('Airside_RCx', dx_table)
-        result.log(diagnostic_message, logging.INFO)
-        return result
+        dx_result.insert_table_row('Airside_RCx', dx_table)
+        dx_result.log(msg, logging.INFO)
+        return dx_result
 
-    def high_ductstatic_pr(self, result, static_override_check):
-        '''Diagnostic to identify and correct high duct static pressure
+    def high_stcpr_dx(self, dx_result, avg_stcpr_stpt):
+        """
+        Diagnostic to identify and correct high duct static pressure
         (correction by modifying duct static pressure set point)
-        '''
-        zone_damper_temp = self.zone_damper_values
-        zone_damper_temp.sort(reverse=True)
-        zone_damper_temp = zone_damper_temp[
-            :int(math.ceil(len(self.zone_damper_values)*0.5))
-            if len(self.zone_damper_values) != 1 else 1]
-        avg_zone_damper = sum(zone_damper_temp) / len(zone_damper_temp)
-        energy_impact = None
-        avg_duct_stpr_stpt = None
-        if self.duct_stp_stpt_values:
-            avg_duct_stpr_stpt = sum(
-                self.duct_stp_stpt_values) / len(self.duct_stp_stpt_values)
-        if avg_zone_damper <= self.hdzone_damper_threshold:
+        """
+        zn_dmpr = deepcopy(self.zn_dmpr_arr)
+        zn_dmpr.sort(reverse=True)
+        zn_dmpr = zn_dmpr[:int(math.ceil(len(self.zn_dmpr_arr) * 0.5)) if len(self.zn_dmpr_arr) != 1 else 1]
+        avg_zone_damper = mean(zn_dmpr)
+
+        if avg_zone_damper <= self.hdzn_dmpr_thr:
             color_code = 'RED'
-            if avg_duct_stpr_stpt is not None and not static_override_check:
-                if self.auto_correctflag:
-                    duct_stpr_stpt = (avg_duct_stpr_stpt -
-                                      self.duct_stc_retuning)
-                    if duct_stpr_stpt >= self.min_duct_stp_stpt:
-                        result.command(
-                            Application.duct_stp_stpt_cname, duct_stpr_stpt)
-                        duct_stpr_stpt = '%s' % float('%.2g' % duct_stpr_stpt)
-                        duct_stpr_stpt = str(duct_stpr_stpt)
-                        duct_stpr_stpt = ''.join([duct_stpr_stpt,
-                                                  ' in. w.g.'])
-                        diagnostic_message = ('The duct static '
-                                              'pressure was detected to be '
-                                              'too high. The duct static '
-                                              'pressure set point has been '
-                                              'reduced to: {val}'
-                                              .format(val=duct_stpr_stpt))
-                    else:
-                        result.command(
-                            Application.duct_stp_stpt_cname,
-                            self.min_duct_stp_stpt)
-                        duct_stpr_stpt = '%s' % float('%.2g' % self.min_duct_stp_stpt)
-                        duct_stpr_stpt = str(duct_stpr_stpt)
-                        duct_stpr_stpt = ''.join([duct_stpr_stpt,
-                                                  ' in. w.g.'])
-                        diagnostic_message = ('The duct static pressure set '
-                                              'point is at the minimum value '
-                                              'configured by the building '
-                                              'operator: {val})'
-                                              .format(val=duct_stpr_stpt))
+            if avg_stcpr_stpt is None:
+                # Create diagnostic message for fault
+                # when duct static pressure set point
+                # is not available.
+                msg = ('The duct static pressure set point has been '
+                       'detected to be too high but but duct static '
+                       'pressure set point data is not available.'
+                       'temperature set point data is not available.')
+                # dx_msg = 24.1
+            elif self.auto_correct_flag:
+                auto_correct_stcpr_stpt = avg_stcpr_stpt - self.stcpr_retuning
+                if auto_correct_stcpr_stpt >= self.min_stcpr_stpt:
+                    dx_result.command(self.stcpr_stpt_cname, auto_correct_stcpr_stpt)
+                    new_stcpr_stpt = '%s' % float('%.2g' % auto_correct_stcpr_stpt)
+                    new_stcpr_stpt = new_stcpr_stpt + ' in. w.g.'
+                    msg = ('The duct static pressure was detected to be '
+                           'too high. The duct static pressure set point '
+                           'has been reduced to: {}'.format(new_stcpr_stpt))
+                    # dx_msg = 21.1
                 else:
-                    diagnostic_message = ('Duct static pressure set '
-                                          'point was detected to be too high '
-                                          'but auto-correction '
-                                          'is not enabled.')
-            elif not static_override_check:
-                diagnostic_message = ('The duct static pressure was '
-                                      'detected to be too high.')
+                    dx_result.command(self.stcpr_stpt_cname, self.min_stcpr_stpt)
+                    new_stcpr_stpt = '%s' % float('%.2g' % self.min_stcpr_stpt)
+                    new_stcpr_stpt = new_stcpr_stpt + ' in. w.g.'
+                    msg = ('The duct static pressure set point is at the '
+                           'minimum value configured by the building '
+                           'operator: {})'.format(new_stcpr_stpt))
+                    # dx_msg = 22.1
             else:
-                diagnostic_message = ('The duct static pressure was '
-                                      'detected to be too high but an '
-                                      'operator override was detected. '
-                                      'Auto-correction can not be performed '
-                                      'when the static pressure set point '
-                                      'or fan speed command is in override.')
+                msg = ('Duct static pressure set point was detected to be '
+                       'too high but auto-correction is not enabled.')
+                # dx_msg = 23.1
         else:
-            diagnostic_message = ('No re-tuning opportunity was '
-                                  'detected during the low duct static '
-                                  'pressure diagnostic.')
+            msg = ('No re-tuning opportunity was detected during the high duct '
+                   'static pressure diagnostic.')
             color_code = 'GREEN'
+            # dx_msg = 20.0
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': DUCT_STC_RCx2,
-            'diagnostic_message': diagnostic_message,
-            'energy_impact': energy_impact,
+            'datetime': str(self.timestamp_arr[-1]),
+            'diagnostic_name': DUCT_STC_RCX2,
+            'diagnostic_message': msg,
+            'energy_impact': None,
             'color_code': color_code
         }
 
-        result.insert_table_row('Airside_RCx', dx_table)
-        result.log(diagnostic_message, logging.INFO)
-        self.duct_stp_stpt_values = []
-        self.duct_stp_values = []
-        self.zone_damper_values = []
-        self.timestamp = []
-        return result
+        dx_result.insert_table_row('Airside_RCx', dx_table)
+        dx_result.log(msg, logging.INFO)
+        return dx_result
 
-    def no_static_pr_reset(self, result):
-        '''Auto-RCx  to detect whether a static pressure set point
+    def no_static_pr_reset(self, dx_result):
+        """
+        Auto-RCx  to detect whether a static pressure set point
         reset is implemented.
-        '''
-        if not self.duct_stp_stpt_values:
-            return result
-        stp_diff = (max(self.duct_stp_stpt_values) -
-                    min(self.duct_stp_stpt_values))
-        energy_impact = None
+        """
+        if not self.stcpr_stpt_reset:
+            return dx_result
 
-        if stp_diff < self.stpr_reset_threshold:
-            diagnostic_message = ('No duct static pressure '
-                                  'reset detected. A duct static '
-                                  'pressure set point reset can save '
-                                  'significant amounts of energy.')
+        stcpr_daily_range = (max(self.stcpr_stpt_reset) - min(self.stcpr_stpt_reset))
+
+        if stcpr_daily_range < self.stpr_reset_threshold:
             color_code = 'RED'
+            msg = ('No duct static pressure reset detected. A duct static '
+                   'pressure set point reset can save significant energy.')
+            # dx_msg = 71.1
         else:
-            diagnostic_message = 'No problem detected.'
+            msg = ('No problems detected for duct static pressure set point '
+                   'reset diagnostic.')
             color_code = 'GREEN'
+            # dx_msg = 70.0
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': DUCT_STC_RCx3,
-            'diagnostic_message': diagnostic_message,
-            'energy_impact': energy_impact,
+            'datetime': str(self.dx_time),
+            'diagnostic_name': DUCT_STC_RCX3,
+            'diagnostic_message': msg,
+            'energy_impact': None,
             'color_code': color_code
         }
 
-        result.insert_table_row('Airside_RCx', dx_table)
-        result.log(diagnostic_message, logging.INFO)
-        return result
+        dx_result.insert_table_row('Airside_RCx', dx_table)
+        dx_result.log(msg, logging.INFO)
+        return dx_result
 
