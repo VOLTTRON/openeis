@@ -123,10 +123,8 @@ class Application(DriverApplicationBaseClass):
     def get_self_descriptor(cls):    
         name = 'Time Series Load Profiling Rx'
         desc = 'Time series load profiling is used to understand the relationship\
-                between energy use and time of day. Abnormalities or changes in\
-                load profiles can indicate inefficiencies due to scheduling errors,\
-                unexpected or irregular equipment operation,\
-                high use during unoccupied hours, or untimely peaks.'
+                between energy use and time of day. \
+                This app compares load profile for pre- and post- retrocommissioning periods.'
         return Descriptor(name=name, description=desc)
 
     @classmethod
@@ -134,10 +132,10 @@ class Application(DriverApplicationBaseClass):
         #Called by UI
         return {
             'building_name': ConfigDescriptor(str, "Building Name", optional=True),
-            'pre_start': ConfigDescriptor(str, 'Pre-Rx start date (yyyy-mm-dd)'),
-            'pre_end': ConfigDescriptor(str, 'Pre-Rx end date (yyyy-mm-dd)'),
-            'post_start': ConfigDescriptor(str, 'Post-Rx start date (yyyy-mm-dd)'),
-            'post_end': ConfigDescriptor(str, 'Post-Rx end date (yyyy-mm-dd)'),
+            'pre_start': ConfigDescriptor(str, 'Pre-Rx start date (yyyy-mm-dd) (including)'),
+            'pre_end': ConfigDescriptor(str, 'Pre-Rx end date (yyyy-mm-dd) (excluding)'),
+            'post_start': ConfigDescriptor(str, 'Post-Rx start date (yyyy-mm-dd) (including)'),
+            'post_end': ConfigDescriptor(str, 'Post-Rx end date (yyyy-mm-dd) (excluding)'),
         }
     
     @classmethod
@@ -267,24 +265,20 @@ class Application(DriverApplicationBaseClass):
             local_time = self.inp.localize_sensor_time(base_topic['load'][0], x[0])
             #Rx type
             rx_type = None
-            print("START")
-            print(local_time)
-            print(pre_start_local)
-            print(pre_end_local)
-            print(post_start_local)
-            print(post_end_local)
-            if (pre_start_local < local_time < pre_end_local):
+            if (pre_start_local <= local_time <= pre_end_local):
                 rx_type = "pre"
-            elif (post_start_local < local_time < post_end_local):
+            elif (post_start_local <= local_time <= post_end_local):
                 rx_type = "post"
             if rx_type is None:
+                prev_local_time = None
+                values = []
                 continue
-            #
-            if (i==0) or (local_time == prev_local_time):
+            #Add 1st record or subsequent records having the same timestamp
+            if (local_time == pre_start_local) or (local_time == post_start_local) or (local_time == prev_local_time):
                 values.append(x[1])
                 prev_local_time = local_time
 
-            if (i==len(load_by_hour)-1) or (local_time != prev_local_time):
+            if (local_time == pre_end_local) or (local_time == post_end_local) or (local_time != prev_local_time):
                 daytype = 'W' #weekdays: [0,4]
                 if prev_local_time.weekday() == 5:
                     daytype = 'Sat'
@@ -302,4 +296,3 @@ class Application(DriverApplicationBaseClass):
                 })
                 values = [x[1]]
                 prev_local_time = local_time
-
