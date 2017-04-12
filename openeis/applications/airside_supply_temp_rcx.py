@@ -50,8 +50,9 @@ under Contract DE-AC05-76RL01830
 '''
 import datetime
 import logging
-import re
-import math
+from datetime import timedelta as td
+import dateutil.tz
+from numpy import mean
 from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor,
                                   ConfigDescriptor,
@@ -60,165 +61,202 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
-DUCT_STC_RCx = 'Duct Static Pressure Control Loop Diagnostics'
-DUCT_STC_RCx1 = 'Low Duct Static Pressure Dx'
-DUCT_STC_RCx2 = 'High Duct Static Pressure Dx'
-DUCT_STC_RCx3 = 'No Static Pressure Reset Dx'
-SA_TEMP_RCx = 'Supply-air temperature Control Loop Dx'
-SA_TEMP_RCx1 = 'Low Supply-air Temperature Dx'
-SA_TEMP_RCx2 = 'High Supply-air Temperature Dx'
-SA_TEMP_RCx3 = 'No Supply-air Temperature Reset Dx'
-SCHED_RCx = 'Operational Schedule Dx'
+SA_TEMP_RCX = 'Supply-air Temperature Set Point Control Loop Dx'
+SA_TEMP_RCX1 = 'Low Supply-air Temperature Dx'
+SA_TEMP_RCX2 = 'High Supply-air Temperature Dx'
+SA_TEMP_RCX3 = 'No Supply-air Temperature Reset Dx'
+
+DX = '/diagnostic message'
+
+STCPR_NAME = 'StcPr_ACCx_State'
+SATEMP_NAME = 'Satemp_ACCx_State'
+SCHED_NAME = 'Sched_ACCx_State'
+ST = 'state'
+DATA = '/data/'
+
+SATEMP_VAL_FILE_TOKEN = 'satemp-rcx'
+SAT_POINT_NAME = 'supply-air temperature'
+SA_VALIDATE = 'Supply-air Temperature ACCx'
+
+RESET_FILE_TOKEN = 'reset'
+SCHEDULE_FILE_TOKEN = 'schedule'
+
+"""Common functions used across multiple algorithms."""
+
+def create_table_key(table_name, timestamp):
+    return '&'.join([table_name, timestamp.isoformat()])
+
+
+def check_date(current_time, timestamp_array):
+    """
+    Check current timestamp with previous timestamp
+    to verify that there are no large missing data gaps.
+    """
+    if not timestamp_array:
+        return False
+    if current_time.date() != timestamp_array[-1].date():
+        if (timestamp_array[-1].date() + td(days=1) != current_time.date() or
+                (timestamp_array[-1].hour != 23 and current_time.hour == 0)):
+            return True
+        return False
+
+
+def check_run_status(timestamp_array, current_time, no_required_data, minimum_diagnostic_time=None):
+    """
+    The diagnostics run at a regular interval (some minimum elapsed amount of time) and have a
+       minimum data count requirement (each time series of data must contain some minimum number
+       of points).
+       ARGS:
+            timestamp_array(list(datetime)): ordered array of timestamps associated with building
+                data.
+            no_required_data(integer):  The minimum number of measurements for each time series used
+                in the analysis.
+    """
+    def minimum_data():
+        if len(timestamp_array) < no_required_data:
+            return None
+        return True
+    if minimum_diagnostic_time is not None:
+        sampling_interval = (timestamp_array[-1] - timestamp_array[0])/len(timestamp_array)
+        required_time = (timestamp_array[-1] - timestamp_array[0]) + sampling_interval
+        if required_time >= minimum_diagnostic_time:
+            return minimum_data()
+        return False
+    if timestamp_array and timestamp_array[-1].hour != current_time.hour:
+        return minimum_data()
+    return False
+
+
+def setpoint_control_check(setpoint_array, point_array, allowable_deviation,
+                           token, token_offset, current_time):
+    """Verify that point is tracking well with set point.
+        ARGS:
+            setpoint_array (list(floats):
+    """
+    average_setpoint = None
+    setpoint_array = [float(pt) for pt in setpoint_array if pt != 0]
+    if setpoint_array:
+        average_setpoint = sum(setpoint_array)/len(setpoint_array)
+        zipper = (setpoint_array, point_array)
+        stpt_tracking = [abs(x - y) for x, y in zip(*zipper)]
+        stpt_tracking = (sum(stpt_tracking)/len(stpt_tracking))/average_setpoint*100
+
+        if stpt_tracking > allowable_deviation:
+            # color_code = 'red'
+            msg = ('{pt} is deviating significantly '
+                   'from the {pt} set point.'.format(pt=token))
+            # dx_msg = 1.1 + token_offset
+            color_code = 'RED'
+            # dx_table = {dx_name + dx_tag: dx_msg}
+        else:
+            # color_code = 'green'
+            msg = 'No problem detected.'
+            # dx_msg = 0.0 + token_offset
+            color_code = 'GREEN'
+            # dx_table = {dx_name + dx_tag: dx_msg}
+    else:
+        # color_code = 'grey'
+        msg = ('{} set point data is not available. '
+               'The Set Point Control Loop Diagnostic'
+               'requires set point '
+               'data.'.format(token))
+        # dx_msg = 2.2 + token_offset
+        color_code = 'GREY'
+        # dx_table = {dx_name + dx_tag: dx_msg}
+
+    dx_table = {
+        'datetime': str(current_time),
+        'diagnostic_name': SA_TEMP_RCX,
+        'diagnostic_message': msg,
+        'energy_impact': None,
+        'color_code': color_code
+    }
+
+    return average_setpoint, dx_table
 
 
 class Application(DrivenApplicationBaseClass):
-    '''
+    """
     Air-side HVAC Auto-Retuning Diagnostics
     for AHUs
-    '''
+    """
     fan_status_name = 'fan_status'
     zone_reheat_name = 'zone_reheat'
     zone_damper_name = 'zone_damper'
     fan_speedcmd_name = 'fan_speedcmd'
-    duct_stp_name = 'duct_stp'
     sa_temp_name = 'sa_temp'
     sat_stpt_name = 'sat_stpt'
-    duct_stp_stpt_name = 'duct_stp_stpt'
 
     fan_speedcmd_priority = ''
     duct_stp_stpt_priority = ''
     ahu_ccoil_priority = ''
     sat_stpt_priority = ''
 
-    def __init__(self, *args, no_required_data=1, data_window=1,
-                 warm_up_time=0, duct_stc_retuning=0.15,
-                 max_duct_stp_stpt=2.5, high_supply_fan_threshold=100.0,
-                 zone_high_damper_threshold=90.0,
-                 zone_low_damper_threshold=10.0, min_duct_stp_stpt=0.5,
-                 hdzone_damper_threshold=30.0, low_supply_fan_threshold=20.0,
-                 setpoint_allowable_deviation=10.0, stpr_reset_threshold=0.25,
-                 percent_reheat_threshold=25.0, rht_on_threshold=10.0,
-                 sat_reset_threshold=5.0, sat_high_damper_threshold=80.0,
-                 percent_damper_threshold=50.0,
-                 minimum_sat_stpt=50.0, sat_retuning=1.0,
-                 reheat_valve_threshold=50.0, maximum_sat_stpt=75.0,
-                 unocc_time_threshold=30.0, unocc_stp_threshold=0.2,
-                 monday_sch='6:30;18:30', tuesday_sch='6:30;18:30',
-                 wednesday_sch='6:30;18:30', thursday_sch='6:30;18:30',
-                 friday_sch='6:30;18:30', saturday_sch='0:00;0:00',
-                 sunday_sch='0:00;0:00', sensitivity= 1.0, **kwargs):
+    def __init__(self, *args, no_required_data=1, data_window=1, warm_up_time=0,
+                 setpoint_allowable_deviation=10.0, percent_reheat_threshold=25.0,
+                 rht_on_threshold=10.0, sat_reset_threshold=5.0, sat_high_damper_threshold=80.0,
+                 percent_damper_threshold=50.0, minimum_sat_stpt=50.0, sat_retuning=1.0,
+                 reheat_valve_threshold=50.0, maximum_sat_stpt=75.0, sensitivity=1.0, **kwargs):
         super().__init__(*args, **kwargs)
-        Application.pre_requiste_messages = []
-        Application.pre_msg_time = []
-        no_required_data = int(no_required_data)
-        # Pre-requisite messages
-        self.pre_msg0 = ('Fan Status is not available, '
-                         'could not verify system is ON.')
-        self.pre_msg1 = ('Supply fan is off, current data will '
-                         'not be used for diagnostics.')
-        self.pre_msg2 = ('Missing required data for diagnostic:  '
-                         'duct static pressure.')
-        self.pre_msg3 = ('Missing required data for diagnostic:  '
-                         'duct static pressure set point')
-        self.pre_msg4 = ('Missing required data for diagnostic:  '
-                         'terminal-box damper-position (all zones).')
-        self.pre_msg5 = ('Missing required data for diagnostic: SAT.')
-        self.pre_msg6 = ('Missing required data for diagnostic: '
-                         'terminal-box reheat-valve-positions (all zones).')
-        self.pre_msg7 = ('Missing required data for diagnostic: '
-                         'SAT set point.')
-        # Point names (Configurable)
 
         if sensitivity == 0.0:
             # low sensitivity
-            zone_high_damper_threshold = float(zone_high_damper_threshold) * 1.5
-            zone_low_damper_threshold = float(zone_low_damper_threshold) * 1.5
-            stcpr_reset_threshold = float(stpr_reset_threshold) * 1.5
             sat_reset_threshold = float(sat_reset_threshold) * 1.5
-            sat_high_damper_threshold= float(sat_high_damper_threshold) * 1.5
+            sat_high_damper_threshold = float(sat_high_damper_threshold) * 1.5
             percent_damper_threshold = float(percent_damper_threshold) * 1.5
-            percent_reheat_threshold= float(percent_reheat_threshold) * 1.5
+            percent_reheat_threshold = float(percent_reheat_threshold) * 1.5
             reheat_valve_threshold = float(reheat_valve_threshold) * 1.5
-
-            unocc_stp_threshold= float(unocc_stp_threshold) * 1.5
-            unocc_time_threshold= float(unocc_time_threshold) * 1.5
 
         elif sensitivity == 2.0:
             # high sensitivity
-            zone_high_damper_threshold = float(zone_high_damper_threshold) * 0.5
-            zone_low_damper_threshold = float(zone_low_damper_threshold) * 0.5
-            stcpr_reset_threshold = float(stpr_reset_threshold) * 0.5
-
             sat_reset_threshold = float(sat_reset_threshold) * 0.5
-            sat_high_damper_threshold= float(sat_high_damper_threshold) * 0.5
+            sat_high_damper_threshold = float(sat_high_damper_threshold) * 0.5
             percent_damper_threshold = float(percent_damper_threshold) * 0.5
-            percent_reheat_threshold= float(percent_reheat_threshold) * 0.5
+            percent_reheat_threshold = float(percent_reheat_threshold) * 0.5
             reheat_valve_threshold = float(reheat_valve_threshold) * 0.5
 
-            unocc_stp_threshold= float(unocc_stp_threshold) * 0.5
-            unocc_time_threshold= float(unocc_time_threshold) * 0.5
         else:
             # Normal sensitivtyy
-            zone_high_damper_threshold = float(zone_high_damper_threshold)
-            zone_low_damper_threshold = float(zone_low_damper_threshold)
-            stcpr_reset_threshold = float(stpr_reset_threshold)
-
             sat_reset_threshold = float(sat_reset_threshold)
-            sat_high_damper_threshold= float(sat_high_damper_threshold)
+            sat_high_damper_threshold = float(sat_high_damper_threshold)
             percent_damper_threshold = float(percent_damper_threshold)
-            percent_reheat_threshold= float(percent_reheat_threshold)
+            percent_reheat_threshold = float(percent_reheat_threshold)
             reheat_valve_threshold = float(reheat_valve_threshold)
 
-            unocc_stp_threshold= float(unocc_stp_threshold)
-            unocc_time_threshold= float(unocc_time_threshold)
-
         self.fan_status_name = Application.fan_status_name
-        self.duct_stp_stpt_name = Application.duct_stp_stpt_name
-        self.duct_stp_name = Application.duct_stp_name
         self.sa_temp_name = Application.sa_temp_name
         self.sat_stpt_name = Application.sat_stpt_name
         Application.sat_stpt_cname = Application.sat_stpt_name
-        Application.duct_stp_stpt_cname = Application.duct_stp_stpt_name
         # Optional points
-        self.override_state = 'AUTO'
         if Application.fan_speedcmd_name is not None:
             self.fan_speedcmd_name = Application.fan_speedcmd_name.lower()
         else:
             self.fan_speedcmd_name = None
-        self.fan_speedcmd_priority = Application.fan_speedcmd_priority.lower()
-        self.duct_stp_stpt_priority = Application.duct_stp_stpt_priority.lower()
-        self.ahu_ccoil_priority = Application.ahu_ccoil_priority.lower()
-        self.sat_stpt_priority = Application.sat_stpt_priority.lower()
+
         # Zone Parameters
         self.zone_damper_name = Application.zone_damper_name.lower()
         self.zone_reheat_name = Application.zone_reheat_name.lower()
+
         # Application thresholds (Configurable)
         self.data_window = float(data_window)
-        self.low_supply_fan_threshold = float(low_supply_fan_threshold)
-        self.high_supply_fan_threshold = float(high_supply_fan_threshold)
         self.warm_up_flag = None
         self.warm_up_time = int(warm_up_time)
         self.warm_up_start = None
         auto_correctflag = True
+        no_required_data = int(no_required_data)
+        analysis = 'Airside_RCx'
 
-        self.sat_dx = SupplyTempRcx(data_window, no_required_data,
-                                    auto_correctflag,
-                                    setpoint_allowable_deviation,
-                                    rht_on_threshold,
-                                    sat_high_damper_threshold,
-                                    percent_damper_threshold,
-                                    percent_reheat_threshold,
-                                    minimum_sat_stpt, sat_retuning,
-                                    reheat_valve_threshold,
-                                    maximum_sat_stpt,
-                                    sat_reset_threshold)
+        self.sat_dx = SupplyTempRcx(no_required_data, auto_correctflag, setpoint_allowable_deviation,
+                                    rht_on_threshold, sat_high_damper_threshold, percent_damper_threshold,
+                                    percent_reheat_threshold, minimum_sat_stpt, sat_retuning, reheat_valve_threshold,
+                                    maximum_sat_stpt, sat_reset_threshold, analysis, Application.sat_stpt_cname)
 
     @classmethod
     def get_config_parameters(cls):
-        '''
+        """
         Generate required configuration
         parameters with description for user
-        '''
+        """
         dgr_sym = u'\N{DEGREE SIGN}'
         return {
             'data_window':
@@ -237,20 +275,6 @@ class Application(DrivenApplicationBaseClass):
                              'time will be allowed to elapse before adding '
                              'using data for analysis (minutes)',
                              value_default=30),
-
-
-            'low_supply_fan_threshold':
-            ConfigDescriptor(float,
-                             'Value above which the supply fan will be '
-                             'considered at its minimum speed (%)',
-                             value_default=20.0),
-            'high_supply_fan_threshold':
-            ConfigDescriptor(float,
-                             ('Value above which the supply fan will '
-                              'be considered running at its maximum speed. '
-                              'If fan is running at its '
-                              'maximum speed (%)'),
-                             value_default=95.0),
             'setpoint_allowable_deviation':
             ConfigDescriptor(float,
                              'Allowable deviation from set points '
@@ -324,16 +348,17 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
+        """Name and description for of application for UI"""
         name = 'Auto-RCx AHU: Supply Temperature'
         desc = 'Auto-RCx AHU: Supply Temperature'
         return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):
-        '''
+        """
         Generate required inputs with description for
         user.
-        '''
+        """
         return {
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
@@ -358,9 +383,9 @@ class Application(DrivenApplicationBaseClass):
             }
 
     def reports(self):
-        '''Called by UI to assemble information for creation of the diagnostic
+        """Called by UI to assemble information for creation of the diagnostic
         visualization.
-        '''
+        """
         report = reports.Report('Retuning Report')
         # report.add_element(reports.RetroCommissioningOAED(
         #     table_name='Airside_RCx'))
@@ -370,10 +395,10 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def output_format(cls, input_object):
-        '''Describes how the output or results will be formatted
+        """Describes how the output or results will be formatted
         Output will have the date-time, error-message, color-code,
         and energy impact.
-        '''
+        """
         result = super().output_format(input_object)
         topics = input_object.get_topics()
         diagnostic_topic = topics[cls.fan_status_name][0]
@@ -404,459 +429,398 @@ class Application(DrivenApplicationBaseClass):
         return result
 
     def run(self, current_time, points):
-        '''Check application pre-quisites and assemble analysis data set.
+        """
+        Check application pre-quisites and assemble analysis data set.
         Receives mapped data from the DrivenBaseClass.  Filters non-relevent
         data and assembles analysis data set for diagnostics.
-        '''
+        """
+        # topics = self.inp.get_topics()
+        # diagnostic_topic = topics[self.fan_status_name][0])
+        # cur_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
+        try:
+            local_tz = dateutil.tz.tzlocal()
+        except:
+            local_tz = dateutil.tz.tzutc()
+        cur_time = current_time.astimezone(local_tz)
         device_dict = {}
         diagnostic_result = Results()
-        topics = self.inp.get_topics()
-        diagnostic_topic = topics[self.fan_status_name][0]
-        current_time = self.inp.localize_sensor_time(diagnostic_topic,
-                                                     current_time)
-        for key, value in points.items():
-            device_dict[key.lower()] = value
+        fan_status_data = []
         supply_fan_off = False
-        fan_stat_data = []
-        fan_stat_check = False
-        for key, value in device_dict.items():
-            if key.startswith(self.fan_status_name) and value is not None:
-                fan_stat_check = True
-                fan_stat_data.append(value)
-                if not value:
-                    self.warm_up_flag = True
-                    Application.pre_requiste_messages.append(self.pre_msg1)
-                    diagnostic_result = self.pre_message(diagnostic_result,
-                                                         current_time)
-                    supply_fan_off = True
-        if not fan_stat_check and self.fan_speedcmd_name is not None:
-            for key, value in device_dict.items():
-                if (key.startswith(self.fan_speedcmd_name) and
-                        value is not None):
-                    fan_stat_check = True
-                    if value < self.low_supply_fan_threshold:
-                        self.warm_up_flag = True
-                        Application.pre_requiste_messages.append(self.pre_msg1)
-                        diagnostic_result = self.pre_message(diagnostic_result,
-                                                             current_time)
-                        return diagnostic_result
-                    fan_stat_data.append(1)
-                    supply_fan_off = False
-        if not fan_stat_check:
-            Application.pre_requiste_messages.append(self.pre_msg0)
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
-            return diagnostic_result
-        low_dx_condition = False
-        high_dx_condition = False
-        static_override_check = False
-        sat_override_check = False
 
-        for key, value in device_dict.items():
-            if self.ahu_ccoil_priority in key:
-                if value == self.override_state:
-                    sat_override_check = True
-            if self.sat_stpt_priority in key:
-                if value == self.override_state:
-                    sat_override_check = True
-        stc_pr_data = []
-        stc_pr_sp_data = []
-        zone_damper_data = []
+        for key, value in points.items():
+            point_device = [_name.lower() for _name in key.split('&')]
+            if point_device[0] not in device_dict:
+                device_dict[point_device[0]] = [(point_device[1], value)]
+            else:
+                device_dict[point_device[0]].append((point_device[1], value))
+
+        if self.fan_status_name in device_dict:
+            fan_status = device_dict[self.fan_status_name]
+            fan_status = [point[1] for point in fan_status]
+            fan_status = [status for status in fan_status if status is not None]
+            if fan_status:
+                fan_status_data.append(min(fan_status))
+                if not int(fan_status_data[0]):
+                    supply_fan_off = True
+                    self.warm_up_flag = True
+
+        if self.fan_speedcmd_name in device_dict:
+            fan_speed = device_dict[self.fan_speedcmd_name]
+            fan_speed = mean([point[1] for point in fan_speed])
+            if self.fan_status_name is None:
+                if not int(fan_speed):
+                    supply_fan_off = True
+                    self.warm_up_flag = True
+                fan_status_data.append(bool(int(fan_speed)))
+
+
+        zn_dmpr_data = []
         satemp_data = []
         rht_data = []
         sat_stpt_data = []
-        for key, value in device_dict.items():
-            if (key.startswith(self.zone_damper_name) and
-                  value is not None):
-                zone_damper_data.append(value)
-            elif (key.startswith(self.sat_stpt_name) and
-                  value is not None):
-                sat_stpt_data.append(value)
-            elif (key.startswith(self.sa_temp_name) and
-                  value is not None):
-                satemp_data.append(value)
-            elif (key.startswith(self.zone_reheat_name) and
-                  value is not None):
-                rht_data.append(value)
 
+        def data_builder(value_tuple, point_name):
+            value_list = []
+            for item in value_tuple:
+                value_list.append(item[1])
+            return value_list
+
+        for key, value in device_dict.items():
+            data_name = key
+            if value is None:
+                continue
+            elif data_name == self.sat_stpt_name:
+                sat_stpt_data = data_builder(value, data_name)
+            elif data_name == self.sa_temp_name:
+                satemp_data = data_builder(value, data_name)
+            elif data_name == self.zone_reheat_name:
+                rht_data = data_builder(value, data_name)
+            elif data_name == self.zone_damper_name:
+                zn_dmpr_data = data_builder(value, data_name)
+
+        missing_data = []
         if not satemp_data:
-            Application.pre_requiste_messages.append(self.pre_msg5)
+            missing_data.append(self.sa_temp_name)
         if not rht_data:
-            Application.pre_requiste_messages.append(self.pre_msg6)
+            missing_data.append(self.zone_reheat_name)
         if not sat_stpt_data:
-            Application.pre_requiste_messages.append(self.pre_msg7)
-        if not satemp_data or not rht_data or not sat_stpt_data:
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
+            diagnostic_result.log('Supply-air temperature set point data is '
+                                  'missing. This will limit the effectiveness of '
+                                  'the supply-air temperature diagnostics.')
+        if not zn_dmpr_data:
+            missing_data.append(self.zone_damper_name)
+        if not fan_status:
+            missing_data.append(self.fan_status_name)
+        if missing_data:
+            diagnostic_result.log('Missing required data: {}'.format(missing_data))
             return diagnostic_result
-        # diagnostic_result = self.sched_occ_dx.sched_rcx_alg(
-        #     current_time, stc_pr_data, stc_pr_sp_data,
-        #     sat_stpt_data, fan_stat_data, diagnostic_result)
 
         if supply_fan_off:
+            diagnostic_result.log('Supply fan is off. Data will not be used for '
+                                  'retuning diagnostics.')
             return diagnostic_result
-
         if self.warm_up_flag:
             self.warm_up_flag = False
-            self.warm_up_start = current_time
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
+            self.warm_up_start = cur_time
             return diagnostic_result
-
-        time_check = datetime.timedelta(minutes=self.warm_up_time)
-        if (self.warm_up_start is not None and
-                (current_time - self.warm_up_start) < time_check):
-            diagnostic_result = self.pre_message(diagnostic_result,
-                                                 current_time)
+        time_check = td(minutes=self.warm_up_time)
+        if self.warm_up_start is not None and (cur_time - self.warm_up_start) < time_check:
+            diagnostic_result.log('Unit may be in warm-up. Data will not be analyzed.')
             return diagnostic_result
-        # diagnostic_result = self.static_dx.duct_static(
-        #     current_time, stc_pr_sp_data, stc_pr_data, zone_damper_data,
-        #     static_override_check, low_dx_condition,
-        #     high_dx_condition, diagnostic_result)
-        diagnostic_result = self.sat_dx.sat_rcx(
-            current_time, satemp_data, sat_stpt_data, rht_data,
-            zone_damper_data, diagnostic_result, sat_override_check)
-
+        dx_status, diagnostic_result = self.sat_dx.sat_rcx(cur_time, satemp_data, sat_stpt_data,
+                                                           rht_data, zn_dmpr_data, diagnostic_result)
         return diagnostic_result
-
-    def pre_message(self, result, current_time):
-        '''Add meaningful output based to results table if analysis
-        cannot be run.
-        '''
-        Application.pre_msg_time.append(current_time)
-        pre_check = ((Application.pre_msg_time[-1] -
-                      Application.pre_msg_time[0])
-                     .total_seconds()/60)
-        pre_check = pre_check if pre_check > 0.0 else 1.0
-        if pre_check >= self.data_window:
-            msg_lst = [self.pre_msg0, self.pre_msg1, self.pre_msg2,
-                       self.pre_msg3, self.pre_msg4, self.pre_msg5,
-                       self.pre_msg6, self.pre_msg7]
-            for item in msg_lst:
-                if (Application.pre_requiste_messages.count(item) >
-                        (0.25) * len(Application.pre_msg_time)):
-                    result.log(item, logging.DEBUG)
-            Application.pre_requiste_messages = []
-            Application.pre_msg_time = []
-        return result
 
 
 class SupplyTempRcx(object):
-    '''Air-side HVAC Self-Correcting Diagnostic: Detect and correct
-    supply-air temperature problems.
-    '''
-    def __init__(self, data_window, no_required_data,
-                 auto_correctflag, setpoint_allowable_deviation,
-                 rht_on_threshold, high_damper_threshold,
-                 percent_damper_threshold, percent_reheat_threshold,
-                 minimum_sat_stpt, sat_retuning,
-                 reheat_valve_threshold, maximum_sat_stpt, sat_reset_threshold):
+    """Air-side HVAC Self-Correcting Diagnostic: Detect and correct supply-air
+    temperature problems.
+    Args:
+        timestamp_arr (List[datetime]): timestamps for analysis period.
+        sat_stpt_arr (List[float]): supply-air temperature set point
+            for analysis period.
+        satemp_arr (List[float]): supply-air temperature for analysis period.
+        rht_arr (List[float]): terminal box reheat command for analysis period.
+    """
+    def __init__(self, no_req_data, auto_correct_flag, stpt_allowable_dev,
+                 rht_on_thr, high_dmpr_thr, percent_dmpr_thr, percent_rht_thr,
+                 min_sat_stpt, sat_retuning, rht_valve_thr, max_sat_stpt, sat_reset_threshold,
+                 analysis, sat_stpt_cname):
+        self.timestamp_arr = []
+        self.timestamp_reset = []
+        self.sat_stpt_arr = []
+        self.satemp_arr = []
+        self.rht_arr = []
+        self.percent_rht = []
+        self.percent_dmpr = []
+        self.satemp_stpt_reset = []
+        self.table_key = None
+        self.file_key = None
+        self.data = {}
+        self.dx_table = {}
+        self.dx_time = None
 
-        self.timestamp = []
-        self.sat_stpt_values = []
-        self.sa_temp_values = []
-        self.rht_values = []
-        self.reheat = []
-        self.percent_in_reheat = []
-        self.percent_damper = []
         # Common RCx parameters
-        self.data_window = float(data_window)
-        self.no_required_data = no_required_data
-        self.auto_correctflag = bool(auto_correctflag)
-        self.setpoint_allowable_deviation = float(setpoint_allowable_deviation)
-        self.rht_on_threshold = float(rht_on_threshold)
-        self.percent_reheat_threshold = float(percent_reheat_threshold)
+        self.analysis = analysis + '-' + SATEMP_VAL_FILE_TOKEN
+        self.sat_stpt_cname = sat_stpt_cname
+        self.no_req_data = no_req_data
+        self.auto_correct_flag = bool(auto_correct_flag)
+        self.stpt_allowable_dev = float(stpt_allowable_dev)
+        self.rht_on_thr = float(rht_on_thr)
+        self.percent_rht_thr = float(percent_rht_thr)
         self.dgr_sym = u'\N{DEGREE SIGN}'
+
         # Low SAT RCx thresholds
-        self.reheat_valve_threshold = float(reheat_valve_threshold)
-        self.maximum_sat_stpt = float(maximum_sat_stpt)
+        self.rht_valve_thr = float(rht_valve_thr)
+        self.max_sat_stpt = float(max_sat_stpt)
+
         # High SAT RCx thresholds
-        self.high_damper_threshold = float(high_damper_threshold)
-        self.percent_damper_threshold = float(percent_damper_threshold)
-        self.minimum_sat_stpt = float(minimum_sat_stpt)
-        self.sat_retuning = float(sat_retuning)
-        self.sat_reset_threshold = float(sat_reset_threshold)
+        self.high_dmpr_thr = high_dmpr_thr
+        self.percent_dmpr_thr = percent_dmpr_thr
+        self.min_sat_stpt = min_sat_stpt
+        self.sat_retuning = sat_retuning
+        self.token_offset = 30.0
 
-    def sat_rcx(self, current_time, satemp_data, sat_stpt_data,
-                rht_data, zone_damper_data, diagnostic_result,
-                sat_override_check):
-        '''Check supply-air temperature RCx pre-requisites
-        and assemble the supply-air temperature analysis data set.
-        '''
-        self.sa_temp_values.append(sum(satemp_data) / len(satemp_data))
-        self.rht_values.append(sum(rht_data) / len(rht_data))
-        self.sat_stpt_values.append(sum(sat_stpt_data) / len(sat_stpt_data))
-        total_damper = 0
-        count_damper = 0
-        total_reheat = 0
-        count_reheat = 0
-        for value in rht_data:
-            if value > self.rht_on_threshold:
-                total_reheat += 1
-            count_reheat += 1
-        for value in zone_damper_data:
-            if value > self.high_damper_threshold:
-                total_damper += 1
-            count_damper += 1
+        # SAT Reset RCx threshold
+        self.sat_reset_threshold = sat_reset_threshold
 
-        self.percent_in_reheat.append(total_reheat/count_reheat)
-        self.percent_damper.append(total_damper/count_damper)
-        self.timestamp.append(current_time)
-        elapsed_time = ((self.timestamp[-1] - self.timestamp[0])
-                        .total_seconds()/60)
-        elapsed_time = elapsed_time if elapsed_time > 0.0 else 1.0
-        if (elapsed_time >= self.data_window and
-                len(self.timestamp) >= self.no_required_data):
-            avg_sat_stpt = (sum(self.sat_stpt_values) /
-                            len(self.sat_stpt_values))
+    def reinitialize(self):
+        """Reinitialize data arrays."""
+        self.table_key = None
+        self.file_key = None
+        self.timestamp_arr = []
+        self.sat_stpt_arr = []
+        self.satemp_arr = []
+        self.rht_arr = []
+        self.percent_rht = []
+        self.percent_dmpr = []
+        self.data = {}
+        self.dx_table = {}
 
-            set_point_tracking = [abs(x - y) for x, y in
-                                  zip(self.sat_stpt_values,
-                                      self.sa_temp_values)]
+    def sat_rcx(self, current_time, sat_data, sat_stpt_data,
+                zone_rht_data, zone_dmpr_data, dx_result):
+        """Manages supply-air diagnostic data sets.
+        Args:
+            current_time (datetime): current timestamp for trend data.
+            sat_data (lst of floats): supply-air temperature measurement for
+                AHU.
+            sat_stpt_data (List[floats]): supply-air temperature set point
+                data for AHU.
+            zone_rht_data (List[floats]): reheat command for terminal boxes
+                served by AHU.
+            zone_dmpr_data (List[floats]): damper command for terminal boxes
+                served by AHU.
+            dx_result (Object): Object for interacting with platform and devices.
+        Returns:
+            Results object (dx_result) to Application.
+            Status of diagnostic (dx_status)
+        """
+        dx_status = 1
+        if check_date(current_time, self.timestamp_arr):
+            self.reinitialize()
+            dx_status = 0
+            return dx_status, dx_result
 
-            set_point_tracking = (sum(set_point_tracking) /
-                                  len(set_point_tracking)
-                                  * avg_sat_stpt) * 100
+        tot_rht = sum(1 if val > self.rht_on_thr else 0 for val in zone_rht_data)
+        count_rht = len(zone_rht_data)
+        tot_dmpr = sum(1 if val > self.high_dmpr_thr else 0 for val in zone_dmpr_data)
+        count_damper = len(zone_dmpr_data)
 
-            if set_point_tracking > self.setpoint_allowable_deviation:
-                diagnostic_message = ('Supply-air temperature is '
-                                      'deviating significantly '
-                                      'from the supply-air temperature '
-                                      'set point.')
-                color_code = 'RED'
-                energy_impact = None
+        run_status = check_run_status(self.timestamp_arr, current_time, self.no_req_data)
+
+        if run_status is None:
+            dx_result.log('{}: Current analysis data set has insufficient data '
+                          'to produce a valid diagnostic result.'.format(SA_VALIDATE, logging.DEBUG))
+            self.reinitialize()
+            dx_status = 0
+            return dx_status, dx_result
+
+        if run_status:
+            self.table_key = create_table_key(self.analysis, self.timestamp_arr[-1])
+            avg_sat_stpt, dx_table = setpoint_control_check(self.sat_stpt_arr, self.satemp_arr,
+                                                            self.stpt_allowable_dev, SA_TEMP_RCX,
+                                                            self.token_offset, self.timestamp_arr[-1])
+
+            dx_result.insert_table_row('Airside_RCx', dx_table)
+            dx_result = self.low_sat(dx_result, avg_sat_stpt)
+            dx_result = self.high_sat(dx_result, avg_sat_stpt)
+            # dx_result.insert_table_row(self.table_key, self.dx_table)
+            dx_result.log('{}: Running diagnostics.'.format(SA_VALIDATE, logging.DEBUG))
+            dx_status = 2
+            self.reinitialize()
+
+        if self.timestamp_reset and self.timestamp_reset[-1].date() != current_time.date():
+            self.dx_time = self.timestamp_reset[-1]
+            if len(self.satemp_stpt_reset) >= self.no_req_data:
+                dx_result = self.no_sat_stpt_reset(dx_result)
+            else:
                 dx_table = {
-                    'datetime': str(self.timestamp[-1]),
-                    'diagnostic_name': SA_TEMP_RCx,
-                    'diagnostic_message': diagnostic_message,
-                    'energy_impact': energy_impact,
-                    'color_code': color_code
+                    'datetime': str(self.dx_time),
+                    'diagnostic_name': SA_TEMP_RCX3,
+                    'diagnostic_message': 'Insufficient data for conclusive diagnostic.',
+                    'energy_impact': None,
+                    'color_code': 'GREY'
                 }
-                diagnostic_result.insert_table_row('Airside_RCx', dx_table)
-                diagnostic_result.log(diagnostic_message, logging.INFO)
+                dx_result.insert_table_row('Airside_RCx', dx_table)
+            self.satemp_stpt_reset = []
+            self.timestamp_reset = []
 
-            diagnostic_result = self.no_sat_sp_reset(diagnostic_result)
+        dx_result.log('{}: Collecting and aggregating data.'.format(SA_VALIDATE, logging.DEBUG))
+        self.satemp_arr.append(mean(sat_data))
+        self.satemp_stpt_reset.append(mean(sat_data))
+        self.rht_arr.append(mean(zone_rht_data))
+        self.sat_stpt_arr.append(mean(sat_stpt_data))
+        self.percent_rht.append(tot_rht/count_rht)
+        self.percent_dmpr.append(tot_dmpr/count_damper)
+        self.timestamp_arr.append(current_time)
+        self.timestamp_reset.append(current_time)
 
-            diagnostic_result = self.low_sat(diagnostic_result,
-                                             avg_sat_stpt,
-                                             sat_override_check)
-            diagnostic_result = self.high_sat(diagnostic_result,
-                                              avg_sat_stpt,
-                                              sat_override_check)
+        return dx_status, dx_result
 
-
-            self.percent_in_reheat = []
-            self.percent_damper = []
-            self.rht_values = []
-        return diagnostic_result
-
-    def low_sat(self, result, avg_sat_stpt, sat_override_check):
-        '''Diagnostic to identify and correct low supply-air temperature
+    def low_sat(self, dx_result, avg_sat_stpt):
+        """Diagnostic to identify and correct low supply-air temperature
         (correction by modifying SAT set point)
-        '''
-        avg_zones_reheat = (sum(self.percent_in_reheat) /
-                            len(self.percent_in_reheat) * 100)
-
-        reheat_coil_average = (sum(self.rht_values)) / (len(self.rht_values))
-        energy_impact = None
-
-        if (reheat_coil_average > self.reheat_valve_threshold and
-                avg_zones_reheat > self.percent_reheat_threshold):
+        """
+        avg_zones_rht = mean(self.percent_rht)*100
+        rht_avg = mean(self.rht_arr)
+        if rht_avg > self.rht_valve_thr and avg_zones_rht > self.percent_rht_thr:
             color_code = 'RED'
-            if (avg_sat_stpt is not None and
-                    not sat_override_check):
-                if self.auto_correctflag:
-
-                    sat_stpt = avg_sat_stpt + self.sat_retuning
-                    # Create diagnostic message for fault
-                    # condition with auto-correction
-                    if sat_stpt <= self.maximum_sat_stpt:
-                        result.command(Application.sat_stpt_cname, sat_stpt)
-                        sat_stpt = '%s' % float('%.2g' % sat_stpt)
-                        sat_stpt = str(sat_stpt)
-                        diagnostic_message = ('The SAT has been '
-                                              'detected to be too low. '
-                                              'The SAT set point has been '
-                                              'increased to: {val} F'
-                                              .format(val=sat_stpt))
-
-#                         diagnostic_message = ('The SAT has been '
-#                                               'detected to be too low. '
-#                                               'The SAT set point has been '
-#                                               'increased to: {val}{drg}F'
-#                                               .format(drg=self.dgr_sym,
-#                                                       val=sat_stpt))
-#                         diagnostic_message = diagnostic_message.encode("utf-8")
-                    else:
-                        # Create diagnostic message
-                        # for fault condition where
-                        # the maximum SAT has been reached
-                        result.command(Application.sat_stpt_cname,
-                                       self.maximum_sat_stpt)
-                        sat_stpt = '%s' % float('%.2g' % self.maximum_sat_stpt)
-                        sat_stpt = str(sat_stpt)
-                        diagnostic_message = ('The SAT was detected '
-                                              'to be too low. Auto-correction '
-                                              'has increased the SAT set '
-                                              'point to the maximum '
-                                              'configured SAT set point: '
-                                              '{val} F)'.format(val=sat_stpt))
-#                         diagnostic_message = ('The SAT has been '
-#                                               'detected to be too low. '
-#                                               'The SAT set point has been '
-#                                               'increased to: {val}{drg}F'
-#                                               .format(drg=self.dgr_sym,
-#                                                       val=sat_stpt))
-#                         diagnostic_message = diagnostic_message.encode("utf-8")
+            if avg_sat_stpt is None:
+                # Create diagnostic message for fault
+                # when supply-air temperature set point
+                # is not available.
+                msg = ('The SAT has been detected to be too low but '
+                       'but supply-air temperature set point data '
+                       'is not available.')
+                # dx_msg = 43.1
+            elif self.auto_correct_flag:
+                autocorrect_sat_stpt = avg_sat_stpt + self.sat_retuning
+                if autocorrect_sat_stpt <= self.max_sat_stpt:
+                    dx_result.command(self.sat_stpt_cname, autocorrect_sat_stpt)
+                    sat_stpt = '%s' % float('%.2g' % autocorrect_sat_stpt)
+                    msg = ('The SAT has been detected to be too low. '
+                           'The SAT set point has been increased to: '
+                           '{}{}F'.format(self.dgr_sym, sat_stpt))
+                    # dx_msg = 41.1
                 else:
-                    # Create diagnostic message for fault
-                    # condition without auto-correction
-                    diagnostic_message = ('The SAT has been detected '
-                                          'to be too low but auto-correction '
-                                          'is not enabled.')
-            elif not sat_override_check:
-                diagnostic_message = ('The SAT has been detected to '
-                                      'be too low.')
+                    dx_result.command(self.sat_stpt_cname, self.max_sat_stpt)
+                    sat_stpt = '%s' % float('%.2g' % self.max_sat_stpt)
+                    sat_stpt = str(sat_stpt)
+                    msg = (
+                        'The supply-air temperautre was detected to be '
+                        'too low. Auto-correction has increased the '
+                        'supply-air temperature set point to the maximum '
+                        'configured supply-air tempeature set point: '
+                        '{}{}F)'.format(self.dgr_sym, sat_stpt))
+                    # dx_msg = 42.1
             else:
-                diagnostic_message = ('The SAT has been detected to '
-                                      'be too low but auto-correction cannot '
-                                      'be performed because the SAT set-point '
-                                      'is in an override state.')
+                msg = ('The SAT has been detected to be too low but'
+                       'auto-correction is not enabled.')
+                # dx_msg = 44.1
         else:
-            diagnostic_message = ('No problem detected')
+            msg = 'No problem detected.'
             color_code = 'GREEN'
+            # dx_msg = 40.0
 
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': SA_TEMP_RCx1,
-            'diagnostic_message': diagnostic_message,
-            'energy_impact': energy_impact,
+            'datetime': str(self.timestamp_arr[-1]),
+            'diagnostic_name': SA_TEMP_RCX1,
+            'diagnostic_message': msg,
+            'energy_impact': None,
             'color_code': color_code
         }
-        result.insert_table_row('Airside_RCx', dx_table)
-        result.log(diagnostic_message, logging.INFO)
-        return result
+        dx_result.insert_table_row('Airside_RCx', dx_table)
+        dx_result.log(msg, logging.INFO)
+        return dx_result
 
-    def high_sat(self, result, avg_sat_stpt, sat_override_check):
-        '''Diagnostic to identify and correct high supply-air temperature
+    def high_sat(self, dx_result, avg_sat_stpt):
+        """Diagnostic to identify and correct high supply-air temperature
         (correction by modifying SAT set point)
-        '''
-        avg_zones_reheat = (sum(self.percent_in_reheat) /
-                            len(self.percent_in_reheat) * 100)
-        avg_zone_damper = (sum(self.percent_damper) /
-                           len(self.percent_damper) * 100)
-        energy_impact = None
+        """
+        avg_zones_rht = mean(self.percent_rht)*100
+        avg_zone_dmpr_data = mean(self.percent_dmpr)*100
 
-        if (avg_zone_damper > self.percent_damper_threshold and
-                avg_zones_reheat < self.percent_reheat_threshold):
+        if avg_zone_dmpr_data > self.percent_dmpr_thr and avg_zones_rht < self.percent_rht_thr:
             color_code = 'RED'
-            if (avg_sat_stpt is not None and
-                    not sat_override_check):
-                if self.auto_correctflag:
-                    sat_stpt = avg_sat_stpt - self.sat_retuning
-                    # Create diagnostic message for fault condition
-                    # with auto-correction
-                    if sat_stpt >= self.minimum_sat_stpt:
-                        result.command(Application.sat_stpt_cname, sat_stpt)
-                        sat_stpt = '%s' % float('%.2g' % sat_stpt)
-                        sat_stpt = str(sat_stpt)
-                        diagnostic_message = ('The SAT has been detected to '
-                                              'be too high. The SAT set point '
-                                              'has been increased to: '
-                                              '{val} F'.format(val=sat_stpt))
-#                         diagnostic_message = ('The SAT has been detected to '
-#                                               'be too high. The SAT set point '
-#                                               'has been increased to: '
-#                                               '{val}{drg}F'
-#                                               .format(drg=self.dgr_sym,
-#                                                       val=sat_stpt))
-#                         diagnostic_message = diagnostic_message.encode("utf-8")
-                    else:
-                        # Create diagnostic message for fault condition
-                        # where the maximum SAT has been reached
-                        result.command(
-                            Application.sat_stpt_cname, self.minimum_sat_stpt)
-                        sat_stpt = '%s' % float('%.2g' % self.minimum_sat_stpt)
-                        sat_stpt = str(sat_stpt)
-                        diagnostic_message = ('The SAT was detected '
-                                              'to be too high, '
-                                              'auto-correction has increased '
-                                              'the SAT to the minimum '
-                                              'configured SAT: {val} F'
-                                              .format(val=sat_stpt))
-#                         diagnostic_message = ('The SAT was detected '
-#                                               'to be too high, '
-#                                               'auto-correction has increased '
-#                                               'the SAT to the minimum '
-#                                               'configured SAT: {val}{drg}F'
-#                                               .format(drg=self.dgr_sym,
-#                                                       val=sat_stpt))
-#                         diagnostic_message = diagnostic_message.encode("utf-8")
+            if avg_sat_stpt is None:
+                # Create diagnostic message for fault
+                # when supply-air temperature set point
+                # is not available.
+                msg = ('The SAT has been detected to be too high but '
+                       'but supply-air temperature set point data '
+                       'is not available.')
+                # dx_msg = 54.1
+            elif self.auto_correct_flag:
+                autocorrect_sat_stpt = avg_sat_stpt - self.sat_retuning
+                # Create diagnostic message for fault condition
+                # with auto-correction
+                if autocorrect_sat_stpt >= self.min_sat_stpt:
+                    dx_result.command(self.sat_stpt_cname, autocorrect_sat_stpt)
+                    sat_stpt = '%s' % float('%.2g' % autocorrect_sat_stpt)
+                    msg = ('The SAT has been detected to be too high. The '
+                           'SAT set point has been increased to: '
+                           '{}{}F'.format(self.dgr_sym, sat_stpt))
+                    # dx_msg = 51.1
                 else:
                     # Create diagnostic message for fault condition
-                    # without auto-correction
-                    diagnostic_message = ('The SAT has been detected '
-                                          'to be too high but auto-correction '
-                                          'is not enabled.')
-            elif not sat_override_check:
-                diagnostic_message = ('The SAT has been detected to '
-                                      'be too high.')
+                    # where the maximum SAT has been reached
+                    dx_result.command(self.sat_stpt_cname, self.min_sat_stpt)
+                    sat_stpt = '%s' % float('%.2g' % self.min_sat_stpt)
+                    msg = ('The SAT was detected to be too high, '
+                           'auto-correction has increased the SAT to the '
+                           'minimum configured SAT: {}{}F'
+                           .format(self.dgr_sym, sat_stpt))
+                    # dx_msg = 52.1
             else:
-                diagnostic_message = ('The SAT has been detected to '
-                                      'be too high but auto-correction cannot '
-                                      'be performed because the SAT set point '
-                                      'is in an override state.')
+                # Create diagnostic message for fault condition
+                # without auto-correction
+                msg = ('The SAT has been detected to be too high but '
+                       'auto-correction is not enabled.')
+                # dx_msg = 53.1
         else:
-            diagnostic_message = ('No problem detected.'
-                                  .format(name=SA_TEMP_RCx2))
+            msg = ('No problem detected.')
             color_code = 'GREEN'
+            # dx_msg = 50.0
+
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': SA_TEMP_RCx2,
-            'diagnostic_message': diagnostic_message,
-            'energy_impact': energy_impact,
+            'datetime': str(self.timestamp_arr[-1]),
+            'diagnostic_name': SA_TEMP_RCX2,
+            'diagnostic_message': msg,
+            'energy_impact': None,
             'color_code': color_code
         }
-        result.insert_table_row('Airside_RCx', dx_table)
-        result.log(diagnostic_message, logging.INFO)
-        self.sat_stpt_values = []
-        self.sa_temp_values = []
-        self.timestamp = []
-        temp1 = []
-        temp2 = []
-        for message in range(0, len(Application.pre_requiste_messages) - 1):
-            if SCHED_RCx in Application.pre_requiste_messages[message]:
-                temp1.append(Application.pre_requiste_messages[message])
-                temp2.append(Application.pre_msg_time[message])
-        Application.pre_requiste_messages = temp1
-        Application.pre_msg_time = temp2
-        return result
+        dx_result.insert_table_row('Airside_RCx', dx_table)
+        dx_result.log(msg, logging.INFO)
+        return dx_result
 
-    def no_sat_sp_reset(self, result):
-        '''Auto-RCx  to detect whether a supply-air temperature set point
+    def no_sat_stpt_reset(self, dx_result):
+        """Auto-RCx  to detect whether a supply-air temperature set point
         reset is implemented.
-        '''
-        if not self.sat_stpt_values:
-            return result
-        satemp_diff = max(self.sat_stpt_values) - min(self.sat_stpt_values)
-        energy_impact = None
-        if satemp_diff <= self.sat_reset_threshold:
-            diagnostic_message = ('A supply-air temperature '
-                                  'reset was not detected. This can '
-                                  'result in excess energy '
-                                  'consumption.')
+        """
+        if not self.satemp_stpt_reset:
+            return dx_result
+
+        satemp_daily_range = max(self.satemp_stpt_reset) - min(self.satemp_stpt_reset)
+        if satemp_daily_range <= self.sat_reset_threshold:
+            msg = ('A supply-air temperature reset was not detected. '
+                   'This can result in excess energy consumption.')
             color_code = 'RED'
+            # dx_msg = 81.1
         else:
-            diagnostic_message = ('No problems detected for this '
-                                  'diagnostic.')
+            msg = ('No problems detected for supply-air temperature set point '
+                   'reset diagnostic.')
             color_code = 'GREEN'
+            # dx_msg = 80.0
+
         dx_table = {
-            'datetime': str(self.timestamp[-1]),
-            'diagnostic_name': SA_TEMP_RCx3,
-            'diagnostic_message': diagnostic_message,
-            'energy_impact': energy_impact,
+            'datetime': str(self.dx_time),
+            'diagnostic_name': SA_TEMP_RCX3,
+            'diagnostic_message': msg,
+            'energy_impact': None,
             'color_code': color_code
         }
-        result.insert_table_row('Airside_RCx', dx_table)
-        result.log(diagnostic_message, logging.INFO)
-        return result
+
+        dx_result.insert_table_row('Airside_RCx', dx_table)
+        dx_result.log(msg, logging.INFO)
+        return dx_result
+
