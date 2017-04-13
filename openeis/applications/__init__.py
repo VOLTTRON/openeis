@@ -200,6 +200,7 @@ class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
         Return False if application has terminated normally.
         '''
         for point, value in results.commands.items():
+
             row = {"timestamp":time_stamp,
                    "point": point,
                    "value": value}
@@ -225,7 +226,7 @@ class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
         flattens the input dictionary returned from self.inp.merge
         '''
         result={}
-        key_template = '{table}_{n}'
+        key_template = '{table}&{n}'
         for table, value_list in merged_input.items():
             for n, value in enumerate(value_list, start=1):
                 key = key_template.format(table=table, n=n)
