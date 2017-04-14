@@ -61,6 +61,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
+available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
 SA_TEMP_RCX = 'Supply-air Temperature Set Point Control Loop Dx'
 SA_TEMP_RCX1 = 'Low Supply-air Temperature Dx'
 SA_TEMP_RCX2 = 'High Supply-air Temperature Dx'
@@ -192,7 +193,7 @@ class Application(DrivenApplicationBaseClass):
     ahu_ccoil_priority = ''
     sat_stpt_priority = ''
 
-    def __init__(self, *args, no_required_data=1, data_window=1, warm_up_time=0,
+    def __init__(self, *args, no_required_data=1, data_window=1, warm_up_time=0, local_tz=1,
                  setpoint_allowable_deviation=10.0, percent_reheat_threshold=25.0,
                  rht_on_threshold=10.0, sat_reset_threshold=5.0, sat_high_damper_threshold=80.0,
                  percent_damper_threshold=50.0, minimum_sat_stpt=50.0, sat_retuning=1.0,
@@ -222,6 +223,11 @@ class Application(DrivenApplicationBaseClass):
             percent_damper_threshold = float(percent_damper_threshold)
             percent_reheat_threshold = float(percent_reheat_threshold)
             reheat_valve_threshold = float(reheat_valve_threshold)
+
+        try:
+            self.cur_tz = available_tz[local_tz]
+        except:
+            self.cur_tz = 'UTC'
 
         self.fan_status_name = Application.fan_status_name
         self.sa_temp_name = Application.sa_temp_name
@@ -340,10 +346,14 @@ class Application(DrivenApplicationBaseClass):
                              'set point reset ({drg}F)'.format(drg=dgr_sym),
                              value_default=3.0),
             'sensitivity':
-                ConfigDescriptor(float,
-                                 'Sensitivity: values can be 0.0 (low sensitivity), '
-                                 '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
-                                 value_default=1.0)
+            ConfigDescriptor(float,
+                             'Sensitivity: values can be 0.0 (low sensitivity), '
+                             '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
+                             value_default=1.0),
+            'local_tz':
+            ConfigDescriptor(int,
+                             "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
+                             value_default=1)
             }
 
     @classmethod
@@ -437,18 +447,16 @@ class Application(DrivenApplicationBaseClass):
         # topics = self.inp.get_topics()
         # diagnostic_topic = topics[self.fan_status_name][0])
         # cur_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
-        try:
-            local_tz = dateutil.tz.tzlocal()
-        except:
-            local_tz = dateutil.tz.tzutc()
-        cur_time = current_time.astimezone(local_tz)
+        to_zone = dateutil.tz.gettz(self.cur_tz)
+        cur_time = current_time.astimezone(to_zone)
         device_dict = {}
         diagnostic_result = Results()
         fan_status_data = []
         supply_fan_off = False
 
         for key, value in points.items():
-            point_device = [_name.lower() for _name in key.split('&')]
+            point_device = [_name.lower() for _name in key.split('&&&')]
+            print(point_device)
             if point_device[0] not in device_dict:
                 device_dict[point_device[0]] = [(point_device[1], value)]
             else:
@@ -823,4 +831,3 @@ class SupplyTempRcx(object):
         dx_result.insert_table_row('Airside_RCx', dx_table)
         dx_result.log(msg, logging.INFO)
         return dx_result
-

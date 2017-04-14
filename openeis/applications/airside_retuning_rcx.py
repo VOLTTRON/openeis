@@ -64,6 +64,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
+available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
 DUCT_STC_RCX = 'Duct Static Pressure Set Point Control Loop Dx'
 DUCT_STC_RCX1 = 'Low Duct Static Pressure Dx'
 DUCT_STC_RCX2 = 'High Duct Static Pressure Dx'
@@ -237,7 +238,7 @@ class Application(DrivenApplicationBaseClass):
 
     def __init__(
             self, *args, data_window=1, no_required_data=10, warm_up_time=15,
-            duct_stcpr_retuning=0.15, max_duct_stcpr_stpt=2.5,
+            duct_stcpr_retuning=0.15, max_duct_stcpr_stpt=2.5, local_tz=1,
             high_sf_threshold=100.0, zone_high_damper_threshold=90.0,
             zone_low_damper_threshold=10.0, min_duct_stcpr_stpt=0.5,
             hdzone_damper_threshold=30.0, low_sf_threshold=20.0,
@@ -256,6 +257,11 @@ class Application(DrivenApplicationBaseClass):
             sunday_sch=['0:00', '0:00'], auto_correct_flag=False,
             analysis_name='', **kwargs):
         super().__init__(*args, **kwargs)
+        try:
+            self.cur_tz = available_tz[local_tz]
+        except:
+            self.cur_tz = 'UTC'
+
         self.warm_up_start = None
         self.warm_up_flag = True
         analysis = analysis_name
@@ -511,7 +517,11 @@ class Application(DrivenApplicationBaseClass):
                              'Used to detect the '
                              'time when the supply fan should '
                              'be operational (unoccupied)',
-                             value_default=['0:00','0:00'])
+                             value_default=['0:00','0:00']),
+            'local_tz':
+            ConfigDescriptor(int,
+                             "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
+                             value_default=1)
             }
 
     @classmethod
@@ -611,11 +621,8 @@ class Application(DrivenApplicationBaseClass):
         # cur_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
         # validate_topic = create_table_key('validate', cur_time)
         # validate_data = {SATEMP_NAME: 0, STCPR_NAME: 0, SCHED_NAME: 0}
-        try:
-            local_tz = dateutil.tz.tzlocal()
-        except:
-            local_tz = dateutil.tz.tzutc()
-        cur_time = current_time.astimezone(local_tz)
+        to_zone = dateutil.tz.gettz(self.cur_tz)
+        cur_time = current_time.astimezone(to_zone)
 
         try:
             device_dict = {}
@@ -626,7 +633,7 @@ class Application(DrivenApplicationBaseClass):
             high_dx_cond = False
 
             for key, value in points.items():
-                point_device = [_name.lower() for _name in key.split('&')]
+                point_device = [_name.lower() for _name in key.split('&&&')]
                 if point_device[0] not in device_dict:
                     device_dict[point_device[0]] = [(point_device[1], value)]
                 else:
