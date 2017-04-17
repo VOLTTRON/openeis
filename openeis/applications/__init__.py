@@ -225,7 +225,7 @@ class DrivenApplicationBaseClass(DriverApplicationBaseClass, metaclass=ABCMeta):
         flattens the input dictionary returned from self.inp.merge
         '''
         result={}
-        key_template = '{table}_{n}'
+        key_template = '{table}&&&{n}'
         for table, value_list in merged_input.items():
             for n, value in enumerate(value_list, start=1):
                 key = key_template.format(table=table, n=n)
@@ -288,7 +288,7 @@ class Results:
 for applicationName in _applicationList:
     try:
         absolute_app = '.'+applicationName
-        module = __import__(applicationName,globals(),locals(),['Application'], 1)
+        module = __import__(applicationName, globals(), locals(), ['Application'], 1)
         klass = module.Application
     except Exception as e:
         logging.error('Module {name} cannot be imported. Reason: {ex}'.format(name=applicationName, ex=e))
@@ -306,3 +306,4 @@ for applicationName in _applicationList:
 
 def get_algorithm_class(name):
     return _applicationDict.get(name)
+

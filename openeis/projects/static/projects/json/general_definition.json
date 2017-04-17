@@ -59,8 +59,7 @@
             "timezone"
         ],
         "sensor_list": [
-            "ChilledWaterValvePosition",
-            "CoolingCall",
+            "CoolingCall/ChilledWaterValvePosition",
             "DischargeAirRelativeHumidity",
             "DischargeAirTemperature",
             "DischargeAirTemperatureSetPoint",
@@ -124,7 +123,7 @@
             "timezone"
         ],
         "sensor_list": [
-            "CoolingCall",
+            "CoolingCall/ChilledWaterValvePosition",
             "CondenserFanPower",
             "DischargeAirRelativeHumidity",
             "DischargeAirTemperature",
@@ -704,10 +703,10 @@
             "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
         },
-        "CoolingCall": {
-            "data_type": "integer",
-            "sensor_type": "CoolingCall",
-            "sensor_name": "CoolingCall",
+        "CoolingCall/ChilledWaterValvePosition": {
+            "data_type": "float",
+            "sensor_type": "CoolingCall/ChilledWaterValvePosition",
+            "sensor_name": "CoolingCall/ChilledWaterValvePosition",
             "unit_type": "dimensionless",
             "default_aggregation": "Any",
             "default_fill": "RepeatPrevious"
@@ -869,14 +868,6 @@
             "sensor_type": "ChillerStatus",
             "sensor_name": "ChillerStatus",
             "unit_type": "unitless",
-            "default_aggregation": "Average",
-            "default_fill": "RepeatPrevious"
-        },
-        "ChilledWaterValvePosition": {
-            "data_type": "float",
-            "sensor_type": "ChilledWaterValvePosition",
-            "sensor_name": "ChilledWaterValvePosition",
-            "unit_type": "dimensionless",
             "default_aggregation": "Average",
             "default_fill": "RepeatPrevious"
         },

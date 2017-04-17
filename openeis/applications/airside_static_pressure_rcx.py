@@ -62,6 +62,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
+available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
 DUCT_STC_RCX = 'Duct Static Pressure Set Point Control Loop Dx'
 DUCT_STC_RCX1 = 'Low Duct Static Pressure Dx'
 DUCT_STC_RCX2 = 'High Duct Static Pressure Dx'
@@ -206,7 +207,7 @@ class Application(DrivenApplicationBaseClass):
     sat_stpt_name = 'sat_stpt'
     duct_stp_stpt_name = 'duct_stp_stpt'
 
-    def __init__(self, *args, no_required_data=1, data_window=1,
+    def __init__(self, *args, no_required_data=1, data_window=1, local_tz=1,
                  warm_up_time=0, duct_stc_retuning=0.15,
                  max_duct_stp_stpt=2.5, high_supply_fan_threshold=100.0,
                  zone_high_damper_threshold=90.0,
@@ -229,6 +230,11 @@ class Application(DrivenApplicationBaseClass):
             # Normal sensitivtyy
             zone_high_damper_threshold = float(zone_high_damper_threshold)
             zone_low_damper_threshold = float(zone_low_damper_threshold)
+
+        try:
+            self.cur_tz = available_tz[local_tz]
+        except:
+            self.cur_tz = 'UTC'
 
         # Point names (Configurable)
         self.fan_status_name = Application.fan_status_name
@@ -347,7 +353,11 @@ class Application(DrivenApplicationBaseClass):
                               'maximum duct static pressure set point '
                               'detecting a duct static pressure '
                               'set point reset (inch w.g.)'),
-                             value_default=0.25)
+                             value_default=0.25),
+            'local_tz':
+            ConfigDescriptor(int,
+                             "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
+                             value_default=1)
             }
 
     @classmethod
@@ -432,11 +442,8 @@ class Application(DrivenApplicationBaseClass):
         # topics = self.inp.get_topics()
         # diagnostic_topic = topics[self.fan_status_name][0]
         # cur_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
-        try:
-            local_tz = dateutil.tz.tzlocal()
-        except:
-            local_tz = dateutil.tz.tzutc()
-        cur_time = current_time.astimezone(local_tz)
+        to_zone = dateutil.tz.gettz(self.cur_tz)
+        cur_time = current_time.astimezone(to_zone)
         device_dict = {}
         diagnostic_result = Results()
         fan_status_data = []
@@ -445,7 +452,7 @@ class Application(DrivenApplicationBaseClass):
         high_dx_cond = False
 
         for key, value in points.items():
-            point_device = [_name.lower() for _name in key.split('&')]
+            point_device = [_name.lower() for _name in key.split('&&&')]
             if point_device[0] not in device_dict:
                 device_dict[point_device[0]] = [(point_device[1], value)]
             else:
@@ -808,4 +815,3 @@ class DuctStaticRcx(object):
         dx_result.insert_table_row('Airside_RCx', dx_table)
         dx_result.log(msg, logging.INFO)
         return dx_result
-

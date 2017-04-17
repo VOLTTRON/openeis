@@ -62,6 +62,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
+available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
 DUCT_STC_RCX = 'Duct Static Pressure Set Point Control Loop Dx'
 DUCT_STC_RCX1 = 'Low Duct Static Pressure Dx'
 DUCT_STC_RCX2 = 'High Duct Static Pressure Dx'
@@ -112,18 +113,21 @@ class Application(DrivenApplicationBaseClass):
 
     def __init__(
             self, *args, no_required_data=10,
-            unocc_time_threshold=30.0, unocc_stp_threshold=0.2,
+            unocc_time_threshold=30.0, unocc_stp_threshold=0.2, local_tz=1,
             monday_sch=['5:30', '18:30'], tuesday_sch=['5:30', '18:30'],
             wednesday_sch=['5:30', '18:30'], thursday_sch=['5:30', '18:30'],
             friday_sch=['5:30', '18:30'], saturday_sch=['0:00', '0:00'],
             sunday_sch=['0:00', '0:00'],
             analysis_name='', **kwargs):
         super().__init__(*args, **kwargs)
-
+        try:
+            self.cur_tz = available_tz[local_tz]
+        except:
+            self.cur_tz = 'UTC'
         analysis = analysis_name
         self.fan_status_name = Application.fan_status_name
         self.duct_stp_name = Application.duct_stp_name
-
+        self.local_tz = local_tz
         # Optional points
         self.override_state = 'AUTO'
         if Application.fan_speedcmd_name is not None:
@@ -207,7 +211,11 @@ class Application(DrivenApplicationBaseClass):
                              'Used to detect the '
                              'time when the supply fan should '
                              'be operational (unoccupied)',
-                             value_default=['0:00', '0:00'])
+                             value_default=['0:00', '0:00']),
+            'local_tz':
+            ConfigDescriptor(int,
+                             "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
+                             value_default=1)
             }
 
     @classmethod
@@ -289,17 +297,14 @@ class Application(DrivenApplicationBaseClass):
         # topics = self.inp.get_topics()
         # diagnostic_topic = topics[self.fan_status_name][0]
         # cur_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
-        try:
-            local_tz = dateutil.tz.tzlocal()
-        except:
-            local_tz = dateutil.tz.tzutc()
-        cur_time = current_time.astimezone(local_tz)
+        to_zone = dateutil.tz.gettz(self.cur_tz)
+        cur_time = current_time.astimezone(to_zone)
         device_dict = {}
         diagnostic_result = Results()
         fan_status_data = []
 
         for key, value in points.items():
-            point_device = [_name.lower() for _name in key.split('&')]
+            point_device = [_name.lower() for _name in key.split('&&&')]
             if point_device[0] not in device_dict:
                 device_dict[point_device[0]] = [(point_device[1], value)]
             else:
@@ -521,4 +526,3 @@ class SchedResetRcx(object):
             dx_result.insert_table_row('Airside_RCx', dx_table)
         dx_result.log(msg, logging.INFO)
         return dx_result
-
