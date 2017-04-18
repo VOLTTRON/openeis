@@ -197,10 +197,10 @@ class Application(DrivenApplicationBaseClass):
                  setpoint_allowable_deviation=10.0, percent_reheat_threshold=25.0,
                  rht_on_threshold=10.0, sat_reset_threshold=5.0, sat_high_damper_threshold=80.0,
                  percent_damper_threshold=50.0, minimum_sat_stpt=50.0, sat_retuning=1.0,
-                 reheat_valve_threshold=50.0, maximum_sat_stpt=75.0, sensitivity=1.0, **kwargs):
+                 reheat_valve_threshold=50.0, maximum_sat_stpt=75.0, sensitivity=1, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if sensitivity == 0.0:
+        if sensitivity == 0:
             # low sensitivity
             sat_reset_threshold = float(sat_reset_threshold) * 1.5
             sat_high_damper_threshold = float(sat_high_damper_threshold) * 1.5
@@ -208,7 +208,7 @@ class Application(DrivenApplicationBaseClass):
             percent_reheat_threshold = float(percent_reheat_threshold) * 1.5
             reheat_valve_threshold = float(reheat_valve_threshold) * 1.5
 
-        elif sensitivity == 2.0:
+        elif sensitivity == 2:
             # high sensitivity
             sat_reset_threshold = float(sat_reset_threshold) * 0.5
             sat_high_damper_threshold = float(sat_high_damper_threshold) * 0.5
@@ -217,7 +217,7 @@ class Application(DrivenApplicationBaseClass):
             reheat_valve_threshold = float(reheat_valve_threshold) * 0.5
 
         else:
-            # Normal sensitivtyy
+            # Normal sensitivity
             sat_reset_threshold = float(sat_reset_threshold)
             sat_high_damper_threshold = float(sat_high_damper_threshold)
             percent_damper_threshold = float(percent_damper_threshold)
@@ -298,46 +298,21 @@ class Application(DrivenApplicationBaseClass):
                              ('Threshold for average percent of zones '
                               'where terminal box re-heat is ON (%)'),
                              value_default=25.0),
-            'maximum_sat_stpt':
-            ConfigDescriptor(float,
-                             'Maximum SAT set point allowed when '
-                             'auto-correction  is enabled, '
-                             'i.e., the set point chosen by the '
-                             'diagnostic will never exceed '
-                             'this value ({drg}F)'
-                             .format(drg=dgr_sym),
-                             value_default=75.0),
             'rht_on_threshold':
             ConfigDescriptor(float,
                              'Value above which zone re-heat is '
                              'considered ON (%)',
                              value_default=10.0),
-            'sat_retuning':
-            ConfigDescriptor(float,
-                             'Decrement of supply-air temperature set '
-                             'point during auto-correction ({drg}F)'
-                             .format(drg=dgr_sym),
-                             value_default=1.0),
             'sat_high_damper_threshold':
             ConfigDescriptor(float,
                              'High zone damper threshold for '
-                             'high supply-air temperature '
-                             'auto-correct RCx (%)',
+                             'high supply-air temperature RCx (%)',
                              value_default=30),
             'percent_damper_threshold':
             ConfigDescriptor(float,
                              'Threshold for the average % of zone '
                              'dampers above high damper threshold '
                              '(%)',
-                             value_default=50.0),
-            'minimum_sat_stpt':
-            ConfigDescriptor(float,
-                             'Maximum supply-air temperature '
-                             'set point allowed, when auto-correction '
-                             'is enabled, i.e., '
-                             'the set point chosen by the '
-                             'diagnostic will never exceed this value '
-                             '({drg}F)'.format(drg=dgr_sym),
                              value_default=50.0),
             'sat_reset_threshold':
             ConfigDescriptor(float,
@@ -346,10 +321,11 @@ class Application(DrivenApplicationBaseClass):
                              'set point reset ({drg}F)'.format(drg=dgr_sym),
                              value_default=3.0),
             'sensitivity':
-            ConfigDescriptor(float,
-                             'Sensitivity: values can be 0.0 (low sensitivity), '
-                             '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
-                             value_default=1.0),
+            ConfigDescriptor(int,
+                             'Sensitivity: values can be 0 (low), '
+                             '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                             'allows you to enter your own values for all threshold values',
+                             value_default=1),
             'local_tz':
             ConfigDescriptor(int,
                              "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
@@ -706,9 +682,7 @@ class SupplyTempRcx(object):
                 if autocorrect_sat_stpt <= self.max_sat_stpt:
                     dx_result.command(self.sat_stpt_cname, autocorrect_sat_stpt)
                     sat_stpt = '%s' % float('%.2g' % autocorrect_sat_stpt)
-                    msg = ('The SAT has been detected to be too low. '
-                           'The SAT set point has been increased to: '
-                           '{}{}F'.format(self.dgr_sym, sat_stpt))
+                    msg = ('The SAT has been detected to be too low.')
                     # dx_msg = 41.1
                 else:
                     dx_result.command(self.sat_stpt_cname, self.max_sat_stpt)
@@ -716,14 +690,10 @@ class SupplyTempRcx(object):
                     sat_stpt = str(sat_stpt)
                     msg = (
                         'The supply-air temperautre was detected to be '
-                        'too low. Auto-correction has increased the '
-                        'supply-air temperature set point to the maximum '
-                        'configured supply-air tempeature set point: '
-                        '{}{}F)'.format(self.dgr_sym, sat_stpt))
+                        'too low.')
                     # dx_msg = 42.1
             else:
-                msg = ('The SAT has been detected to be too low but'
-                       'auto-correction is not enabled.')
+                msg = ('The SAT has been detected to be too low.')
                 # dx_msg = 44.1
         else:
             msg = 'No problem detected.'
@@ -765,25 +735,19 @@ class SupplyTempRcx(object):
                 if autocorrect_sat_stpt >= self.min_sat_stpt:
                     dx_result.command(self.sat_stpt_cname, autocorrect_sat_stpt)
                     sat_stpt = '%s' % float('%.2g' % autocorrect_sat_stpt)
-                    msg = ('The SAT has been detected to be too high. The '
-                           'SAT set point has been increased to: '
-                           '{}{}F'.format(self.dgr_sym, sat_stpt))
+                    msg = ('The SAT has been detected to be too high.')
                     # dx_msg = 51.1
                 else:
                     # Create diagnostic message for fault condition
                     # where the maximum SAT has been reached
                     dx_result.command(self.sat_stpt_cname, self.min_sat_stpt)
                     sat_stpt = '%s' % float('%.2g' % self.min_sat_stpt)
-                    msg = ('The SAT was detected to be too high, '
-                           'auto-correction has increased the SAT to the '
-                           'minimum configured SAT: {}{}F'
-                           .format(self.dgr_sym, sat_stpt))
+                    msg = ('The SAT was detected to be too high.')
                     # dx_msg = 52.1
             else:
                 # Create diagnostic message for fault condition
                 # without auto-correction
-                msg = ('The SAT has been detected to be too high but '
-                       'auto-correction is not enabled.')
+                msg = ('The SAT has been detected to be too high.')
                 # dx_msg = 53.1
         else:
             msg = ('No problem detected.')

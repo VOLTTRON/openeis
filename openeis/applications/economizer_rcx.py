@@ -108,7 +108,7 @@ class Application(DrivenApplicationBaseClass):
                  ventilation_oaf_threshold=5.0,
                  insufficient_damper_threshold=15.0,
                  temp_damper_threshold=90.0, rated_cfm=1000.0, eer=10.0,
-                 sensitivity=1.0,
+                 sensitivity=1,
                  **kwargs):
         # initialize user configurable parameters.
         super().__init__(*args, **kwargs)
@@ -147,7 +147,7 @@ class Application(DrivenApplicationBaseClass):
         cfm = float(rated_cfm)
         eer = float(eer)
 
-        if sensitivity == 0.0:
+        if sensitivity == 0:
             # low sensitivity
             temp_difference_threshold = float(temp_difference_threshold) * 1.5
             oat_mat_check = float(oat_mat_check) * 1.5
@@ -156,7 +156,7 @@ class Application(DrivenApplicationBaseClass):
             oaf_economizing_threshold= float(oaf_economizing_threshold) * 1.5
             excess_oaf_threshold = float(minimum_damper_setpoint) * 1.5
             insufficient_damper_threshold = float(minimum_damper_setpoint) * 0.5
-        elif sensitivity == 2.0:
+        elif sensitivity == 2:
             # high sensitivity
             temp_difference_threshold = float(temp_difference_threshold) * 0.5
             oat_mat_check = float(oat_mat_check) * 0.5
@@ -376,10 +376,11 @@ class Application(DrivenApplicationBaseClass):
                              'AHU/RTU rated EER',
                              value_default=10.0),
             'sensitivity':
-             ConfigDescriptor(float,
-                                 'Sensitivity: values can be 0.0 (low sensitivity), '
-                                 '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
-                                 value_default=1.0),
+            ConfigDescriptor(int,
+                             'Sensitivity: values can be 0 (low), '
+                             '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                             'allows you to enter your own values for all threshold values',
+                             value_default=1),
             'local_tz':
             ConfigDescriptor(int,
                              "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",

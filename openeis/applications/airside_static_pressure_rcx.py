@@ -213,15 +213,15 @@ class Application(DrivenApplicationBaseClass):
                  zone_high_damper_threshold=90.0,
                  zone_low_damper_threshold=10.0, min_duct_stp_stpt=0.5,
                  hdzone_damper_threshold=30.0, low_supply_fan_threshold=20.0,
-                 setpoint_allowable_deviation=10.0, sensitivity=1.0,
+                 setpoint_allowable_deviation=10.0, sensitivity=1,
                  stpr_reset_threshold=0.25, **kwargs):
         super().__init__(*args, **kwargs)
-        if sensitivity == 0.0:
+        if sensitivity == 0:
             # low sensitivity
             zone_high_damper_threshold = float(zone_high_damper_threshold) * 1.5
             zone_low_damper_threshold = float(zone_low_damper_threshold) * 1.5
 
-        elif sensitivity == 2.0:
+        elif sensitivity == 2:
             # high sensitivity
             zone_high_damper_threshold = float(zone_high_damper_threshold) * 0.5
             zone_low_damper_threshold = float(zone_low_damper_threshold) * 0.5
@@ -309,26 +309,6 @@ class Application(DrivenApplicationBaseClass):
                               'used for detection of duct static '
                               'pressure problems (%)'),
                              value_default=10.0),
-            'max_duct_stp_stpt':
-            ConfigDescriptor(float,
-                             'Maximum duct static pressure set point '
-                             'allowed, when auto-correction is '
-                             'enabled, i.e., the set point chosen by the '
-                             'diagnostic will never exceed this value '
-                             '(inch w.g.)', value_default=2.5),
-            'duct_stc_retuning':
-            ConfigDescriptor(float,
-                             ('Increment/decrement of static pressure '
-                              'set point during auto-correction '
-                              '(inch w.g.)'),
-                             value_default=0.15),
-            'min_duct_stp_stpt':
-            ConfigDescriptor(float,
-                             'Minimum duct static pressure set point '
-                             'allowed, when auto-correction is '
-                             'enabled, i.e., the set point chosen by the '
-                             'diagnostic will never exceed this value '
-                             '(inch w.g.)', value_default=0.25),
             'hdzone_damper_threshold':
             ConfigDescriptor(float,
                              'Threshold for zone damper. If the '
@@ -343,10 +323,11 @@ class Application(DrivenApplicationBaseClass):
                              'before a fault message is generated '
                              '(%)', value_default=10.0),
             'sensitivity':
-            ConfigDescriptor(float,
-                             'Sensitivity: values can be 0.0 (low sensitivity), '
-                             '1.0 (normal sensitivity), 2.0 (high sensitivity) ',
-                             value_default=1.0),
+            ConfigDescriptor(int,
+                             'Sensitivity: values can be 0 (low), '
+                             '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                             'allows you to enter your own values for all threshold values',
+                             value_default=1),
             'stpr_reset_threshold':
             ConfigDescriptor(float,
                              ('Required difference between minimum and '
@@ -689,8 +670,7 @@ class DuctStaticRcx(object):
                     new_stcpr_stpt = '%s' % float('%.2g' % auto_correct_stcpr_stpt)
                     new_stcpr_stpt = new_stcpr_stpt + ' in. w.g.'
                     msg = ('The duct static pressure was detected to be '
-                           'too low. The duct static pressure has been '
-                           'increased to: {}'.format(new_stcpr_stpt))
+                           'too low.')
                     # dx_msg = 11.1
                 else:
                     dx_result.command(self.stcpr_stpt_cname, self.max_stcpr_stpt)
@@ -702,7 +682,7 @@ class DuctStaticRcx(object):
                     # dx_msg = 12.1
             else:
                 msg = ('The duct static pressure set point was detected '
-                       'to be too low but auto-correction is not enabled.')
+                       'to be too low.')
                 # dx_msg = 13.1
         else:
             msg = ('No re-tuning opportunity was detected during the low duct '
@@ -750,8 +730,7 @@ class DuctStaticRcx(object):
                     new_stcpr_stpt = '%s' % float('%.2g' % auto_correct_stcpr_stpt)
                     new_stcpr_stpt = new_stcpr_stpt + ' in. w.g.'
                     msg = ('The duct static pressure was detected to be '
-                           'too high. The duct static pressure set point '
-                           'has been reduced to: {}'.format(new_stcpr_stpt))
+                           'too high.')
                     # dx_msg = 21.1
                 else:
                     dx_result.command(self.stcpr_stpt_cname, self.min_stcpr_stpt)
@@ -763,7 +742,7 @@ class DuctStaticRcx(object):
                     # dx_msg = 22.1
             else:
                 msg = ('Duct static pressure set point was detected to be '
-                       'too high but auto-correction is not enabled.')
+                       'too high.')
                 # dx_msg = 23.1
         else:
             msg = ('No re-tuning opportunity was detected during the high duct '
