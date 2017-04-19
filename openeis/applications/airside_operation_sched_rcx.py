@@ -118,7 +118,7 @@ class Application(DrivenApplicationBaseClass):
             wednesday_sch=['5:30', '18:30'], thursday_sch=['5:30', '18:30'],
             friday_sch=['5:30', '18:30'], saturday_sch=['0:00', '0:00'],
             sunday_sch=['0:00', '0:00'],
-            analysis_name='', **kwargs):
+            analysis_name='', sensitivity=1, **kwargs):
         super().__init__(*args, **kwargs)
         try:
             self.cur_tz = available_tz[local_tz]
@@ -136,6 +136,19 @@ class Application(DrivenApplicationBaseClass):
             self.fansp_name = None
 
         no_required_data = int(no_required_data)
+
+        if sensitivity == 0:
+            # low sensitivity
+            unocc_time_threshold = 45.0
+            unocc_stp_threshold = 0.1
+        elif sensitivity == 1:
+            # normal sensitivity
+            unocc_time_threshold = 30.0
+            unocc_stp_threshold = 0.2
+        elif sensitivity == 2:
+            # high sensitivity
+            unocc_time_threshold = 15.0
+            unocc_stp_threshold = 0.3
 
         self.sched_occ_dx = (
             SchedResetRcx(unocc_time_threshold, unocc_stp_threshold,
@@ -212,6 +225,12 @@ class Application(DrivenApplicationBaseClass):
                              'time when the supply fan should '
                              'be operational (unoccupied)',
                              value_default=['0:00', '0:00']),
+            'sensitivity':
+                ConfigDescriptor(int,
+                                 'Sensitivity: values can be 0 (low), '
+                                 '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                                 'allows you to enter your own values for all threshold values',
+                                 value_default=1),
             'local_tz':
             ConfigDescriptor(int,
                              "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",

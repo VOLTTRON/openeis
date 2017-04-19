@@ -202,27 +202,28 @@ class Application(DrivenApplicationBaseClass):
 
         if sensitivity == 0:
             # low sensitivity
-            sat_reset_threshold = float(sat_reset_threshold) * 1.5
+            setpoint_allowable_deviation = 15.0
+            percent_reheat_threshold = 25.0
+            percent_damper_threshold = 100.0
+            reheat_valve_threshold = 75.0
+            sat_reset_threshold = 7.0
             sat_high_damper_threshold = float(sat_high_damper_threshold) * 1.5
-            percent_damper_threshold = float(percent_damper_threshold) * 1.5
-            percent_reheat_threshold = float(percent_reheat_threshold) * 1.5
-            reheat_valve_threshold = float(reheat_valve_threshold) * 1.5
-
+        elif sensitivity == 1:
+            # normal sensitivity
+            setpoint_allowable_deviation = 10.0
+            percent_reheat_threshold = 25.0
+            percent_damper_threshold = 80.0
+            reheat_valve_threshold = 50.0
+            sat_reset_threshold = 5.0
+            sat_high_damper_threshold = float(sat_high_damper_threshold)
         elif sensitivity == 2:
             # high sensitivity
-            sat_reset_threshold = float(sat_reset_threshold) * 0.5
+            setpoint_allowable_deviation = 5.0
+            percent_reheat_threshold = 25.0
+            percent_damper_threshold = 60.0
+            reheat_valve_threshold = 25.0
+            sat_reset_threshold = 3.0
             sat_high_damper_threshold = float(sat_high_damper_threshold) * 0.5
-            percent_damper_threshold = float(percent_damper_threshold) * 0.5
-            percent_reheat_threshold = float(percent_reheat_threshold) * 0.5
-            reheat_valve_threshold = float(reheat_valve_threshold) * 0.5
-
-        else:
-            # Normal sensitivity
-            sat_reset_threshold = float(sat_reset_threshold)
-            sat_high_damper_threshold = float(sat_high_damper_threshold)
-            percent_damper_threshold = float(percent_damper_threshold)
-            percent_reheat_threshold = float(percent_reheat_threshold)
-            reheat_valve_threshold = float(reheat_valve_threshold)
 
         try:
             self.cur_tz = available_tz[local_tz]

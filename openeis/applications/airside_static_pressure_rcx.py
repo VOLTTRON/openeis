@@ -218,18 +218,22 @@ class Application(DrivenApplicationBaseClass):
         super().__init__(*args, **kwargs)
         if sensitivity == 0:
             # low sensitivity
-            zone_high_damper_threshold = float(zone_high_damper_threshold) * 1.5
-            zone_low_damper_threshold = float(zone_low_damper_threshold) * 1.5
-
+            setpoint_allowable_deviation = 15
+            zone_high_damper_threshold = 100
+            zone_low_damper_threshold = 5
+            stpr_reset_threshold = 0.38
+        elif sensitivity == 1:
+            # normal sensitivity
+            setpoint_allowable_deviation = 10
+            zone_high_damper_threshold = 90
+            zone_low_damper_threshold = 10
+            stpr_reset_threshold = 0.25
         elif sensitivity == 2:
             # high sensitivity
-            zone_high_damper_threshold = float(zone_high_damper_threshold) * 0.5
-            zone_low_damper_threshold = float(zone_low_damper_threshold) * 0.5
-
-        else:
-            # Normal sensitivtyy
-            zone_high_damper_threshold = float(zone_high_damper_threshold)
-            zone_low_damper_threshold = float(zone_low_damper_threshold)
+            setpoint_allowable_deviation = 5
+            zone_high_damper_threshold = 80
+            zone_low_damper_threshold = 15
+            stpr_reset_threshold = 0.17
 
         try:
             self.cur_tz = available_tz[local_tz]
