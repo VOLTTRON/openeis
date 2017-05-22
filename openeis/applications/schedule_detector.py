@@ -84,18 +84,10 @@ class Application(DrivenApplicationBaseClass):
         '''
         dgr_sym = u'\N{DEGREE SIGN}'
         return {
-            'no_required_data':
-                ConfigDescriptor(int,
-                                 'Minimum data count ',
-                                 value_default=25),
             'sample_rate':
                 ConfigDescriptor(str,
-                                 'Sample Rate',
-                                 value_default='30Min'),
-            'alphabet':
-                ConfigDescriptor(str,
-                                 'Alphabet',
-                                 value_default='abcd'),
+                                 'Sample rate for occupancy schedule detection (min)',
+                                 value_default='60Min')
         }
 
     @classmethod
