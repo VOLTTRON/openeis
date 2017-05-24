@@ -58,9 +58,11 @@ from abc import abstractmethod, ABCMeta
 class Descriptor:
     def __init__(self,
                  name,
-                 description=''):
+                 description='',
+                 note=''):
         self.name = name
         self.description = description
+        self.note = note
 
 class ConfigDescriptor:
     ''''''

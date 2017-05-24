@@ -110,8 +110,8 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'Ecam Visualization for AHU HVAC Systems'
-        desc = 'Ecam Visualization for AHU HVAC Systems'
+        name = 'Visualization for AHU HVAC Systems'
+        desc = 'Visualization for AHU HVAC Systems'
         return Descriptor(name=name, description=desc)
 
     @classmethod
@@ -173,7 +173,7 @@ class Application(DrivenApplicationBaseClass):
 
         Describe how to present output to user
         '''
-        report = reports.Report('AHU Ecam Report')
+        report = reports.Report('AHU Report')
 
         report.add_element(reports.AhuEcam(table_name='AhuEcam'))
 

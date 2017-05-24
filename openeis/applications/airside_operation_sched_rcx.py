@@ -118,7 +118,7 @@ class Application(DrivenApplicationBaseClass):
             wednesday_sch=['5:30', '18:30'], thursday_sch=['5:30', '18:30'],
             friday_sch=['5:30', '18:30'], saturday_sch=['0:00', '0:00'],
             sunday_sch=['0:00', '0:00'],
-            analysis_name='', sensitivity=1, **kwargs):
+            analysis_name='', asensitivity=1, **kwargs):
         super().__init__(*args, **kwargs)
         try:
             self.cur_tz = available_tz[local_tz]
@@ -137,15 +137,15 @@ class Application(DrivenApplicationBaseClass):
 
         no_required_data = int(no_required_data)
 
-        if sensitivity == 0:
+        if asensitivity == 0:
             # low sensitivity
             unocc_time_threshold = 45.0
             unocc_stp_threshold = 0.1
-        elif sensitivity == 1:
+        elif asensitivity == 1:
             # normal sensitivity
             unocc_time_threshold = 30.0
             unocc_stp_threshold = 0.2
-        elif sensitivity == 2:
+        elif asensitivity == 2:
             # high sensitivity
             unocc_time_threshold = 15.0
             unocc_stp_threshold = 0.3
@@ -225,10 +225,11 @@ class Application(DrivenApplicationBaseClass):
                              'time when the supply fan should '
                              'be operational (unoccupied)',
                              value_default=['0:00', '0:00']),
-            'sensitivity':
+            'asensitivity':
                 ConfigDescriptor(int,
                                  'Sensitivity: values can be 0 (low), '
-                                 '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                                 '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will '
+                                 'ignore other threshold values. Setting sensitivity to 3 (custom) '
                                  'allows you to enter your own values for all threshold values',
                                  value_default=1),
             'local_tz':
@@ -241,7 +242,10 @@ class Application(DrivenApplicationBaseClass):
     def get_self_descriptor(cls):
         name = 'Auto-RCx for AHU: Operation Schedule'
         desc = 'Auto-RCx for AHU: Operation Schedule'
-        return Descriptor(name=name, description=desc)
+        note = 'Sensitivity: values can be 0 (low), ' \
+               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+               'ignore other threshold values.'
+        return Descriptor(name=name, description=desc, note=note)
 
     @classmethod
     def required_input(cls):

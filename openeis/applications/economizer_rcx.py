@@ -108,7 +108,7 @@ class Application(DrivenApplicationBaseClass):
                  ventilation_oaf_threshold=5.0,
                  insufficient_damper_threshold=15.0,
                  temp_damper_threshold=90.0, rated_cfm=1000.0, eer=10.0,
-                 sensitivity=1,
+                 asensitivity=1,
                  **kwargs):
         # initialize user configurable parameters.
         super().__init__(*args, **kwargs)
@@ -147,7 +147,7 @@ class Application(DrivenApplicationBaseClass):
         cfm = float(rated_cfm)
         eer = float(eer)
 
-        if sensitivity == 0:
+        if asensitivity == 0:
             # low sensitivity
             temp_difference_threshold = 6
             open_damper_threshold = 60
@@ -157,7 +157,7 @@ class Application(DrivenApplicationBaseClass):
             insufficient_damper_threshold = 20
             ventilation_oaf_threshold = 30
             oat_mat_check = float(oat_mat_check) * 1.5
-        elif sensitivity == 1:
+        elif asensitivity == 1:
             # Normal sensitivity
             temp_difference_threshold = 4
             open_damper_threshold = 40
@@ -167,7 +167,7 @@ class Application(DrivenApplicationBaseClass):
             insufficient_damper_threshold = 10
             ventilation_oaf_threshold = 20
             oat_mat_check = float(oat_mat_check)
-        elif sensitivity == 2:
+        elif asensitivity == 2:
             # high sensitivity
             temp_difference_threshold = 2
             open_damper_threshold = 20
@@ -377,10 +377,11 @@ class Application(DrivenApplicationBaseClass):
             ConfigDescriptor(float,
                              'AHU/RTU rated EER',
                              value_default=10.0),
-            'sensitivity':
+            'asensitivity':
             ConfigDescriptor(int,
                              'Sensitivity: values can be 0 (low), '
-                             '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                             '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will '
+                             'ignore other threshold values. Setting sensitivity to 3 (custom) '
                              'allows you to enter your own values for all threshold values',
                              value_default=1),
             'local_tz':
@@ -391,9 +392,12 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'Auto-RCx/Ecam for Economizer HVAC Systems'
+        name = 'Auto-RCx for Economizer HVAC Systems'
         desc = 'Automated Retro-commisioning for HVAC Economizer Systems'
-        return Descriptor(name=name, description=desc)
+        note = 'Sensitivity: values can be 0 (low), ' \
+               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+               'ignore other threshold values.'
+        return Descriptor(name=name, description=desc, note=note)
 
     @classmethod
     def required_input(cls):

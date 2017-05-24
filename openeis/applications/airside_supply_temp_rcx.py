@@ -197,10 +197,10 @@ class Application(DrivenApplicationBaseClass):
                  setpoint_allowable_deviation=10.0, percent_reheat_threshold=25.0,
                  rht_on_threshold=10.0, sat_reset_threshold=5.0, sat_high_damper_threshold=80.0,
                  percent_damper_threshold=50.0, minimum_sat_stpt=50.0, sat_retuning=1.0,
-                 reheat_valve_threshold=50.0, maximum_sat_stpt=75.0, sensitivity=1, **kwargs):
+                 reheat_valve_threshold=50.0, maximum_sat_stpt=75.0, asensitivity=1, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if sensitivity == 0:
+        if asensitivity == 0:
             # low sensitivity
             setpoint_allowable_deviation = 15.0
             percent_reheat_threshold = 25.0
@@ -208,7 +208,7 @@ class Application(DrivenApplicationBaseClass):
             reheat_valve_threshold = 75.0
             sat_reset_threshold = 7.0
             sat_high_damper_threshold = float(sat_high_damper_threshold) * 1.5
-        elif sensitivity == 1:
+        elif asensitivity == 1:
             # normal sensitivity
             setpoint_allowable_deviation = 10.0
             percent_reheat_threshold = 25.0
@@ -216,7 +216,7 @@ class Application(DrivenApplicationBaseClass):
             reheat_valve_threshold = 50.0
             sat_reset_threshold = 5.0
             sat_high_damper_threshold = float(sat_high_damper_threshold)
-        elif sensitivity == 2:
+        elif asensitivity == 2:
             # high sensitivity
             setpoint_allowable_deviation = 5.0
             percent_reheat_threshold = 25.0
@@ -321,10 +321,11 @@ class Application(DrivenApplicationBaseClass):
                              'to detect a supply-air temperature '
                              'set point reset ({drg}F)'.format(drg=dgr_sym),
                              value_default=3.0),
-            'sensitivity':
+            'asensitivity':
             ConfigDescriptor(int,
                              'Sensitivity: values can be 0 (low), '
-                             '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                             '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will '
+                             'ignore other threshold values. Setting sensitivity to 3 (custom) '
                              'allows you to enter your own values for all threshold values',
                              value_default=1),
             'local_tz':
@@ -338,7 +339,10 @@ class Application(DrivenApplicationBaseClass):
         """Name and description for of application for UI"""
         name = 'Auto-RCx AHU: Supply Temperature'
         desc = 'Auto-RCx AHU: Supply Temperature'
-        return Descriptor(name=name, description=desc)
+        note = 'Sensitivity: values can be 0 (low), ' \
+               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+               'ignore other threshold values.'
+        return Descriptor(name=name, description=desc, note=note)
 
     @classmethod
     def required_input(cls):

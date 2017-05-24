@@ -213,22 +213,22 @@ class Application(DrivenApplicationBaseClass):
                  zone_high_damper_threshold=90.0,
                  zone_low_damper_threshold=10.0, min_duct_stp_stpt=0.5,
                  hdzone_damper_threshold=30.0, low_supply_fan_threshold=20.0,
-                 setpoint_allowable_deviation=10.0, sensitivity=1,
+                 setpoint_allowable_deviation=10.0, asensitivity=1,
                  stpr_reset_threshold=0.25, **kwargs):
         super().__init__(*args, **kwargs)
-        if sensitivity == 0:
+        if asensitivity == 0:
             # low sensitivity
             setpoint_allowable_deviation = 15
             zone_high_damper_threshold = 100
             zone_low_damper_threshold = 5
             stpr_reset_threshold = 0.38
-        elif sensitivity == 1:
+        elif asensitivity == 1:
             # normal sensitivity
             setpoint_allowable_deviation = 10
             zone_high_damper_threshold = 90
             zone_low_damper_threshold = 10
             stpr_reset_threshold = 0.25
-        elif sensitivity == 2:
+        elif asensitivity == 2:
             # high sensitivity
             setpoint_allowable_deviation = 5
             zone_high_damper_threshold = 80
@@ -326,10 +326,11 @@ class Application(DrivenApplicationBaseClass):
                              'Allowable deviation from set points '
                              'before a fault message is generated '
                              '(%)', value_default=10.0),
-            'sensitivity':
+            'asensitivity':
             ConfigDescriptor(int,
                              'Sensitivity: values can be 0 (low), '
-                             '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                             '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will '
+                             'ignore other threshold values. Setting sensitivity to 3 (custom) '
                              'allows you to enter your own values for all threshold values',
                              value_default=1),
             'stpr_reset_threshold':
@@ -349,7 +350,10 @@ class Application(DrivenApplicationBaseClass):
     def get_self_descriptor(cls):
         name = 'Auto-RCx AHU: Static Pressure'
         desc = 'Auto-RCx AHU: Static Pressure'
-        return Descriptor(name=name, description=desc)
+        note = 'Sensitivity: values can be 0 (low), ' \
+               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+               'ignore other threshold values.'
+        return Descriptor(name=name, description=desc, note=note)
 
     @classmethod
     def required_input(cls):
