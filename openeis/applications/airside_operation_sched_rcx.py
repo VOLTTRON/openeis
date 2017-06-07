@@ -54,6 +54,7 @@ from numpy import mean
 from datetime import datetime
 from dateutil.parser import parse
 import dateutil.tz
+import collections
 from openeis.applications import (DrivenApplicationBaseClass,
                                   OutputDescriptor,
                                   ConfigDescriptor,
@@ -112,22 +113,21 @@ class Application(DrivenApplicationBaseClass):
     duct_stp_name = 'duct_stp'
 
     def __init__(
-            self, *args, no_required_data=10,
-            unocc_time_threshold=30.0, unocc_stp_threshold=0.2, local_tz=1,
-            monday_sch=['5:30', '18:30'], tuesday_sch=['5:30', '18:30'],
-            wednesday_sch=['5:30', '18:30'], thursday_sch=['5:30', '18:30'],
-            friday_sch=['5:30', '18:30'], saturday_sch=['0:00', '0:00'],
-            sunday_sch=['0:00', '0:00'],
-            analysis_name='', **kwargs):
+            self, *args, no_required_data=10, a2_unocc_time_threshold=30.0,
+            a3_unocc_stp_threshold=0.2, a1_local_tz=1, b0_monday_sch=['5:30', '18:30'],
+            b1_tuesday_sch=['5:30', '18:30'], b2_wednesday_sch=['5:30', '18:30'],
+            b3_thursday_sch=['5:30', '18:30'], b4_friday_sch=['5:30', '18:30'],
+            b5_saturday_sch=['0:00', '0:00'], b6_sunday_sch=['0:00', '0:00'],
+            analysis_name='', a0_sensitivity=1, **kwargs):
         super().__init__(*args, **kwargs)
         try:
-            self.cur_tz = available_tz[local_tz]
+            self.cur_tz = available_tz[a1_local_tz]
         except:
             self.cur_tz = 'UTC'
         analysis = analysis_name
         self.fan_status_name = Application.fan_status_name
         self.duct_stp_name = Application.duct_stp_name
-        self.local_tz = local_tz
+
         # Optional points
         self.override_state = 'AUTO'
         if Application.fan_speedcmd_name is not None:
@@ -137,10 +137,22 @@ class Application(DrivenApplicationBaseClass):
 
         no_required_data = int(no_required_data)
 
+        if a0_sensitivity == 0:
+            # low sensitivity
+            unocc_time_threshold = 45.0
+            unocc_stp_threshold = 0.1
+        elif a0_sensitivity == 1:
+            # normal sensitivity
+            unocc_time_threshold = 30.0
+            unocc_stp_threshold = 0.2
+        elif a0_sensitivity == 2:
+            # high sensitivity
+            unocc_time_threshold = 15.0
+            unocc_stp_threshold = 0.3
+
         self.sched_occ_dx = (
-            SchedResetRcx(unocc_time_threshold, unocc_stp_threshold,
-                          monday_sch, tuesday_sch, wednesday_sch, thursday_sch,
-                          friday_sch, saturday_sch, sunday_sch,
+            SchedResetRcx(a2_unocc_time_threshold, a3_unocc_stp_threshold, b0_monday_sch, b1_tuesday_sch,
+                          b2_wednesday_sch, b3_thursday_sch, b4_friday_sch, b5_saturday_sch, b6_sunday_sch,
                           no_required_data, analysis))
 
     @classmethod
@@ -150,73 +162,58 @@ class Application(DrivenApplicationBaseClass):
         parameters with description for user
         """
         dgr_sym = u'\N{DEGREE SIGN}'
-        return {
-            'unocc_time_threshold':
+        config_dict =  [
+
+            ('a0_sensitivity',
+             ConfigDescriptor(int,
+                              'Sensitivity: values can be 0 (low), '
+                              '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                              'allows you to enter your own values for all threshold values',
+                               value_default=1)),
+            ('a1_local_tz',
+             ConfigDescriptor(int,
+                              "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
+                               value_default=1)),
+            ('a2_unocc_time_threshold',
             ConfigDescriptor(float,
-                             'Time threshold used for AHU schedule Dx. '
-                             '(%)', value_default=30.0),
-            'unocc_stp_threshold':
+                             'Threshold for acceptable unoccupied run-time percentage for AHU supply fan (%)', value_default=30.0)),
+            ('a3_unocc_stp_threshold',
             ConfigDescriptor(float,
-                             'AHU off static pressure dead-band '
-                             'Detects whether the duct static '
-                             'pressure exceeds this '
-                             'value during non-working scheduled '
-                             'hours (inch w.g.)',
-                             value_default=0.2),
-            'monday_sch':
+                             'Threshold for the AHU average static pressure during unoccupied periods (inch w.g.)',
+                             value_default=0.2)),
+            ('b0_monday_sch',
             ConfigDescriptor(str,
-                             'Thursday AHU occupied schedule, '
-                             'Used to detect the '
-                             'time when the supply fan should '
-                             'be operational)',
-                             value_default=['6:30', '18:30']),
-            'tuesday_sch':
+                             'Monday occupancy schedule for AHU',
+                             value_default=['6:30', '18:30'])),
+            ('b1_tuesday_sch',
             ConfigDescriptor(str,
-                             'Tuesday AHU occupied schedule, '
-                             'Used to detect the '
-                             'time when the supply fan should '
-                             'be operational',
-                             value_default=['6:30', '18:30']),
-            'wednesday_sch':
+                             'Tuesday occupancy schedule for AHU',
+                             value_default=['6:30', '18:30'])),
+            ('b2_wednesday_sch',
             ConfigDescriptor(str,
-                             'Wednesday AHU occupied schedule, '
-                             'Used to detect the '
-                             'time when the supply fan should '
-                             'be operational',
-                             value_default=['6:30', '18:30']),
-            'thursday_sch':
+                             'Wednesday occupancy schedule for AHU',
+                             value_default=['6:30', '18:30'])),
+            ('b3_thursday_sch',
             ConfigDescriptor(str,
-                             'Thursday AHU occupied schedule, '
-                             'Used to detect the '
-                             'time when the supply fan should '
-                             'be operational',
-                             value_default=['6:30', '18:30']),
-            'friday_sch':
+                             'Thursday occupancy schedule for AHU',
+                             value_default=['6:30', '18:30'])),
+            ('b4_friday_sch',
             ConfigDescriptor(str,
-                             'Friday AHU occupied schedule, '
-                             'Used to detect the '
-                             'time when the supply fan should '
-                             'be operational',
-                             value_default=['6:30', '18:30']),
-            'saturday_sch':
+                             'Friday occupancy schedule for AHU',
+                             value_default=['6:30', '18:30'])),
+            ('b5_saturday_sch',
             ConfigDescriptor(str,
-                             'Saturday AHU occupied schedule, '
-                             'Used to detect the '
-                             'time when the supply fan should '
-                             'be operational (unoccupied)',
-                             value_default=['0:00', '0:00']),
-            'sunday_sch':
+                             'Saturday occupancy schedule for AHU (default: unoccupied)',
+                             value_default=['0:00', '0:00'])),
+            ('b6_sunday_sch',
             ConfigDescriptor(str,
-                             'Sunday AHU occupied schedule, '
-                             'Used to detect the '
-                             'time when the supply fan should '
-                             'be operational (unoccupied)',
-                             value_default=['0:00', '0:00']),
-            'local_tz':
-            ConfigDescriptor(int,
-                             "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
-                             value_default=1)
-            }
+                             'Sunday occupancy schedule for AHU (default: unoccupied)',
+                             value_default=['0:00', '0:00']))
+        ]
+         
+        config = collections.OrderedDict(config_dict)
+
+        return config
 
     @classmethod
     def get_self_descriptor(cls):
@@ -317,7 +314,6 @@ class Application(DrivenApplicationBaseClass):
             if fan_status:
                 fan_status_data.append(min(fan_status))
                 if not int(fan_status_data[0]):
-                    supply_fan_off = True
                     self.warm_up_flag = True
 
         if self.fansp_name in device_dict:
@@ -325,7 +321,6 @@ class Application(DrivenApplicationBaseClass):
             fan_speed = mean([point[1] for point in fan_speed])
             if self.fan_status_name is None:
                 if not int(fan_speed):
-                    supply_fan_off = True
                     self.warm_up_flag = True
                 fan_status_data.append(bool(int(fan_speed)))
 
@@ -423,14 +418,16 @@ class SchedResetRcx(object):
 
         if not run_diagnostic:
             if current_time.time() < schedule[0] or current_time.time() > schedule[1]:
-                self.stcpr_arr.extend(stcpr_data)
-                self.fanstat_values.append((current_time, int(max(fan_stat_data))))
+                current_fan_status = int(max(fan_stat_data))
+                self.fanstat_values.append((current_time, current_fan_status))
+                if not current_fan_status:
+                    self.stcpr_arr.append((current_time, mean(stcpr_data)))
+                    #self.stcpr_arr.extend(stcpr_data)
                 self.sched_time.append(current_time)
 
         if run_diagnostic and len(self.timestamp_arr) >= self.no_req_data:
             self.dx_time = self.timestamp_arr[-1]
             dx_result = self.unocc_fan_operation(dx_result)
-
             self.reinitialize()
         elif run_diagnostic:
             dx_msg = 61.2
@@ -446,8 +443,11 @@ class SchedResetRcx(object):
             dx_result.insert_table_row('Airside_RCx', dx_table)
             self.reinitialize()
             if current_time.time() < schedule[0] or current_time.time() > schedule[1]:
-                self.stcpr_arr.extend(stcpr_data)
-                self.fanstat_values.append((current_time, int(max(fan_stat_data))))
+                current_fan_status = int(max(fan_stat_data))
+                self.fanstat_values.append((current_time, current_fan_status))
+                if not current_fan_status:
+                    #self.stcpr_arr.extend(stcpr_data)
+                    self.stcpr_arr.append((current_time, mean(stcpr_data)))
                 self.sched_time.append(current_time)
             dx_status = 0
         self.timestamp_arr.append(current_time)
@@ -478,7 +478,7 @@ class SchedResetRcx(object):
                 avg_duct_stcpr = mean(self.stcpr_arr)
 
             if percent_on > self.unocc_time_threshold:
-                msg = 'Supply fan is on during unoccupied times.'
+                msg = 'Supply fan is operating excessively during unoccupied times.'
                 color_code = 'RED'
                 dx_msg = 63.1
             else:
