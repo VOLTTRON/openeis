@@ -325,8 +325,8 @@ class Application(DrivenApplicationBaseClass):
     @classmethod
     def get_self_descriptor(cls):
         """Name and description for of application for UI"""
-        name = 'Auto-RCx AHU: Supply Temperature'
-        desc = 'Auto-RCx AHU: Supply Temperature'
+        name = 'AIRCx for AHUs: Supply Temperature'
+        desc = 'AIRCx for AHUs: Supply Temperature'
         return Descriptor(name=name, description=desc)
 
     @classmethod
@@ -640,7 +640,7 @@ class SupplyTempRcx(object):
 
         dx_result.log('{}: Collecting and aggregating data.'.format(SA_VALIDATE, logging.DEBUG))
         self.satemp_arr.append(mean(sat_data))
-        self.satemp_stpt_reset.append(mean(sat_data))
+        self.satemp_stpt_reset.append(mean(sat_stpt_data))
         self.rht_arr.append(mean(zone_rht_data))
         self.sat_stpt_arr.append(mean(sat_stpt_data))
         self.percent_rht.append(tot_rht/count_rht)

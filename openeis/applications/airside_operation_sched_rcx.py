@@ -139,16 +139,16 @@ class Application(DrivenApplicationBaseClass):
 
         if a0_sensitivity == 0:
             # low sensitivity
-            unocc_time_threshold = 45.0
-            unocc_stp_threshold = 0.1
+            a2_unocc_time_threshold = 45.0
+            a3_unocc_stp_threshold = 0.1
         elif a0_sensitivity == 1:
             # normal sensitivity
-            unocc_time_threshold = 30.0
-            unocc_stp_threshold = 0.2
+            a2_unocc_time_threshold = 30.0
+            a3_unocc_stp_threshold = 0.2
         elif a0_sensitivity == 2:
             # high sensitivity
-            unocc_time_threshold = 15.0
-            unocc_stp_threshold = 0.3
+            a2_unocc_time_threshold = 15.0
+            a3_unocc_stp_threshold = 0.3
 
         self.sched_occ_dx = (
             SchedResetRcx(a2_unocc_time_threshold, a3_unocc_stp_threshold, b0_monday_sch, b1_tuesday_sch,
@@ -184,23 +184,23 @@ class Application(DrivenApplicationBaseClass):
             ('b0_monday_sch',
             ConfigDescriptor(str,
                              'Monday occupancy schedule for AHU',
-                             value_default=['6:30', '18:30'])),
+                             value_default=['5:30', '18:30'])),
             ('b1_tuesday_sch',
             ConfigDescriptor(str,
                              'Tuesday occupancy schedule for AHU',
-                             value_default=['6:30', '18:30'])),
+                             value_default=['5:30', '18:30'])),
             ('b2_wednesday_sch',
             ConfigDescriptor(str,
                              'Wednesday occupancy schedule for AHU',
-                             value_default=['6:30', '18:30'])),
+                             value_default=['5:30', '18:30'])),
             ('b3_thursday_sch',
             ConfigDescriptor(str,
                              'Thursday occupancy schedule for AHU',
-                             value_default=['6:30', '18:30'])),
+                             value_default=['5:30', '18:30'])),
             ('b4_friday_sch',
             ConfigDescriptor(str,
                              'Friday occupancy schedule for AHU',
-                             value_default=['6:30', '18:30'])),
+                             value_default=['5:30', '18:30'])),
             ('b5_saturday_sch',
             ConfigDescriptor(str,
                              'Saturday occupancy schedule for AHU (default: unoccupied)',
@@ -217,8 +217,8 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'Auto-RCx for AHU: Operation Schedule'
-        desc = 'Auto-RCx for AHU: Operation Schedule'
+        name = 'AIRCx for AHUs: Operation Schedule'
+        desc = 'AIRCx for AHUs: Operation Schedule'
         return Descriptor(name=name, description=desc)
 
     @classmethod
@@ -421,8 +421,7 @@ class SchedResetRcx(object):
                 current_fan_status = int(max(fan_stat_data))
                 self.fanstat_values.append((current_time, current_fan_status))
                 if not current_fan_status:
-                    self.stcpr_arr.append((current_time, mean(stcpr_data)))
-                    #self.stcpr_arr.extend(stcpr_data)
+                    self.stcpr_arr.extend(stcpr_data)
                 self.sched_time.append(current_time)
 
         if run_diagnostic and len(self.timestamp_arr) >= self.no_req_data:
@@ -446,8 +445,7 @@ class SchedResetRcx(object):
                 current_fan_status = int(max(fan_stat_data))
                 self.fanstat_values.append((current_time, current_fan_status))
                 if not current_fan_status:
-                    #self.stcpr_arr.extend(stcpr_data)
-                    self.stcpr_arr.append((current_time, mean(stcpr_data)))
+                    self.stcpr_arr.extend(stcpr_data)
                 self.sched_time.append(current_time)
             dx_status = 0
         self.timestamp_arr.append(current_time)
