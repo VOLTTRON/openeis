@@ -207,36 +207,37 @@ class Application(DrivenApplicationBaseClass):
     sat_stpt_name = 'sat_stpt'
     duct_stp_stpt_name = 'duct_stp_stpt'
 
-    def __init__(self, *args, no_required_data=1, data_window=1, local_tz=1,
-                 warm_up_time=0, duct_stc_retuning=0.15,
-                 max_duct_stp_stpt=2.5, high_supply_fan_threshold=100.0,
-                 zone_high_damper_threshold=90.0,
-                 zone_low_damper_threshold=10.0, min_duct_stp_stpt=0.5,
-                 hdzone_damper_threshold=30.0, low_supply_fan_threshold=20.0,
-                 setpoint_allowable_deviation=10.0, asensitivity=1,
-                 stpr_reset_threshold=0.25, **kwargs):
+    def __init__(self, *args, a0_no_required_data=10, a1_data_window=30,
+                 a2_local_tz=1, a3_sensitivity=1, warm_up_time=30,
+
+                 duct_stc_retuning=0.15, max_duct_stp_stpt=2.5, high_supply_fan_threshold=50.0,
+                 b1_zone_high_damper_threshold=90.0,
+                 b2_zone_low_damper_threshold=10.0, min_duct_stp_stpt=0.5,
+                 b3_hdzone_damper_threshold=30.0, low_supply_fan_threshold=10.0,
+                 b0_setpoint_allowable_deviation=10.0,
+                 b4_stpr_reset_threshold=0.25, **kwargs):
         super().__init__(*args, **kwargs)
-        if asensitivity == 0:
+        if a3_sensitivity == 0:
             # low sensitivity
-            setpoint_allowable_deviation = 15
-            zone_high_damper_threshold = 100
-            zone_low_damper_threshold = 5
-            stpr_reset_threshold = 0.38
-        elif asensitivity == 1:
+            b0_setpoint_allowable_deviation = 15
+            b1_zone_high_damper_threshold = 100
+            b2_zone_low_damper_threshold = 5
+            b4_stpr_reset_threshold = 0.38
+        elif a3_sensitivity == 1:
             # normal sensitivity
-            setpoint_allowable_deviation = 10
-            zone_high_damper_threshold = 90
-            zone_low_damper_threshold = 10
-            stpr_reset_threshold = 0.25
-        elif asensitivity == 2:
+            b0_setpoint_allowable_deviation = 10
+            b1_zone_high_damper_threshold = 90
+            b2_zone_low_damper_threshold = 10
+            b4_stpr_reset_threshold = 0.25
+        elif a3_sensitivity == 2:
             # high sensitivity
-            setpoint_allowable_deviation = 5
-            zone_high_damper_threshold = 80
-            zone_low_damper_threshold = 15
-            stpr_reset_threshold = 0.17
+            b0_setpoint_allowable_deviation = 5
+            b1_zone_high_damper_threshold = 80
+            b2_zone_low_damper_threshold = 15
+            b4_stpr_reset_threshold = 0.17
 
         try:
-            self.cur_tz = available_tz[local_tz]
+            self.cur_tz = available_tz[a2_local_tz]
         except:
             self.cur_tz = 'UTC'
 
@@ -258,7 +259,7 @@ class Application(DrivenApplicationBaseClass):
         self.zone_reheat_name = Application.zone_reheat_name.lower()
 
         # Application thresholds (Configurable)
-        self.data_window = float(data_window)
+        self.data_window = float(a1_data_window)
         self.low_supply_fan_threshold = float(low_supply_fan_threshold)
         self.high_supply_fan_threshold = float(high_supply_fan_threshold)
         self.warm_up_flag = None
@@ -266,10 +267,10 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_start = None
         auto_correctflag = True
         analysis = "Airside_RCx"
-        self.static_dx = DuctStaticRcx(no_required_data, auto_correctflag, setpoint_allowable_deviation,
-                                       max_duct_stp_stpt, duct_stc_retuning, zone_high_damper_threshold,
-                                       zone_low_damper_threshold, hdzone_damper_threshold,
-                                       min_duct_stp_stpt, stpr_reset_threshold, analysis,
+        self.static_dx = DuctStaticRcx(a0_no_required_data, auto_correctflag, b0_setpoint_allowable_deviation,
+                                       max_duct_stp_stpt, duct_stc_retuning, b1_zone_high_damper_threshold,
+                                       b2_zone_low_damper_threshold, b3_hdzone_damper_threshold,
+                                       min_duct_stp_stpt, b4_stpr_reset_threshold, analysis,
                                        duct_stp_stpt_cname)
 
     @classmethod
@@ -280,70 +281,51 @@ class Application(DrivenApplicationBaseClass):
         '''
         dgr_sym = u'\N{DEGREE SIGN}'
         return {
-            'data_window':
+            'a0_no_required_data':
             ConfigDescriptor(int,
-                             'Minimum Elapsed time for '
-                             'analysis (minutes)',
-                             value_default=15),
-            'no_required_data':
-            ConfigDescriptor(int,
-                             'Number of required data measurements to '
-                             'perform diagnostic',
+                             'Number of required data measurements to perform diagnostic',
                              value_default=10),
-            'low_supply_fan_threshold':
-                ConfigDescriptor(float,
-                                 'Value above which the supply fan will be '
-                                 'considered at its minimum speed (%)',
-                                 value_default=20.0),
-            'warm_up_time':
+            'a1_data_window':
             ConfigDescriptor(int,
-                             'When the system starts this much '
-                             'time will be allowed to elapse before adding '
-                             'using data for analysis (minutes)',
+                             'Minimum elapsed time for analysis (minutes)',
                              value_default=30),
-            'zone_high_damper_threshold':
-            ConfigDescriptor(float,
-                             ('Zone high damper threshold '
-                              'used for detection of duct static '
-                              'pressure problems (%)'),
-                             value_default=90.0),
-            'zone_low_damper_threshold':
-            ConfigDescriptor(float,
-                             ('Zone low damper threshold '
-                              'used for detection of duct static '
-                              'pressure problems (%)'),
-                             value_default=10.0),
-            'hdzone_damper_threshold':
-            ConfigDescriptor(float,
-                             'Threshold for zone damper. If the '
-                             'average value of the zone dampers is less '
-                             'than this threshold the fan is '
-                             'supplying too much air (%)',
-                             value_default=30.0),
-
-            'setpoint_allowable_deviation':
-            ConfigDescriptor(float,
-                             'Allowable deviation from set points '
-                             'before a fault message is generated '
-                             '(%)', value_default=10.0),
-            'asensitivity':
+            'a2_local_tz':
+             ConfigDescriptor(int,
+                              "Integer corresponding to local time zone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
+                               value_default=1),
+            'a3_sensitivity':
             ConfigDescriptor(int,
                              'Sensitivity: values can be 0 (low), '
-                             '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will '
-                             'ignore other threshold values. Setting sensitivity to 3 (custom) '
+                             '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
                              'allows you to enter your own values for all threshold values',
                              value_default=1),
-            'stpr_reset_threshold':
+            # 'warm_up_time':
+            # ConfigDescriptor(int,
+            #                 'When the system starts this much '
+            #                 'time will be allowed to elapse before adding '
+            #                 'using data for analysis (minutes)',
+            #                 value_default=30),
+            'b0_setpoint_allowable_deviation':
             ConfigDescriptor(float,
-                             ('Required difference between minimum and '
-                              'maximum duct static pressure set point '
-                              'detecting a duct static pressure '
-                              'set point reset (inch w.g.)'),
-                             value_default=0.25),
-            'local_tz':
-            ConfigDescriptor(int,
-                             "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
-                             value_default=1)
+                             "'Duct Static Pressure Set Point Control Loop Dx' - '"
+                             "the allowable percent deviation from the set point for the duct static pressure",
+                             value_default=10.0),
+            'b1_zone_high_damper_threshold':
+            ConfigDescriptor(float,
+                             ("'Low Duct Static Pressure Dx'- zone high damper threshold (%)"),
+                             value_default=90.0),
+            'b2_zone_low_damper_threshold':
+            ConfigDescriptor(float,
+                             ("'Low Duct Static Pressure Dx' - zone low damper threshold (%)"),
+                             value_default=10.0),
+            'b3_hdzone_damper_threshold':
+            ConfigDescriptor(float,
+                             "'High Duct Static Pressure Dx' - zone damper threshold (%)",
+                             value_default=30.0),
+            'b4_stpr_reset_threshold':
+            ConfigDescriptor(float,
+                             "'No Static Pressure Reset Dx' - the required difference between the minimum and the maximum duct static pressure set point for detection of a duct static pressure set point reset (inch w.g.)",
+                             value_default=0.25)
             }
 
     @classmethod
@@ -595,10 +577,10 @@ class DuctStaticRcx(object):
 
         if low_dx_cond:
             dx_result.log(self.low_msg.format(current_time), logging.DEBUG)
-            return dx_status, dx_result
+
         if high_dx_cond:
             dx_result.log(self.high_msg.format(current_time), logging.DEBUG)
-            return dx_status, dx_result
+
 
         run_status = check_run_status(self.timestamp_arr, current_time, self.no_req_data)
 
@@ -616,8 +598,8 @@ class DuctStaticRcx(object):
                                                               self.timestamp_arr[-1])
 
             dx_result.insert_table_row('Airside_RCx', dx_table)
-            dx_result = self.low_stcpr_dx(dx_result, avg_stcpr_stpt)
-            dx_result = self.high_stcpr_dx(dx_result, avg_stcpr_stpt)
+            dx_result = self.low_stcpr_dx(dx_result, avg_stcpr_stpt, low_dx_cond)
+            dx_result = self.high_stcpr_dx(dx_result, avg_stcpr_stpt, high_dx_cond)
             # dx_result.insert_table_row(self.table_key, self.dx_table)
             dx_result.log('{}: Running diagnostics.'.format(STCPR_VALIDATE, logging.DEBUG))
             dx_status = 2
@@ -648,7 +630,7 @@ class DuctStaticRcx(object):
         self.timestamp_reset.append(current_time)
         return dx_status, dx_result
 
-    def low_stcpr_dx(self, dx_result, avg_stcpr_stpt):
+    def low_stcpr_dx(self, dx_result, avg_stcpr_stpt, low_dx_cond):
         """
         Diagnostic to identify and correct low duct static pressure
         (correction by modifying duct static pressure set point).
@@ -668,8 +650,8 @@ class DuctStaticRcx(object):
                 # when duct static pressure set point
                 # is not available.
                 msg = ('The duct static pressure set point has been '
-                       'detected to be too low but but supply-air'
-                       'temperature set point data is not available.')
+                       'detected to be too low but the duct static pressure '
+                       'set point data is not available.')
                 # dx_msg = 14.1
             elif self.auto_correct_flag:
                 auto_correct_stcpr_stpt = avg_stcpr_stpt + self.stcpr_retuning
@@ -698,6 +680,11 @@ class DuctStaticRcx(object):
             color_code = 'GREEN'
             # dx_msg = 10.0
 
+        if color_code == 'RED' and low_dx_cond:
+            msg = ('The duct static pressure has been detected to be too low but the supply fan is operating at 100%. '
+                   'The AHU supply fan is not able to supply sufficent airflow to the zones, the air filter(s) may '
+                   'need to be replaced or the supply fan could be undersized.')
+
         dx_table = {
             'datetime': str(self.timestamp_arr[-1]),
             'diagnostic_name': DUCT_STC_RCX1,
@@ -710,7 +697,7 @@ class DuctStaticRcx(object):
         dx_result.log(msg, logging.INFO)
         return dx_result
 
-    def high_stcpr_dx(self, dx_result, avg_stcpr_stpt):
+    def high_stcpr_dx(self, dx_result, avg_stcpr_stpt, high_dx_cond):
         """
         Diagnostic to identify and correct high duct static pressure
         (correction by modifying duct static pressure set point)
@@ -757,6 +744,10 @@ class DuctStaticRcx(object):
                    'static pressure diagnostic.')
             color_code = 'GREEN'
             # dx_msg = 20.0
+
+        if color_code == 'RED' and high_dx_cond:
+            msg = ('The duct static pressure has been detected to be too high but the supply fan '
+                   'is operating at the minimum supply fan speed.')
 
         dx_table = {
             'datetime': str(self.timestamp_arr[-1]),
