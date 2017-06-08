@@ -99,6 +99,7 @@ class Application(DrivenApplicationBaseClass):
                  max_hwrt_threshold=180.0,
                  delta_t_threshold=10.0, desired_delta_t=20.0,
                  hwst_reset_threshold=10.0,
+                 sensitivity=1,
                  **kwargs):
         super().__init__(*args, **kwargs)
         Application.pre_requiste_messages = []
@@ -146,6 +147,38 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_flag = None
         self.warm_up_time = int(warm_up_time)
         self.warm_up_start = None
+
+
+        if sensitivity == 0:
+            # low sensitivity
+            setpoint_allowable_deviation = 15.0
+            delta_t_threshold = 15.0
+            desired_delta_t = 20.0
+            hw_st_threshold = 130.0
+            hw_pump_vfd_threshold = 12.5
+            hwst_reset_threshold = 15.0
+            dp_pump_threshold = 25.0
+            dp_reset_threshold = 7.5
+        elif sensitivity == 1:
+            # normal sensitivity
+            setpoint_allowable_deviation = 10.0
+            delta_t_threshold = 10.0
+            desired_delta_t = 20.0
+            hw_st_threshold = 120.0
+            hw_pump_vfd_threshold = 25.0
+            hwst_reset_threshold = 10.0
+            dp_pump_threshold = 45.0
+            dp_reset_threshold = 5.0
+        elif sensitivity == 2:
+            # high sensitivity
+            setpoint_allowable_deviation = 5.0
+            delta_t_threshold = 5.0
+            desired_delta_t = 20.0
+            hw_st_threshold = 110.0
+            hw_pump_vfd_threshold = 37.5
+            hwst_reset_threshold = 5.0
+            dp_pump_threshold = 65.0
+            dp_reset_threshold = 2.5
 
         self.hw_dx1 = HW_loopdp_RCx(no_required_data, data_window,
                                     setpoint_allowable_deviation,
@@ -266,7 +299,13 @@ class Application(DrivenApplicationBaseClass):
                                  'Band around desired delta-T where '
                                  'where delat-T is considered '
                                  'OK ({drg}F)'.format(drg=dgr_sym),
-                                 value_default=10.0)
+                                 value_default=10.0),
+            'sensitivity':
+                ConfigDescriptor(int,
+                                 'Sensitivity: values can be 0 (low), '
+                                 '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
+                                 'allows you to enter your own values for all threshold values',
+                                 value_default=1)
             }
 
     @classmethod

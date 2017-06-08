@@ -974,6 +974,7 @@ class ApplicationViewSet(viewsets.ViewSet):
             if app.get_self_descriptor():
                 data['name'] = app.get_self_descriptor().name
                 data['description'] = app.get_self_descriptor().description
+                data['note'] = app.get_self_descriptor().note
         return Response(app_list)
 
 
@@ -992,6 +993,7 @@ class FilterViewSet(viewsets.ViewSet):
             if filter_.get_self_descriptor():
                 data['name'] = filter_.get_self_descriptor().name
                 data['description'] = filter_.get_self_descriptor().description
+                data['note'] = filter_.get_self_descriptor().note
         return Response(filter_list)
 
 

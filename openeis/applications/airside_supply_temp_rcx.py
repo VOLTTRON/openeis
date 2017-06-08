@@ -325,8 +325,12 @@ class Application(DrivenApplicationBaseClass):
     @classmethod
     def get_self_descriptor(cls):
         """Name and description for of application for UI"""
+
         name = 'AIRCx for AHUs: Supply Temperature'
         desc = 'AIRCx for AHUs: Supply Temperature'
+        note = 'Sensitivity: values can be 0 (low), ' \
+               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+               'ignore other threshold values.'
         return Descriptor(name=name, description=desc)
 
     @classmethod

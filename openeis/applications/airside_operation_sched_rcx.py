@@ -219,6 +219,9 @@ class Application(DrivenApplicationBaseClass):
     def get_self_descriptor(cls):
         name = 'AIRCx for AHUs: Operation Schedule'
         desc = 'AIRCx for AHUs: Operation Schedule'
+        note = 'Sensitivity: values can be 0 (low), ' \
+               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+               'ignore other threshold values.'
         return Descriptor(name=name, description=desc)
 
     @classmethod

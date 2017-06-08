@@ -322,19 +322,20 @@ class Application(DrivenApplicationBaseClass):
             ConfigDescriptor(float,
                              "'High Duct Static Pressure Dx' - zone damper threshold (%)",
                              value_default=30.0),
-
             'b4_stpr_reset_threshold':
             ConfigDescriptor(float,
                              "'No Static Pressure Reset Dx' - the required difference between the minimum and the maximum duct static pressure set point for detection of a duct static pressure set point reset (inch w.g.)",
                              value_default=0.25)
-
             }
 
     @classmethod
     def get_self_descriptor(cls):
         name = 'Auto-RCx AHU: Static Pressure'
         desc = 'Auto-RCx AHU: Static Pressure'
-        return Descriptor(name=name, description=desc)
+        note = 'Sensitivity: values can be 0 (low), ' \
+               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+               'ignore other threshold values.'
+        return Descriptor(name=name, description=desc, note=note)
 
     @classmethod
     def required_input(cls):

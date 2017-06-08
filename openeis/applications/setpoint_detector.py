@@ -86,8 +86,17 @@ class Application(DrivenApplicationBaseClass):
     zone_temp_name = 'zone_temp'
     zone_temp_setpoint_name = 'zone_temp_setpoint'
 
-    def __init__(self, *args, minimum_data_count=5, area_distribution_threshold=0.1, **kwargs):
+    def __init__(self, *args, minimum_data_count=5, sensitivity=1, **kwargs):
         super().__init__(*args, **kwargs)
+
+        area_distribution_threshold = 0.1
+        if sensitivity == 0:
+            area_distribution_threshold = 0.2
+        elif sensitivity == 2:
+            area_distribution_threshold = 0.05
+        else:
+            area_distribution_threshold = 0.1
+
         self.setpoint_detector = SetPointDetector(minimum_data_count, area_distribution_threshold)
 
     @classmethod
@@ -100,12 +109,13 @@ class Application(DrivenApplicationBaseClass):
         return {
             'minimum_data_count':
                 ConfigDescriptor(int,
-                                 'Minimum data count ',
+                                 'Minimum number of observations for analysis',
                                  value_default=5),
-            'area_distribution_threshold':
-                ConfigDescriptor(float,
-                                 'Area distribution threshold',
-                                 value_default=0.1)
+            'sensitivity':
+                ConfigDescriptor(int,
+                                 'Sensitivity to detect a temperature setpoint change: '
+                                 'values can be 0 (low), 1 (normal), 2 (high)',
+                                 value_default=1)
         }
 
     @classmethod

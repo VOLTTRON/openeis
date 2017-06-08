@@ -274,15 +274,12 @@ class Application(DrivenApplicationBaseClass):
         return {
             'minimum_data_count':
                 ConfigDescriptor(int,
-                                 'Minimum data count ',
+                                 'Minimum number of observations for analysis',
                                  value_default=5),
-            'analysis_run_interval':
-                ConfigDescriptor(int,
-                                 'Analysis Run Interval',
-                                 value_default=500),
             'local_tz':
                 ConfigDescriptor(int,
-                                 "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
+                                 "Integer corresponding to local timezone: "
+                                 "[1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
                                  value_default=1)
         }
 

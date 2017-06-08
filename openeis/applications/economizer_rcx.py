@@ -90,6 +90,7 @@ class Application(DrivenApplicationBaseClass):
     da_temp_name = 'da_temp'
     da_temp_setpoint_name = 'da_temp_setpoint'
     #TODO: temp set data_window=1 to test
+
     def __init__(self, *args,
                  building_name=None, open_damper_time=5, low_supply_fan_threshold=15.0,
                  temp_damper_threshold=90.0,
@@ -107,7 +108,7 @@ class Application(DrivenApplicationBaseClass):
                  c0_open_damper_threshold=90.0, c1_oaf_economizing_threshold=25.0,
                  c2_minimum_damper_setpoint=15.0, c3_excess_damper_threshold=20.0,
                  c4_desired_oaf=10.0, c5_excess_oaf_threshold=20.0,
-
+                 
                  d0_insufficient_damper_threshold=15.0, d1_ventilation_oaf_threshold=5.0,
                  **kwargs):
         # initialize user configurable parameters.
@@ -376,6 +377,9 @@ class Application(DrivenApplicationBaseClass):
     def get_self_descriptor(cls):
         name = 'AIRCx for Economizer HVAC Systems'
         desc = 'Automated Retro-commisioning Diagnostics for HVAC Economizer Systems'
+        note = 'Sensitivity: values can be 0 (low), ' \
+               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+               'ignore other threshold values.'
         return Descriptor(name=name, description=desc)
 
     @classmethod
