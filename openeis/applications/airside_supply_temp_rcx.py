@@ -209,7 +209,7 @@ class Application(DrivenApplicationBaseClass):
             b5_percent_damper_threshold = 100.0
             b2_reheat_valve_threshold = 75.0
             b6_sat_reset_threshold = 7.0
-            b4_sat_high_damper_threshold = float(b4_sat_high_damper_threshold) * 1.5
+            b4_sat_high_damper_threshold = 90.0
         elif a3_sensitivity == 1:
             # normal sensitivity
             b0_setpoint_allowable_deviation = 10.0
@@ -217,7 +217,7 @@ class Application(DrivenApplicationBaseClass):
             b5_percent_damper_threshold = 80.0
             b2_reheat_valve_threshold = 50.0
             b6_sat_reset_threshold = 5.0
-            b4_sat_high_damper_threshold = float(b4_sat_high_damper_threshold)
+            b4_sat_high_damper_threshold = b4_sat_high_damper_threshold
         elif a3_sensitivity == 2:
             # high sensitivity
             b0_setpoint_allowable_deviation = 5.0
@@ -225,7 +225,7 @@ class Application(DrivenApplicationBaseClass):
             b5_percent_damper_threshold = 60.0
             b2_reheat_valve_threshold = 25.0
             b6_sat_reset_threshold = 3.0
-            b4_sat_high_damper_threshold = float(b4_sat_high_damper_threshold) * 0.5
+            b4_sat_high_damper_threshold = 70.0
 
         try:
             self.cur_tz = available_tz[a2_local_tz]
