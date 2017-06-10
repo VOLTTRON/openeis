@@ -330,8 +330,8 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
-        name = 'Auto-RCx AHU: Static Pressure'
-        desc = 'Auto-RCx AHU: Static Pressure'
+        name = 'AIRCx for AHUs: Static Pressure'
+        desc = 'AIRCx for AHUs: Static Pressure'
         note = 'Sensitivity: values can be 0 (low), ' \
                '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
                'ignore other threshold values.'

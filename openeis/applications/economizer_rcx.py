@@ -293,8 +293,8 @@ class Application(DrivenApplicationBaseClass):
 
             'b0_temp_difference_threshold':
             ConfigDescriptor(float,
-                             'Threshold for detecting temperature sensor '
-                             'problems ({drg}F)'.format(drg=dgr_sym),
+                             "'Temperature Sensor Dx' - Threshold for detecting temperature sensor "
+                             "problems ({drg}F)".format(drg=dgr_sym),
                              value_default=4.0),
 
             'b1_mat_low_threshold':
@@ -329,17 +329,17 @@ class Application(DrivenApplicationBaseClass):
                              value_default=100.0),
             'b7_oat_mat_check':
             ConfigDescriptor(float,
-                            'Threshold value for temperature difference between outdoor-air temperature and mixed-air temperature reading when the outdoor-air damper is near 100% open ({drg}F)'.format(drg=dgr_sym),
+                            "'Temperature Sensor Dx' -Threshold value for temperature difference between outdoor-air temperature and mixed-air temperature reading when the outdoor-air damper is near 100% open ({drg}F)".format(drg=dgr_sym),
                              value_default=6.0),
 
             'c0_open_damper_threshold':
             ConfigDescriptor(float,
-                             'Threshold for the outdoor-air damper position when conditions are favorable for economizing – value above which the damper is considered open for economizing (%)',
+                             "'Economizing When Unit Should Dx' - Threshold for the outdoor-air damper position when conditions are favorable for economizing – value above which the damper is considered open for economizing (%)",
                              value_default=75.0),
 
             'c1_oaf_economizing_threshold':
             ConfigDescriptor(float,
-                             'Value below 100% in which the outdoor-air fraction, as a percent, is considered insufficient for economizing (%)',
+                             "'Economizing When Unit Should Dx' - Value below 100% in which the outdoor-air fraction, as a percent, is considered insufficient for economizing (%)",
                               value_default=25.0),
 
             'c2_minimum_damper_setpoint':
@@ -348,8 +348,8 @@ class Application(DrivenApplicationBaseClass):
                              value_default=15.0),
             'c3_excess_damper_threshold':
             ConfigDescriptor(float,
-                             'Threshold value above the minimum outdoor-air damper set point at which a fault will be identified '
-                             '- when conditions are not favorable for economizing or the AHU/RTU is not cooling (%)',
+                             "'Economizing When Unit Should Not Dx' - Threshold value above the minimum outdoor-air damper set point at which a fault will be identified "
+                             "- when conditions are not favorable for economizing or the AHU/RTU is not cooling (%)",
                              value_default=20.0),
             'c4_desired_oaf':
             ConfigDescriptor(float,
@@ -358,18 +358,18 @@ class Application(DrivenApplicationBaseClass):
 
             'c5_excess_oaf_threshold':
             ConfigDescriptor(float,
-                             'Threshold value above the desired minimum outdoor-air fraction as a percent where a fault will be indicated, when AHU/RTU is not economizing (%)',
+                             "'Excess Outdoor-air Intake Dx' - Threshold value above the desired minimum outdoor-air fraction as a percent where a fault will be indicated, when AHU/RTU is not economizing (%)",
                              value_default=30.0),
 
 
             'd0_insufficient_damper_threshold':
             ConfigDescriptor(float,
-                             'Threshold value below the minimum outdoor-air '
-                             'damper set-point at which a fault will '
-                             'be identified (%)', value_default=15.0),
+                             "'Insufficient Outdoor-air Intake Dx' - Threshold value below the minimum outdoor-air "
+                             "damper set-point at which a fault will "
+                             "be identified (%)", value_default=15.0),
             'd1_ventilation_oaf_threshold':
             ConfigDescriptor(float,
-                             'The value below the desired minimum outdoor-air fraction (percent) where a fault will be identified (%)',
+                             "'Insufficient Outdoor-air Intake Dx' - The value below the desired minimum outdoor-air fraction (percent) where a fault will be identified (%)",
                              value_default=5.0)
             }
 
