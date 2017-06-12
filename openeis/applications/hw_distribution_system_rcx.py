@@ -94,27 +94,7 @@ class Application(DrivenApplicationBaseClass):
 
                  c0_min_dp_threshold=2.5, c1_max_dp_threshold=50.0, c2_dp_reset_threshold=10.0,
                  c3_dp_pump_threshold=65.0, c4_setpoint_allowable_deviation=10.0,
-
-<<<<<<< HEAD
                  dp_oatemp_threshold=65.0, warm_up_time=30,
-=======
-    def __init__(self, *args,
-                 min_dp_threshold=2.5,
-                 max_dp_threshold=50.0,
-                 data_window=180, dp_reset_threshold=10.0,
-                 no_required_data=30,
-                 setpoint_allowable_deviation=10.0,
-                 warm_up_time=30,
-                 dp_pump_threshold=45.0,
-                 hw_st_threshold=120.0,
-                 hw_pump_vfd_threshold=70.0,
-                 min_hwst_threshold=70.0,
-                 max_hwst_threshold=195.0, min_hwrt_threshold=70.0,
-                 max_hwrt_threshold=180.0,
-                 delta_t_threshold=10.0, desired_delta_t=20.0,
-                 hwst_reset_threshold=10.0,
-                 sensitivity=1,
->>>>>>> 305bb12c526bb00087c4ab88223ad18dd198cc2a
                  **kwargs):
         super().__init__(*args, **kwargs)
         try:
@@ -167,7 +147,7 @@ class Application(DrivenApplicationBaseClass):
         self.warm_up_time = int(warm_up_time)
         self.warm_up_start = None
 
-<<<<<<< HEAD
+
         if a3_sensitivity == 0:
             # low sensitivity
             c4_setpoint_allowable_deviation = 15.0
@@ -209,55 +189,6 @@ class Application(DrivenApplicationBaseClass):
                                   b3_max_hwrt_threshold, b5_delta_t_threshold, b4_desired_delta_t)
 
         self.hw_dx3 = HW_reset_RCx(a0_no_required_data, b6_hwst_reset_threshold, c2_dp_reset_threshold)
-=======
-
-        if sensitivity == 0:
-            # low sensitivity
-            setpoint_allowable_deviation = 15.0
-            delta_t_threshold = 15.0
-            desired_delta_t = 20.0
-            hw_st_threshold = 130.0
-            hw_pump_vfd_threshold = 12.5
-            hwst_reset_threshold = 15.0
-            dp_pump_threshold = 25.0
-            dp_reset_threshold = 7.5
-        elif sensitivity == 1:
-            # normal sensitivity
-            setpoint_allowable_deviation = 10.0
-            delta_t_threshold = 10.0
-            desired_delta_t = 20.0
-            hw_st_threshold = 120.0
-            hw_pump_vfd_threshold = 25.0
-            hwst_reset_threshold = 10.0
-            dp_pump_threshold = 45.0
-            dp_reset_threshold = 5.0
-        elif sensitivity == 2:
-            # high sensitivity
-            setpoint_allowable_deviation = 5.0
-            delta_t_threshold = 5.0
-            desired_delta_t = 20.0
-            hw_st_threshold = 110.0
-            hw_pump_vfd_threshold = 37.5
-            hwst_reset_threshold = 5.0
-            dp_pump_threshold = 65.0
-            dp_reset_threshold = 2.5
-
-        self.hw_dx1 = HW_loopdp_RCx(no_required_data, data_window,
-                                    setpoint_allowable_deviation,
-                                    dp_pump_threshold)
-
-        self.hw_dx2 = HW_temp_RCx(no_required_data, data_window,
-                                  hw_st_threshold,
-                                  hw_pump_vfd_threshold,
-                                  setpoint_allowable_deviation,
-                                  min_hwst_threshold, max_hwst_threshold,
-                                  min_hwrt_threshold, max_hwrt_threshold,
-                                  delta_t_threshold, desired_delta_t)
-
-        self.hw_dx3 = HW_reset_RCx(no_required_data,
-                                   hwst_reset_threshold,
-                                   dp_reset_threshold)
->>>>>>> 305bb12c526bb00087c4ab88223ad18dd198cc2a
 
     @classmethod
     def get_config_parameters(cls):
@@ -273,7 +204,6 @@ class Application(DrivenApplicationBaseClass):
                             'Number of required data measurements to perform diagnostic', value_default=30),
             'a1_data_window':
             ConfigDescriptor(int,
-<<<<<<< HEAD
                              'Minimum elapsed time for analysis (minutes)',
                              value_default=180),
             'a2_local_tz':
@@ -344,91 +274,6 @@ class Application(DrivenApplicationBaseClass):
             ConfigDescriptor(float,
                              "'HW Differential Pressure Control Loop Dx' and 'HW Supply Temperature Control Loop Dx' - the allowable percent deviation from the set point for the hot-water supply temperature and loop differential pressure (%)",
                              value_default=10.0)
-=======
-                             'When the system starts this much '
-                             'time will be allowed to elapse before adding '
-                             'using data for analysis (minutes)',
-                             value_default=30),
-
-            'setpoint_allowable_deviation':
-                ConfigDescriptor(float,
-                                 'Percent allowable deviation from set '
-                                 'points (HWS and loop DP (%)',
-                                 value_default=10.0),
-
-
-            'dp_pump_threshold':
-                ConfigDescriptor(float,
-                                 'Pump threshold to determine if the loop DP '
-                                 'is too high (%)',
-                                 value_default=45.0),
-
-            'dp_reset_threshold':
-                ConfigDescriptor(float,
-                                 'HW loop DP threshold to detect DP reset '
-                                 '(psi)', value_default=5.0),
-
-            'hwst_reset_threshold':
-                ConfigDescriptor(float,
-                                 'HW supply temperature threshold to detect '
-                                 'HW supply temperature reset ({drg}F)'
-                                 .format(drg=dgr_sym),
-                                 value_default=10.0),
-
-            'hw_st_threshold':
-                ConfigDescriptor(float,
-                                 'HW supply temperature threshold to detect '
-                                 'if the HW supply temperature is too '
-                                 'high ({drg}F)'.format(drg=dgr_sym),
-                                 value_default=120.0),
-            'hw_pump_vfd_threshold':
-                ConfigDescriptor(float,
-                                 'HW loop pump VFD command threshold used to '
-                                 'determine if the HW supply temperature is '
-                                 'too high (%)', value_default=25.0),
-
-            'min_hwst_threshold':
-                ConfigDescriptor(float,
-                                 'Minimum allowable operational HW '
-                                 'supply temperature ({drg}F)'
-                                 .format(drg=dgr_sym),
-                                 value_default=125.0),
-            'max_hwst_threshold':
-                ConfigDescriptor(float, 'Maximum allowable operational '
-                                 'HW supply temperature ({drg}F)'
-                                 .format(drg=dgr_sym),
-                                 value_default=190.0),
-            'min_hwrt_threshold':
-                ConfigDescriptor(float,
-                                 'Minimum allowable operational '
-                                 'HW return temperature ({drg}F)'
-                                 .format(drg=dgr_sym),
-                                 value_default=115.0),
-            'max_hwrt_threshold':
-                ConfigDescriptor(float,
-                                 'Maximum allowable operational '
-                                 'HW return temperature ({drg}F)'
-                                 .format(drg=dgr_sym),
-                                 value_default=180.0),
-            'desired_delta_t':
-                ConfigDescriptor(float,
-                                 'Desired delta-T (difference between HWS '
-                                 'and HWR temperatures ({drg}F)'
-                                 .format(drg=dgr_sym),
-                                 value_default=20.0),
-            'delta_t_threshold':
-                ConfigDescriptor(float,
-                                 'Band around desired delta-T where '
-                                 'where delat-T is considered '
-                                 'OK ({drg}F)'.format(drg=dgr_sym),
-                                 value_default=10.0),
-            'sensitivity':
-                ConfigDescriptor(int,
-                                 'Sensitivity: values can be 0 (low), '
-                                 '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
-                                 'allows you to enter your own values for all threshold values',
-                                 value_default=1)
->>>>>>> 305bb12c526bb00087c4ab88223ad18dd198cc2a
             }
 
     @classmethod
