@@ -380,7 +380,7 @@ class Application(DrivenApplicationBaseClass):
         note = 'Sensitivity: values can be 0 (low), ' \
                '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
                'ignore other threshold values.'
-        return Descriptor(name=name, description=desc)
+        return Descriptor(name=name, description=desc, note=note)
 
     @classmethod
     def required_input(cls):
@@ -409,7 +409,7 @@ class Application(DrivenApplicationBaseClass):
             cls.cool_call_name:
             InputDescriptor('CoolingCall/ChilledWaterValvePosition',
                             'AHU cooling coil valve command or RTU coolcall/'
-                            'compressor command.', count_min=0),
+                            'compressor command (required for Dx)', count_min=0),
             cls.da_temp_name:
             InputDescriptor('DischargeAirTemperature',
                             'AHU discharge-air temperature', count_min=0),

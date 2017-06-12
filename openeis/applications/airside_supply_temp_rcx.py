@@ -331,7 +331,7 @@ class Application(DrivenApplicationBaseClass):
         note = 'Sensitivity: values can be 0 (low), ' \
                '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
                'ignore other threshold values.'
-        return Descriptor(name=name, description=desc)
+        return Descriptor(name=name, description=desc, note=note)
 
     @classmethod
     def required_input(cls):
