@@ -331,12 +331,13 @@ class Application(DrivenApplicationBaseClass):
         topic_parts = topic.split('/')
         output_topic_base = topic_parts[:-1]
 
-        type_topic  = '/'.join(output_topic_base + ['CyclingDetector', cls.type])
+        type_topic = '/'.join(output_topic_base + ['CyclingDetector', cls.type])
         ts_topic = '/'.join(output_topic_base + ['CyclingDetector', cls.timestamp])
         fanstatus_topic = '/'.join(output_topic_base + ['CyclingDetector', cls.fanstatus_name])
         zonetemp_topic = '/'.join(output_topic_base + ['CyclingDetector', cls.zonetemperature_name])
         zonetempsetpoint_topic = '/'.join(output_topic_base + ['CyclingDetector', cls.zonetemperature_stpt_name])
         cycling_topic = '/'.join(output_topic_base + ['CyclingDetector', 'cycling'])
+        penalty_topic = '/'.join(output_topic_base + ['CyclingDetector', 'penalty'])
 
         output_needs = {
             'CyclingDetector': {
@@ -346,7 +347,8 @@ class Application(DrivenApplicationBaseClass):
                 'ComprStatus': OutputDescriptor('integer', fanstatus_topic),
                 'ZoneTemperature': OutputDescriptor('float', zonetemp_topic),
                 'ZoneTemperatureSetPoint': OutputDescriptor('float', zonetempsetpoint_topic),
-                'cycling': OutputDescriptor('integer', cycling_topic)
+                'cycling': OutputDescriptor('integer', cycling_topic),
+                'penalty': OutputDescriptor('integer', penalty_topic)
             }
         }
 
@@ -482,6 +484,9 @@ class CyclingDetector(object):
         if "cycles" in results:
             if results["cycles"] != 'INCONCLUSIVE':
                 cycling = results["cycles"]
+        penalty = 0
+        if "Energy penalty" in results:
+            penalty = results["Energy penalty"]
 
         row = self.get_output_obj(datetime=timestamp,
                                   rec_type=type_cycling,
@@ -489,14 +494,15 @@ class CyclingDetector(object):
                                   compr_status=compr_stat,
                                   zone_temp=zonetemp,
                                   zone_temp_sp=zone_temp_setpoint,
-                                  cycling=cycling)
+                                  cycling=cycling,
+                                  penalty=penalty)
 
         diagnostic_result.insert_table_row('CyclingDetector', row)
         return diagnostic_result
 
     def get_output_obj(self, datetime, rec_type=type_data,
                        fan_status=-9999, compr_status=-9999, zone_temp=-9999,
-                       zone_temp_sp=-9999, cycling=-9999):
+                       zone_temp_sp=-9999, cycling=-9999, penalty=0):
         return {
             'type': rec_type,
             'datetime': datetime,
@@ -504,7 +510,8 @@ class CyclingDetector(object):
             'ComprStatus': compr_status,
             'ZoneTemperature': zone_temp,
             'ZoneTemperatureSetPoint': zone_temp_sp,
-            'cycling': cycling
+            'cycling': cycling,
+            'penalty': penalty
         }
 
     def operating_mode1(self, compressor_data, current_time, diagnostic_result):
@@ -714,7 +721,6 @@ class CyclingDetector(object):
         if self.last_state is not None and self.last_state == 0:
             from_previous = (self.timestamp_array[on_indices[0]] - self.last_time).total_seconds() / 60
             off_time.insert(0, from_previous)
-
         self.last_time = self.timestamp_array[0] + td(minutes=self.check_time / 4)
 
         if self.last_time not in self.timestamp_array:
@@ -732,7 +738,24 @@ class CyclingDetector(object):
         avg_on = np.mean(on_time) if on_time else -99.9
         avg_off = np.mean(off_time) if off_time else -99.9
 
-        results = {"cycles": no_cycles, "Avg On Cycle": avg_on, "Avg Off Cycle": avg_off}
+        # penalty (added by Woohyun)
+        results = {
+            "cycles": no_cycles,
+            "Avg On Cycle": avg_on,
+            "Avg Off Cycle": avg_off,
+            "Energy penalty": 0
+        }
+        if avg_on > 0 and avg_off > 0:
+            cycle_time = avg_on + avg_off
+            const_time = 1.0
+            cycle_rate = 60 / cycle_time
+            fraction_time = avg_on/cycle_time
+            cycle_max = cycle_rate/(4*fraction_time*(1-fraction_time))
+            energy_penalty = ((avg_on/(avg_on-const_time*(1-np.exp(-avg_on/const_time))))-1)*100
+
+            if cycle_max > 2.0 and energy_penalty > 10.0:
+                results["Energy penalty"] = energy_penalty
+
         return results
 
     def gen_status(self, peak, valley, time_array, diagnostic_result):
@@ -777,4 +800,3 @@ class CyclingDetector(object):
         while len(status_array) < len(time_array):
             status_array.append(status_value)
         return status_array
-
