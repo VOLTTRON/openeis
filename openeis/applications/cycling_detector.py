@@ -304,7 +304,7 @@ class Application(DrivenApplicationBaseClass):
                                 'Zone Temperature Set Point', count_min=0),
             cls.fanstatus_name:
                 InputDescriptor('SupplyFanStatus',
-                                'Supply fan status', count_min=1),
+                                'Supply fan status', count_min=0),
             cls.comprstatus_name:
                 InputDescriptor('CompressorStatus',
                                 'Compressor status', count_min=0)
@@ -380,7 +380,8 @@ class Application(DrivenApplicationBaseClass):
         def data_builder(value_tuple, point_name):
             value_list = []
             for item in value_tuple:
-                value_list.append(item[1])
+                if item[1] is not None:
+                    value_list.append(item[1])
             return value_list
 
         for key, value in device_dict.items():
@@ -396,6 +397,8 @@ class Application(DrivenApplicationBaseClass):
             if data_name == self.comprstatus_name:
                 compr_stat_data = data_builder(value, data_name)
 
+        if len(zone_temp_data) == 0:
+            return diagnostic_result
         zonetemp = (sum(zone_temp_data) / len(zone_temp_data))
         fanstat = None
         comprstat = None
@@ -745,6 +748,7 @@ class CyclingDetector(object):
             "Avg Off Cycle": avg_off,
             "Energy penalty": 0
         }
+
         if avg_on > 0 and avg_off > 0:
             cycle_time = avg_on + avg_off
             const_time = 1.0

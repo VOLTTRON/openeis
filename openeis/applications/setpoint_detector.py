@@ -200,6 +200,9 @@ class Application(DrivenApplicationBaseClass):
             if key.startswith(self.zone_temp_name) and value is not None:
                 zone_temp_data.append(value)
 
+        if len(zone_temp_data) == 0:
+            return diagnostic_result
+
         zonetemp = (sum(zone_temp_data) / len(zone_temp_data))
         fanstat = None
         if len(fan_stat_data)>0:
@@ -412,17 +415,18 @@ class SetPointDetector(object):
 
     def on_new_data(self, timestamp, fanstat, zonetemp, diagnostic_result):
         self.inconsistent_data_flag = 0
-        fanstat_value = int(fanstat)
+        fanstat_value = None
+        if fanstat is not None:
+            fanstat_value = int(fanstat)
         zonetemp_val = float(zonetemp)
         #Insert raw data for plotting
         row = self.get_output_obj(timestamp, type_data,
                                        FanStatus=fanstat_value, ZoneTemp=zonetemp_val )
         diagnostic_result.insert_table_row('SetpointDetector', row)
         #Dx
-        if not fanstat_value:
-            diagnostic_result.log('Supply fan is off.  Data for {} '
-                      'will not used'.format(str(timestamp)), logging.DEBUG)
-            return diagnostic_result
+        if fanstat_value is None:
+            diagnostic_result.log('Supply fan is off. {}'.format(str(timestamp)), logging.DEBUG)
+            #return diagnostic_result
 
         diagnostic_result = self.detect_stpt_main(zonetemp_val, timestamp, diagnostic_result)
         return diagnostic_result
@@ -443,7 +447,7 @@ class SetPointDetector(object):
                 peak_array, valley_array = align_pv(filtered_timeseries, peaks, valleys, self.timestamp_array)
                 if (np.prod(peak_array.shape) < self.minimum_data_count or
                             np.prod(valley_array.shape) < self.minimum_data_count):
-                    diagnostic_result.debug('Set point detection is inconclusive.  Not enough data.', logging.DEBUG)
+                    diagnostic_result.log('Set point detection is inconclusive.  Not enough data.', logging.DEBUG)
                     self.initialize()
                     return diagnostic_result
 

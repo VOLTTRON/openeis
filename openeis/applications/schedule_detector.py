@@ -158,6 +158,9 @@ class Application(DrivenApplicationBaseClass):
             if key.startswith(self.zone_temp_name) and value is not None:
                 zone_temp_data.append(value)
 
+        if len(zone_temp_data) == 0:
+            return diagnostic_result
+
         zonetemp = (sum(zone_temp_data) / len(zone_temp_data))
         diagnostic_result = self.schedule_detector.on_new_data(current_time, zonetemp, diagnostic_result)
 
