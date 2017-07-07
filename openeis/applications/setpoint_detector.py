@@ -88,7 +88,7 @@ class Application(DrivenApplicationBaseClass):
     zone_temp_name = 'zone_temp'
     zone_temp_setpoint_name = 'zone_temp_setpoint'
 
-    def __init__(self, *args, minimum_data_count=5, sensitivity=1, local_tz=1, **kwargs):
+    def __init__(self, *args, minimum_data_count=5, sensitivity=1, local_tz=1, db=0.3, **kwargs):
         super().__init__(*args, **kwargs)
         try:
             self.cur_tz = available_tz[local_tz]
@@ -103,7 +103,7 @@ class Application(DrivenApplicationBaseClass):
         else:
             area_distribution_threshold = 0.1
 
-        self.setpoint_detector = SetPointDetector(minimum_data_count, area_distribution_threshold)
+        self.setpoint_detector = SetPointDetector(minimum_data_count, area_distribution_threshold, db)
 
     @classmethod
     def get_config_parameters(cls):
@@ -126,7 +126,11 @@ class Application(DrivenApplicationBaseClass):
                 ConfigDescriptor(int,
                                  "Integer corresponding to local timezone: "
                                  "[1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
-                                 value_default=1)
+                                 value_default=1),
+            'db':
+                ConfigDescriptor(float,
+                                 "Temperature Deadband",
+                                 value_default=0.3)
         }
 
     @classmethod
@@ -398,9 +402,10 @@ def detect_peaks(data, mph=None, threshold=0, mpd=1, edge='rising',
     return ind
 
 class SetPointDetector(object):
-    def __init__(self, minimum_data_count=5, area_distribution_threshold=0.1, **kwargs):
+    def __init__(self, minimum_data_count=5, area_distribution_threshold=0.1, db=0.3, **kwargs):
         self.minimum_data_count = minimum_data_count
         self.area_distribution_threshold = area_distribution_threshold
+        self.db = db
         self.initialize()
 
     def initialize(self):
@@ -582,8 +587,8 @@ class SetPointDetector(object):
         peak_valley_ts1 = zip(peak_ts1, valley_ts1)
         peak_valley_ts2 = zip(peak_ts2, valley_ts2)
 
-        remove_temp2 = [(y[0], y[1]) for x, y in peak_valley_ts2 if x[1] >= y[1] + 0.3]
-        remove_temp1 = [(x[0], x[1]) for x, y in peak_valley_ts1 if x[1] >= y[1] + 0.3]
+        remove_temp2 = [(y[0], y[1]) for x, y in peak_valley_ts2 if x[1] >= y[1] + self.db]
+        remove_temp1 = [(x[0], x[1]) for x, y in peak_valley_ts1 if x[1] >= y[1] + self.db]
 
         peak_temp = [row[1] for row in remove_temp1]
         valley_temp = [row[1] for row in remove_temp2]
