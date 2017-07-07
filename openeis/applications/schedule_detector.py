@@ -51,6 +51,7 @@ under Contract DE-AC05-76RL01830
 
 import sys
 import logging
+import dateutil.tz
 import datetime as dt
 from dateutil.parser import parse
 import numpy as np
@@ -64,7 +65,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   reports)
 
 DATE_FORMAT = '%m-%d-%y %H:%M'
-
+available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
 
 class Application(DrivenApplicationBaseClass):
     type = 'type' #can be: data, peak, valley, setpoint
@@ -72,8 +73,13 @@ class Application(DrivenApplicationBaseClass):
     zone_temp_name = 'zone_temp'
     status_name = 'schedule_status'
 
-    def __init__(self, *args, no_required_data=25, sample_rate='30Min', alphabet='abcd', **kwargs):
+    def __init__(self, *args, no_required_data=25, sample_rate='30Min', alphabet='abcd', local_tz=1, **kwargs):
         super().__init__(*args, **kwargs)
+        try:
+            self.cur_tz = available_tz[local_tz]
+        except:
+            self.cur_tz = 'UTC'
+
         self.schedule_detector = ScheduleDetection(no_required_data, sample_rate, alphabet)
 
     @classmethod
@@ -87,7 +93,12 @@ class Application(DrivenApplicationBaseClass):
             'sample_rate':
                 ConfigDescriptor(str,
                                  'Sample rate for occupancy schedule detection (min)',
-                                 value_default='60Min')
+                                 value_default='60Min'),
+            'local_tz':
+                ConfigDescriptor(int,
+                                 "Integer corresponding to local timezone: "
+                                 "[1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
+                                 value_default=1)
         }
 
     @classmethod
@@ -148,8 +159,9 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_result = Results()
         topics = self.inp.get_topics()
         diagnostic_topic = topics[self.zone_temp_name][0]
-        current_time = self.inp.localize_sensor_time(diagnostic_topic,
-                                                     current_time)
+        to_zone = dateutil.tz.gettz(self.cur_tz)
+        current_time = current_time.astimezone(to_zone)
+
         for key, value in points.items():
             device_dict[key.lower()] = value
 
@@ -202,9 +214,9 @@ def create_alphabet_dict(alphabet):
     alphabet_length = len(alphabet)
     for item in range(alphabet_length):
         if item <= (alphabet_length - 1) / 2:
-            alphabet_dict[alphabet[item]] = 0
-        else:
             alphabet_dict[alphabet[item]] = 1
+        else:
+            alphabet_dict[alphabet[item]] = 0
     return alphabet_dict
 
 

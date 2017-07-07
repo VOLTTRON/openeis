@@ -50,6 +50,7 @@ under Contract DE-AC05-76RL01830
 '''
 
 import sys
+import dateutil.tz
 import logging
 from math import ceil
 from datetime import timedelta as td
@@ -78,6 +79,7 @@ type_valley = 'valley'
 type_setpoint = 'setpoint'
 
 DATE_FORMAT = '%m-%d-%y %H:%M'
+available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
 
 class Application(DrivenApplicationBaseClass):
     type = 'type' #can be: data, peak, valley, setpoint
@@ -86,8 +88,12 @@ class Application(DrivenApplicationBaseClass):
     zone_temp_name = 'zone_temp'
     zone_temp_setpoint_name = 'zone_temp_setpoint'
 
-    def __init__(self, *args, minimum_data_count=5, sensitivity=1, **kwargs):
+    def __init__(self, *args, minimum_data_count=5, sensitivity=1, local_tz=1, **kwargs):
         super().__init__(*args, **kwargs)
+        try:
+            self.cur_tz = available_tz[local_tz]
+        except:
+            self.cur_tz = 'UTC'
 
         area_distribution_threshold = 0.1
         if sensitivity == 0:
@@ -115,6 +121,11 @@ class Application(DrivenApplicationBaseClass):
                 ConfigDescriptor(int,
                                  'Sensitivity to detect a temperature setpoint change: '
                                  'values can be 0 (low), 1 (normal), 2 (high)',
+                                 value_default=1),
+            'local_tz':
+                ConfigDescriptor(int,
+                                 "Integer corresponding to local timezone: "
+                                 "[1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
                                  value_default=1)
         }
 
@@ -187,8 +198,9 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_result = Results()
         topics = self.inp.get_topics()
         diagnostic_topic = topics[self.zone_temp_name][0]
-        current_time = self.inp.localize_sensor_time(diagnostic_topic,
-                                                     current_time)
+        to_zone = dateutil.tz.gettz(self.cur_tz)
+        current_time = current_time.astimezone(to_zone)
+
         for key, value in points.items():
             device_dict[key.lower()] = value
 
@@ -479,8 +491,9 @@ class SetPointDetector(object):
                     # }
                     diagnostic_result.insert_table_row('SetpointDetector', row)
 
-                # do domething with this
+                # do something with this
                 #setpoint_array = self.check_timeseries_grouping()
+                #print(setpoint_array)
 
                 self.initialize()
         finally:
@@ -492,38 +505,41 @@ class SetPointDetector(object):
         incrementer = 0
         index = 0
         set_points = []
+        next_group = None
         number_groups = int(ceil(
             self.current_stpt_array.size)) - self.minimum_data_count if self.current_stpt_array.size > self.minimum_data_count else 1
         if number_groups == 1:
             current_stpt = [self.timestamp_array[0], self.timestamp_array[-1], np.average(self.current_stpt_array)]
             set_points.append(current_stpt)
+
         else:
             for grouper in range(number_groups):
                 current = self.current_stpt_array[(0 + incrementer):(self.minimum_data_count + incrementer + index)]
                 next_group = self.current_stpt_array[(1 + grouper):(self.minimum_data_count + grouper + 1)]
 
-        if np.std(next_group) < 0.4:
-            area = self.determine_distribution_area(current, next_group)
-            if area < self.area_distribution_threshold:
-                incrementer += 1
-                current_stpt = [self.timestamp_array[0 + incrementer],
-                                self.timestamp_array[self.minimum_data_count + incrementer + index],
-                                np.average(current)]
-                if np.std(current_stpt) < 0.4:
-                    set_points.append(current_stpt)
-                if grouper < number_groups - 1:
-                    last_stpt = [self.timestamp_array[1 + grouper],
-                                 self.timestamp_array[self.minimum_data_count + grouper + 1],
-                                 np.average(next_group)]
-            else:
-                index += 1
-                if grouper == number_groups - 1:
-                    current = self.current_stpt_array[(0 + incrementer):(self.minimum_data_count + grouper + 1)]
+        if next_group is not None:
+            if np.std(next_group) < 0.4:
+                area = self.determine_distribution_area(current, next_group)
+                if area < self.area_distribution_threshold:
+                    incrementer += 1
                     current_stpt = [self.timestamp_array[0 + incrementer],
-                                    self.timestamp_array[self.minimum_data_count + grouper + 1],
+                                    self.timestamp_array[self.minimum_data_count + incrementer + index],
                                     np.average(current)]
-            if np.std(current_stpt) < 0.4:
-                set_points.append(current_stpt)
+                    if np.std(current) < 0.4:
+                        set_points.append(current_stpt)
+                    if grouper < number_groups - 1:
+                        last_stpt = [self.timestamp_array[1 + grouper],
+                                     self.timestamp_array[self.minimum_data_count + grouper + 1],
+                                     np.average(next_group)]
+                else:
+                    index += 1
+                    if grouper == number_groups - 1:
+                        current = self.current_stpt_array[(0 + incrementer):(self.minimum_data_count + grouper + 1)]
+                        current_stpt = [self.timestamp_array[0 + incrementer],
+                                        self.timestamp_array[self.minimum_data_count + grouper + 1],
+                                        np.average(current)]
+                if np.std(current) < 0.4:
+                    set_points.append(current_stpt)
 
         return set_points
 

@@ -259,11 +259,12 @@ class Application(DrivenApplicationBaseClass):
 
     def __init__(self, *args, minimum_data_count=5, analysis_run_interval=500, local_tz=1, **kwargs):
         super().__init__(*args, **kwargs)
-        self.cycling_detector = CyclingDetector(minimum_data_count, analysis_run_interval)
         try:
             self.cur_tz = available_tz[local_tz]
         except:
             self.cur_tz = 'UTC'
+        self.cycling_detector = CyclingDetector(minimum_data_count, analysis_run_interval)
+
     @classmethod
     def get_config_parameters(cls):
         '''
@@ -460,7 +461,7 @@ class CyclingDetector(object):
             self.mode = 1
         elif zonetemp != default_if_none and zone_temp_setpoint != default_if_none and fanstat != default_if_none:
             self.mode = 2
-        elif zonetemp != default_if_none and fanstat != default_if_none:
+        elif zonetemp != default_if_none:
             self.mode = 3
         else:
             self.mode = 4
@@ -644,6 +645,9 @@ class CyclingDetector(object):
 
     def create_setpoint_array(self, pcopy, vcopy):
         """Creates setpoint array when zone temperature set point is not measured."""
+
+        db = 0.3
+
         peak_ts1 = zip([self.timestamp_array[ind] for ind in pcopy], [self.zone_temperature_array[ind] for ind in pcopy])
         valley_ts1 = zip([self.timestamp_array[ind] for ind in vcopy], [self.zone_temperature_array[ind] for ind in vcopy])
 
@@ -655,14 +659,14 @@ class CyclingDetector(object):
 
         zip1 = zip(peak_ts1, valley_ts1)
         zip2 = zip(peak_ts2, valley_ts2)
-        remove_temp1 = [(x[0], x[1]) for x, y in zip1 if x[1] >= y[1] + 0.25]
-        remove_temp2 = [(y[0], y[1]) for x, y in zip2 if x[1] >= y[1] + 0.25]
+        remove_temp1 = [(x[0], x[1]) for x, y in zip1 if x[1] >= y[1] + db]
+        remove_temp2 = [(y[0], y[1]) for x, y in zip2 if x[1] >= y[1] + db]
 
         peak_ts_list = list(peak_ts3)
         valleys_ts_list = list(valley_ts3)
 
-        peaks = [pcopy[x] for x in range(pcopy.size) if peak_ts_list[x][1] >= valleys_ts_list[x][1] + 0.25]
-        valleys = [vcopy[x] for x in range(vcopy.size) if peak_ts_list[x][1] >= valleys_ts_list[x][1] + 0.25]
+        peaks = [pcopy[x] for x in range(pcopy.size) if peak_ts_list[x][1] >= valleys_ts_list[x][1] + db]
+        valleys = [vcopy[x] for x in range(vcopy.size) if peak_ts_list[x][1] >= valleys_ts_list[x][1] + db]
 
         zone_temperature_stpt = []
 
