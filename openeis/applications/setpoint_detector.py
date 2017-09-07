@@ -1,5 +1,5 @@
-'''
-Copyright (c) 2014, Battelle Memorial Institute
+"""
+Copyright (c) 2017, Battelle Memorial Institute
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -26,37 +26,34 @@ The views and conclusions contained in the software and documentation are those
 of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the FreeBSD Project.
 
-This material was prepared as an account of work sponsored by an
-agency of the United States Government.  Neither the United States
-Government nor the United States Department of Energy, nor Battelle,
-nor any of their employees, nor any jurisdiction or organization
-that has cooperated in the development of these materials, makes
-any warranty, express or implied, or assumes any legal liability
-or responsibility for the accuracy, completeness, or usefulness or
-any information, apparatus, product, software, or process disclosed,
-or represents that its use would not infringe privately owned rights.
+This material was prepared as an account of work sponsored by an agency of the
+United States Government. Neither the United States Government nor the United
+States Department of Energy, nor Battelle, nor any of their employees, nor any
+jurisdiction or organization that has cooperated in the development of these
+materials, makes any warranty, express or implied, or assumes any legal
+liability or responsibility for the accuracy, completeness, or usefulness or
+any information, apparatus, product, software, or process disclosed, or
+represents that its use would not infringe privately owned rights.
 
-Reference herein to any specific commercial product, process, or
-service by trade name, trademark, manufacturer, or otherwise does
-not necessarily constitute or imply its endorsement, recommendation,
-r favoring by the United States Government or any agency thereof,
-or Battelle Memorial Institute. The views and opinions of authors
-expressed herein do not necessarily state or reflect those of the
-United States Government or any agency thereof.
+Reference herein to any specific commercial product, process, or service by
+trade name, trademark, manufacturer, or otherwise does not necessarily
+constitute or imply its endorsement, recommendation, or favoring by the
+United States Government or any agency thereof, or Battelle Memorial Institute.
+The views and opinions of authors expressed herein do not necessarily state or
+reflect those of the United States Government or any agency thereof.
 
 PACIFIC NORTHWEST NATIONAL LABORATORY
-operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
+operated by
+BATTELLE
+for the
+UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
-'''
-
-import sys
+"""
 import dateutil.tz
 import logging
 from math import ceil
 from datetime import timedelta as td
 from copy import deepcopy
-from dateutil .parser import parse
-import os
 
 import numpy as np
 from scipy.stats import norm
@@ -69,7 +66,8 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Results,
                                   Descriptor,
                                   reports)
-
+__version__ = "1.0.1"
+__authors__ = ["Robert Lutes <robert.lutes@pnnl.gov>", "Hung Ngo <ngo.hung@pnnl.gov>"]
 cutoff = 300
 fs = 3000
 
@@ -81,8 +79,9 @@ type_setpoint = 'setpoint'
 DATE_FORMAT = '%m-%d-%y %H:%M'
 available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
 
+
 class Application(DrivenApplicationBaseClass):
-    type = 'type' #can be: data, peak, valley, setpoint
+    type = 'type' # can be: data, peak, valley, setpoint
     timestamp = 'date'  # For Rcx
     fan_status_name = 'fan_status'
     zone_temp_name = 'zone_temp'
@@ -95,22 +94,26 @@ class Application(DrivenApplicationBaseClass):
         except:
             self.cur_tz = 'UTC'
 
-        area_distribution_threshold = 0.1
         if sensitivity == 0:
             area_distribution_threshold = 0.2
+            std_deviation_threshold = 2.0
         elif sensitivity == 2:
             area_distribution_threshold = 0.05
+            std_deviation_threshold = 1.0
         else:
             area_distribution_threshold = 0.1
+            std_deviation_threshold = 1.5
 
-        self.setpoint_detector = SetPointDetector(minimum_data_count, area_distribution_threshold, db)
+        self.setpoint_detector = SetPointDetector(minimum_data_count,
+                                                  area_distribution_threshold,
+                                                  db, std_deviation_threshold)
 
     @classmethod
     def get_config_parameters(cls):
-        '''
-        Generate required configuration
-        parameters with description for user
-        '''
+        """
+        Generate required configuration parameters with description for user.
+        :return:
+        """
         dgr_sym = u'\N{DEGREE SIGN}'
         return {
             'minimum_data_count':
@@ -135,16 +138,20 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def get_self_descriptor(cls):
+        """
+        Description for front end.
+        :return:
+        """
         name = 'Temperature Setpoint Detector'
         desc = 'Temperature Setpoint Detector'
         return Descriptor(name=name, description=desc)
 
     @classmethod
     def required_input(cls):
-        '''
-        Generate required inputs with description for
-        user.
-        '''
+        """
+        Generate required inputs with description for user.
+        :return:
+        """
         return {
             cls.fan_status_name:
                 InputDescriptor('SupplyFanStatus',
@@ -155,9 +162,11 @@ class Application(DrivenApplicationBaseClass):
         }
 
     def reports(self):
-        '''Called by UI to assemble information for creation of the diagnostic
+        """
+        Called by UI to assemble information for creation of the diagnostic
         visualization.
-        '''
+        :return:
+        """
         report = reports.Report('Setpoint Detector Report')
         report.add_element(reports.SetpointDetector(
             table_name='SetpointDetector'))
@@ -165,10 +174,12 @@ class Application(DrivenApplicationBaseClass):
 
     @classmethod
     def output_format(cls, input_object):
-        '''Called when application is staged.
-
-        Output will have the date-time and  error-message.
-        '''
+        """
+        Called when application is staged.
+        Output will have the date-time and error-message.
+        :param input_object:
+        :return:
+        """
         result = super().output_format(input_object)
         topics = input_object.get_topics()
         topic = topics[cls.zone_temp_name][0]
@@ -198,6 +209,12 @@ class Application(DrivenApplicationBaseClass):
         return result
 
     def run(self, current_time, points):
+        """
+        Main method called by DrivenApplicationBaseClass.
+        :param current_time:
+        :param points:
+        :return:
+        """
         device_dict = {}
         diagnostic_result = Results()
         topics = self.inp.get_topics()
@@ -219,31 +236,64 @@ class Application(DrivenApplicationBaseClass):
         if len(zone_temp_data) == 0:
             return diagnostic_result
 
-        zonetemp = (sum(zone_temp_data) / len(zone_temp_data))
-        fanstat = None
-        if len(fan_stat_data)>0:
-            fanstat = (sum(fan_stat_data) / len(fan_stat_data))
-        diagnostic_result = self.setpoint_detector.on_new_data(current_time, fanstat, zonetemp, diagnostic_result)
+        zn_temperature = (sum(zone_temp_data) / len(zone_temp_data))
+        fan_status = sum(fan_stat_data) / len(fan_stat_data) if fan_stat_data else None
+
+        diagnostic_result = self.setpoint_detector.on_new_data(current_time, fan_status,
+                                                               zn_temperature, diagnostic_result)
         return diagnostic_result
 
+
 def butter_lowpass(cutoff, fs, order=5):
+    """
+    Butter filter.
+    :param cutoff:
+    :param fs:
+    :param order:
+    :return:
+    """
     nyq = 0.5 * fs
     normal_cutoff = cutoff / nyq
     b, a = butter(order, normal_cutoff, btype='low', analog=False)
     return b, a
 
+
 def butter_lowpass_filtfilt(data, cutoff, fs, order=5):
+    """
+    Butter lowpass filter main method.
+    :param data:
+    :param cutoff:
+    :param fs:
+    :param order:
+    :return:
+    """
     b, a = butter_lowpass(cutoff, fs, order=order)
     y = filtfilt(b, a, data)
     return y
 
+
 def find_intersections(m1, m2, std1, std2):
+    """
+    Statistical function
+    :param m1:
+    :param m2:
+    :param std1:
+    :param std2:
+    :return:
+    """
     a = 1. / (2. * std1 ** 2) - 1. / (2. * std2 ** 2)
     b = m2 / (std2 ** 2) - m1 / (std1 ** 2)
     c = m1 ** 2 / (2 * std1 ** 2) - m2 ** 2 / (2 * std2 ** 2) - np.log(std2 / std1)
     return np.roots([a, b, c])
 
+
 def locate_min_max(timeseries):
+    """
+    Filters timeseries zone temperature data and locates the peaks and
+    valleys for set point detection.
+    :param timeseries:
+    :return:
+    """
     try:
         filtered_timeseries = butter_lowpass_filtfilt(timeseries, cutoff, fs)
         maximums = detect_peaks(timeseries, mpd=1, valley=False)
@@ -254,15 +304,21 @@ def locate_min_max(timeseries):
         minimums = np.empty(0)
     return minimums, maximums, filtered_timeseries
 
-def align_pv(zonetemp_array, peak_ind, val_ind, dtime):
-    '''align_pv takes the indices of peaks (peak_ind) and indices of
 
+def align_pv(zonetemp_array, peak_ind, val_ind, dtime):
+    """
+    align_pv takes the indices of peaks (peak_ind) and indices of
     valleys (val_ind) and ensures that there is only one valley
     in-between two consecutive peaks and only one peak between two
     consecutive valleys.  If there are two or more peaks between
     valleys the largest value is kept.  If there are two or more
     valleys between two peaks then the smallest value is kept.
-    '''
+    :param zonetemp_array:
+    :param peak_ind:
+    :param val_ind:
+    :param dtime:
+    :return:
+    """
     try:
         reckon = 0
         aligned = False
@@ -271,11 +327,11 @@ def align_pv(zonetemp_array, peak_ind, val_ind, dtime):
         while not aligned:
             if find_peak:
                 while peak_ind[reckon + 1] < val_ind[reckon + begin]:
-                    if (zonetemp_array[peak_ind[reckon]] > zonetemp_array[peak_ind[reckon + 1]]):
+                    if zonetemp_array[peak_ind[reckon]] > zonetemp_array[peak_ind[reckon + 1]]:
                         peak_ind = np.delete(peak_ind, reckon + 1)
                     else:
                         peak_ind = np.delete(peak_ind, reckon)
-                if ((dtime[val_ind[reckon + begin]] - dtime[peak_ind[reckon]]) <= td(minutes=5)):
+                if (dtime[val_ind[reckon + begin]] - dtime[peak_ind[reckon]]) <= td(minutes=3):
                     val_ind = np.delete(val_ind, reckon + begin)
                     peak_ind = np.delete(peak_ind, reckon + 1)
                 else:
@@ -286,11 +342,11 @@ def align_pv(zonetemp_array, peak_ind, val_ind, dtime):
                         reckon += 1
             else:
                 while val_ind[reckon + 1] < peak_ind[reckon + begin]:
-                    if (zonetemp_array[val_ind[reckon]] > zonetemp_array[val_ind[reckon + 1]]):
+                    if zonetemp_array[val_ind[reckon]] > zonetemp_array[val_ind[reckon + 1]]:
                         val_ind = np.delete(val_ind, reckon)
                     else:
                         val_ind = np.delete(val_ind, reckon + 1)
-                if ((dtime[peak_ind[reckon + begin]] - dtime[val_ind[reckon]]) <= td(minutes=5)):
+                if (dtime[peak_ind[reckon + begin]] - dtime[val_ind[reckon]]) <= td(minutes=3):
                     val_ind = np.delete(val_ind, reckon + 1)
                     peak_ind = np.delete(peak_ind, reckon + begin)
                 else:
@@ -309,9 +365,10 @@ def align_pv(zonetemp_array, peak_ind, val_ind, dtime):
     except:
         return np.empty(0), np.empty(0)
 
+
 def detect_peaks(data, mph=None, threshold=0, mpd=1, edge='rising',
                  kpsh=False, valley=False, ax=None):
-    '''
+    """
     Detect peaks in data based on their amplitude and other features.
     Original source for detect_peaks function can be obtained at:
     https://github.com/demotu/BMC/blob/master/functions/detect_peaks.py
@@ -341,7 +398,16 @@ def detect_peaks(data, mph=None, threshold=0, mpd=1, edge='rising',
     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
     OTHER DEALINGS IN THE SOFTWARE.
-    '''
+    :param data:
+    :param mph:
+    :param threshold:
+    :param mpd:
+    :param edge:
+    :param kpsh:
+    :param valley:
+    :param ax:
+    :return:
+    """
     data = np.array(data)
     if data.size < 3:
         return np.array([], dtype=int)
@@ -401,15 +467,30 @@ def detect_peaks(data, mph=None, threshold=0, mpd=1, edge='rising',
         ind = np.sort(ind[~idel])
     return ind
 
+
 class SetPointDetector(object):
-    def __init__(self, minimum_data_count=5, area_distribution_threshold=0.1, db=0.3, **kwargs):
+    def __init__(self, minimum_data_count=5, area_distribution_threshold=0.1, db=0.3,
+                 std_deviation_threshold=2.0, **kwargs):
         self.minimum_data_count = minimum_data_count
         self.area_distribution_threshold = area_distribution_threshold
         self.db = db
-        self.initialize()
+        self.zn_temperature_array= np.empty(0)
+        self.fan_status_arr = np.empty(0)
+        self.timestamp_array = np.empty(0)
+        self.curr_stpt_array = np.empty(0)
+        self.curr_timestamp_array = np.empty(0)
+        self.inconsistent_data_flag = 0
+        self.std_deviation_threshold = std_deviation_threshold
+        self.number = 0
+        self.startup = True
+        self.available = []
 
     def initialize(self):
-        self.zonetemp_array = np.empty(0)
+        """
+        Reinitialize data arrays and algorithm parameters.
+        :return:
+        """
+        self.zn_temperature_array = np.empty(0)
         self.fan_status_arr = np.empty(0)
         self.timestamp_array = np.empty(0)
         self.inconsistent_data_flag = 0
@@ -430,126 +511,206 @@ class SetPointDetector(object):
             'note': note
         }
 
-    def on_new_data(self, timestamp, fanstat, zonetemp, diagnostic_result):
+    def on_new_data(self, timestamp, fan_status, zn_temperature, diagnostic_result):
+        """
+        Process each data row in csv.
+        :param timestamp:
+        :param fan_status:
+        :param zn_temperature:
+        :param diagnostic_result:
+        :return:
+        """
         self.inconsistent_data_flag = 0
-        fanstat_value = None
-        if fanstat is not None:
-            fanstat_value = int(fanstat)
-        zonetemp_val = float(zonetemp)
-        #Insert raw data for plotting
-        row = self.get_output_obj(timestamp, type_data,
-                                       FanStatus=fanstat_value, ZoneTemp=zonetemp_val )
-        diagnostic_result.insert_table_row('SetpointDetector', row)
-        #Dx
-        if fanstat_value is None:
-            diagnostic_result.log('Supply fan is off. {}'.format(str(timestamp)), logging.DEBUG)
-            #return diagnostic_result
 
-        diagnostic_result = self.detect_stpt_main(zonetemp_val, timestamp, diagnostic_result)
+        fan_status = int(fan_status) if fan_status is not None else None
+        zn_temperature = float(zn_temperature)
+
+        # Insert raw data for plotting
+        row = self.get_output_obj(timestamp, type_data,
+                                  FanStatus=fan_status,
+                                  ZoneTemp=zn_temperature)
+
+        diagnostic_result.insert_table_row('SetpointDetector', row)
+
+        if fan_status is None:
+            diagnostic_result.log('Supply fan is off. {}'.format(str(timestamp)), logging.DEBUG)
+
+        diagnostic_result = self.detect_stpt_main(zn_temperature, timestamp, diagnostic_result)
         return diagnostic_result
 
     def check_run_status(self, current_time):
+        """
+        Check if algorithm has sufficient data to run set point detection.
+        :param current_time:
+        :return:
+        """
         if self.timestamp_array.size and self.timestamp_array[0].date() != current_time.date():
             return True
         return False
 
-    def detect_stpt_main(self, zone_temp, current_time, diagnostic_result):
+    def detect_stpt_main(self, zn_temperature, current_time, diagnostic_result):
+        """
+
+        :param zn_temperature:
+        :param current_time:
+        :param diagnostic_result:
+        :return:
+        """
         try:
             if self.check_run_status(current_time):
-                valleys, peaks, filtered_timeseries = locate_min_max(self.zonetemp_array)
+                valleys, peaks, filtered_timeseries = locate_min_max(self.zn_temperature_array)
                 if np.prod(peaks.shape) < self.minimum_data_count or np.prod(valleys.shape) < self.minimum_data_count:
                     diagnostic_result.log('Set point detection is inconclusive.  Not enough data.', logging.DEBUG)
                     self.initialize()
                     return diagnostic_result
                 peak_array, valley_array = align_pv(filtered_timeseries, peaks, valleys, self.timestamp_array)
-                if (np.prod(peak_array.shape) < self.minimum_data_count or
-                            np.prod(valley_array.shape) < self.minimum_data_count):
+                if np.prod(peak_array.shape) < self.minimum_data_count or np.prod(valley_array.shape) < self.minimum_data_count:
                     diagnostic_result.log('Set point detection is inconclusive.  Not enough data.', logging.DEBUG)
                     self.initialize()
                     return diagnostic_result
 
-                # for i in (0, peak_array.size-1):
-                #     row = self.get_output_obj(timestamp, type_data,
-                #                               FanStatus=fanstat_value, ZoneTemp=zonetemp_val)
-                #     diagnostic_result.insert_table_row('SetpointDetector', row)
-                #     peak_row = {
-                #         'type': type_setpoint,
-                #         'datetime': self.current_timestamp_array[i],
-                #         'FanStatus': None,
-                #         'ZoneTemperature': None,
-                #         'ZoneTemperatureSetPoint': None
-                #     }
+                self.curr_stpt_array, self.curr_timestamp_array = self.create_setpoint_array(deepcopy(peak_array),
+                                                                                             deepcopy(valley_array))
 
-                self.current_stpt_array, self.current_timestamp_array = self.create_setpoint_array(deepcopy(peak_array),
-                                                                                                   deepcopy(
-                                                                                                       valley_array))
+                # diagnostic_result.log("Current set point array: {}".format(self.curr_stpt_array))
+                print("Current set point array: {}".format(self.curr_stpt_array))
+                if not np.prod(self.curr_stpt_array.shape):
+                    return diagnostic_result
 
-                for i in (0, self.current_stpt_array.size-1):
-                    row = self.get_output_obj(self.current_timestamp_array[i], type_setpoint,
-                                              ZoneTempSp=self.current_stpt_array[i])
-                    # stpt_row = {
-                    #     'type': type_setpoint,
-                    #     'datetime': self.current_timestamp_array[i],
-                    #     'FanStatus': None,
-                    #     'ZoneTemperature': None,
-                    #     'ZoneTemperatureSetPoint': self.current_stpt_array[i]
-                    # }
-                    diagnostic_result.insert_table_row('SetpointDetector', row)
+                setpoint_array, diagnostic_result = self.check_timeseries_grouping(diagnostic_result)
+                if setpoint_array:
+                    for i in (0, len(setpoint_array)-1):
+                        row = self.get_output_obj(setpoint_array[i][0], type_setpoint,
+                                                  ZoneTempSp=setpoint_array[i][2])
+                        row1 = self.get_output_obj(setpoint_array[i][1], type_setpoint,
+                                                  ZoneTempSp=setpoint_array[i][2])
 
-                # do something with this
-                #setpoint_array = self.check_timeseries_grouping()
-                #print(setpoint_array)
+                        diagnostic_result.insert_table_row('SetpointDetector', row)
+                        diagnostic_result.insert_table_row('SetpointDetector', row1)
 
                 self.initialize()
         finally:
             self.timestamp_array = np.append(self.timestamp_array, current_time)
-            self.zonetemp_array = np.append(self.zonetemp_array, zone_temp)
+            self.zn_temperature_array = np.append(self.zn_temperature_array, zn_temperature)
         return diagnostic_result
 
-    def check_timeseries_grouping(self):
+    def check_timeseries_grouping(self, diagnostic_result):
+        """
+        Create final set point array.
+        :param diagnostic_result:
+        :return:
+        """
+
         incrementer = 0
         index = 0
         set_points = []
-        next_group = None
-        number_groups = int(ceil(
-            self.current_stpt_array.size)) - self.minimum_data_count if self.current_stpt_array.size > self.minimum_data_count else 1
+        current_check = None
+        number_groups = int(ceil(self.curr_stpt_array.size)) - self.minimum_data_count if \
+            self.curr_stpt_array.size > self.minimum_data_count else 1
+
         if number_groups == 1:
-            current_stpt = [self.timestamp_array[0], self.timestamp_array[-1], np.average(self.current_stpt_array)]
+            current_stpt = [self.curr_timestamp_array[0],
+                            self.curr_timestamp_array[-1],
+                            np.average(self.curr_stpt_array)]
             set_points.append(current_stpt)
+            return set_points, diagnostic_result
 
-        else:
-            for grouper in range(number_groups):
-                current = self.current_stpt_array[(0 + incrementer):(self.minimum_data_count + incrementer + index)]
-                next_group = self.current_stpt_array[(1 + grouper):(self.minimum_data_count + grouper + 1)]
+        for grouper in range(number_groups):
+            current = self.curr_stpt_array[(0+incrementer):(self.minimum_data_count+incrementer+index)]
+            next_group = self.curr_stpt_array[(1+grouper):(self.minimum_data_count+grouper+1)]
 
-        if next_group is not None:
-            if np.std(next_group) < 0.4:
-                area = self.determine_distribution_area(current, next_group)
-                if area < self.area_distribution_threshold:
-                    incrementer += 1
-                    current_stpt = [self.timestamp_array[0 + incrementer],
-                                    self.timestamp_array[self.minimum_data_count + incrementer + index],
-                                    np.average(current)]
-                    if np.std(current) < 0.4:
-                        set_points.append(current_stpt)
-                    if grouper < number_groups - 1:
-                        last_stpt = [self.timestamp_array[1 + grouper],
-                                     self.timestamp_array[self.minimum_data_count + grouper + 1],
-                                     np.average(next_group)]
-                else:
-                    index += 1
-                    if grouper == number_groups - 1:
-                        current = self.current_stpt_array[(0 + incrementer):(self.minimum_data_count + grouper + 1)]
-                        current_stpt = [self.timestamp_array[0 + incrementer],
-                                        self.timestamp_array[self.minimum_data_count + grouper + 1],
-                                        np.average(current)]
-                if np.std(current) < 0.4:
+            if np.std(current) > self.std_deviation_threshold:
+                if current_check is not None and grouper < number_groups - 1:
+                    current_stpt = [current_check[1],
+                                    current_check[2],
+                                    np.average(current_check[0])]
                     set_points.append(current_stpt)
+                elif current_check is not None:
+                    if np.average(next_group) <= self.std_deviation_threshold:
+                        combined = np.append(current_check[0], next_group)
+                        if np.average(combined) <= self.std_deviation_threshold:
+                            current_stpt = [current_check[1], self.curr_stpt_array[self.minimum_data_count+grouper+1], np.average(combined)]
+                        else:
+                            current_stpt = [[current_check[1],
+                                             self.curr_stpt_array[self.minimum_data_count+grouper+1],
+                                             np.average(combined)],
+                                            [self.curr_timestamp_array[grouper+1],
+                                             self.curr_timestamp_array[self.minimum_data_count+grouper],
+                                             np.average(next_group)]]
+                    else:
+                        current_stpt = [current_check[1], current_check[2], np.average(current_check[0])]
+                    set_points.append(current_stpt)
+                else:
+                    if np.average(next_group) <= self.std_deviation_threshold:
+                        current_stpt = [self.curr_timestamp_array[grouper+1],
+                                        self.curr_timestamp_array[self.minimum_data_count+grouper],
+                                        np.average(next_group)]
+                        set_points.append(current_stpt)
+                current_check = None
+                incrementer += 1
+                continue
 
-        return set_points
+            diagnostic_result.log("Current group: {}".format(current))
+            diagnostic_result.log("Next group: {}".format(next_group))
+            if current_check is None:
+                current_check = [current,
+                                 self.curr_timestamp_array[0+incrementer],
+                                 self.curr_timestamp_array[self.minimum_data_count+incrementer+index]]
+
+            area = self.determine_distribution_area(current_check[0], next_group)
+
+            if area < self.area_distribution_threshold:
+                current_stpt = [self.curr_timestamp_array[0+incrementer],
+                                self.curr_timestamp_array[self.minimum_data_count+incrementer+index],
+                                np.average(current)]
+                set_points.append(current_stpt)
+
+                if grouper == number_groups - 1:
+                    if np.average(next_group) <= self.std_deviation_threshold:
+                        last_stpt = [self.curr_timestamp_array[grouper+1],
+                                     self.curr_timestamp_array[self.minimum_data_count+grouper],
+                                     np.average(next_group)]
+                        set_points.append(last_stpt)
+
+                incrementer += 1
+                current_check = None
+            else:
+                current_stpt = []
+                diagnostic_result.log("index current stdev: {}".format(np.std(current)))
+                diagnostic_result.log("Index next stdev: {}".format(np.std(next_group)))
+                if grouper == number_groups - 1:
+                    diagnostic_result.log("Last not combined current stdev: {}".format(np.std(current)))
+                    diagnostic_result.log("Last not combined next stdev: {}".format(np.std(next_group)))
+                    if np.std(current) <= self.std_deviation_threshold:
+                        if np.std(next_group) <= self.std_deviation_threshold:
+
+                            combined = np.append(current, next_group)
+                            diagnostic_result.log("Last combine stdev: {}".format(np.std(combined)))
+                            diagnostic_result.log("Combined array: {}".format(combined))
+                            if np.std(combined) <= self.std_deviation_threshold:
+                                current_stpt = [self.curr_timestamp_array[0+incrementer], self.curr_timestamp_array[self.minimum_data_count+grouper], np.average(combined)]
+                            else:
+                                current_stpt = [[self.curr_timestamp_array[0+incrementer], self.curr_timestamp_array[self.minimum_data_count+incrementer+index], np.average(current)],
+                                                [self.curr_timestamp_array[grouper+1], self.curr_timestamp_array[self.minimum_data_count+grouper], np.average(next_group)]]
+                        else:
+                            current_stpt = [self.curr_timestamp_array[0+incrementer], self.curr_timestamp_array[self.minimum_data_count+incrementer+index], np.average(current)]
+                    elif np.std(next_group) <= self.std_deviation_threshold:
+                        current_stpt = [self.curr_timestamp_array[grouper+1], self.curr_timestamp_array[self.minimum_data_count+grouper], np.average(next_group)]
+                    if current_stpt:
+                        set_points.append(current_stpt)
+                index += 1
+
+        diagnostic_result.log('Set point array: {}'.format(set_points))
+        return set_points, diagnostic_result
 
     def determine_distribution_area(self, current_ts, next_ts):
-
+        """
+        Determine overlap of probability density curve (bell curve) for zone
+        temperature data to determine set point grouping.
+        :param current_ts:
+        :param next_ts:
+        :return:
+        """
         def calculate_area():
             lower = min(norm.cdf(min(intersections), m1, std1), norm.cdf(min(intersections), m2, std2))
             mid_calc1 = 1 - norm.cdf(min(intersections), m1, std1) - (1 - norm.cdf(max(intersections), m1, std1))
@@ -558,7 +719,6 @@ class SetPointDetector(object):
             mid = min(mid_calc1, mid_calc2)
             end = min(1 - norm.cdf(max(intersections), m1, std1), 1 - norm.cdf(max(intersections), m2, std2))
             return lower + mid + end
-
         if np.average(current_ts) > np.average(next_ts):
             current_max = True
             m1 = np.average(current_ts)
@@ -572,17 +732,27 @@ class SetPointDetector(object):
             std2 = np.std(current_ts)
             std1 = np.std(next_ts)
         intersections = find_intersections(m1, m2, std1, std2)
-        area = calculate_area()
-
+        try:
+            area = calculate_area()
+        except ValueError:
+            if np.average(current_ts) == np.average(next_ts):
+                area = 1.0
+            else:
+                area = 0.0
         return area
 
     def create_setpoint_array(self, pcopy, vcopy):
+        """
+        Create raw set point array from peak and valley detection.
+        :param pcopy:
+        :param vcopy:
+        :return:
+        """
+        peak_ts1 = zip(self.timestamp_array[pcopy], self.zn_temperature_array[pcopy])
+        valley_ts1 = zip(self.timestamp_array[vcopy], self.zn_temperature_array[vcopy])
 
-        peak_ts1 = zip(self.timestamp_array[pcopy], self.zonetemp_array[pcopy])
-        valley_ts1 = zip(self.timestamp_array[vcopy], self.zonetemp_array[vcopy])
-
-        peak_ts2 = zip(self.timestamp_array[pcopy], self.zonetemp_array[pcopy])
-        valley_ts2 = zip(self.timestamp_array[vcopy], self.zonetemp_array[vcopy])
+        peak_ts2 = zip(self.timestamp_array[pcopy], self.zn_temperature_array[pcopy])
+        valley_ts2 = zip(self.timestamp_array[vcopy], self.zn_temperature_array[vcopy])
 
         peak_valley_ts1 = zip(peak_ts1, valley_ts1)
         peak_valley_ts2 = zip(peak_ts2, valley_ts2)
@@ -595,6 +765,9 @@ class SetPointDetector(object):
 
         peak_timestamp = [row[0] for row in remove_temp1]
         valley_timestamp = [row[0] for row in remove_temp2]
+
+        if not peak_timestamp or not valley_timestamp:
+            return np.empty(0), np.empty(0)
 
         if peak_timestamp[0] < valley_timestamp[0]:
             timestamp_array = np.array(peak_timestamp) + (np.array(valley_timestamp) - np.array(peak_timestamp)) / 2
