@@ -108,7 +108,7 @@ class Application(DrivenApplicationBaseClass):
                  c0_open_damper_threshold=90.0, c1_oaf_economizing_threshold=25.0,
                  c2_minimum_damper_setpoint=15.0, c3_excess_damper_threshold=20.0,
                  c4_desired_oaf=10.0, c5_excess_oaf_threshold=20.0,
-                 
+
                  d0_insufficient_damper_threshold=15.0, d1_ventilation_oaf_threshold=5.0,
                  **kwargs):
         # initialize user configurable parameters.
@@ -151,34 +151,34 @@ class Application(DrivenApplicationBaseClass):
 
         if a0_sensitivity == 0:
             # low sensitivity
-            b0_temp_difference_threshold = 6
+            b0_temp_difference_threshold = max(b0_temp_difference_threshold + 2.0, 6.0)
             oat_mat_check = float(b7_oat_mat_check) * 1.5
-            c0_open_damper_threshold = 60
-            c1_oaf_economizing_threshold = 30
-            c3_excess_damper_threshold = 40
-            c5_excess_oaf_threshold = 50
-            d0_insufficient_damper_threshold = 20
-            d1_ventilation_oaf_threshold = 30
+            c0_open_damper_threshold = max(c2_minimum_damper_setpoint*0.5, 10.0)
+            c1_oaf_economizing_threshold = 90.0 - 3.0*c2_minimum_damper_setpoint
+            c3_excess_damper_threshold = c2_minimum_damper_setpoint*2.0
+            c5_excess_oaf_threshold = c2_minimum_damper_setpoint*2.0 + 10.0
+            d0_insufficient_damper_threshold = c2_minimum_damper_setpoint - 10.0
+            d1_ventilation_oaf_threshold = c4_desired_oaf*0.75,
         elif a0_sensitivity == 1:
             # Normal sensitivity
-            b0_temp_difference_threshold = 4
+            b0_temp_difference_threshold = max(b0_temp_difference_threshold + 2.0, 6.0)
             oat_mat_check = float(b7_oat_mat_check)
-            c0_open_damper_threshold = 40
-            c1_oaf_economizing_threshold = 50
-            c3_excess_damper_threshold = 20
-            c5_excess_oaf_threshold = 30
-            d0_insufficient_damper_threshold = 10
-            d1_ventilation_oaf_threshold = 20
+            c0_open_damper_threshold = max(c2_minimum_damper_setpoint, 20.0)
+            c1_oaf_economizing_threshold = 90.0 - 2.0*c2_minimum_damper_setpoint
+            c3_excess_damper_threshold = c2_minimum_damper_setpoint
+            c5_excess_oaf_threshold = c2_minimum_damper_setpoint + 10.0
+            d0_insufficient_damper_threshold = c2_minimum_damper_setpoint - 5.0
+            d1_ventilation_oaf_threshold = c4_desired_oaf*0.5
         elif a0_sensitivity == 2:
             # high sensitivity
-            b0_temp_difference_threshold = 2
+            b0_temp_difference_threshold = max(b0_temp_difference_threshold - 2.0, 2.0)
             oat_mat_check = float(b7_oat_mat_check) * 0.5
-            c0_open_damper_threshold = 20
-            c1_oaf_economizing_threshold = 70
-            c3_excess_damper_threshold = 10
-            c5_excess_oaf_threshold = 20
-            d0_insufficient_damper_threshold = 0
-            d1_ventilation_oaf_threshold = 10
+            c0_open_damper_threshold = max(c2_minimum_damper_setpoint*2.0, 40.0)
+            c1_oaf_economizing_threshold = 90.0 - c2_minimum_damper_setpoint
+            c3_excess_damper_threshold = c2_minimum_damper_setpoint*0.5
+            c5_excess_oaf_threshold = c2_minimum_damper_setpoint*0.5 + 10.0
+            d0_insufficient_damper_threshold = c2_minimum_damper_setpoint
+            d1_ventilation_oaf_threshold = c4_desired_oaf*0.25
 
         # Pre-requisite messages
         self.pre_msg1 = ('Supply fan is off, current data will '

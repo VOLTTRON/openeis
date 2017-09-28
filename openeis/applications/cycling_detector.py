@@ -89,6 +89,7 @@ def butter_lowpass_filtfilt(data, cutoff, fs, order=5):
         y = []
     return y
 
+
 def find_intersections(m1, m2, std1, std2):
     a = 1. / (2. * std1 ** 2) - 1. / (2. * std2 ** 2)
     b = m2 / (std2 ** 2) - m1 / (std1 ** 2)
@@ -104,7 +105,7 @@ def locate_min_max(*args):
     return minimums, maximums, filtered_timeseries
 
 
-def align_pv(zone_temperature_array, peak_ind, val_ind, dtime):
+def align_pv(zonetemp_array, peak_ind, val_ind, dtime):
     """
     align_pv takes the indices of peaks (peak_ind) and indices of
     valleys (val_ind) and ensures that there is only one valley
@@ -112,6 +113,11 @@ def align_pv(zone_temperature_array, peak_ind, val_ind, dtime):
     consecutive valleys.  If there are two or more peaks between
     valleys the largest value is kept.  If there are two or more
     valleys between two peaks then the smallest value is kept.
+    :param zonetemp_array:
+    :param peak_ind:
+    :param val_ind:
+    :param dtime:
+    :return:
     """
     try:
         reckon = 0
@@ -121,11 +127,11 @@ def align_pv(zone_temperature_array, peak_ind, val_ind, dtime):
         while not aligned:
             if find_peak:
                 while peak_ind[reckon + 1] < val_ind[reckon + begin]:
-                    if zone_temperature_array[peak_ind[reckon]] > zone_temperature_array[peak_ind[reckon + 1]]:
+                    if zonetemp_array[peak_ind[reckon]] > zonetemp_array[peak_ind[reckon + 1]]:
                         peak_ind = np.delete(peak_ind, reckon + 1)
                     else:
                         peak_ind = np.delete(peak_ind, reckon)
-                if (dtime[val_ind[reckon + begin]] - dtime[peak_ind[reckon]]) <= td(minutes=5):
+                if (dtime[val_ind[reckon + begin]] - dtime[peak_ind[reckon]]) <= td(minutes=3):
                     val_ind = np.delete(val_ind, reckon + begin)
                     peak_ind = np.delete(peak_ind, reckon + 1)
                 else:
@@ -136,11 +142,11 @@ def align_pv(zone_temperature_array, peak_ind, val_ind, dtime):
                         reckon += 1
             else:
                 while val_ind[reckon + 1] < peak_ind[reckon + begin]:
-                    if zone_temperature_array[val_ind[reckon]] > zone_temperature_array[val_ind[reckon + 1]]:
+                    if zonetemp_array[val_ind[reckon]] > zonetemp_array[val_ind[reckon + 1]]:
                         val_ind = np.delete(val_ind, reckon)
                     else:
                         val_ind = np.delete(val_ind, reckon + 1)
-                if (dtime[peak_ind[reckon + begin]] - dtime[val_ind[reckon]]) <= td(minutes=5):
+                if (dtime[peak_ind[reckon + begin]] - dtime[val_ind[reckon]]) <= td(minutes=3):
                     val_ind = np.delete(val_ind, reckon + 1)
                     peak_ind = np.delete(peak_ind, reckon + begin)
                 else:
@@ -158,6 +164,21 @@ def align_pv(zone_temperature_array, peak_ind, val_ind, dtime):
         return peak_ind, val_ind
     except:
         return np.empty(0), np.empty(0)
+
+
+def get_output_obj(datetime, rec_type=type_data,
+                   fan_status=-9999, compr_status=-9999, zone_temp=-9999,
+                   zone_temp_sp=-9999, cycling=-9999, penalty=0):
+        return {
+            'type': rec_type,
+            'datetime': datetime,
+            'FanStatus': fan_status,
+            'ComprStatus': compr_status,
+            'ZoneTemperature': zone_temp,
+            'ZoneTemperatureSetPoint': zone_temp_sp,
+            'cycling': cycling,
+            'penalty': penalty
+        }
 
 
 def detect_peaks(data, mph=None, threshold=0, mpd=1, edge='rising',
@@ -312,7 +333,7 @@ class Application(DrivenApplicationBaseClass):
                 InputDescriptor('SupplyFanStatus',
                                 'Supply fan status', count_min=0),
             cls.comprstatus_name:
-                InputDescriptor('CompressorStatus',
+                InputDescriptor('FirstStageCooling',
                                 'Compressor status', count_min=0)
         }
 
@@ -378,12 +399,12 @@ class Application(DrivenApplicationBaseClass):
             else:
                 device_dict[point_device[0]].append((point_device[1], value))
 
-        fan_stat_data = []
-        zone_temp_data = []
-        compr_stat_data = []
-        zone_temp_setpoint_data = []
+        fan_status_data = []
+        zn_temperature_data = []
+        compressor_status_data = []
+        zn_temperature_stpt_data = []
 
-        def data_builder(value_tuple, point_name):
+        def data_builder(value_tuple):
             value_list = []
             for item in value_tuple:
                 if item[1] is not None:
@@ -395,36 +416,36 @@ class Application(DrivenApplicationBaseClass):
             if value is None:
                 continue
             if data_name == self.fanstatus_name:
-                fan_stat_data = data_builder(value, data_name)
+                fan_status_data = data_builder(value)
             if data_name == self.zonetemperature_stpt_name:
-                zone_temp_setpoint_data = data_builder(value, data_name)
+                zn_temperature_stpt_data = data_builder(value)
             if data_name == self.zonetemperature_name:
-                zone_temp_data = data_builder(value, data_name)
+                zn_temperature_data = data_builder(value)
             if data_name == self.comprstatus_name:
-                compr_stat_data = data_builder(value, data_name)
+                compressor_status_data = data_builder(value)
 
-        if len(zone_temp_data) == 0:
+        if not zn_temperature_data:
             return diagnostic_result
-        zonetemp = (sum(zone_temp_data) / len(zone_temp_data))
-        fanstat = None
-        comprstat = None
-        zonetemp_setpoint = None
 
-        if fan_stat_data:
-            fanstat = (sum(fan_stat_data) / len(fan_stat_data))
-        if compr_stat_data:
-            comprstat = (sum(compr_stat_data) / len(compr_stat_data))
-        if zone_temp_setpoint_data:
-            zonetemp_setpoint = (sum(zone_temp_setpoint_data) / len(zone_temp_setpoint_data))
+        zn_temperature = sum(zn_temperature_data) / len(zn_temperature_data)
+        fan_status = None
+        compressor_status = None
+        zn_temperature_stpt = None
 
+        if fan_status_data:
+            fan_status = max(fan_status_data)
+        if compressor_status_data:
+            compressor_status = max(compressor_status_data)
+        if zn_temperature_stpt_data:
+            zn_temperature_stpt = sum(zn_temperature_stpt_data) / len(zn_temperature_stpt_data)
 
-        zonetemp = zonetemp or default_if_none
-        fanstat = fanstat or default_if_none
-        comprstat = comprstat or default_if_none
-        zonetemp_setpoint = zonetemp_setpoint or default_if_none
+        zn_temperature = zn_temperature or default_if_none
+        fan_status = fan_status if fan_status is not None else default_if_none
+        compressor_status = compressor_status if compressor_status is not None else default_if_none
+        zn_temperature_stpt = zn_temperature_stpt if zn_temperature_stpt is not None else default_if_none
 
-        diagnostic_result = self.cycling_detector.on_new_data(current_time, zonetemp, zonetemp_setpoint,
-                                                              fanstat, comprstat, diagnostic_result)
+        diagnostic_result = self.cycling_detector.on_new_data(current_time, zn_temperature, zn_temperature_stpt,
+                                                              fan_status, compressor_status, diagnostic_result)
 
         return diagnostic_result
 
@@ -441,22 +462,15 @@ class CyclingDetector(object):
         self.intervals = 1
         self.file = 1
         self.file_sp = 1
-
-        # Initialize data arrays
-        self.initialize()
-
-    def initialize(self):
-        """
-        Initialize data arrays.
-        """
-        self.zone_temperature_array = []
-        self.zone_temperature_stpt_array = []
-        self.compressor_status_array = []
-        self.timestamp_array = []
         self.last_state = None
         self.last_time = None
         self.startup = True
         self.mode = None
+        # Initialize data arrays
+        self.zone_temperature_array = []
+        self.zone_temperature_stpt_array = []
+        self.compressor_status_array = []
+        self.timestamp_array = []
 
     def on_new_data(self, timestamp, zonetemp, zone_temp_setpoint, fanstat, compr_stat, diagnostic_result):
         """
@@ -474,21 +488,21 @@ class CyclingDetector(object):
 
         if self.mode == 4:
             diagnostic_result.log('Required data for diagnostic is not available or '
-                      'configured names do not match published names!')
+                                  'configured names do not match published names!')
             return diagnostic_result
 
         results = {}
 
         if self.mode == 1:
             compressor_data = int(compr_stat)
-            results = self.operating_mode1(compressor_data, timestamp, diagnostic_result)
+            results, diagnostic_result = self.operating_mode1(compressor_data, timestamp, diagnostic_result)
         if self.mode == 2:
             zonetemp_data = float(zonetemp)
             zonetemp_stpt_data = float(zone_temp_setpoint)
-            results = self.operating_mode2(zonetemp_data, zonetemp_stpt_data, timestamp, diagnostic_result)
+            results, diagnostic_result = self.operating_mode2(zonetemp_data, zonetemp_stpt_data, timestamp, diagnostic_result)
         if self.mode == 3:
             zonetemp_data = float(zonetemp)
-            results = self.operating_mode3(zonetemp_data, timestamp, diagnostic_result)
+            results, diagnostic_result = self.operating_mode3(zonetemp_data, timestamp, diagnostic_result)
 
         cycling = 0
         if "cycles" in results:
@@ -498,31 +512,17 @@ class CyclingDetector(object):
         if "Energy penalty" in results:
             penalty = results["Energy penalty"]
 
-        row = self.get_output_obj(datetime=timestamp,
-                                  rec_type=type_cycling,
-                                  fan_status=fanstat,
-                                  compr_status=compr_stat,
-                                  zone_temp=zonetemp,
-                                  zone_temp_sp=zone_temp_setpoint,
-                                  cycling=cycling,
-                                  penalty=penalty)
+        row = get_output_obj(datetime=timestamp,
+                             rec_type=type_cycling,
+                             fan_status=fanstat,
+                             compr_status=compr_stat,
+                             zone_temp=zonetemp,
+                             zone_temp_sp=zone_temp_setpoint,
+                             cycling=cycling,
+                             penalty=penalty)
 
         diagnostic_result.insert_table_row('CyclingDetector', row)
         return diagnostic_result
-
-    def get_output_obj(self, datetime, rec_type=type_data,
-                       fan_status=-9999, compr_status=-9999, zone_temp=-9999,
-                       zone_temp_sp=-9999, cycling=-9999, penalty=0):
-        return {
-            'type': rec_type,
-            'datetime': datetime,
-            'FanStatus': fan_status,
-            'ComprStatus': compr_status,
-            'ZoneTemperature': zone_temp,
-            'ZoneTemperatureSetPoint': zone_temp_sp,
-            'cycling': cycling,
-            'penalty': penalty
-        }
 
     def operating_mode1(self, compressor_data, current_time, diagnostic_result):
         diagnostic_result.log('Running Cycling Dx Mode 1.')
@@ -540,17 +540,16 @@ class CyclingDetector(object):
                 if not self.compressor_status_array[status] and self.compressor_status_array[status - 1]:
                     off_indices.append(status)
 
-            results = self.cycling_dx(on_indices, off_indices, diagnostic_result)
-            #self.output_cycling()
+            results = self.cycling_dx(on_indices, off_indices)
             self.shrink(self.compressor_status_array)
             diagnostic_result.log('CyclingDx results: {}'.format(results))
 
-        return results
+        return results, diagnostic_result
 
-    def operating_mode2(self, zonetemperature_data, zonetemperature_stpt_data, current_time, diagnostic_result):
+    def operating_mode2(self, zn_temperature_data, zonetemperature_stpt_data, current_time, diagnostic_result):
         diagnostic_result.log('Running Cycling Dx Mode 2.')
         self.timestamp_array.append(current_time)
-        self.zone_temperature_array.append(zonetemperature_data)
+        self.zone_temperature_array.append(zn_temperature_data)
         self.zone_temperature_stpt_array.append(zonetemperature_stpt_data)
         results = {}
 
@@ -559,18 +558,18 @@ class CyclingDetector(object):
                                                                      self.zone_temperature_stpt_array)
             results = self.results_handler(maximums, minimums, filtered_timeseries, diagnostic_result)
 
-        return results
+        return results, diagnostic_result
 
-    def operating_mode3(self, zonetemperature_data, current_time, diagnostic_result):
+    def operating_mode3(self, zn_temperature_data, current_time, diagnostic_result):
         diagnostic_result.log('Running CyclingDx Mode 3.')
         self.timestamp_array.append(current_time)
-        self.zone_temperature_array.append(zonetemperature_data)
+        self.zone_temperature_array.append(zn_temperature_data)
         results = {}
 
         if self.timestamp_array[-1] - self.timestamp_array[0] >= td(minutes=self.check_time):
             valleys, peaks, filtered_timeseries = locate_min_max(self.zone_temperature_array, None)
             if np.prod(valleys.shape) < self.minimum_data_count or np.prod(peaks.shape) < self.minimum_data_count:
-                diagnostic_result.log('Set point detection is inconclusive.  Not enough data.')
+                diagnostic_result.log('Set point detection is inconclusive1.  Not enough data.')
                 self.shrink(self.zone_temperature_array)
                 results = {
                     "cycles": 'INCONCLUSIVE',
@@ -578,13 +577,12 @@ class CyclingDetector(object):
                     "Avg Off Cycle": "INCONCLUSIVE"
                 }
 
-                return results
+                return results, diagnostic_result
 
             peak_array, valley_array = align_pv(filtered_timeseries, peaks, valleys, self.timestamp_array)
 
-            if np.prod(peak_array.shape) < self.minimum_data_count or np.prod(
-                    peak_array.shape) < self.minimum_data_count:
-                diagnostic_result.log('Set point detection is inconclusive.  Not enough data.')
+            if np.prod(peak_array.shape) < self.minimum_data_count or np.prod(peak_array.shape) < self.minimum_data_count:
+                diagnostic_result.log('Set point detection is inconclusive2.  Not enough data.')
                 self.shrink(self.zone_temperature_array)
                 results = {
                     "cycles": 'INCONCLUSIVE',
@@ -592,14 +590,17 @@ class CyclingDetector(object):
                     "Avg Off Cycle": "INCONCLUSIVE"
                 }
 
-                return results
+                return results, diagnostic_result
 
             self.zone_temperature_stpt_array = self.create_setpoint_array(deepcopy(peak_array), deepcopy(valley_array))
 
-            if len(self.zone_temperature_stpt_array)>0:
+            if self.zone_temperature_stpt_array:
                 minimums, maximums, filtered_timeseries = locate_min_max(self.zone_temperature_array,
                                                                          self.zone_temperature_stpt_array)
-                results = self.results_handler(maximums, minimums, filtered_timeseries, diagnostic_result)
+                results, diagnostic_result = self.results_handler(maximums,
+                                                                  minimums,
+                                                                  filtered_timeseries,
+                                                                  diagnostic_result)
             else:
                 results = {
                     "cycles": 'INCONCLUSIVE',
@@ -607,9 +608,14 @@ class CyclingDetector(object):
                     "Avg Off Cycle": "INCONCLUSIVE"
                 }
 
-        return results
+        return results, diagnostic_result
 
     def shrink(self, array):
+        """
+        Moves starting point for analysis period.
+        :param array:
+        :return:
+        """
         self.timestamp_array = [item for item in self.timestamp_array if (item - self.timestamp_array[0]) >= td(minutes=self.check_time / 4)]
         shrink = len(array) - len(self.timestamp_array)
         self.zone_temperature_array = self.zone_temperature_array[shrink:]
@@ -617,41 +623,53 @@ class CyclingDetector(object):
         self.compressor_status_array = self.compressor_status_array[shrink:]
 
     def results_handler(self, maximums, minimums, filtered_timeseries, diagnostic_result):
+        """
+        Main Result handler if peak and valley detection is used on zone temperature
+        to determine cycling.
+        :param maximums:
+        :param minimums:
+        :param filtered_timeseries:
+        :param diagnostic_result:
+        :return:
+        """
         if np.prod(maximums.shape) < self.minimum_data_count or np.prod(minimums.shape) < self.minimum_data_count:
-            diagnostic_result.log('Set point detection is inconclusive.  Not enough data.')
+            diagnostic_result.log('Set point detection is inconclusive3.  Not enough data.')
             self.shrink(self.zone_temperature_array)
             results = {
                 "cycles": 'INCONCLUSIVE',
                 "Avg On Cycle": "INCONCLUSIVE",
                 "Avg Off Cycle": "INCONCLUSIVE"
             }
-            return results
+            return results, diagnostic_result
 
         peak_array, valley_array = align_pv(filtered_timeseries, maximums, minimums, self.timestamp_array)
 
         if np.prod(peak_array.shape) < self.minimum_data_count or np.prod(valley_array.shape) < self.minimum_data_count:
-            diagnostic_result.log('Set point detection is inconclusive.  Not enough data.')
+            diagnostic_result.log('Set point detection is inconclusive4.  Not enough data.')
             self.shrink(self.zone_temperature_array)
             results = {
                 "cycles": 'INCONCLUSIVE',
                 "Avg On Cycle": "INCONCLUSIVE",
                 "Avg Off Cycle": "INCONCLUSIVE"
             }
-            return results
+            return results, diagnostic_result
 
-        pcopy = deepcopy(peak_array)
-        vcopy = deepcopy(valley_array)
-        self.compressor_status_array = self.gen_status(pcopy, vcopy, self.timestamp_array, diagnostic_result)
-        # self.output_cycling()
-        results = self.cycling_dx(pcopy, vcopy, diagnostic_result)
+        peak_copy = deepcopy(peak_array)
+        valley_copy = deepcopy(valley_array)
+        self.compressor_status_array = self.gen_status(peak_copy, valley_copy, self.timestamp_array)
+        results = self.cycling_dx(peak_copy, valley_copy)
         diagnostic_result.log('Cycling diagnostic results: ' + str(results))
         self.shrink(self.zone_temperature_array)
 
-        return results
+        return results, diagnostic_result
 
     def create_setpoint_array(self, pcopy, vcopy):
-        """Creates setpoint array when zone temperature set point is not measured."""
-
+        """
+        Creates set point array when zone temperature set point is not measured.
+        :param pcopy:
+        :param vcopy:
+        :return:
+        """
         peak_ts1 = zip([self.timestamp_array[ind] for ind in pcopy], [self.zone_temperature_array[ind] for ind in pcopy])
         valley_ts1 = zip([self.timestamp_array[ind] for ind in vcopy], [self.zone_temperature_array[ind] for ind in vcopy])
 
@@ -698,8 +716,13 @@ class CyclingDetector(object):
 
         return zone_temperature_stpt
 
-    def cycling_dx(self, on_indices, off_indices, diagnostic_result):
-        diagnostic_result.log('Determine if units is cycling excessively.')
+    def cycling_dx(self, on_indices, off_indices):
+        """
+        Count cycles and determine on/off cycle count.
+        :param on_indices:
+        :param off_indices:
+        :return:
+        """
         no_cycles = False
         always_on = False
         always_off = False
@@ -770,8 +793,14 @@ class CyclingDetector(object):
 
         return results
 
-    def gen_status(self, peak, valley, time_array, diagnostic_result):
-        '''Generate cycling status array.'''
+    def gen_status(self, peak, valley, time_array):
+        """
+        Generate cycling status array.
+        :param peak:
+        :param valley:
+        :param time_array:
+        :return:
+        """
         extrema_array = [peak, valley]
         first = min(peak[0], valley[0])
         first_array = peak if peak[0] == first else valley
