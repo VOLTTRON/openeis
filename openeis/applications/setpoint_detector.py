@@ -67,7 +67,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 __version__ = "1.0.1"
-__authors__ = ["Robert Lutes <robert.lutes@pnnl.gov>", "Hung Ngo <ngo.hung@pnnlg.gov>"]
+__authors__ = ["Robert Lutes <robert.lutes@pnnl.gov>", "Hung Ngo <ngo.hung@pnnl.gov>"]
 cutoff = 300
 fs = 3000
 
