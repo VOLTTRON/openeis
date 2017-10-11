@@ -67,7 +67,7 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 __version__ = "1.0.1"
-__authors__ = ["Robert Lutes <robert.lutes@pnnl.gov>", "Hung Ngo <ngo.hung@pnnl.gov>"]
+__authors__ = ["Robert Lutes <robert.lutes@pnnl.gov>", "Hung Ngo <ngo.hung@pnnlg.gov>"]
 cutoff = 300
 fs = 3000
 
@@ -413,7 +413,7 @@ def detect_peaks(data, mph=None, threshold=0, mpd=1, edge='rising',
         return np.array([], dtype=int)
     if valley:
         data = -data
-        # mph = -mph
+        mph = -mph if mph is not None else None
     # find indices of all peaks
     dx = data[1:] - data[:-1]
     # handle NaN's
@@ -532,8 +532,9 @@ class SetPointDetector(object):
 
         diagnostic_result.insert_table_row('SetpointDetector', row)
 
-        if fan_status is None:
+        if fan_status is not None and not fan_status:
             diagnostic_result.log('Supply fan is off. {}'.format(str(timestamp)), logging.DEBUG)
+            return diagnostic_result
 
         diagnostic_result = self.detect_stpt_main(zn_temperature, timestamp, diagnostic_result)
         return diagnostic_result
@@ -572,18 +573,17 @@ class SetPointDetector(object):
                 self.curr_stpt_array, self.curr_timestamp_array = self.create_setpoint_array(deepcopy(peak_array),
                                                                                              deepcopy(valley_array))
 
-                # diagnostic_result.log("Current set point array: {}".format(self.curr_stpt_array))
-                print("Current set point array: {}".format(self.curr_stpt_array))
+                diagnostic_result.log("Current set point array: {}".format(self.curr_stpt_array))
                 if not np.prod(self.curr_stpt_array.shape):
                     return diagnostic_result
 
                 setpoint_array, diagnostic_result = self.check_timeseries_grouping(diagnostic_result)
                 if setpoint_array:
-                    for i in (0, len(setpoint_array)-1):
-                        row = self.get_output_obj(setpoint_array[i][0], type_setpoint,
-                                                  ZoneTempSp=setpoint_array[i][2])
-                        row1 = self.get_output_obj(setpoint_array[i][1], type_setpoint,
-                                                  ZoneTempSp=setpoint_array[i][2])
+                    for setpoint in setpoint_array:
+                        row = self.get_output_obj(setpoint[0], type_setpoint,
+                                                  ZoneTempSp=setpoint[2])
+                        row1 = self.get_output_obj(setpoint[1], type_setpoint,
+                                                  ZoneTempSp=setpoint[2])
 
                         diagnostic_result.insert_table_row('SetpointDetector', row)
                         diagnostic_result.insert_table_row('SetpointDetector', row1)
@@ -601,106 +601,92 @@ class SetPointDetector(object):
         :return:
         """
 
-        incrementer = 0
-        index = 0
+        def get_current_indices(iteration, num_stpts, minimum_data_count, max_size, start):
+            current_start = min(num_stpts*minimum_data_count + start, max_size)
+            current_end = min(minimum_data_count + minimum_data_count*num_stpts + iteration + start_iter, max_size)
+            return current_start, current_end
+
         set_points = []
+        setpoint_array_size = self.curr_stpt_array.size
+        iteration = 0
+        start_iter = 0
         current_check = None
-        number_groups = int(ceil(self.curr_stpt_array.size)) - self.minimum_data_count if \
+        max_groups = int(ceil(self.curr_stpt_array.size)) - self.minimum_data_count if \
             self.curr_stpt_array.size > self.minimum_data_count else 1
 
-        if number_groups == 1:
-            current_stpt = [self.curr_timestamp_array[0],
-                            self.curr_timestamp_array[-1],
-                            np.average(self.curr_stpt_array)]
-            set_points.append(current_stpt)
-            return set_points, diagnostic_result
-
-        for grouper in range(number_groups):
-            current = self.curr_stpt_array[(0+incrementer):(self.minimum_data_count+incrementer+index)]
-            next_group = self.curr_stpt_array[(1+grouper):(self.minimum_data_count+grouper+1)]
-
+        for grouper in range(max_groups):
+            current_start, current_end = get_current_indices(iteration,
+                                                             len(set_points),
+                                                             self.minimum_data_count,
+                                                             setpoint_array_size,
+                                                             start_iter)
+            diagnostic_result.log("CS - {} - CE - {}".format(current_start, current_end))
+            next_start = min(current_start + 1, setpoint_array_size)
+            next_end = min(current_end + 1, setpoint_array_size)
+            current = self.curr_stpt_array[current_start:current_end]
+            next_group = self.curr_stpt_array[next_start:next_end]
+            diagnostic_result.log("Current group {}".format(current))
+            diagnostic_result.log("next group {}".format(next_group))
             if np.std(current) > self.std_deviation_threshold:
-                if current_check is not None and grouper < number_groups - 1:
-                    current_stpt = [current_check[1],
-                                    current_check[2],
-                                    np.average(current_check[0])]
+                diagnostic_result.log("Current group standard deviation greater than threshold!")
+                if current_check is not None and grouper < max_groups - 1:
+                    diagnostic_result.log("Appending current_previous to set_point")
+                    current_stpt = [current_previous[0],
+                                    current_previous[1],
+                                    np.average(current_previous[2])]
                     set_points.append(current_stpt)
-                elif current_check is not None:
-                    if np.average(next_group) <= self.std_deviation_threshold:
-                        combined = np.append(current_check[0], next_group)
-                        if np.average(combined) <= self.std_deviation_threshold:
-                            current_stpt = [current_check[1], self.curr_stpt_array[self.minimum_data_count+grouper+1], np.average(combined)]
-                        else:
-                            current_stpt = [[current_check[1],
-                                             self.curr_stpt_array[self.minimum_data_count+grouper+1],
-                                             np.average(combined)],
-                                            [self.curr_timestamp_array[grouper+1],
-                                             self.curr_timestamp_array[self.minimum_data_count+grouper],
-                                             np.average(next_group)]]
-                    else:
-                        current_stpt = [current_check[1], current_check[2], np.average(current_check[0])]
-                    set_points.append(current_stpt)
-                else:
-                    if np.average(next_group) <= self.std_deviation_threshold:
-                        current_stpt = [self.curr_timestamp_array[grouper+1],
-                                        self.curr_timestamp_array[self.minimum_data_count+grouper],
-                                        np.average(next_group)]
-                        set_points.append(current_stpt)
+                start_iter += 1
                 current_check = None
-                incrementer += 1
                 continue
 
-            diagnostic_result.log("Current group: {}".format(current))
-            diagnostic_result.log("Next group: {}".format(next_group))
-            if current_check is None:
-                current_check = [current,
-                                 self.curr_timestamp_array[0+incrementer],
-                                 self.curr_timestamp_array[self.minimum_data_count+incrementer+index]]
+            if current.size >= self.minimum_data_count:
+                if current_check is None:
+                    current_check = current[:]
+                current_previous = [self.curr_timestamp_array[current_start],
+                                    self.curr_timestamp_array[current_end-1], current]
 
-            area = self.determine_distribution_area(current_check[0], next_group)
+                if next_group.size > 1 and self.determine_distribution_area(current_check, next_group) < self.area_distribution_threshold:
+                    diagnostic_result.log("Area distribution too small!")
+                    current_stpt = [self.curr_timestamp_array[current_start],
+                                    self.curr_timestamp_array[current_end],
+                                    np.average(current)]
+                    start_iter += iteration
+                    set_points.append(current_stpt)
 
-            if area < self.area_distribution_threshold:
-                current_stpt = [self.curr_timestamp_array[0+incrementer],
-                                self.curr_timestamp_array[self.minimum_data_count+incrementer+index],
-                                np.average(current)]
-                set_points.append(current_stpt)
+                    if grouper == max_groups - 1:
+                        if np.average(next_group) <= self.std_deviation_threshold:
+                            last_stpt = [self.curr_timestamp_array[next_start],
+                                         self.curr_timestamp_array[next_end],
+                                         np.average(next_group)]
+                            start_iter += iteration
+                            set_points.append(last_stpt)
 
-                if grouper == number_groups - 1:
-                    if np.average(next_group) <= self.std_deviation_threshold:
-                        last_stpt = [self.curr_timestamp_array[grouper+1],
-                                     self.curr_timestamp_array[self.minimum_data_count+grouper],
-                                     np.average(next_group)]
-                        set_points.append(last_stpt)
-
-                incrementer += 1
-                current_check = None
-            else:
-                current_stpt = []
-                diagnostic_result.log("index current stdev: {}".format(np.std(current)))
-                diagnostic_result.log("Index next stdev: {}".format(np.std(next_group)))
-                if grouper == number_groups - 1:
-                    diagnostic_result.log("Last not combined current stdev: {}".format(np.std(current)))
-                    diagnostic_result.log("Last not combined next stdev: {}".format(np.std(next_group)))
-                    if np.std(current) <= self.std_deviation_threshold:
-                        if np.std(next_group) <= self.std_deviation_threshold:
-
-                            combined = np.append(current, next_group)
-                            diagnostic_result.log("Last combine stdev: {}".format(np.std(combined)))
-                            diagnostic_result.log("Combined array: {}".format(combined))
-                            if np.std(combined) <= self.std_deviation_threshold:
-                                current_stpt = [self.curr_timestamp_array[0+incrementer], self.curr_timestamp_array[self.minimum_data_count+grouper], np.average(combined)]
-                            else:
-                                current_stpt = [[self.curr_timestamp_array[0+incrementer], self.curr_timestamp_array[self.minimum_data_count+incrementer+index], np.average(current)],
-                                                [self.curr_timestamp_array[grouper+1], self.curr_timestamp_array[self.minimum_data_count+grouper], np.average(next_group)]]
-                        else:
-                            current_stpt = [self.curr_timestamp_array[0+incrementer], self.curr_timestamp_array[self.minimum_data_count+incrementer+index], np.average(current)]
-                    elif np.std(next_group) <= self.std_deviation_threshold:
-                        current_stpt = [self.curr_timestamp_array[grouper+1], self.curr_timestamp_array[self.minimum_data_count+grouper], np.average(next_group)]
+                    current_check = None
+                else:
+                    current_stpt = []
+                    diagnostic_result.log("Area distribution for adding next element met!")
+                    if grouper == max_groups - 1:
+                        diagnostic_result.log("Last group adding to setpoints!")
+                        current_stpt = [self.curr_timestamp_array[current_start], self.curr_timestamp_array[current_end-1], np.average(current)]
                     if current_stpt:
+                        start_iter += iteration
                         set_points.append(current_stpt)
-                index += 1
+            else:
+                diagnostic_result.log("Current group is smaller than minimum_data_count")
+                current_stpt = []
+                if current.size > 2:
+                    current_stpt = [self.curr_timestamp_array[current_start],
+                                    self.curr_timestamp_array[current_end-1],
+                                    np.average(current)]
+                if current_stpt:
+                    start_iter += iteration
+                    set_points.append(current_stpt)
+            if current_end == self.curr_stpt_array.size:
+                break
+            iteration += 1
 
-        diagnostic_result.log('Set point array: {}'.format(set_points))
+            diagnostic_result.log('Set point array: {}'.format(set_points))
+        diagnostic_result.log('Final point array: {}'.format(set_points))
         return set_points, diagnostic_result
 
     def determine_distribution_area(self, current_ts, next_ts):
@@ -733,6 +719,7 @@ class SetPointDetector(object):
             std1 = np.std(next_ts)
         intersections = find_intersections(m1, m2, std1, std2)
         try:
+            intersections = find_intersections(m1, m2, std1, std2)
             area = calculate_area()
         except ValueError:
             if np.average(current_ts) == np.average(next_ts):
