@@ -62,6 +62,7 @@ from pytz import timezone
 import random
 import string
 import threading
+from dateutil import parser
 
 from django import dispatch
 from django.conf import settings
@@ -337,7 +338,14 @@ class SensorIngest(models.Model):
                     time = min(t for t in (next(i) for i in iterators) if t)
                 except ValueError:
                     break
-                data_time = time if tz is None else time.astimezone(timezone(tz)) 
+                if tz:
+                    data_time = time
+                elif isinstance(time, str):
+                    data_time = parser.parse(time)
+                    data_time = data_time.astimezone(timezone(tz))
+                else:
+                    data_time = time.astimezone(timezone(tz))
+                #data_time = time if tz is None else time.astimezone(timezone(tz))
 
                 yield [data_time] + [d and d.value for d in [i.send(time) for i in iterators]]
         generator = _merge()
