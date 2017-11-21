@@ -338,13 +338,28 @@ class SensorIngest(models.Model):
                     time = min(t for t in (next(i) for i in iterators) if t)
                 except ValueError:
                     break
-                if tz:
-                    data_time = time
-                elif isinstance(time, str):
-                    data_time = parser.parse(time)
-                    data_time = data_time.astimezone(timezone(tz))
+                if tz is None:
+                    zone = timezone('UTC')
+                    if isinstance(time, str):
+                        data_time = parser.parse(time)
+                        # check naive
+                        if data_time.tzinfo is None or data_time.tzinfo.utcoffset(data_time) is None:
+                            data_time = zone.localize(data_time)
+                        else:
+                            data_time = data_time.astimezone(zone)
+                    else:
+                        data_time = time
                 else:
-                    data_time = time.astimezone(timezone(tz))
+                    zone = timezone(tz)
+                    if isinstance(time, str):
+                        data_time = parser.parse(time)
+                        #check naive
+                        if data_time.tzinfo is None or data_time.tzinfo.utcoffset(data_time) is None:
+                            data_time = zone.localize(data_time)
+                        else:
+                            data_time = data_time.astimezone(zone)
+                    else:
+                        data_time = time.astimezone(zone)
                 #data_time = time if tz is None else time.astimezone(timezone(tz))
 
                 yield [data_time] + [d and d.value for d in [i.send(time) for i in iterators]]
