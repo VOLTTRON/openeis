@@ -69,6 +69,9 @@ ECON5 = 'Insufficient Outdoor-air Intake Dx'
 DX = "/diagnostic message"
 EI = "/energy impact"
 dx_list = [ECON1, ECON2, ECON3, ECON4, ECON5]
+RED = "RED"
+GREY = "GREY"
+GREEN = "GREEN"
 FAN_OFF = -99.3
 OAF = -89.2
 OAT_LIMIT = -79.2
@@ -304,10 +307,10 @@ class Application(DrivenApplicationBaseClass):
         return {
             'a0_sensitivity':
             ConfigDescriptor(str,
-                             'Sensitivity: values can be low, normal, high, custom. '
-                             'Setting sensitivity to custom allows you to enter your '
+                             'Sensitivity: values can be all (produces a result for low, normal, and high), '
+                             'low, normal, high, or custom. Setting sensitivity to custom allows you to enter your '
                              'own values for all threshold values',
-                                 value_default="all"),
+                              value_default="all"),
             'a1_local_tz':
             ConfigDescriptor(int,
                             "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
@@ -890,11 +893,12 @@ class Application(DrivenApplicationBaseClass):
         :return:
         """
         dx_msg = {'low': message, 'normal': message, 'high': message}
+        color_code_dict = {'low': GREY, 'normal': GREY, 'high': GREY}
         for diagnostic in diagnostics:
             # dx_table = {diagnostic + DX: dx_msg}
             # table_key = create_table_key(self.analysis, cur_time)
             # dx_result.insert_table_row(table_key, dx_table)
-            dx_table = create_dx_table(cur_time, diagnostic, dx_msg, "GREY", energy_impact=None)
+            dx_table = create_dx_table(cur_time, diagnostic, dx_msg, color_code_dict, energy_impact=None)
             dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
         return dx_result
 
@@ -989,9 +993,9 @@ class TempSensorDx(object):
 
             if elapsed_time > self.max_dx_time:
                 dx_msg = {"low": 3.2, "normal": 3.2, "high": 3.2}
-                color_code = "GREY"
+                color_code_dict = {'low': GREY, 'normal': GREY, 'high': GREY}
                 # dx_result.insert_table_row(table_key, {ECON1 + DX: dx_msg})
-                dx_table = create_dx_table(cur_time, ECON1, dx_msg, color_code)
+                dx_table = create_dx_table(cur_time, ECON1, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 self.clear_data()
                 return dx_result, self.temp_sensor_problem
@@ -1021,28 +1025,30 @@ class TempSensorDx(object):
         :return:
         """
         avg_oa_ma, avg_ra_ma, avg_ma_oa, avg_ma_ra = self.aggregate_data()
-        diagnostic_msg = {}
+        dx_msg = {}
+        color_code_dict = {}
         for key, value in self.temp_diff_thr.items():
             if avg_oa_ma > value and avg_ra_ma > value:
                 msg = ("{}: MAT is less than OAT and RAT - Sensitivity: {}".format(ECON1, key))
-                color_code = "RED"
+                color_code = RED
                 result = 1.1
             elif avg_ma_oa > value and avg_ma_ra > value:
                 msg = ("{}: MAT is greater than OAT and RAT - Sensitivity: {}".format(ECON1, key))
-                color_code = "RED"
+                color_code = RED
                 result = 2.1
             else:
                 msg = "{}: No problems were detected - Sensitivity: {}".format(ECON1, key)
-                color_code = "GREEN"
+                color_code = GREEN
                 result = 0.0
                 self.temp_sensor_problem = False
             dx_result.log(msg)
-            diagnostic_msg.update({key: result})
+            dx_msg.update({key: result})
+            color_code_dict.update({key: color_code})
 
-        if diagnostic_msg["normal"] > 0.0:
+        if dx_msg["normal"] > 0.0:
             self.temp_sensor_problem = True
 
-        dx_table = create_dx_table(cur_time, ECON1, diagnostic_msg, color_code)
+        dx_table = create_dx_table(cur_time, ECON1, dx_msg, color_code_dict)
         dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
         # dx_table = {ECON1 + DX: diagnostic_msg}
         # dx_result.insert_table_row(table_key, dx_table)
@@ -1058,7 +1064,6 @@ class TempSensorDx(object):
         self.rat_values = []
         self.mat_values = []
         self.timestamp = []
-        print("TEMP PROBLEM: {}".format(self.temp_sensor_problem))
         if self.temp_sensor_problem:
             self.temp_sensor_problem = None
 
@@ -1112,20 +1117,22 @@ class DamperSensorInconsistencyDx(object):
             if len(self.oat_values) > self.no_required_data:
                 mat_oat_diff_list = [abs(x - y) for x, y in zip(self.oat_values, self.mat_values)]
                 open_damper_check = mean(mat_oat_diff_list)
-                table_key = create_table_key(self.analysis, self.timestamp[-1])
-                diagnostic_msg = {}
+                # table_key = create_table_key(self.analysis, self.timestamp[-1])
+                dx_msg = {}
+                color_code_dict = {}
                 for key, threshold in self.oat_mat_check.items():
                     if open_damper_check > threshold:
                         msg = "{}: The OAT and MAT at 100% OAD - Sensitivity: {}".format(ECON1, key)
-                        color_code = "RED"
+                        color_code = RED
                         result = 0.1
                         dx_result.log(msg)
                     else:
-                        color_code = "GREEN"
+                        color_code = GREEN
                         result = 0.0
-                    diagnostic_msg.update({key: result})
+                    dx_msg.update({key: result})
+                    color_code_dict.update({key: color_code})
 
-                dx_table = create_dx_table(cur_time, ECON1, diagnostic_msg, color_code)
+                dx_table = create_dx_table(cur_time, ECON1, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_table = {ECON1 + DX: diagnostic_msg}
                 # dx_result.insert_table_row(table_key, dx_table)
@@ -1208,14 +1215,13 @@ class EconCorrectlyOn(object):
         self.fan_spd_values.append(fan_sp)
 
         elapsed_time = self.timestamp[-1] - self.timestamp[0]
-        print("ECON3: {}".format(elapsed_time))
         if elapsed_time >= self.data_window and len(self.timestamp) >= self.no_required_data:
             table_key = create_table_key(self.analysis, self.timestamp[-1])
 
             if elapsed_time > self.max_dx_time:
                 diagnostic_msg = {"low": 13.2, "normal": 13.2, "high": 13.2}
-                color_code = "GREY"
-                dx_table = create_dx_table(cur_time, ECON2, diagnostic_msg, color_code)
+                color_code_dict = {"low": GREY, "normal": GREY, "high": GREY}
+                dx_table = create_dx_table(cur_time, ECON2, diagnostic_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_result.insert_table_row(table_key, {ECON2 + DX: result})
                 self.clear_data()
@@ -1236,31 +1242,33 @@ class EconCorrectlyOn(object):
         oaf = [(m - r) / (o - r) for o, r, m in zip(self.oat_values, self.rat_values, self.mat_values)]
         avg_oaf = mean(oaf)*100.0
         avg_damper_signal = mean(self.oad_values)
-        diagnostic_msg = {}
+        dx_msg = {}
         energy_impact = {}
+        color_code_dict = {}
         thresholds = zip(self.open_damper_threshold.items(), self.oaf_economizing_threshold.items())
         for (key, damper_thr), (key2, oaf_thr) in thresholds:
             if avg_damper_signal - self.minimum_damper_setpoint < damper_thr:
                 msg = "{}: {} - sensitivity: {}".format(ECON2, self.alg_result_messages[0], key)
-                color_code = "RED"
+                color_code = RED
                 result = 11.1
                 energy = self.energy_impact_calculation()
             else:
                 if 100.0 - avg_oaf <= oaf_thr:
                     msg = "{}: {} - sensitivity: {}".format(ECON2, self.alg_result_messages[1], key)
-                    color_code = "GREEN"
+                    color_code = GREEN
                     result = 10.0
                     energy = 0.0
                 else:
                     msg = "{}: {} --OAF: {} - sensitivity: {}".format(ECON2, self.alg_result_messages[2], avg_oaf, key)
-                    color_code = "RED"
+                    color_code = RED
                     result = 12.1
                     energy = self.energy_impact_calculation()
             dx_result.log(msg)
-            diagnostic_msg.update({key: result})
+            dx_msg.update({key: result})
             energy_impact.update({key: energy})
+            color_code_dict.update({key: color_code})
 
-        dx_table = create_dx_table(cur_time, ECON2, diagnostic_msg, color_code, energy_impact)
+        dx_table = create_dx_table(cur_time, ECON2, dx_msg, color_code_dict, energy_impact)
         dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
         # dx_table = {
         #    ECON2 + DX: diagnostic_msg,
@@ -1285,9 +1293,9 @@ class EconCorrectlyOn(object):
                 self.not_cooling = cur_time
             if cur_time - self.not_cooling >= self.data_window:
                 dx_result.log("{}: unit is not cooling - reinitialize!".format(ECON2))
-                diagnostic_msg = {"low": 14.0, "normal": 14.0, "high": 14.0}
-                color_code = "GREEN"
-                dx_table = create_dx_table(cur_time, ECON2, diagnostic_msg, color_code)
+                dx_msg = {"low": 14.0, "normal": 14.0, "high": 14.0}
+                color_code_dict = {"low": GREEN, "normal": GREEN, "high": GREEN}
+                dx_table = create_dx_table(cur_time, ECON2, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_table = {ECON2 + DX: diagnostic_msg}
                 # table_key = create_table_key(self.analysis, cur_time)
@@ -1303,9 +1311,9 @@ class EconCorrectlyOn(object):
                 self.not_economizing = cur_time
             if cur_time - self.not_economizing >= self.data_window:
                 dx_result.log("{}: unit is not economizing - reinitialize!".format(ECON2))
-                diagnostic_msg = {"low": 15.0, "normal": 15.0, "high": 15.0}
-                color_code = "GREEN"
-                dx_table = create_dx_table(cur_time, ECON2, diagnostic_msg, color_code)
+                dx_msg = {"low": 15.0, "normal": 15.0, "high": 15.0}
+                color_code_dict = {"low": GREEN, "normal": GREEN, "high": GREEN}
+                dx_table = create_dx_table(cur_time, ECON2, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_table = {ECON2 + DX: diagnostic_msg}
                 # table_key = create_table_key(self.analysis, cur_time)
@@ -1409,8 +1417,8 @@ class EconCorrectlyOff(object):
 
             if elapsed_time > self.max_dx_time:
                 dx_msg = {"low": 23.2, "normal": 23.2, "high": 23.2}
-                color_code = "GREY"
-                dx_table = create_dx_table(cur_time, ECON3, dx_msg, color_code)
+                color_code_dict = {"low": GREY, "normal": GREY, "high": GREY}
+                dx_table = create_dx_table(cur_time, ECON3, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_result.insert_table_row(table_key, {ECON3 + DX: result})
                 self.clear_data()
@@ -1430,24 +1438,26 @@ class EconCorrectlyOff(object):
         """
         desired_oaf = self.desired_oaf / 100.0
         avg_damper = mean(self.oad_values)
-        diagnostic_msg = {}
+        dx_msg = {}
         energy_impact = {}
+        color_code_dict = {}
         for key, threshold in self.excess_damper_threshold.items():
             if avg_damper - self.min_damper_sp > threshold:
                 msg = "{}: {} - sensitivity: {}".format(ECON3, self.alg_result_messages[0], key)
-                color_code = "RED"
+                color_code = RED
                 result = 21.1
                 energy = self.energy_impact_calculation(desired_oaf)
             else:
                 msg = "{}: {} - sensitivity: {}".format(ECON3, self.alg_result_messages[1], key)
-                color_code = "GREEN"
+                color_code = GREEN
                 result = 20.0
                 energy = 0.0
             dx_result.log(msg)
-            diagnostic_msg.update({key: result})
+            dx_msg.update({key: result})
             energy_impact.update({key: energy})
+            color_code_dict.update({key: color_code})
 
-        dx_table = create_dx_table(cur_time, ECON3, diagnostic_msg, color_code, energy_impact)
+        dx_table = create_dx_table(cur_time, ECON3, dx_msg, color_code_dict, energy_impact)
         dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
         # dx_table = {
         #     ECON3 + DX: diagnostic_msg,
@@ -1491,9 +1501,9 @@ class EconCorrectlyOff(object):
                 self.economizing = cur_time
             if cur_time - self.economizing >= self.data_window:
                 dx_result.log("{}: economizing - reinitialize!".format(ECON3))
-                diagnostic_msg = {"low": 25.0, "normal": 25.0, "high": 25.0}
-                color_code = "GREY"
-                dx_table = create_dx_table(cur_time, ECON3, diagnostic_msg, color_code)
+                dx_msg = {"low": 25.0, "normal": 25.0, "high": 25.0}
+                color_code_dict = {"low": GREEN, "normal": GREEN, "high": GREEN}
+                dx_table = create_dx_table(cur_time, ECON3, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_table = {ECON3 + DX: diagnostic_msg}
                 # table_key = create_table_key(self.analysis, cur_time)
@@ -1565,9 +1575,9 @@ class ExcessOA(object):
         if elapsed_time >= self.data_window and len(self.timestamp) >= self.no_required_data:
             table_key = create_table_key(self.analysis, self.timestamp[-1])
             if elapsed_time > self.max_dx_time:
-                diagnostic_msg = {"low": 35.2, "normal": 35.2, "high": 35.2}
-                color_code = "GREY"
-                dx_table = create_dx_table(cur_time, ECON4, diagnostic_msg, color_code)
+                dx_msg = {"low": 35.2, "normal": 35.2, "high": 35.2}
+                color_code_dict = {"low": GREY, "normal": GREY, "high": GREY}
+                dx_table = create_dx_table(cur_time, ECON4, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_result.insert_table_row(table_key, {ECON4 + DX: diagnostic_msg})
                 self.clear_data()
@@ -1588,17 +1598,18 @@ class ExcessOA(object):
         avg_damper = mean(self.oad_values)
         desired_oaf = self.desired_oaf / 100.0
         msg = ""
-        diagnostic_msg = {}
+        dx_msg = {}
         energy_impact = {}
+        color_code_dict = {}
 
         if avg_oaf < 0 or avg_oaf > 125.0:
             msg = ("{}: Inconclusive result, unexpected OAF value: {}".format(ECON4, avg_oaf))
-            color_code = "GREY"
-            diagnostic_msg = {"low": 31.2, "normal": 31.2, "high": 31.2}
-            dx_table = create_dx_table(cur_time, ECON4, diagnostic_msg, color_code)
+            dx_msg = {"low": 31.2, "normal": 31.2, "high": 31.2}
+            color_code_dict = {"low": GREY, "normal": GREY, "high": GREY}
+            dx_table = create_dx_table(cur_time, ECON4, dx_msg, color_code_dict)
             dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
+            dx_result.log(msg)
             # dx_table = {ECON4 + DX: result}
-            # dx_result.log(msg)
             # dx_result.insert_table_row(table_key, dx_table)
             self.clear_data()
             return dx_result
@@ -1607,9 +1618,10 @@ class ExcessOA(object):
         for (key, damper_thr), (key2, oaf_thr) in thresholds:
             result = 30.0
             energy = 0.0
+            color_code = GREEN
             if avg_damper - self.min_damper_sp > damper_thr:
                 msg = "{}: The OAD should be at the minimum but is significantly higher.".format(ECON4)
-                color_code = "RED"
+                color_code = RED
                 result = 32.1
 
             if avg_oaf - self.desired_oaf > oaf_thr:
@@ -1623,7 +1635,7 @@ class ExcessOA(object):
                     msg = ("{}: Excess outdoor air is being provided, this could "
                            "increase heating and cooling energy consumption.".format(ECON4))
                     result = 33.1
-                    color_code = "RED"
+                    color_code = RED
 
             elif result == 30.0:
                 msg = ("{}: The calculated OAF is within configured limits.".format(ECON4))
@@ -1633,9 +1645,10 @@ class ExcessOA(object):
 
             dx_result.log(msg)
             energy_impact.update({key: energy})
-            diagnostic_msg.update({key: result})
+            dx_msg.update({key: result})
+            color_code_dict.update({key: color_code})
 
-        dx_table = create_dx_table(cur_time, ECON4, diagnostic_msg, color_code, energy_impact)
+        dx_table = create_dx_table(cur_time, ECON4, dx_msg, color_code_dict, energy_impact)
         dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
         # dx_table = {
         #     ECON4 + DX: diagnostic_msg,
@@ -1680,9 +1693,9 @@ class ExcessOA(object):
                 self.economizing = cur_time
             if cur_time - self.economizing >= self.data_window:
                 dx_result.log("{}: economizing - reinitialize!".format(ECON4))
-                diagnostic_msg = {"low": 36.0, "normal": 36.0, "high": 36.0}
-                color_code = "GREEN"
-                dx_table = create_dx_table(cur_time, ECON4, diagnostic_msg, color_code)
+                dx_msg = {"low": 36.0, "normal": 36.0, "high": 36.0}
+                color_code_dict = {"low": GREEN, "normal": GREEN, "high": GREEN}
+                dx_table = create_dx_table(cur_time, ECON4, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_table = {ECON4 + DX: diagnostic_msg}
                 # table_key = create_table_key(self.analysis, cur_time)
@@ -1740,9 +1753,9 @@ class InsufficientOA(object):
         if elapsed_time >= self.data_window and len(self.timestamp) >= self.no_required_data:
             table_key = create_table_key(self.analysis, self.timestamp[-1])
             if elapsed_time > self.max_dx_time:
-                diagnostic_msg = {"low": 44.2, "normal": 44.2, "high": 44.2}
-                color_code = "GREY"
-                dx_table = create_dx_table(cur_time, ECON5, diagnostic_msg, color_code)
+                dx_msg = {"low": 44.2, "normal": 44.2, "high": 44.2}
+                color_code_dict = {"low": GREY, "normal": GREY, "high": GREY}
+                dx_table = create_dx_table(cur_time, ECON5, dx_msg, color_code_dict)
                 dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
                 # dx_result.insert_table_row(table_key, {ECON5 + DX: diagnostic_msg})
                 self.clear_data()
@@ -1762,14 +1775,16 @@ class InsufficientOA(object):
         """
         oaf = [(m - r) / (o - r) for o, r, m in zip(self.oat_values, self.rat_values, self.mat_values)]
         avg_oaf = mean(oaf) * 100.0
-        diagnostic_msg = {}
+        dx_msg = {}
+        color_code_dict = {}
 
         if avg_oaf < 0 or avg_oaf > 125.0:
             msg = ("{}: Inconclusive result, the OAF calculation led to an "
                    "unexpected value: {}".format(ECON5, avg_oaf))
             color_code = "GREY"
             diagnostic_msg = {"low": 41.2, "normal": 41.2, "high": 41.2}
-            dx_table = create_dx_table(cur_time, ECON5, diagnostic_msg, color_code)
+            color_code_dict = {"low": GREY, "normal": GREY, "high": GREY}
+            dx_table = create_dx_table(cur_time, ECON5, diagnostic_msg, color_code_dict)
             dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
             dx_result.log(msg)
             # dx_table = {ECON5 + DX: diagnostic_msg}
@@ -1780,16 +1795,17 @@ class InsufficientOA(object):
         for key, threshold in self.ventilation_oaf_threshold.items():
             if self.desired_oaf - avg_oaf > threshold:
                 msg = "{}: Insufficient OA is being provided for ventilation - sensitivity: {}".format(ECON5, key)
-                color_code = "RED"
+                color_code = RED
                 result = 43.1
             else:
                 msg = "{}: The calculated OAF was within acceptable limits - sensitivity: {}".format(ECON5, key)
-                color_code = "GREEN"
+                color_code = GREEN
                 result = 40.0
             dx_result.log(msg)
-            diagnostic_msg.update({key: result})
+            dx_msg.update({key: result})
+            color_code_dict.update({key: color_code})
 
-        dx_table = create_dx_table(cur_time, ECON5, diagnostic_msg, color_code)
+        dx_table = create_dx_table(cur_time, ECON5, dx_msg, color_code_dict)
         dx_result = insert_ecam_data(dx_result, dx_table, ecam_data)
         # dx_table = {ECON5 + DX: diagnostic_msg}
         # dx_result.insert_table_row(table_key, dx_table)

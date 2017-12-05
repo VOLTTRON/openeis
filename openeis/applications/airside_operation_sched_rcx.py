@@ -64,43 +64,92 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   reports)
 
 available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
-DUCT_STC_RCX = 'Duct Static Pressure Set Point Control Loop Dx'
-DUCT_STC_RCX1 = 'Low Duct Static Pressure Dx'
-DUCT_STC_RCX2 = 'High Duct Static Pressure Dx'
-DUCT_STC_RCX3 = 'No Static Pressure Reset Dx'
 
-SA_TEMP_RCX = 'Supply-air Temperature Set Point Control Loop Dx'
-SA_TEMP_RCX1 = 'Low Supply-air Temperature Dx'
-SA_TEMP_RCX2 = 'High Supply-air Temperature Dx'
-SA_TEMP_RCX3 = 'No Supply-air Temperature Reset Dx'
+FAN_OFF = -99.3
+INCONSISTENT_DATE = -89.2
+INSUFFICIENT_DATA = -79.2
+RED = "RED"
+GREY = "GREY"
+GREEN = "GREEN"
 
 SCHED_RCX = 'Operational Schedule Dx'
 DX = '/diagnostic message'
 
-STCPR_NAME = 'StcPr_ACCx_State'
-SATEMP_NAME = 'Satemp_ACCx_State'
-SCHED_NAME = 'Sched_ACCx_State'
-ST = 'state'
-DATA = '/data/'
-
-CORRECT_STC_PR = 'suggested duct static pressure set point'
-STCPR_VALIDATE = 'Duct Static Pressure ACCx'
-STCPR_VAL_FILE_TOKEN = 'stcpr-rcx'
-SATEMP_VAL_FILE_TOKEN = 'satemp-rcx'
-RESET_VAL_FILE_TOKEN = 'reset-schedule'
-
-STCPR_POINT_NAME = 'duct static pressure'
-SAT_POINT_NAME = 'supply-air temperature'
-
-SA_VALIDATE = 'Supply-air Temperature ACCx'
-
-RESET_FILE_TOKEN = 'reset'
-SCHEDULE_FILE_TOKEN = 'schedule'
 
 """Common functions used across multiple algorithms."""
 
+def create_dx_table(cur_time, diagnostic, message, color_code, energy_impact=None):
+    dx_table = dict(datetime=str(cur_time),
+                    diagnostic_name=diagnostic,
+                    diagnostic_message=message,
+                    energy_impact=energy_impact,
+                    color_code=color_code)
+    return dx_table
+
+
 def create_table_key(table_name, timestamp):
-    return '&'.join([table_name, timestamp.isoformat()])
+    return "&".join([table_name, timestamp.isoformat()])
+
+
+def data_builder(value_tuple, point_name):
+    value_list = []
+    for item in value_tuple:
+        value_list.append(item[1])
+    return value_list
+
+
+def check_run_status(timestamp_array, current_time, no_required_data, minimum_diagnostic_time=None,
+                     run_schedule="hourly", minimum_point_array=None):
+    """
+    The diagnostics run at a regular interval (some minimum elapsed amount of time) and have a
+    minimum data count requirement (each time series of data must contain some minimum number of points).
+    :param timestamp_array:
+    :param current_time:
+    :param no_required_data:
+    :param minimum_diagnostic_time:
+    :param run_schedule:
+    :param minimum_point_array:
+    :return:
+    """
+    def minimum_data():
+        min_data_array = timestamp_array if minimum_point_array is None else minimum_point_array
+        if len(min_data_array) < no_required_data:
+            return None
+        return True
+
+    if minimum_diagnostic_time is not None:
+        sampling_interval = (timestamp_array[-1] - timestamp_array[0])/len(timestamp_array)
+        required_time = (timestamp_array[-1] - timestamp_array[0]) + sampling_interval
+        if required_time >= minimum_diagnostic_time:
+            return minimum_data()
+        return False
+
+    if run_schedule == "hourly":
+        if timestamp_array and timestamp_array[-1].hour != current_time.hour:
+            return minimum_data()
+    elif run_schedule == "daily":
+        if timestamp_array and timestamp_array[-1].date() != current_time.date():
+            return minimum_data()
+    return False
+
+
+def pre_conditions(message, dx_list, analysis, cur_time, dx_result):
+    """
+    Check for persistence of failure to meet pre-conditions for diagnostics.
+    :param message:
+    :param dx_list:
+    :param analysis:
+    :param cur_time:
+    :param dx_result:
+    :return:
+    """
+    dx_msg = {'low': message, 'normal': message, 'high': message}
+    for diagnostic in dx_list:
+        # dx_table = {diagnostic + DX: dx_msg}
+        # table_key = create_table_key(analysis, cur_time)
+        dx_table = create_dx_table(cur_time, diagnostic, dx_msg, "GREY")
+        dx_result.insert_table_row(analysis, dx_table)
+    return dx_result
 
 
 class Application(DrivenApplicationBaseClass):
@@ -109,52 +158,55 @@ class Application(DrivenApplicationBaseClass):
     for AHUs.
     """
     fan_status_name = 'fan_status'
-    fan_speedcmd_name = 'fan_speedcmd'
-    duct_stp_name = 'duct_stp'
+    fan_sp_name = 'fan_sp'
+    duct_stcpr_name = 'duct_stcpr'
 
     def __init__(
-            self, *args, no_required_data=10, a2_unocc_time_threshold=30.0,
-            a3_unocc_stp_threshold=0.2, a1_local_tz=1, b0_monday_sch=['5:30', '18:30'],
+            self, *args, no_required_data=10, a2_unocc_time_thr=30.0,
+            a3_unocc_stcpr_thr=0.2, a1_local_tz=1, b0_monday_sch=['5:30', '18:30'],
             b1_tuesday_sch=['5:30', '18:30'], b2_wednesday_sch=['5:30', '18:30'],
             b3_thursday_sch=['5:30', '18:30'], b4_friday_sch=['5:30', '18:30'],
             b5_saturday_sch=['0:00', '0:00'], b6_sunday_sch=['0:00', '0:00'],
-            analysis_name='', a0_sensitivity=1, **kwargs):
+            a0_sensitivity="all", **kwargs):
         super().__init__(*args, **kwargs)
         try:
             self.cur_tz = available_tz[a1_local_tz]
         except:
             self.cur_tz = 'UTC'
-        analysis = analysis_name
-        self.fan_status_name = Application.fan_status_name
-        self.duct_stp_name = Application.duct_stp_name
-
-        # Optional points
-        self.override_state = 'AUTO'
-        if Application.fan_speedcmd_name is not None:
-            self.fansp_name = Application.fan_speedcmd_name.lower()
-        else:
-            self.fansp_name = None
-
+        analysis = "Airside_RCx"
+        self.low_sf_threshold = 10.0
         no_required_data = int(no_required_data)
+        sensitivity = a0_sensitivity.lower() if a0_sensitivity is not None else None
+        self.unit_status = None
+        if sensitivity is not None and sensitivity != "custom":
+            unocc_stcpr_thr = {
+                "low": a3_unocc_stcpr_thr * 1.5,
+                "normal": a3_unocc_stcpr_thr,
+                "high": a3_unocc_stcpr_thr * 0.625
+            }
+            unocc_time_thr = {
+                "low": a2_unocc_time_thr * 1.5,
+                "normal": a2_unocc_time_thr,
+                "high": a2_unocc_time_thr * 0.5
+            }
 
-        if a0_sensitivity == 0:
-            # low sensitivity
-            a2_unocc_time_threshold = 45.0
-            a3_unocc_stp_threshold = 0.1
-        elif a0_sensitivity == 1:
-            # normal sensitivity
-            a2_unocc_time_threshold = 30.0
-            a3_unocc_stp_threshold = 0.2
-        elif a0_sensitivity == 2:
-            # high sensitivity
-            a2_unocc_time_threshold = 15.0
-            a3_unocc_stp_threshold = 0.3
+            if sensitivity != "all":
+                remove_sensitivities = [item for item in ["high", "normal", "low"] if item != sensitivity]
+                if remove_sensitivities:
+                    for remove in remove_sensitivities:
+                        unocc_time_thr.pop(remove)
+                        unocc_stcpr_thr.pop(remove)
+        else:
 
-        self.sched_occ_dx = (
-            SchedResetRcx(a2_unocc_time_threshold, a3_unocc_stp_threshold, b0_monday_sch, b1_tuesday_sch,
-                          b2_wednesday_sch, b3_thursday_sch, b4_friday_sch, b5_saturday_sch, b6_sunday_sch,
-                          no_required_data, analysis))
+            unocc_stcpr_thr = {"normal": a3_unocc_stcpr_thr}
+            unocc_time_thr = {"normal": a2_unocc_time_thr}
 
+        self.sched_aircx = ScheduleAIRCx(unocc_time_thr, unocc_stcpr_thr,
+                                         b0_monday_sch, b1_tuesday_sch,
+                                         b2_wednesday_sch, b3_thursday_sch,
+                                         b4_friday_sch, b5_saturday_sch,
+                                         b6_sunday_sch, no_required_data,
+                                         analysis)
     @classmethod
     def get_config_parameters(cls):
         """
@@ -165,19 +217,20 @@ class Application(DrivenApplicationBaseClass):
         config_dict =  [
 
             ('a0_sensitivity',
-             ConfigDescriptor(int,
-                              'Sensitivity: values can be 0 (low), '
-                              '1 (normal), 2 (high), 3 (custom). Setting sensitivity to 3 (custom) '
-                              'allows you to enter your own values for all threshold values',
-                               value_default=1)),
+             ConfigDescriptor(str,
+                              'Sensitivity: values can be all (produces a result for low, normal, and high), '
+                              'low, normal, high, or custom. Setting sensitivity to custom allows you to customize your '
+                              'all threshold values',
+                              value_default="all")),
             ('a1_local_tz',
              ConfigDescriptor(int,
                               "Integer corresponding to local timezone: [1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern']",
                                value_default=1)),
-            ('a2_unocc_time_threshold',
+            ('a2_unocc_time_thr',
             ConfigDescriptor(float,
-                             'Threshold for acceptable unoccupied run-time percentage for AHU supply fan (%)', value_default=30.0)),
-            ('a3_unocc_stp_threshold',
+                             'Threshold for acceptable unoccupied run-time percentage for AHU supply fan (%)',
+                             value_default=30.0)),
+            ('a3_unocc_stcpr_thr',
             ConfigDescriptor(float,
                              'Threshold for the AHU average static pressure during unoccupied periods (inch w.g.)',
                              value_default=0.2)),
@@ -210,7 +263,7 @@ class Application(DrivenApplicationBaseClass):
                              'Sunday occupancy schedule for AHU (default: unoccupied)',
                              value_default=['0:00', '0:00']))
         ]
-         
+
         config = collections.OrderedDict(config_dict)
 
         return config
@@ -219,8 +272,8 @@ class Application(DrivenApplicationBaseClass):
     def get_self_descriptor(cls):
         name = 'AIRCx for AHUs: Operation Schedule'
         desc = 'AIRCx for AHUs: Operation Schedule'
-        note = 'Sensitivity: values can be 0 (low), ' \
-               '1 (normal), 2 (high), 3 (custom). Setting values of 0, 1, or 2 will ' \
+        note = 'Sensitivity: value can be all, low, normal, high, or custom. ' \
+               'Setting values of all, low, normal, or high will ' \
                'ignore other threshold values.'
         return Descriptor(name=name, description=desc, note=note)
 
@@ -234,10 +287,10 @@ class Application(DrivenApplicationBaseClass):
             cls.fan_status_name:
             InputDescriptor('SupplyFanStatus',
                             'AHU Supply fan status', count_min=1),
-            cls.fan_speedcmd_name:
+            cls.fan_sp_name:
             InputDescriptor('SupplyFanSpeed',
                             'AHU supply fan speed', count_min=0),
-            cls.duct_stp_name:
+            cls.duct_stcpr_name:
             InputDescriptor('DuctStaticPressure', 'AHU duct static pressure',
                             count_min=1)
             }
@@ -248,8 +301,6 @@ class Application(DrivenApplicationBaseClass):
         visualization.
         """
         report = reports.Report('Retuning Report')
-        # report.add_element(reports.RetroCommissioningOAED(
-        #     table_name='Airside_RCx'))
         report.add_element(reports.RxOperationSchedule(
             table_name='Airside_RCx'))
         return [report]
@@ -265,23 +316,17 @@ class Application(DrivenApplicationBaseClass):
         diagnostic_topic = topics[cls.fan_status_name][0]
         diagnostic_topic_parts = diagnostic_topic.split('/')
         output_topic_base = diagnostic_topic_parts[:-1]
-        datetime_topic = '/'.join(output_topic_base + ['Airside_RCx',
-                                                       'date'])
-        message_topic = '/'.join(output_topic_base + ['Airside_RCx',
-                                                      'message'])
-        diagnostic_name = '/'.join(output_topic_base + ['Airside_RCx',
-                                                        ' diagnostic_name'])
-        energy_impact = '/'.join(output_topic_base + ['Airside_RCx',
-                                                      'energy_impact'])
-        color_code = '/'.join(output_topic_base + ['Airside_RCx',
-                                                   'color_code'])
+        datetime_topic = '/'.join(output_topic_base + ['Airside_RCx', 'date'])
+        message_topic = '/'.join(output_topic_base + ['Airside_RCx', 'message'])
+        diagnostic_name = '/'.join(output_topic_base + ['Airside_RCx', 'diagnostic_name'])
+        energy_impact = '/'.join(output_topic_base + ['Airside_RCx', 'energy_impact'])
+        color_code = '/'.join(output_topic_base + ['Airside_RCx', 'color_code'])
 
         output_needs = {
             'Airside_RCx': {
                 'datetime': OutputDescriptor('string', datetime_topic),
                 'diagnostic_name': OutputDescriptor('string', diagnostic_name),
-                'diagnostic_message': OutputDescriptor('string',
-                                                       message_topic),
+                'diagnostic_message': OutputDescriptor('string', message_topic),
                 'energy_impact': OutputDescriptor('float', energy_impact),
                 'color_code': OutputDescriptor('string', color_code)
             }
@@ -289,8 +334,9 @@ class Application(DrivenApplicationBaseClass):
         result.update(output_needs)
         return result
 
-    def run(self, current_time, points):
-        """Check application pre-quisites and assemble analysis data set.
+    def run(self, cur_time, points):
+        """
+        Check application pre-quisites and assemble analysis data set.
         Receives mapped data from the DrivenBaseClass.  Filters non-relevent
         data and assembles analysis data set for diagnostics.
         """
@@ -298,88 +344,95 @@ class Application(DrivenApplicationBaseClass):
         # diagnostic_topic = topics[self.fan_status_name][0]
         # cur_time = self.inp.localize_sensor_time(diagnostic_topic, current_time)
         to_zone = dateutil.tz.gettz(self.cur_tz)
-        cur_time = current_time.astimezone(to_zone)
+        cur_time = cur_time.astimezone(to_zone)
+
         device_dict = {}
-        diagnostic_result = Results()
-        fan_status_data = []
+        dx_result = Results()
 
         for key, value in points.items():
-            point_device = [_name.lower() for _name in key.split('&&&')]
+            point_device = [_name.lower() for _name in key.split("&")]
             if point_device[0] not in device_dict:
                 device_dict[point_device[0]] = [(point_device[1], value)]
             else:
                 device_dict[point_device[0]].append((point_device[1], value))
 
-        if self.fan_status_name in device_dict:
-            fan_status = device_dict[self.fan_status_name]
-            fan_status = [point[1] for point in fan_status]
-            fan_status = [status for status in fan_status if status is not None]
-            if fan_status:
-                fan_status_data.append(min(fan_status))
-                if not int(fan_status_data[0]):
-                    self.warm_up_flag = True
-
-        if self.fansp_name in device_dict:
-            fan_speed = device_dict[self.fansp_name]
-            fan_speed = mean([point[1] for point in fan_speed])
-            if self.fan_status_name is None:
-                if not int(fan_speed):
-                    self.warm_up_flag = True
-                fan_status_data.append(bool(int(fan_speed)))
-
+        fan_status_data = []
         stc_pr_data = []
-
-        def data_builder(value_tuple, point_name):
-            value_list = []
-            for item in value_tuple:
-                value_list.append(item[1])
-            return value_list
+        fan_sp_data = []
 
         for key, value in device_dict.items():
             data_name = key
             if value is None:
                 continue
-            if data_name == self.duct_stp_name:
+            if data_name == self.fan_status_name:
+                fan_status_data = data_builder(value, data_name)
+            elif data_name == self.duct_stcpr_name:
                 stc_pr_data = data_builder(value, data_name)
+            elif data_name == self.fan_sp_name:
+                fan_sp_data = data_builder(value, data_name)
 
         missing_data = []
-
-        if not stc_pr_data:
-            missing_data.append(self.duct_stp_name)
-        if not fan_status:
+        if not fan_status_data and not fan_sp_data:
             missing_data.append(self.fan_status_name)
+        if not stc_pr_data:
+            missing_data.append(self.duct_stcpr_name)
+
+
         if missing_data:
-            raise Exception('Missing required data: {}'.format(missing_data))
-            return diagnostic_result
-        dx_status, diagnostic_result = (
-            self.sched_occ_dx.sched_rcx_alg(cur_time, stc_pr_data, fan_status, diagnostic_result))
-        return diagnostic_result
+            dx_result.log("Missing data from publish: {}".format(missing_data))
+            return dx_result
+
+        current_fan_status, fan_sp = self.check_fan_status(fan_status_data, fan_sp_data, cur_time)
+
+        dx_result = self.sched_aircx.sched_aircx(cur_time, stc_pr_data, current_fan_status, dx_result)
+
+        return dx_result
+
+    def check_fan_status(self, fan_status_data, fan_sp_data, cur_time):
+        """
+        :param fan_status_data:
+        :param fan_sp_data:
+        :param cur_time:
+        :return:
+        """
+        supply_fan_status = int(max(fan_status_data)) if fan_status_data else None
+
+        fan_speed = mean(fan_sp_data) if fan_sp_data else None
+        if supply_fan_status is None:
+            supply_fan_status = 1 if fan_speed > self.low_sf_thr else 0
+
+        if not supply_fan_status:
+            if self.unit_status is None:
+                self.unit_status = cur_time
+        else:
+            self.unit_status = None
+        return supply_fan_status, fan_speed
 
 
-class SchedResetRcx(object):
-    """Schedule, supply-air temperature, and duct static pressure auto-detect
-    diagnostics for AHUs or RTUs.
+class ScheduleAIRCx(object):
     """
-
-    def __init__(self, unocc_time_threshold, unocc_stp_threshold,
+    Operational schedule, supply-air temperature set point reset, and duct static pressure reset
+    AIRCx for AHUs or RTUs.
+    """
+    def __init__(self, unocc_time_thr, unocc_stcpr_thr,
                  monday_sch, tuesday_sch, wednesday_sch, thursday_sch,
                  friday_sch, saturday_sch, sunday_sch,
                  no_req_data, analysis):
-        self.fanstat_values = []
+        self.fan_status_array = []
         self.schedule = {}
-        self.stcpr_arr = []
-        self.stcpr_stpt_arr = []
-        self.sat_stpt_arr = []
-        self.sched_time = []
+        self.stcpr_array = []
+        self.schedule_time_array = []
+
+        self.stcpr_stpt_array = []
+        self.sat_stpt_array = []
+        self.reset_table_key = None
+        self.timestamp_array = []
         self.dx_table = {}
-        self.dx_time = None
 
         def date_parse(dates):
-            return [parse(timestamp).time() for timestamp in dates]
+            return [parse(timestamp_array).time() for timestamp_array in dates]
 
         self.analysis = analysis
-        self.sched_file_name_id = analysis + '-' + SCHEDULE_FILE_TOKEN
-        self.reset_file_name_id = analysis + '-' + RESET_FILE_TOKEN
         self.monday_sch = date_parse(monday_sch)
         self.tuesday_sch = date_parse(tuesday_sch)
         self.wednesday_sch = date_parse(wednesday_sch)
@@ -387,143 +440,140 @@ class SchedResetRcx(object):
         self.friday_sch = date_parse(friday_sch)
         self.saturday_sch = date_parse(saturday_sch)
         self.sunday_sch = date_parse(sunday_sch)
-        self.timestamp_arr = []
 
         self.schedule = {0: self.monday_sch, 1: self.tuesday_sch,
                          2: self.wednesday_sch, 3: self.thursday_sch,
                          4: self.friday_sch, 5: self.saturday_sch,
                          6: self.sunday_sch}
+        self.pre_msg = ("Current time is in the scheduled hours "
+                        "unit is operating correctly.")
 
         # Application thresholds (Configurable)
         self.no_req_data = no_req_data
-        self.unocc_time_threshold = float(unocc_time_threshold)
-        self.unocc_stp_threshold = float(unocc_stp_threshold)
+        self.unocc_time_thr = unocc_time_thr
+        self.unocc_stcpr_thr = unocc_stcpr_thr
 
+    def reinitialize_sched(self):
+        """
+        Reinitialize schedule data arrays
+        :return:
+        """
+        self.stcpr_array = []
+        self.fan_status_array = []
+        self.schedule_time_array = []
+        self.timestamp_array = []
 
-    def reinitialize(self):
-        """Reinitialize data arrays"""
-        self.stcpr_arr = []
-        self.fanstat_values = []
-        self.sched_time = []
-        self.dx_table = {}
-        self.timestamp_arr = []
-
-
-    def sched_rcx_alg(self, current_time, stcpr_data, fan_stat_data, dx_result):
-        """Check schedule status and unit operational status."""
-        dx_status = 1
-        fan_status = None
+    def sched_aircx(self, current_time, stcpr_data, current_fan_status, dx_result):
+        """
+        Main function for operation schedule AIRCx - manages data arrays checks AIRCx run status.
+        :param current_time:
+        :param stcpr_data:
+        :param current_fan_status:
+        :param dx_result:
+        :return:
+        """
         schedule = self.schedule[current_time.weekday()]
-        run_diagnostic = False
+        try:
+            run_status = check_run_status(self.timestamp_array, current_time, self.no_req_data, run_schedule="daily")
 
-        if self.timestamp_arr and self.timestamp_arr[-1].date() != current_time.date():
-            run_diagnostic = True
+            if run_status is None:
+                # schedule_name = create_table_key(self.analysis, self.timestamp_array[0])
+                dx_result.log("{} - Insufficient data to produce a valid diagnostic result.".format(current_time))
+                dx_result = pre_conditions(INSUFFICIENT_DATA, [SCHED_RCX], self.analysis, current_time, dx_result)
+                self.reinitialize_sched()
+                return dx_result
 
-        if not run_diagnostic:
+            if run_status:
+                dx_result = self.unocc_fan_operation(dx_result)
+                self.reinitialize_sched()
+
+            return dx_result
+
+        finally:
+            self.timestamp_array.append(current_time)
             if current_time.time() < schedule[0] or current_time.time() > schedule[1]:
-                current_fan_status = int(max(fan_stat_data))
-                self.fanstat_values.append((current_time, current_fan_status))
-                if not current_fan_status:
-                    self.stcpr_arr.extend(stcpr_data)
-                self.sched_time.append(current_time)
-
-        if run_diagnostic and len(self.timestamp_arr) >= self.no_req_data:
-            self.dx_time = self.timestamp_arr[-1]
-            dx_result = self.unocc_fan_operation(dx_result)
-            self.reinitialize()
-        elif run_diagnostic:
-            dx_msg = 61.2
-            msg = 'Insufficient data for conclusive diagnostic'
-            color_code = 'GREY'
-            dx_table = {
-                'datetime': str(self.timestamp_arr[-1]),
-                'diagnostic_name': SCHED_RCX,
-                'diagnostic_message': msg,
-                'energy_impact': None,
-                'color_code': color_code
-            }
-            dx_result.insert_table_row('Airside_RCx', dx_table)
-            self.reinitialize()
-            if current_time.time() < schedule[0] or current_time.time() > schedule[1]:
-                current_fan_status = int(max(fan_stat_data))
-                self.fanstat_values.append((current_time, current_fan_status))
-                if not current_fan_status:
-                    self.stcpr_arr.extend(stcpr_data)
-                self.sched_time.append(current_time)
-            dx_status = 0
-        self.timestamp_arr.append(current_time)
-        return dx_status, dx_result
+                self.stcpr_array.extend(stcpr_data)
+                self.fan_status_array.append((current_time, current_fan_status))
+                self.schedule_time_array.append(current_time)
 
     def unocc_fan_operation(self, dx_result):
-        """If the AHU/RTU is operating during unoccupied periods inform the
-        building operator.
+        """
+        AIRCx to determine if AHU is operating excessively in unoccupied mode.
+        :param dx_result:
+        :return:
         """
         avg_duct_stcpr = 0
         percent_on = 0
-        fanstat_on = [(fan[0].hour, fan[1]) for fan in self.fanstat_values if int(fan[1]) == 1]
-        fanstat = [(fan[0].hour, fan[1]) for fan in self.fanstat_values]
+        fan_status_on = [(fan[0].hour, fan[1]) for fan in self.fan_status_array if int(fan[1]) == 1]
+        fanstat = [(fan[0].hour, fan[1]) for fan in self.fan_status_array]
         hourly_counter = []
+        thresholds = zip(self.unocc_time_thr.items(), self.unocc_stcpr_thr.items())
+        diagnostic_msg = {}
+        color_code_dict = {}
 
         for counter in range(24):
-            fan_on_count = [fan_status_time[1] for fan_status_time in fanstat_on if fan_status_time[0] == counter]
+            fan_on_count = [fan_status_time[1] for fan_status_time in fan_status_on if fan_status_time[0] == counter]
             fan_count = [fan_status_time[1] for fan_status_time in fanstat if fan_status_time[0] == counter]
             if len(fan_count):
-                hourly_counter.append(fan_on_count.count(1) / len(fan_count) * 100)
+                hourly_counter.append(fan_on_count.count(1)/len(fan_count)*100)
             else:
                 hourly_counter.append(0)
 
-        if self.sched_time:
-            if self.fanstat_values:
-                percent_on = (len(fanstat_on) / len(self.fanstat_values)) * 100.0
-            if self.stcpr_arr:
-                avg_duct_stcpr = mean(self.stcpr_arr)
+        if self.schedule_time_array:
+            if self.fan_status_array:
+                percent_on = (len(fan_status_on)/len(self.fan_status_array)) * 100.0
+            if self.stcpr_array:
+                avg_duct_stcpr = mean(self.stcpr_array)
 
-            if percent_on > self.unocc_time_threshold:
-                msg = 'Supply fan is operating excessively during unoccupied times.'
-                color_code = 'RED'
-                dx_msg = 63.1
-            else:
-                if avg_duct_stcpr < self.unocc_stp_threshold:
-                    msg = 'No problems detected for schedule diagnostic.'
-                    color_code = 'GREEN'
-                    dx_msg = 60.0
+            for (key, unocc_time_thr), (key2, unocc_stcpr_thr) in thresholds:
+                if percent_on > unocc_time_thr:
+                    msg = "{} - Supply fan is on during unoccupied times".format(key)
+                    color_code = RED
+                    result = 63.1
                 else:
-                    msg = ('Fan status show the fan is off but the duct static '
-                           'pressure is high, check the functionality of the '
-                           'pressure sensor.')
-                    color_code = 'RED'
-                    dx_msg = 64.2
+                    if avg_duct_stcpr < unocc_stcpr_thr:
+                        msg = "{} - No problems detected for schedule diagnostic.".format(key)
+                        color_code = GREEN
+                        result = 60.0
+                    else:
+                        msg = ("{} - Fan status show the fan is off but the duct static "
+                               "pressure is high, check the functionality of the "
+                               "pressure sensor.".format(key))
+                        color_code = GREY
+                        result = 64.2
+                color_code_dict.update({key: color_code})
+                diagnostic_msg.update({key: result})
+                dx_result.log(msg)
         else:
-            msg = 'No problems detected for schedule diagnostic.'
-            color_code = 'GREEN'
-            dx_msg = 60.0
+            msg = "ALL - No problems detected for schedule diagnostic."
+            dx_result.log(msg)
+            color_code_dict = {"low": GREEN, "normal": GREEN, "high": GREEN}
+            diagnostic_msg = {"low": 60.0, "normal": 60.0, "high": 60.0}
 
-        if dx_msg != 64.2:
+        if 64.2 not in diagnostic_msg.values():
             for _hour in range(24):
-                push_time = self.sched_time[0].date() if self.sched_time else self.timestamp_arr[0].date()
+                diagnostic_msg = {}
+                color_code_dict = {}
+                utc_offset = self.timestamp_array[0].isoformat()[-6:]
+                push_time = self.timestamp_array[0].date()
                 push_time = datetime.combine(push_time, datetime.min.time())
                 push_time = push_time.replace(hour=_hour)
-                # dx_table = {SCHED_RCX + DX: 60.0}
-                if hourly_counter[_hour] > self.unocc_time_threshold:
-                    dx_table = {
-                        'datetime': str(push_time),
-                        'diagnostic_name': SCHED_RCX,
-                        'diagnostic_message': msg,
-                        'energy_impact': None,
-                        'color_code': color_code
-                    }
-                    # table_key = create_table_key(self.sched_file_name_id, push_time)
-                    dx_result.insert_table_row('Airside_RCx', dx_table)
+                for key, unocc_time_thr in self.unocc_time_thr.items():
+                    diagnostic_msg.update({key: 60.0})
+                    color_code_dict.update({key: GREEN})
+                    if hourly_counter[_hour] > unocc_time_thr:
+                        diagnostic_msg.update({key: 63.1})
+                        color_code_dict.update({key: RED})
+                dx_table = create_dx_table(str(push_time), SCHED_RCX, diagnostic_msg, color_code_dict)
+                dx_result.insert_table_row(self.analysis, dx_table)
+                # dx_table = {SCHED_RCX + DX:  diagnostic_msg}
+                # table_key = create_table_key(self.analysis, push_time) + utc_offset
+                # dx_result.insert_table_row(table_key, dx_table)
         else:
-            push_time = self.timestamp_arr[-1]
-            # table_key = create_table_key(self.sched_file_name_id, push_time)
-            dx_table = {
-                'datetime': str(push_time),
-                'diagnostic_name': SCHED_RCX,
-                'diagnostic_message': msg,
-                'energy_impact': None,
-                'color_code': color_code
-            }
-            dx_result.insert_table_row('Airside_RCx', dx_table)
-        dx_result.log(msg, logging.INFO)
+            push_time = self.timestamp_array[0].date()
+            dx_table = create_dx_table(str(push_time), SCHED_RCX, diagnostic_msg, color_code_dict)
+            dx_result.insert_table_row(self.analysis, dx_table)
+            # table_key = create_table_key(self.analysis, push_time)
+            # dx_result.insert_table_row(table_key, {SCHED_RCX + DX:  diagnostic_msg})
+
         return dx_result
