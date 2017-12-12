@@ -61,19 +61,22 @@ from openeis.applications import (DrivenApplicationBaseClass,
                                   Descriptor,
                                   reports)
 
-FAN_OFF = -99.3
-INCONSISTENT_DATE = -89.2
-INSUFFICIENT_DATA = -79.2
-RED = "RED"
-GREY = "GREY"
-GREEN = "GREEN"
 DUCT_STC_RCX = "Duct Static Pressure Control Loop Dx"
 DUCT_STC_RCX1 = "Low Duct Static Pressure Dx"
 DUCT_STC_RCX2 = "High Duct Static Pressure Dx"
 DUCT_STC_RCX3 = "No Static Pressure Reset Dx"
 DX = "/diagnostic message"
-
 DX_LIST = [DUCT_STC_RCX, DUCT_STC_RCX1, DUCT_STC_RCX2]
+
+FAN_OFF = -99.3
+INCONSISTENT_DATE = -89.2
+INSUFFICIENT_DATA = -79.2
+
+RED = "RED"
+GREY = "GREY"
+WHITE = "WHITE"
+GREEN = "GREEN"
+
 __version__ = "1.0.6"
 
 available_tz = {1: 'US/Pacific', 2: 'US/Mountain', 3: 'US/Central', 4: 'US/Eastern'}
@@ -136,12 +139,13 @@ def check_run_status(timestamp_array, current_time, no_required_data, minimum_di
             return None
         return True
 
-    if minimum_diagnostic_time is not None and timestamp_array:
-        sampling_interval = td(minutes=
-            round(((timestamp_array[-1] - timestamp_array[0])/len(timestamp_array)).total_seconds()/60))
-        required_time = (timestamp_array[-1] - timestamp_array[0]) + sampling_interval
-        if required_time >= minimum_diagnostic_time:
-            return minimum_data()
+    if minimum_diagnostic_time is not None:
+        if timestamp_array:
+            sampling_interval = td(minutes=
+                round(((timestamp_array[-1] - timestamp_array[0])/len(timestamp_array)).total_seconds()/60))
+            required_time = (timestamp_array[-1] - timestamp_array[0]) + sampling_interval
+            if required_time >= minimum_diagnostic_time:
+                return minimum_data()
         return False
 
     if run_schedule == "hourly":
@@ -207,12 +211,16 @@ def pre_conditions(message, dx_list, analysis, cur_time, dx_result):
     :param dx_result:
     :return:
     """
-    dx_msg = {'low': message, 'normal': message, 'high': message}
-    color_code_dict = {'low': GREY, 'normal': GREY, 'high': GREY}
+    diagnostic_msg = {}
+    color_code_dict = {}
+    for sensitivity in pre_condition_sensitivities:
+        diagnostic_msg[sensitivity] = message
+        color_code_dict[sensitivity] = GREY if message != FAN_OFF else WHITE
+
     for diagnostic in dx_list:
         # dx_table = {diagnostic + DX: dx_msg}
         # table_key = create_table_key(analysis, cur_time)
-        dx_table = create_dx_table(cur_time, diagnostic, dx_msg, color_code_dict)
+        dx_table = create_dx_table(cur_time, diagnostic, diagnostic_msg, color_code_dict)
         dx_result.insert_table_row(analysis, dx_table)
     return dx_result
 
@@ -302,7 +310,6 @@ class Application(DrivenApplicationBaseClass):
                 "normal": b4_stcpr_reset_thr,
                 "high": b4_stcpr_reset_thr * 0.5
             }
-
             if sensitivity != "all":
                 remove_sensitivities = [item for item in ["high", "normal", "low"] if item != sensitivity]
                 if remove_sensitivities:
@@ -311,13 +318,16 @@ class Application(DrivenApplicationBaseClass):
                         zn_high_damper_thr.pop(remove)
                         zn_low_damper_thr.pop(remove)
                         stcpr_reset_thr.pop(remove)
-
+                        hdzn_damper_thr.pop(remove)
         else:
             stpt_deviation_thr = {"normal": b0_stpt_deviation_thr}
             zn_high_damper_thr = {"normal": b1_zn_high_damper_thr}
             zn_low_damper_thr = {"normal": b2_zn_low_damper_thr}
             hdzn_damper_thr = {"normal": b3_hdzn_damper_thr}
             stcpr_reset_thr = {"normal": b4_stcpr_reset_thr}
+
+        global pre_condition_sensitivities
+        pre_condition_sensitivities = stpt_deviation_thr.keys()
 
         self.stcpr_aircx = DuctStaticAIRCx(
             a0_no_required_data, self.data_window,
@@ -542,8 +552,7 @@ class Application(DrivenApplicationBaseClass):
         dx_result = self.stcpr_aircx.stcpr_aircx(cur_time, stcpr_stpt_data, stc_pr_data,
                                                  zn_dmpr_data, low_sf_cond, high_sf_cond,
                                                  dx_result)
-        dx_result = self.stcpr_reset_aircx.stcpr_reset_aircx(cur_time, current_fan_status,
-                                                             stcpr_stpt_data, dx_result)
+        dx_result = self.stcpr_reset_aircx.stcpr_reset_aircx(cur_time, stcpr_stpt_data, dx_result)
 
         return dx_result
 
@@ -832,7 +841,7 @@ class StcprResetAIRCx(object):
         self.no_req_data = no_req_data
         self.stcpr_reset_thr = stcpr_reset_thr
 
-    def stcpr_reset_aircx(self, current_time, current_fan_status, stcpr_stpt_data, dx_result):
+    def stcpr_reset_aircx(self, current_time, stcpr_stpt_data, dx_result):
         """
         Main function for set point reset AIRCx - manages data arrays checks AIRCx run status.
         :param current_time:
@@ -846,10 +855,7 @@ class StcprResetAIRCx(object):
             stcpr_run_status = check_run_status(self.timestamp_array, current_time, self.no_req_data,
                                                 run_schedule="daily", minimum_point_array=self.stcpr_stpt_array)
 
-            if not self.timestamp_array:
-                return dx_result
-
-            self.reset_table_key = reset_name = create_table_key(self.analysis, self.timestamp_array[0])
+            # self.reset_table_key = reset_name = create_table_key(self.analysis, self.timestamp_array[0])
             if stcpr_run_status is None:
                 dx_result.log("{} - Insufficient data to produce - {}".format(current_time, DUCT_STC_RCX3))
                 dx_result = pre_conditions(INSUFFICIENT_DATA, [DUCT_STC_RCX3], self.analysis, current_time, dx_result)
@@ -864,9 +870,8 @@ class StcprResetAIRCx(object):
 
         finally:
             self.timestamp_array.append(current_time)
-            if current_fan_status:
-                if stcpr_stpt_data:
-                    self.stcpr_stpt_array.append(mean(stcpr_stpt_data))
+            if stcpr_stpt_data:
+                self.stcpr_stpt_array.append(mean(stcpr_stpt_data))
 
     def no_static_pr_reset(self, dx_result):
         """

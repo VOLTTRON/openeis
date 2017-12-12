@@ -49,7 +49,6 @@ operated by BATTELLE for the UNITED STATES DEPARTMENT OF ENERGY
 under Contract DE-AC05-76RL01830
 '''
 import datetime
-import logging
 from numpy import mean
 from datetime import datetime
 from dateutil.parser import parse
@@ -71,6 +70,7 @@ INSUFFICIENT_DATA = -79.2
 RED = "RED"
 GREY = "GREY"
 GREEN = "GREEN"
+WHITE = "WHITE"
 
 SCHED_RCX = 'Operational Schedule Dx'
 DX = '/diagnostic message'
@@ -143,11 +143,16 @@ def pre_conditions(message, dx_list, analysis, cur_time, dx_result):
     :param dx_result:
     :return:
     """
-    dx_msg = {'low': message, 'normal': message, 'high': message}
+    diagnostic_msg = {}
+    color_code_dict = {}
+    for sensitivity in pre_condition_sensitivities:
+        diagnostic_msg[sensitivity] = message
+        color_code_dict[sensitivity] = GREY if message != FAN_OFF else WHITE
+
     for diagnostic in dx_list:
         # dx_table = {diagnostic + DX: dx_msg}
         # table_key = create_table_key(analysis, cur_time)
-        dx_table = create_dx_table(cur_time, diagnostic, dx_msg, "GREY")
+        dx_table = create_dx_table(cur_time, diagnostic, diagnostic_msg, "GREY")
         dx_result.insert_table_row(analysis, dx_table)
     return dx_result
 
@@ -174,7 +179,7 @@ class Application(DrivenApplicationBaseClass):
         except:
             self.cur_tz = 'UTC'
         analysis = "Airside_RCx"
-        self.low_sf_threshold = 10.0
+        self.low_sf_thr = 10.0
         no_required_data = int(no_required_data)
         sensitivity = a0_sensitivity.lower() if a0_sensitivity is not None else None
         self.unit_status = None
@@ -197,9 +202,11 @@ class Application(DrivenApplicationBaseClass):
                         unocc_time_thr.pop(remove)
                         unocc_stcpr_thr.pop(remove)
         else:
-
             unocc_stcpr_thr = {"normal": a3_unocc_stcpr_thr}
             unocc_time_thr = {"normal": a2_unocc_time_thr}
+
+        global pre_condition_sensitivities
+        pre_condition_sensitivities = unocc_stcpr_thr.keys()
 
         self.sched_aircx = ScheduleAIRCx(unocc_time_thr, unocc_stcpr_thr,
                                          b0_monday_sch, b1_tuesday_sch,
@@ -214,7 +221,7 @@ class Application(DrivenApplicationBaseClass):
         parameters with description for user
         """
         dgr_sym = u'\N{DEGREE SIGN}'
-        config_dict =  [
+        config_dict = [
 
             ('a0_sensitivity',
              ConfigDescriptor(str,
