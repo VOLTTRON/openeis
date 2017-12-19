@@ -234,7 +234,7 @@
                     "properties": {
                         "type": {
                             "enum": [
-                                "CoolingCall/ChilledWaterValvePosition",
+                                "CoolingCall",
                                 "DischargeAirRelativeHumidity",
                                 "MixedAirRelativeHumidity",
                                 "OutdoorAirRelativeHumidity",
